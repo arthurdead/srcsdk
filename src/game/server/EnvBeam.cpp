@@ -442,7 +442,7 @@ void CEnvBeam::Strike( void )
 				m_boltWidth,
 				0,	// No spread
 				m_noiseAmplitude,
-				GetRenderColorR(),	GetRenderColorG(),	GetRenderColorB(),	GetRenderAlpha(),
+				color32( GetRenderColorR(),	GetRenderColorG(),	GetRenderColorB(),	GetRenderAlpha() ),
 				m_speed );
 		}
 		else
@@ -461,7 +461,7 @@ void CEnvBeam::Strike( void )
 				m_boltWidth,	// End width
 				0,				// No fade
 				m_noiseAmplitude,
-				GetRenderColorR(),	GetRenderColorG(),	GetRenderColorB(),	GetRenderAlpha(),
+				color32( GetRenderColorR(),	GetRenderColorG(),	GetRenderColorB(),	GetRenderAlpha() ),
 				m_speed );
 		}
 	}
@@ -480,10 +480,10 @@ void CEnvBeam::Strike( void )
 				m_boltWidth,
 				0,	// No spread
 				m_noiseAmplitude,
-				GetRenderColorR(),
+				color32( GetRenderColorR(),
 				GetRenderColorG(),
 				GetRenderColorB(),
-				GetRenderAlpha(),
+				GetRenderAlpha() ),
 				m_speed );
 		}
 		else
@@ -500,10 +500,10 @@ void CEnvBeam::Strike( void )
 				m_boltWidth,	// End width
 				0,				// No fade
 				m_noiseAmplitude,
-				GetRenderColorR(),
+				color32( GetRenderColorR(),
 				GetRenderColorG(),
 				GetRenderColorB(),
-				GetRenderAlpha(),
+				GetRenderAlpha() ),
 				m_speed );
 
 		}
@@ -667,10 +667,10 @@ void CEnvBeam::Zap( const Vector &vecSrc, const Vector &vecDest )
 		m_boltWidth,	// End width
 		0,				// No fade
 		m_noiseAmplitude,
-		GetRenderColorR(),
+		color32( GetRenderColorR(),
 		GetRenderColorG(),
 		GetRenderColorB(),
-		GetRenderAlpha(),
+		GetRenderAlpha() ),
 		m_speed );
 
 	DoSparks( vecSrc, vecDest );

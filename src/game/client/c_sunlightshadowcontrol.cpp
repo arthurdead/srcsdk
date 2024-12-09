@@ -63,7 +63,7 @@ IMPLEMENT_CLIENTCLASS_DT(C_SunlightShadowControl, DT_SunlightShadowControl, CSun
 	RecvPropVector(RECVINFO(m_shadowDirection)),
 	RecvPropBool(RECVINFO(m_bEnabled)),
 	RecvPropString(RECVINFO(m_TextureName)),
-	RecvPropInt(RECVINFO(m_LightColor), 0, RecvProxy_Int32ToColor32),
+	RecvPropColor32(RECVINFO(m_LightColor)),
 	RecvPropFloat(RECVINFO(m_flColorTransitionTime)),
 	RecvPropFloat(RECVINFO(m_flSunDistance)),
 	RecvPropFloat(RECVINFO(m_flFOV)),

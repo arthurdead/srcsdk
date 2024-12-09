@@ -18,8 +18,16 @@ public:
 	// Add a virtual destructor to silence the clang warning.
 	// This is harmless but not important since the only derived class
 	// doesn't have a destructor.
-	virtual ~IVguiMatInfoVar() {}
+#ifdef __MINGW32__
+private:
+	virtual void __DTOR__() = 0;
+	~IVguiMatInfoVar() = delete;
+#else
+public:
+	virtual					~IVguiMatInfoVar( void ) { }
+#endif
 
+public:
 	virtual int GetIntValue ( void ) const = 0;
 	virtual void SetIntValue ( int val ) = 0;
 

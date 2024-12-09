@@ -182,6 +182,8 @@ bool PhysicsDLLInit( CreateInterfaceFn physicsFactory )
 	return true;
 }
 
+extern modelindex_t g_sModelIndexWorld;
+
 void PhysicsLevelInit( void )
 {
 	physenv = physics->CreateEnvironment();
@@ -205,7 +207,7 @@ void PhysicsLevelInit( void )
 	physenv->SetCollisionSolver( &g_Collisions );
 
 	C_World *pWorld = GetClientWorldEntity();
-	g_PhysWorldObject = PhysCreateWorld_Shared( pWorld, modelinfo->GetVCollide(1), g_PhysDefaultObjectParams );
+	g_PhysWorldObject = PhysCreateWorld_Shared( pWorld, modelinfo->GetVCollide(g_sModelIndexWorld), g_PhysDefaultObjectParams );
 
 	staticpropmgr->CreateVPhysicsRepresentations( physenv, &g_SolidSetup, pWorld );
 }
@@ -278,7 +280,9 @@ int CCollisionEvent::ShouldCollide_2( IPhysicsObject *pObj0, IPhysicsObject *pOb
 		if ( (gameFlags0 | gameFlags1) & FVPHYSICS_NO_SELF_COLLISIONS )
 			return 0;
 
-		IPhysicsCollisionSet *pSet = physics->FindCollisionSet( pEntity0->GetModelIndex() );
+		unsigned int collset = (unsigned int)pEntity0->GetModelIndex().GetRaw();
+
+		IPhysicsCollisionSet *pSet = physics->FindCollisionSet( collset );
 		if ( pSet )
 			return pSet->ShouldCollide( pObj0->GetGameIndex(), pObj1->GetGameIndex() );
 

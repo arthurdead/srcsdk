@@ -8,40 +8,23 @@
 // Group definitions //
 ///////////////////////
 
-$Group "gamedlls"
-{
-	"client"
-	"server"
-}
-
-$Group "game"
-{
-	"client"
-	"mathlib"
-	"raytrace"
-	"server"
-	"tier1"
-	"vgui_controls"
-}
-
 $Group "everything"
 {
-	"client"
+	//"client"
 	"mathlib"
 	"raytrace"
-	"server"
+	//"server"
 	"tier1"
 	"vgui_controls"
 	"video_services"
 	"vaudio_minimp3"
-}
-
-$Group "shaders"
-{
-	"game_shader_dx9"
-}
-
-$Group "gamepad"
-{
-	"gamepadui"
+	"fgdlib"
+	"choreoobjects"
+	"game_loopback"
+	"gamepadui_redirect"
+	//"gameui"
+	"matchmaking"
+	"matchmaking_ds"
+	"responserules_runtime"
+	"serverbrowser_redirect"
 }

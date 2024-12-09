@@ -8,17 +8,31 @@
 
 #define MAX_GAME_PATHS 20
 
+IFileSystem *GetFilesystem()
+{
+	if(!GetFilesystemInterfaceFactory()) {
+		return NULL;
+	}
+
+	int status = IFACE_OK;
+	IFileSystem *pFileSystem = (IFileSystem *)GetFilesystemInterfaceFactory()(FILESYSTEM_INTERFACE_VERSION, &status);
+	if(!pFileSystem || status != IFACE_OK) {
+		return NULL;
+	}
+
+#ifdef __MINGW32__
+	g_pFullFileSystem = pFileSystem;
+	g_pBaseFileSystem = (IBaseFileSystem *)pFileSystem->QueryInterface( BASEFILESYSTEM_INTERFACE_VERSION );
+#endif
+
+	return pFileSystem;
+}
+
 HACKMGR_EXECUTE_ON_LOAD_BEGIN(0)
 
-if(!GetFilesystemInterfaceFactory()) {
+IFileSystem *pFileSystem = GetFilesystem();
+if(!pFileSystem)
 	return;
-}
-
-int status = IFACE_OK;
-IFileSystem *pFileSystem = (IFileSystem *)GetFilesystemInterfaceFactory()(FILESYSTEM_INTERFACE_VERSION, &status);
-if(!pFileSystem || status != IFACE_OK) {
-	return;
-}
 
 char basePath[MAX_PATH];
 pFileSystem->GetSearchPath("BASE_PATH", false, basePath, sizeof(basePath));
@@ -49,5 +63,7 @@ const char *path = gamePath+last_len;
 if(path[0] != '\0') {
 	pFileSystem->AddSearchPath(path, "GAME_NOBSP", PATH_ADD_TO_TAIL);
 }
+
+DebuggerBreak();
 
 HACKMGR_EXECUTE_ON_LOAD_END

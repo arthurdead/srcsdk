@@ -49,11 +49,11 @@ C_TEBeamLaser::~C_TEBeamLaser( void )
 
 void TE_BeamLaser( IRecipientFilter& filter, float delay,
 	int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-	float life, float width, float endWidth, int fadeLength, float amplitude, int r, int g, int b, int a, int speed )
+	float life, float width, float endWidth, int fadeLength, float amplitude, color32 clr, int speed )
 {
 	beams->CreateBeamEnts( start, end, modelindex, haloindex, 0.0f, 
-		life, width, endWidth, fadeLength, amplitude, a, 0.1 * speed, 
-		startframe, 0.1 * framerate, r, g, b, TE_BEAMLASER );
+		life, width, endWidth, fadeLength, amplitude, clr.a(), 0.1 * speed, 
+		startframe, 0.1 * framerate, clr.r(), clr.g(), clr.b(), TE_BEAMLASER );
 }
 
 //-----------------------------------------------------------------------------
@@ -63,8 +63,8 @@ void TE_BeamLaser( IRecipientFilter& filter, float delay,
 void C_TEBeamLaser::PostDataUpdate( DataUpdateType_t updateType )
 {
 	beams->CreateBeamEnts( m_nStartEntity, m_nEndEntity, m_nModelIndex, m_nHaloIndex, 0.0f, 
-		m_fLife, m_fWidth,  m_fEndWidth, m_nFadeLength, m_fAmplitude, a, 0.1 * m_nSpeed, 
-		m_nStartFrame, 0.1 * m_nFrameRate, r, g, b, TE_BEAMLASER );
+		m_fLife, m_fWidth,  m_fEndWidth, m_nFadeLength, m_fAmplitude, m_clr.a(), 0.1 * m_nSpeed, 
+		m_nStartFrame, 0.1 * m_nFrameRate, m_clr.r(), m_clr.g(), m_clr.b(), TE_BEAMLASER );
 }
 
 IMPLEMENT_CLIENTCLASS_EVENT_DT(C_TEBeamLaser, DT_TEBeamLaser, CTEBeamLaser)

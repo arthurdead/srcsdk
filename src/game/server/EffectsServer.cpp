@@ -32,8 +32,7 @@ public:
 	virtual void Beam( const Vector &Start, const Vector &End, modelindex_t nModelIndex, 
 		modelindex_t nHaloIndex, unsigned char frameStart, unsigned char frameRate,
 		float flLife, unsigned char width, unsigned char endWidth, unsigned char fadeLength, 
-		unsigned char noise, unsigned char red, unsigned char green,
-		unsigned char blue, unsigned char brightness, unsigned char speed);
+		unsigned char noise, color32 clr, unsigned char speed);
 	virtual void Smoke( const Vector &origin, modelindex_t mModel, float flScale, float flFramerate );
 	virtual void Sparks( const Vector &position, int nMagnitude = 1, int nTrailLength = 1, const Vector *pvecDir = NULL );
 	virtual void Dust( const Vector &pos, const Vector &dir, float size, float speed );
@@ -103,15 +102,14 @@ CEffectsServer::~CEffectsServer()
 void CEffectsServer::Beam( const Vector &vecStart, const Vector &vecEnd, modelindex_t nModelIndex, 
 	modelindex_t nHaloIndex, unsigned char frameStart, unsigned char frameRate,
 	float flLife, unsigned char width, unsigned char endWidth, unsigned char fadeLength, 
-	unsigned char noise, unsigned char red, unsigned char green,
-	unsigned char blue, unsigned char brightness, unsigned char speed)
+	unsigned char noise, color32 clr, unsigned char speed)
 {
 	CBroadcastRecipientFilter filter;
 	if ( !SuppressTE( filter ) )
 	{
 		te->BeamPoints( filter, 0.0,
 			&vecStart, &vecEnd, nModelIndex, nHaloIndex, frameStart, frameRate, flLife,  
-			width, endWidth, fadeLength, noise, red, green, blue, brightness, speed );
+			width, endWidth, fadeLength, noise, clr, speed );
 	}
 }
 

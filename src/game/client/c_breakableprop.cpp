@@ -19,11 +19,9 @@
 
 void RecvProxy_UnmodifiedQAngles( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	const float *v = pData->m_Value.m_Vector;
+	const QAngle &v = pData->m_Value.m_Angles;
 
-	((float*)pOut)[0] = v[0];
-	((float*)pOut)[1] = v[1];
-	((float*)pOut)[2] = v[2];
+	*((QAngle*)pOut) = v;
 }
 
 IMPLEMENT_CLIENTCLASS_DT(C_BreakableProp, DT_BreakableProp, CBreakableProp)

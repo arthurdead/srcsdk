@@ -98,27 +98,27 @@ class FatColor32;
 // Purpose: Basic handler for an rgb set of colors
 //			This class is fully inline
 //-----------------------------------------------------------------------------
-class Color32
+class Color
 {
 public:
 	// constructors
-	Color32()
+	Color()
 	{
 		SetColor(255, 255, 255, 255);
 	}
-	Color32(unsigned char _r,unsigned char _g,unsigned char _b)
+	Color(unsigned char _r,unsigned char _g,unsigned char _b)
 	{
 		SetColor(_r, _g, _b, 255);
 	}
-	Color32(unsigned char _r,unsigned char _g,unsigned char _b,unsigned char _a)
+	Color(unsigned char _r,unsigned char _g,unsigned char _b,unsigned char _a)
 	{
 		SetColor(_r, _g, _b, _a);
 	}
-	Color32(Color24 clr_,unsigned char _a)
+	Color(Color24 clr_,unsigned char _a)
 	{
 		SetColor(clr_.r(), clr_.g(), clr_.b(), _a);
 	}
-	Color32(FatColor32 other);
+	Color(FatColor32 other);
 	
 	// set the color
 	// r - red component (0-255)
@@ -184,22 +184,22 @@ public:
 	inline unsigned char b() const	{ return (_clr >> 16) & 0xFF; }
 	inline unsigned char a() const	{ return (_clr >> 24) & 0xFF; }
 
-	bool operator==(const Color32 &rhs) const
+	bool operator==(const Color &rhs) const
 	{
 		return _clr == rhs._clr;
 	}
 
-	bool operator!=(const Color32 &rhs) const
+	bool operator!=(const Color &rhs) const
 	{
 		return _clr != rhs._clr;
 	}
 
-	Color32( const Color32 &rhs )
+	Color( const Color &rhs )
 		: _clr(rhs._clr)
 	{
 	}
 
-	Color32 &operator=( const Color32 &rhs )
+	Color &operator=( const Color &rhs )
 	{
 		_clr = rhs._clr;
 		return *this;
@@ -212,7 +212,7 @@ private:
 	unsigned int _clr;
 };
 
-typedef Color32 Color;
+typedef Color Color32;
 typedef Color32 color32;
 
 // compressed color format 
@@ -436,7 +436,7 @@ private:
 
 typedef FatColor32 colorVec;
 
-inline Color32::Color32(FatColor32 other)
+inline Color::Color(FatColor32 other)
 { SetColor(other); }
 
 inline Color32::operator FatColor32() const

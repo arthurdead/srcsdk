@@ -39,7 +39,7 @@ public:
 	void Paint( );
 	void SetColor( const Color& clr );
 	Color GetColor( );
-	void GetColor( int& r,int& g,int& b,int& a );
+	void GetColor( unsigned char& r,unsigned char& g,unsigned char& b,unsigned char& a );
 	void GetSize( int& wide, int& tall );
 	void SetPos( int x, int y );
 	void SetRenderSize( int x, int y );

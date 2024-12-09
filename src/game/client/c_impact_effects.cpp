@@ -275,9 +275,11 @@ void FX_DebrisFlecks( const Vector& origin, trace_t *tr, char materialType, int 
 
 		float colorRamp = random_valve->RandomFloat( 0.5f, 1.25f );
 
-		newParticle.m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
-		newParticle.m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
-		newParticle.m_uchColor[2] = MIN( 1.0f, color[2]*colorRamp )*255.0f;
+		unsigned char r = MIN( 1.0f, color[0]*colorRamp )*255.0f;
+		unsigned char g = MIN( 1.0f, color[1]*colorRamp )*255.0f;
+		unsigned char b = MIN( 1.0f, color[2]*colorRamp )*255.0f;
+
+		newParticle.m_uchColor.SetColor( r, g, b );
 
 		AddSimpleParticle( &newParticle, g_Mat_DustPuff[0] );
 	}
@@ -309,9 +311,11 @@ void FX_DebrisFlecks( const Vector& origin, trace_t *tr, char materialType, int 
 
 		float colorRamp = random_valve->RandomFloat( 0.5f, 1.25f );
 
-		newParticle.m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
-		newParticle.m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
-		newParticle.m_uchColor[2] = MIN( 1.0f, color[2]*colorRamp )*255.0f;
+		unsigned char r = MIN( 1.0f, color[0]*colorRamp )*255.0f;
+		unsigned char g = MIN( 1.0f, color[1]*colorRamp )*255.0f;
+		unsigned char b = MIN( 1.0f, color[2]*colorRamp )*255.0f;
+
+		newParticle.m_uchColor.SetColor( r, g, b );
 
 		AddSimpleParticle( &newParticle, g_Mat_BloodPuff[0] );
 	}
@@ -343,9 +347,11 @@ void FX_DebrisFlecks( const Vector& origin, trace_t *tr, char materialType, int 
 
 	float colorRamp = random_valve->RandomFloat( 0.5f, 1.25f );
 
-	newParticle.m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
-	newParticle.m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
-	newParticle.m_uchColor[2] = MIN( 1.0f, color[2]*colorRamp )*255.0f;
+	unsigned char r = MIN( 1.0f, color[0]*colorRamp )*255.0f;
+	unsigned char g = MIN( 1.0f, color[1]*colorRamp )*255.0f;
+	unsigned char b = MIN( 1.0f, color[2]*colorRamp )*255.0f;
+
+	newParticle.m_uchColor.SetColor( r, g, b );
 
 	AddSimpleParticle( &newParticle, g_Mat_DustPuff[0] );
 }
@@ -375,7 +381,7 @@ void FX_GlassImpact( const Vector &pos, const Vector &normal )
 
 	float flShardSize	= random_valve->RandomFloat( 2.0f, 6.0f );
 
-	unsigned char color[3] = { 200, 200, 210 };
+	color24 color = { 200, 200, 210 };
 
 	// ---------------------
 	// Create glass shards
@@ -401,20 +407,17 @@ void FX_GlassImpact( const Vector &pos, const Vector &normal )
 			pParticle->m_vAngles			= RandomAngle( 0, 360 );
 			pParticle->m_flAngSpeed			= random_valve->RandomFloat(-800,800);
 
-			pParticle->m_uchFrontColor[0]	= (byte)(color[0] * vecColor.x);
-			pParticle->m_uchFrontColor[1]	= (byte)(color[1] * vecColor.y);
-			pParticle->m_uchFrontColor[2]	= (byte)(color[2] * vecColor.z);
-			pParticle->m_uchBackColor[0]	= (byte)(color[0] * vecColor.x);
-			pParticle->m_uchBackColor[1]	= (byte)(color[1] * vecColor.y);
-			pParticle->m_uchBackColor[2]	= (byte)(color[2] * vecColor.z);
+			unsigned char r	= (byte)(color.r() * vecColor.x);
+			unsigned char g	= (byte)(color.g() * vecColor.y);
+			unsigned char b	= (byte)(color.b() * vecColor.z);
+			pParticle->m_uchFrontColor.SetColor( r, g, b );
+			pParticle->m_uchBackColor.SetColor( r, g, b );
 		}
 	}
 
 	pGlassEmitter->m_ParticleCollision.Setup( pos, &normal, GLASS_SHARD_NOISE, GLASS_SHARD_MIN_SPEED, GLASS_SHARD_MAX_SPEED, GLASS_SHARD_GRAVITY, GLASS_SHARD_DAMPING );
 
-	color[0] = 64;
-	color[1] = 64;
-	color[2] = 92;
+	color.SetColor( 64, 64, 92 );
 
 	// ---------------------------
 	// Dust
@@ -451,9 +454,11 @@ void FX_GlassImpact( const Vector &pos, const Vector &normal )
 
 		colorRamp = random_valve->RandomFloat( 0.5f, 1.25f );
 
-		newParticle.m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
-		newParticle.m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
-		newParticle.m_uchColor[2] = MIN( 1.0f, color[2]*colorRamp )*255.0f;
+		unsigned char r = MIN( 1.0f, color.r()*colorRamp )*255.0f;
+		unsigned char g = MIN( 1.0f, color.g()*colorRamp )*255.0f;
+		unsigned char b = MIN( 1.0f, color.b()*colorRamp )*255.0f;
+
+		newParticle.m_uchColor.SetColor( r, g, b );
 
 		AddSimpleParticle( &newParticle, g_Mat_BloodPuff[0] );
 	}
@@ -484,9 +489,11 @@ void FX_GlassImpact( const Vector &pos, const Vector &normal )
 
 	colorRamp = random_valve->RandomFloat( 0.5f, 1.25f );
 
-	newParticle.m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
-	newParticle.m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
-	newParticle.m_uchColor[2] = MIN( 1.0f, color[2]*colorRamp )*255.0f;
+	unsigned char r = MIN( 1.0f, color.r()*colorRamp )*255.0f;
+	unsigned char g = MIN( 1.0f, color.g()*colorRamp )*255.0f;
+	unsigned char b = MIN( 1.0f, color.b()*colorRamp )*255.0f;
+
+	newParticle.m_uchColor.SetColor( r, g, b );
 
 	AddSimpleParticle( &newParticle, g_Mat_DustPuff[0] );
 }
@@ -570,13 +577,8 @@ void FX_AlienInsectImpact( const Vector &pos, trace_t *trace )
 		pFleckParticle->m_vAngles.Random( 0, 360 );
 		pFleckParticle->m_flAngSpeed	= random_valve->RandomFloat(-800,800);
 
-		pFleckParticle->m_uchFrontColor[0] = 255;
-		pFleckParticle->m_uchFrontColor[1] = 255;
-		pFleckParticle->m_uchFrontColor[2] = 255;
-
-		pFleckParticle->m_uchBackColor[0] = 128;
-		pFleckParticle->m_uchBackColor[1] = 128;
-		pFleckParticle->m_uchBackColor[2] = 128;
+		pFleckParticle->m_uchFrontColor.SetColor( 255, 255, 255 );
+		pFleckParticle->m_uchBackColor.SetColor( 128, 128, 128 );
 	}
 
 	//
@@ -621,9 +623,11 @@ void FX_AlienInsectImpact( const Vector &pos, trace_t *trace )
 
 		colorRamp = random_valve->RandomFloat( 0.5f, 1.0f );
 
-		pParticle->m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
-		pParticle->m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
-		pParticle->m_uchColor[2] = MIN( 1.0f, color[2]*colorRamp )*255.0f;
+		unsigned char r = MIN( 1.0f, color[0]*colorRamp )*255.0f;
+		unsigned char g = MIN( 1.0f, color[1]*colorRamp )*255.0f;
+		unsigned char b = MIN( 1.0f, color[2]*colorRamp )*255.0f;
+
+		pParticle->m_uchColor.SetColor( r, g, b );
 	}
 
 
@@ -675,9 +679,7 @@ void FX_BugBlood( Vector &pos, Vector &dir, Vector &vWorldMins, Vector &vWorldMa
 		sParticle->m_vecVelocity	= vDir * -speed;
 		sParticle->m_vecVelocity[2] -= 32.0f;
 
-		sParticle->m_uchColor[0]	= 255;
-		sParticle->m_uchColor[1]	= 200;
-		sParticle->m_uchColor[2]	= 32;
+		sParticle->m_uchColor.SetColor( 255, 200, 32 );
 		sParticle->m_uchStartAlpha	= 255;
 		sParticle->m_uchEndAlpha	= 0;
 		sParticle->m_uchStartSize	= random_valve->RandomInt( 1, 2 );
@@ -703,9 +705,7 @@ void FX_BugBlood( Vector &pos, Vector &dir, Vector &vWorldMins, Vector &vWorldMa
 		sParticle->m_vecVelocity	= vDir * -speed;
 		sParticle->m_vecVelocity[2] -= 16.0f;
 
-		sParticle->m_uchColor[0]	= 255;
-		sParticle->m_uchColor[1]	= 200;
-		sParticle->m_uchColor[2]	= 32;
+		sParticle->m_uchColor.SetColor( 255, 200, 32 );
 		sParticle->m_uchStartAlpha	= random_valve->RandomInt( 16, 32 );
 		sParticle->m_uchEndAlpha	= 0;
 		sParticle->m_uchStartSize	= random_valve->RandomInt( 1, 3 );
@@ -738,9 +738,7 @@ void FX_BugBlood( Vector &pos, Vector &dir, Vector &vWorldMins, Vector &vWorldMa
 		sParticle->m_vecVelocity	+= vDir * -speed;
 		sParticle->m_vecVelocity[2] -= ( 64.0f * ((i/(float)NUM_BUG_SPLATS)+1) );
 
-		sParticle->m_uchColor[0]	= 255;
-		sParticle->m_uchColor[1]	= 200;
-		sParticle->m_uchColor[2]	= 32;
+		sParticle->m_uchColor.SetColor( 255, 200, 32 );
 		sParticle->m_uchStartAlpha	= 255;
 		sParticle->m_uchEndAlpha	= 0;
 		sParticle->m_uchStartSize	= random_valve->RandomInt( 1, 2 );
@@ -789,9 +787,7 @@ void FX_Blood( const Vector &pos, const Vector &dir, color32 clr )
 		sParticle->m_vecVelocity	= vDir * (speed*i);
 		sParticle->m_vecVelocity[2] += random_valve->RandomFloat( -32.0f, -16.0f );
 
-		sParticle->m_uchColor[0]	= clr.r();
-		sParticle->m_uchColor[1]	= clr.g();
-		sParticle->m_uchColor[2]	= clr.b();
+		sParticle->m_uchColor = clr;
 		sParticle->m_uchStartAlpha	= clr.a();
 		sParticle->m_uchEndAlpha	= 0;
 		sParticle->m_uchStartSize	= 2;
@@ -816,9 +812,7 @@ void FX_Blood( const Vector &pos, const Vector &dir, color32 clr )
 
 		sParticle->m_vecVelocity	= vDir * (speed*i);
 
-		sParticle->m_uchColor[0]	= clr.r();
-		sParticle->m_uchColor[1]	= clr.g();
-		sParticle->m_uchColor[2]	= clr.b();
+		sParticle->m_uchColor = clr;
 		sParticle->m_uchStartAlpha	= 128;
 		sParticle->m_uchEndAlpha	= 0;
 		sParticle->m_uchStartSize	= 2;
@@ -886,10 +880,12 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 			
 			colorRamp = random_valve->RandomFloat( 0.75f, 1.25f );
 
-			pParticle->m_uchColor[0]	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
-			pParticle->m_uchColor[1]	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
-			pParticle->m_uchColor[2]	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
+			unsigned char r	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
+			unsigned char g	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
+			unsigned char b	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
 			
+			pParticle->m_uchColor.SetColor( r, g, b );
+
 			// scaled
 			pParticle->m_uchStartSize	= ( unsigned char )( flScale * random_valve->RandomInt( 3, 4 ) * (nId+1) );
 
@@ -927,10 +923,12 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 			
 			colorRamp = random_valve->RandomFloat( 0.75f, 1.25f );
 
-			pParticle->m_uchColor[0]	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
-			pParticle->m_uchColor[1]	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
-			pParticle->m_uchColor[2]	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
+			unsigned char r	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
+			unsigned char g	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
+			unsigned char b	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
 			
+			pParticle->m_uchColor.SetColor( r, g, b );
+
 			pParticle->m_uchStartSize	= random_valve->RandomInt( 2, 4 ) * (nId+1);
 			pParticle->m_uchEndSize		= pParticle->m_uchStartSize * 2;
 			
@@ -971,10 +969,12 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 			
 			colorRamp = random_valve->RandomFloat( 0.75f, 1.25f );
 
-			pParticle->m_uchColor[0]	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
-			pParticle->m_uchColor[1]	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
-			pParticle->m_uchColor[2]	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
+			unsigned char r	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
+			unsigned char g	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
+			unsigned char b	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
 			
+			pParticle->m_uchColor.SetColor( r, g, b );
+
 			pParticle->m_uchStartSize	= random_valve->RandomInt( 1, 4 );
 			pParticle->m_uchEndSize		= pParticle->m_uchStartSize * 4;
 			

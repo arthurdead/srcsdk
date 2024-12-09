@@ -102,6 +102,8 @@ bool C_BaseEntity::s_bInterpolate = true;
 
 bool C_BaseEntity::sm_bDisableTouchFuncs = false;	// Disables PhysicsTouch and PhysicsStartTouch function calls
 
+extern modelindex_t g_sModelIndexWorld;
+
 static ConVar  r_drawrenderboxes( "r_drawrenderboxes", "0", FCVAR_CHEAT );  
 
 static bool g_bAbsRecomputationStack[8];
@@ -535,35 +537,34 @@ IMPLEMENT_CLIENTCLASS(C_BaseEntity, DT_BaseEntity, CBaseEntity);
 
 static void RecvProxy_MoveType( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	((C_BaseEntity*)pStruct)->SetMoveType( (MoveType_t)(pData->m_Value.m_Int) );
+	((C_BaseEntity*)pStruct)->SetMoveType( (MoveType_t)(pData->m_Value.m_UInt) );
 }
 
 static void RecvProxy_MoveCollide( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	((C_BaseEntity*)pStruct)->SetMoveCollide( (MoveCollide_t)(pData->m_Value.m_Int) );
+	((C_BaseEntity*)pStruct)->SetMoveCollide( (MoveCollide_t)(pData->m_Value.m_UInt) );
 }
 
 static void RecvProxy_Solid( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	((C_BaseEntity*)pStruct)->SetSolid( (SolidType_t)pData->m_Value.m_Int );
+	((C_BaseEntity*)pStruct)->SetSolid( (SolidType_t)pData->m_Value.m_UInt );
 }
 
 static void RecvProxy_SolidFlags( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	((C_BaseEntity*)pStruct)->SetSolidFlags( pData->m_Value.m_Int );
+	((C_BaseEntity*)pStruct)->SetSolidFlags( pData->m_Value.m_UInt );
 }
 
 void RecvProxy_EffectFlags( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	((C_BaseEntity*)pStruct)->SetEffects( pData->m_Value.m_Int );
+	((C_BaseEntity*)pStruct)->SetEffects( pData->m_Value.m_UInt );
 }
 
 void RecvProxy_ClrRender( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	// This proxy will cause the alpha modulation to get updated correctly
 	C_BaseEntity *pEnt = (C_BaseEntity*)pStruct;
-	uint32 color = LittleDWord((uint32)pData->m_Value.m_Int);
-	color32 c = *(color32*)( &color );
+	color32 c = pData->m_Value.m_Color32;
 	pEnt->SetRenderColor( c.r(), c.g(), c.b() );
 	pEnt->SetRenderAlpha( c.a() );
 }
@@ -572,14 +573,14 @@ void RecvProxy_RenderMode( const CRecvProxyData *pData, void *pStruct, void *pOu
 {
 	// This proxy will cause the alpha modulation to get updated correctly
 	C_BaseEntity *pEnt = (C_BaseEntity*)pStruct;
-	pEnt->SetRenderMode( (RenderMode_t)(pData->m_Value.m_Int) );
+	pEnt->SetRenderMode( (RenderMode_t)(pData->m_Value.m_UInt) );
 }
 
 void RecvProxy_RenderFX( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	// This proxy will cause the alpha modulation to get updated correctly
 	C_BaseEntity *pEnt = (C_BaseEntity*)pStruct;
-	pEnt->SetRenderFX( (RenderFx_t)(pData->m_Value.m_Int), FLT_MAX, 0.0f );
+	pEnt->SetRenderFX( (RenderFx_t)(pData->m_Value.m_UInt), FLT_MAX, 0.0f );
 }
 
 BEGIN_RECV_TABLE_NOBASE( C_BaseEntity, DT_AnimTimeMustBeFirst )
@@ -650,7 +651,7 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropInt("m_nRenderMode", 0, sizeof(unsigned char), 0, RecvProxy_RenderMode),
 	RecvPropInt("m_nRenderFX", 0, sizeof(unsigned char), 0, RecvProxy_RenderFX),
 
-	RecvPropInt("m_clrRender", 0, sizeof(color32), 0, RecvProxy_ClrRender),
+	RecvPropColor32("m_clrRender", 0, sizeof(color32), RecvProxy_ClrRender),
 
 	RecvPropInt(RECVINFO(m_iViewHideFlags)),
 	RecvPropBool(RECVINFO(m_bDisableFlashlight)),
@@ -661,7 +662,7 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropFloat(RECVINFO(m_flShadowCastDistance)),
 	RecvPropEHandle( RECVINFO(m_hOwnerEntity) ),
 	RecvPropEHandle( RECVINFO(m_hEffectEntity) ),
-	RecvPropInt( RECVINFO_NAME(m_hNetworkMoveParent, moveparent), 0, RecvProxy_IntToMoveParent ),
+	RecvPropInt( RECVINFO_NAME(m_hNetworkMoveParent, moveparent), 0, RecvProxy_MoveParent ),
 	RecvPropInt( RECVINFO( m_iParentAttachment ), 0 ),
 
 	RecvPropStringT( RECVINFO( m_iName ) ),
@@ -676,8 +677,8 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropEHandle (RECVINFO(m_hPlayerSimulationOwner)),
 	RecvPropDataTable( "predictable_id", 0, 0, &REFERENCE_RECV_TABLE( DT_PredictableId ) ),
 
-	RecvPropInt		( RECVINFO( m_bSimulatedEveryTick ), 0, RecvProxy_InterpolationAmountChanged ),
-	RecvPropInt		( RECVINFO( m_bAnimatedEveryTick ), 0, RecvProxy_InterpolationAmountChanged ),
+	RecvPropBool		( RECVINFO( m_bSimulatedEveryTick ), RecvProxy_InterpolationAmountChanged ),
+	RecvPropBool		( RECVINFO( m_bAnimatedEveryTick ), RecvProxy_InterpolationAmountChanged ),
 	RecvPropBool	( RECVINFO( m_bAlternateSorting ) ),
 
 	RecvPropFloat( "m_fadeMinDist", 0, sizeof(float), 0, RecvProxy_FadeMinDist ), 
@@ -3167,7 +3168,7 @@ void C_BaseEntity::PostDataUpdate( DataUpdateType_t updateType )
 	// If it's the world, force solid flags
 	if ( IsWorld() )
 	{
-		m_nModelIndex = 1;
+		m_nModelIndex = g_sModelIndexWorld;
 		SetSolid( SOLID_BSP );
 
 		// FIXME: Should these be assertions?

@@ -25,6 +25,8 @@
 
 C_World *g_pClientWorld = NULL;
 
+modelindex_t g_sModelIndexWorld = INVALID_MODEL_INDEX;
+
 LINK_ENTITY_TO_SERVERCLASS( worldspawn, CWorld );
 
 IMPLEMENT_CLIENTCLASS( C_World, DT_World, CWorld );

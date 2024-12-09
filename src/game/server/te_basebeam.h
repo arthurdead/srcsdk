@@ -44,10 +44,7 @@ public:
 	CNetworkVar( float, m_fEndWidth );
 	CNetworkVar( int, m_nFadeLength );
 	CNetworkVar( float, m_fAmplitude );
-	CNetworkVar( int, r );
-	CNetworkVar( int, g );
-	CNetworkVar( int, b );
-	CNetworkVar( int, a );
+	CNetworkColor32( m_clr );
 	CNetworkVar( int, m_nSpeed );
 	CNetworkVar( int, m_nFlags );
 };

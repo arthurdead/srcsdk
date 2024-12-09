@@ -29,7 +29,7 @@ CBitmapPanel::CBitmapPanel( ) :	BaseClass( NULL, "CBitmapPanel" ), m_pImage(0)
 {
 	SetPaintBackgroundEnabled( false );
 	m_szMouseOverText[ 0 ] = 0;
-	m_r = m_g = m_b = m_a = 255;
+	m_clr.SetColor( 255, 255, 255, 255 );
 	m_bOwnsImage = true;
 }
 
@@ -38,7 +38,7 @@ CBitmapPanel::CBitmapPanel( vgui::Panel *pParent, const char *pName ) :
 {
 	SetPaintBackgroundEnabled( false );
 	m_szMouseOverText[ 0 ] = 0;
-	m_r = m_g = m_b = m_a = 255;
+	m_clr.SetColor( 255, 255, 255, 255 );
 	m_bOwnsImage = true;
 }
 
@@ -60,7 +60,7 @@ bool CBitmapPanel::Init( KeyValues* pInitData )
 	Assert( pInitData );
 
 	// modulation color
-	if (!ParseRGBA( pInitData, "color", m_r, m_g, m_b, m_a ))
+	if (!ParseRGBA( pInitData, "color", m_clr ))
 		return false;
 
 	int x, y, w, h;
@@ -103,17 +103,17 @@ void CBitmapPanel::ApplySettings(KeyValues *pInitData)
 	}
 
 	// modulation color. Can't use ParseRGBA since this uses a vgui::KeyValues (feh)
-	m_r = m_g = m_b = m_a = 255;
+	m_clr.SetColor( 255, 255, 255, 255 );
 	const char *pColorString = pInitData->GetString( "color", "255 255 255 255" );
 	if ( pColorString && pColorString[ 0 ] )
 	{
 		// Try and scan them in
-		int r = 0, g = 0, b = 0, a = 0;
+		unsigned char r = 0, g = 0, b = 0, a = 0;
 		int scanned;
-		scanned = sscanf( pColorString, "%i %i %i %i", &r, &g, &b, &a );
+		scanned = sscanf( pColorString, "%hhu %hhu %hhu %hhu", &r, &g, &b, &a );
 		if ( scanned == 4 )
 		{
-			m_r = r; m_g = g; m_b = b; m_a = a;
+			m_clr.SetColor( r, g, b, a );
 		}
 		else
 		{
@@ -140,9 +140,7 @@ void CBitmapPanel::Paint( void )
 	if ( !m_pImage )
 		return;
 
-	Color color;
-	color.SetColor( m_r, m_g, m_b, m_a );
-	m_pImage->SetColor( color );
+	m_pImage->SetColor( m_clr );
 	m_pImage->DoPaint( GetVPanel() );
 }
 
@@ -197,7 +195,9 @@ void CBitmapPanel::SetImage( BitmapImage *pImage )
 	// Get the color from the image
 	if ( m_pImage )
 	{
-		m_pImage->GetColor( m_r, m_g, m_b, m_a );
+		unsigned char r, g, b, a;
+		m_pImage->GetColor( r, g, b, a );
+		m_clr.SetColor( r, g, b, a );
 	}
 }
 

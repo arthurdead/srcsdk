@@ -1,6 +1,9 @@
 *.vpc_crc
+*.vcxproj
+*.vcxproj.filters
 *.mak
 *.project
+*.sln
 
 /materialsystem/*shaders/fxctmp9/
 /materialsystem/*shaders/fxctmp9_tmp/

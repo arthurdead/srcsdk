@@ -253,7 +253,7 @@ bool C_PhysPropClientside::Initialize()
 
 	if ( !PhysModelParseSolid( tmpSolid, this, GetModelIndex() ) )
 	{
-		DevMsg("C_PhysPropClientside::Initialize: PhysModelParseSolid failed for entity %i.\n", GetModelIndex() );
+		DevMsg("C_PhysPropClientside::Initialize: PhysModelParseSolid failed for entity %i.\n", GetModelIndex().GetRaw() );
 		return false;
 	}
 	else
@@ -752,7 +752,7 @@ C_BaseAnimating *BreakModelCreate_Ragdoll( C_BaseEntity *pOwnerEnt, breakmodel_t
 
 	pRagdoll->SetClientSideRagdoll();
 	pRagdoll->SetRenderMode( pOwner->GetRenderMode() );
-	pRagdoll->SetRenderColor( pOwner->GetRenderColor().r, pOwner->GetRenderColor().g, pOwner->GetRenderColor().b );
+	pRagdoll->SetRenderColor( pOwner->GetRenderColor().r(), pOwner->GetRenderColor().g(), pOwner->GetRenderColor().b() );
 	pRagdoll->SetRenderAlpha( pOwner->GetRenderAlpha() );
 	pRagdoll->SetGlobalFadeScale( pOwner->GetGlobalFadeScale() );
 

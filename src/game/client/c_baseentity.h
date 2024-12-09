@@ -190,7 +190,7 @@ DECLARE_LOGGING_CHANNEL( LOG_BASEENTITY );
 #ifdef DT_CELL_COORD_SUPPORTED
 #define RECVPROP_VECORIGIN_PROXY C_BaseEntity::RecvProxy_CellOrigin
 #else
-#define RECVPROP_VECORIGIN_PROXY RecvProxy_VectorToVector
+#define RECVPROP_VECORIGIN_PROXY RecvProxy_Vector
 #endif
 
 //-----------------------------------------------------------------------------

@@ -4,6 +4,7 @@
 #include "hackmgr/hackmgr.h"
 #include "hackmgr_internal.h"
 #include "commandline.h"
+#include "filesystem_internal.h"
 #ifndef SWDS
 #include "game_loopback/igameloopback.h"
 #endif
@@ -405,15 +406,11 @@ CVideoServicesRedirect::vtable_size = vfunc_index(&IVideoServices::GetCodecName)
 CPhysicsRedirect::vtable_size = vfunc_index(&IPhysics::DestroyAllCollisionSets) + 1;
 #endif
 
-if(!GetFilesystemInterfaceFactory()) {
-	return;
-}
-
 int status = IFACE_OK;
-IFileSystem *pFileSystem = (IFileSystem *)GetFilesystemInterfaceFactory()(FILESYSTEM_INTERFACE_VERSION, &status);
-if(!pFileSystem || status != IFACE_OK) {
+
+IFileSystem *pFileSystem = GetFilesystem();
+if(!pFileSystem)
 	return;
-}
 
 char gamebin_path[MAX_PATH];
 pFileSystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));

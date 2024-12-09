@@ -66,10 +66,7 @@ void CTEBeamLaser::Test( const Vector& current_origin, const QAngle& current_ang
 	m_fLife			= 2.0;
 	m_fWidth		= 1.0;
 	m_fAmplitude	= 1.0;
-	r				= 127;
-	g				= 63;
-	b				= 0;
-	a				= 150;
+	m_clr.SetColor( 127, 63, 0, 150 );
 	m_nSpeed		= 1;
 
 	CBroadcastRecipientFilter filter;
@@ -103,7 +100,7 @@ static CTEBeamLaser g_TEBeamLaser( "BeamLaser" );
 //-----------------------------------------------------------------------------
 void TE_BeamLaser( IRecipientFilter& filter, float delay,
 	int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-	float life, float width, float endWidth, int fadeLength, float amplitude, int r, int g, int b, int a, int speed )
+	float life, float width, float endWidth, int fadeLength, float amplitude, color32 clr, int speed )
 {
 	g_TEBeamLaser.m_nStartEntity = (start & 0x0FFF) | ((1 & 0xF)<<12);
 	g_TEBeamLaser.m_nEndEntity	= (end & 0x0FFF) | ((1 & 0xF)<<12);
@@ -117,10 +114,7 @@ void TE_BeamLaser( IRecipientFilter& filter, float delay,
 	g_TEBeamLaser.m_nFadeLength	= fadeLength;
 	g_TEBeamLaser.m_fAmplitude	= amplitude;
 	g_TEBeamLaser.m_nSpeed		= speed;
-	g_TEBeamLaser.r				= r;
-	g_TEBeamLaser.g				= g;
-	g_TEBeamLaser.b				= b;
-	g_TEBeamLaser.a				= a;
+	g_TEBeamLaser.m_clr				= clr;
 
 	// Send it over the wire
 	g_TEBeamLaser.Create( filter, delay );

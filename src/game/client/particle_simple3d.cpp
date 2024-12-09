@@ -107,15 +107,15 @@ void CSimple3DEmitter::RenderParticles( CParticleRenderIterator *pIterator )
 
 		if (flFacing <= 0)
 		{
-			color[0] = pParticle->m_uchFrontColor[0] / 255.0f;
-			color[1] = pParticle->m_uchFrontColor[1] / 255.0f;
-			color[2] = pParticle->m_uchFrontColor[2] / 255.0f;
+			color[0] = pParticle->m_uchFrontColor.r() / 255.0f;
+			color[1] = pParticle->m_uchFrontColor.g() / 255.0f;
+			color[2] = pParticle->m_uchFrontColor.b() / 255.0f;
 		}
 		else
 		{
-			color[0] = pParticle->m_uchBackColor[0] / 255.0f;
-			color[1] = pParticle->m_uchBackColor[1] / 255.0f;
-			color[2] = pParticle->m_uchBackColor[2] / 255.0f;
+			color[0] = pParticle->m_uchBackColor.r() / 255.0f;
+			color[1] = pParticle->m_uchBackColor.g() / 255.0f;
+			color[2] = pParticle->m_uchBackColor.b() / 255.0f;
 		}
 
 		//Render it in world space

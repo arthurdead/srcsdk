@@ -48,7 +48,7 @@ void CHudBitmapNumericDisplay::Paint()
 {
 	float alpha = m_flAlphaOverride / 255;
 	Color fgColor = GetFgColor();
-	fgColor[3] *= alpha;
+	fgColor.SetA( fgColor.a() * alpha );
 	SetFgColor( fgColor );
 
 	if (m_bDisplayValue)
@@ -68,7 +68,7 @@ void CHudBitmapNumericDisplay::Paint()
 			{
 				// draw a percentage of the last one
 				Color col = GetFgColor();
-				col[3] *= fl;
+				col.SetA( col.a() * fl );
 				PaintNumbers(digit_xpos, digit_ypos, m_iValue, col);
 			}
 		}
@@ -90,7 +90,7 @@ void CHudBitmapNumericDisplay::PaintBackground( void )
 {
 	int alpha = m_flAlphaOverride / 255;
 	Color bgColor = GetBgColor();
-	bgColor[3] *= alpha;
+	bgColor.SetA( bgColor.a() * alpha );
 	SetBgColor( bgColor );
 
 	BaseClass::PaintBackground();

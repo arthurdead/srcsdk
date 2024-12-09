@@ -265,7 +265,7 @@ SimpleParticle*	CSimpleEmitter::AddSimpleParticle(
 		pRet->m_flStartTime = 0;
 		pRet->m_flLifetime = 0;
 		pRet->m_flDieTime = flDieTime;
-		pRet->m_uchColor[0] = pRet->m_uchColor[1] = pRet->m_uchColor[2] = 0;
+		pRet->m_uchColor.SetColor( 0, 0, 0 );
 		pRet->m_uchStartAlpha = pRet->m_uchEndAlpha = 255;
 		pRet->m_uchStartSize = pRet->m_uchEndSize = uchSize;
 		pRet->m_iFlags = 0;
@@ -353,9 +353,9 @@ Vector CSimpleEmitter::UpdateColor( const SimpleParticle *pParticle )
 {
 	static Vector	cColor;
 
-	cColor[0] = pParticle->m_uchColor[0] / 255.0f;
-	cColor[1] = pParticle->m_uchColor[1] / 255.0f;
-	cColor[2] = pParticle->m_uchColor[2] / 255.0f;
+	cColor[0] = pParticle->m_uchColor.r() / 255.0f;
+	cColor[1] = pParticle->m_uchColor.g() / 255.0f;
+	cColor[2] = pParticle->m_uchColor.b() / 255.0f;
 
 	return cColor;
 }
@@ -458,9 +458,9 @@ Vector CEmberEffect::UpdateColor( const SimpleParticle *pParticle )
 	Vector	color;
 	float	ramp = 1.0f - ( pParticle->m_flLifetime / pParticle->m_flDieTime );
 
-	color[0] = ( (float) pParticle->m_uchColor[0] * ramp ) / 255.0f;
-	color[1] = ( (float) pParticle->m_uchColor[1] * ramp ) / 255.0f;
-	color[2] = ( (float) pParticle->m_uchColor[2] * ramp ) / 255.0f;
+	color[0] = ( (float) pParticle->m_uchColor.r() * ramp ) / 255.0f;
+	color[1] = ( (float) pParticle->m_uchColor.g() * ramp ) / 255.0f;
+	color[2] = ( (float) pParticle->m_uchColor.b() * ramp ) / 255.0f;
 
 	return color;
 }

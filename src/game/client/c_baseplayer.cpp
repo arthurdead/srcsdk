@@ -181,14 +181,14 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	RecvPropInt(RECVINFO_STRUCTELEM(m_skybox3d, area)),
 	RecvPropVector(RECVINFO_STRUCTELEM(m_skybox3d, angles)),
 	RecvPropEHandle(RECVINFO_STRUCTELEM(m_skybox3d, skycamera)),
-	RecvPropInt( RECVINFO_STRUCTELEM( m_skybox3d, skycolor ), 0, RecvProxy_Int32ToColor32 ),
+	RecvPropColor32( RECVINFO_STRUCTELEM( m_skybox3d, skycolor ) ),
 
 	// 3d skybox fog data
 	RecvPropInt( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, enable ) ),
 	RecvPropInt( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, blend ) ),
 	RecvPropVector( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, dirPrimary ) ),
-	RecvPropInt( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, colorPrimary ), 0, RecvProxy_Int32ToColor32 ),
-	RecvPropInt( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, colorSecondary ), 0, RecvProxy_Int32ToColor32 ),
+	RecvPropColor32( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, colorPrimary ) ),
+	RecvPropColor32( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, colorSecondary ) ),
 	RecvPropFloat( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, start ) ),
 	RecvPropFloat( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, end ) ),
 	RecvPropFloat( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, maxdensity ) ),
@@ -2951,7 +2951,7 @@ void RecvProxy_ObserverTarget( const CRecvProxyData *pData, void *pStruct, void 
 
 	EHANDLE hTarget;
 
-	RecvProxy_IntToEHandle( pData, pStruct, &hTarget );
+	RecvProxy_EHandle( pData, pStruct, &hTarget );
 
 	pPlayer->SetObserverTarget( hTarget );
 }

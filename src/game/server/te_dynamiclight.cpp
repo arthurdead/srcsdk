@@ -34,10 +34,7 @@ public:
 public:
 	CNetworkVector( m_vecOrigin );
 	CNetworkVar( float, m_fRadius );
-	CNetworkVar( int, r );
-	CNetworkVar( int, g );
-	CNetworkVar( int, b );
-	CNetworkVar( int, exponent );
+	CNetworkColor32E( m_clr );
 	CNetworkVar( float, m_fTime );
 	CNetworkVar( float, m_fDecay );
 };
@@ -50,10 +47,7 @@ CTEDynamicLight::CTEDynamicLight( const char *name ) :
 	CBaseTempEntity( name )
 {
 	m_vecOrigin.Init();
-	r = 0;
-	g = 0;
-	b = 0;
-	exponent = 0;
+	m_clr.SetColor( 0, 0, 0, 0 );
 	m_fRadius = 0.0;
 	m_fTime = 0.0;
 	m_fDecay = 0.0;
@@ -74,9 +68,7 @@ CTEDynamicLight::~CTEDynamicLight( void )
 void CTEDynamicLight::Test( const Vector& current_origin, const QAngle& current_angles )
 {
 	// Fill in data
-	r = 255;
-	g = 255;
-	b = 63;
+	m_clr.SetColor( 255, 255, 63 );
 	m_vecOrigin = current_origin;
 
 	m_fRadius = 200;
@@ -99,10 +91,7 @@ void CTEDynamicLight::Test( const Vector& current_origin, const QAngle& current_
 
 IMPLEMENT_SERVERCLASS_ST(CTEDynamicLight, DT_TEDynamicLight)
 	SendPropVector( SENDINFO(m_vecOrigin), -1, SPROP_COORD),
-	SendPropInt( SENDINFO(r), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(g), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(b), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(exponent), 8, 0 ),
+	SendPropColor32E( SENDINFO(m_clr) ),
 	SendPropFloat( SENDINFO(m_fRadius), 8, SPROP_ROUNDUP, 0, 2560.0 ),
 	SendPropFloat( SENDINFO(m_fTime), 8, SPROP_ROUNDDOWN, 0, 25.6 ),
 	SendPropFloat( SENDINFO(m_fDecay), 8, SPROP_ROUNDDOWN, 0, 2560.0 ),
@@ -127,14 +116,11 @@ static CTEDynamicLight g_TEDynamicLight( "Dynamic Light" );
 //			decay - 
 //-----------------------------------------------------------------------------
 void TE_DynamicLight( IRecipientFilter& filter, float delay,
-	const Vector* org, int r, int g, int b, int exponent, float radius, float time, float decay )
+	const Vector* org, ColorRGBExp32 clr, float radius, float time, float decay )
 {
 	// Set up parameters
 	g_TEDynamicLight.m_vecOrigin = *org;
-	g_TEDynamicLight.r = r;
-	g_TEDynamicLight.g = g;
-	g_TEDynamicLight.b = b;
-	g_TEDynamicLight.exponent = exponent;
+	g_TEDynamicLight.m_clr = clr;
 	g_TEDynamicLight.m_fRadius = radius;
 	g_TEDynamicLight.m_fTime = time;
 	g_TEDynamicLight.m_fDecay = decay;

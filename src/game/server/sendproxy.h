@@ -15,21 +15,20 @@
 
 class DVariant;
 
-void SendProxy_EHandleToInt( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_IntAddOne( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_ShortAddOne( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_EHandle( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_ModelIndex( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
 
-SendProp SendPropBool(
-	const char *pVarName,
-	int offset,
-	int sizeofVar );
+inline SendProp SendPropModelIndex( const char *pVarName, int offset, int sizeofVar=SIZEOF_IGNORE, byte priority = SENDPROP_DEFAULT_PRIORITY )
+{
+	return SendPropInt( pVarName, offset, sizeofVar, 32, 0, SendProxy_ModelIndex, priority );
+}
 
 SendProp SendPropEHandle(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,
 	int flags = 0,
-	SendVarProxyFn proxyFn=SendProxy_EHandleToInt );
+	SendVarProxyFn proxyFn=SendProxy_EHandle );
 
 SendProp SendPropTime(
 	const char *pVarName,
@@ -40,13 +39,6 @@ SendProp SendPropPredictableId(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE	);
-
-SendProp SendPropIntWithMinusOneFlag(
-	const char *pVarName,
-	int offset,
-	int sizeofVar=SIZEOF_IGNORE,
-	int bits=-1,
-	SendVarProxyFn proxyFn=SendProxy_IntAddOne );
 
 
 // Send a string_t as a string property.

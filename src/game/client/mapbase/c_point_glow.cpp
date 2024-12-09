@@ -41,7 +41,7 @@ public:
 
 IMPLEMENT_CLIENTCLASS_DT( C_PointGlow, DT_PointGlow, CPointGlow )
 	RecvPropEHandle( RECVINFO( m_hGlowTarget ) ),
-	RecvPropInt( RECVINFO( m_GlowColor ), 0, RecvProxy_IntToColor32 ),
+	RecvPropColor32( RECVINFO( m_GlowColor ) ),
 	RecvPropBool( RECVINFO( m_bGlowDisabled ) ),
 END_RECV_TABLE()
 

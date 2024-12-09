@@ -4905,49 +4905,11 @@ void Panel::SetOverridableColor( Color *pColor, const Color &newColor )
 	*pColor = newColor;
 }
 
-class tmphack_IScheme2 : public IBaseInterface
-{
-public:
-	// gets a string from the default settings section
-	virtual const char *GetResourceString(const char *stringName) = 0;
-
-	// returns a pointer to an existing border
-	virtual IBorder *GetBorder(const char *borderName) = 0;
-
-	// returns a pointer to an existing font
-	virtual HFont GetFont(const char *fontName, bool proportional = false) = 0;
-
-	// inverse font lookup
-	virtual char const *GetFontName( const HFont& font ) = 0;
-
-	// colors
-	virtual unsigned int GetColor(const char *colorName, unsigned int defaultColor) = 0;
-	
-	// Get the number of borders
-	virtual int GetBorderCount() const = 0;
-
-	// Get the border at the given index
-	virtual IBorder *GetBorderAtIndex( int iIndex ) = 0;
-
-	// Get the number of fonts
-	virtual int GetFontCount() const = 0;
-
-	// Get the font at the given index
-	virtual HFont GetFontAtIndex( int iIndex ) = 0;	
-
-	// Get color data
-	virtual const KeyValues *GetColorData() const = 0;
-};
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 Color Panel::GetSchemeColor(const char *keyName, IScheme *pScheme)
 {
-	unsigned int clr = ((tmphack_IScheme2 *)pScheme)->GetColor(keyName, 0);
-
-	DebuggerBreak();
-
 	return pScheme->GetColor(keyName, Color(255, 255, 255, 255));
 }
 

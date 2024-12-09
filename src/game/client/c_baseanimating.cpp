@@ -165,7 +165,7 @@ END_RECV_TABLE()
 void RecvProxy_Sequence( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	// Have the regular proxy store the data.
-	RecvProxy_Int32ToInt32( pData, pStruct, pOut );
+	RecvProxy_Int32( pData, pStruct, pOut );
 
 	C_BaseAnimating *pAnimating = (C_BaseAnimating *)pStruct;
 
@@ -7004,7 +7004,7 @@ bool C_BoneFollower::TestCollision( const Ray_t &ray, unsigned int mask, trace_t
 	Assert( pCollide && pCollide->solidCount > m_solidIndex );
 	if ( !pCollide )
 	{
-		DevWarning("Failed to get collision model (%d, %d), %s (%s)\n", m_modelIndex.Get(), m_solidIndex, modelinfo->GetModelName(modelinfo->GetModel(m_modelIndex)), IsDormant() ? "dormant" : "active" );
+		DevWarning("Failed to get collision model (%d, %d), %s (%s)\n", m_modelIndex.GetRaw(), m_solidIndex, modelinfo->GetModelName(modelinfo->GetModel(m_modelIndex)), IsDormant() ? "dormant" : "active" );
 		return false;
 	}
 

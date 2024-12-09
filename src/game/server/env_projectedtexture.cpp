@@ -75,7 +75,7 @@ IMPLEMENT_SERVERCLASS_ST( CEnvProjectedTexture, DT_EnvProjectedTexture )
 	SendPropBool( SENDINFO( m_bLightOnlyTarget ) ),
 	SendPropBool( SENDINFO( m_bLightWorld ) ),
 	SendPropBool( SENDINFO( m_bCameraSpace ) ),
-	SendPropInt( SENDINFO( m_LightColor ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
+	SendPropColor32( SENDINFO( m_LightColor ) ),
 	SendPropFloat( SENDINFO( m_flAmbient ) ),
 	SendPropString( SENDINFO( m_SpotlightTextureName ) ),
 	SendPropInt( SENDINFO( m_nSpotlightTextureFrame ) ),

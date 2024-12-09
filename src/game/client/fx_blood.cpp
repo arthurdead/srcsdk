@@ -592,13 +592,8 @@ void HunterDamageCallback( const CEffectData &data )
 		pFleckParticle->m_vAngles		= RandomAngle( 0, 360 );
 		pFleckParticle->m_flAngSpeed	= random_valve->RandomFloat( -800, 800 );
 
-		unsigned char color = 255;
-		pFleckParticle->m_uchFrontColor[0]	= color;
-		pFleckParticle->m_uchFrontColor[1]	= color;
-		pFleckParticle->m_uchFrontColor[2]	= color;
-		pFleckParticle->m_uchBackColor[0]	= color * 0.25f;
-		pFleckParticle->m_uchBackColor[1]	= color * 0.25f;
-		pFleckParticle->m_uchBackColor[2]	= color * 0.25f;
+		pFleckParticle->m_uchFrontColor.SetColor( 255, 255, 255 );
+		pFleckParticle->m_uchBackColor.SetColor( 255 / 3, 255 / 3, 255 / 3 );
 	}
 }
 

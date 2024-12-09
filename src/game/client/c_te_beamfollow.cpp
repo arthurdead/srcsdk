@@ -59,7 +59,7 @@ C_TEBeamFollow::~C_TEBeamFollow( void )
 void C_TEBeamFollow::PostDataUpdate( DataUpdateType_t updateType )
 {
 	beams->CreateBeamFollow( m_iEntIndex, m_nModelIndex, m_nHaloIndex, 0, m_fLife,
-		m_fWidth, m_fEndWidth, m_nFadeLength, r, g, b, a );
+		m_fWidth, m_fEndWidth, m_nFadeLength, m_clr.r(), m_clr.g(), m_clr.b(), m_clr.a() );
 }
 
 // Expose the TE to the engine.

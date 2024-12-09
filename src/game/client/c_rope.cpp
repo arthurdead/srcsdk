@@ -38,7 +38,7 @@ PRECACHE_REGISTER_FN(PrecacheCable);
 void RecvProxy_RecomputeSprings( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	// Have the regular proxy store the data.
-	RecvProxy_Int32ToInt32( pData, pStruct, pOut );
+	RecvProxy_Int32( pData, pStruct, pOut );
 
 	C_RopeKeyframe *pRope = (C_RopeKeyframe*)pStruct;
 	pRope->RecomputeSprings();
@@ -65,7 +65,7 @@ IMPLEMENT_CLIENTCLASS_DT_NOBASE( C_RopeKeyframe, DT_RopeKeyframe, CRopeKeyframe 
 	RecvPropFloat( RECVINFO(m_Width) ),
 	RecvPropFloat( RECVINFO(m_flScrollSpeed) ),
 	RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ) ),
-	RecvPropInt( RECVINFO_NAME(m_hNetworkMoveParent, moveparent), 0, RecvProxy_IntToMoveParent ),
+	RecvPropInt( RECVINFO_NAME(m_hNetworkMoveParent, moveparent), 0, RecvProxy_MoveParent ),
 	
 	RecvPropInt( RECVINFO( m_iParentAttachment ) ),
 END_RECV_TABLE()

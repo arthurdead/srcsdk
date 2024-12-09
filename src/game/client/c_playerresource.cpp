@@ -23,7 +23,7 @@ ConVar cl_names_debug( "cl_names_debug", "0", FCVAR_DEVELOPMENTONLY );
 void RecvProxy_ChangedTeam( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	// Have the regular proxy store the data.
-	RecvProxy_Int32ToInt32( pData, pStruct, pOut );
+	RecvProxy_Int32( pData, pStruct, pOut );
 
 	if ( g_PR )
 	{

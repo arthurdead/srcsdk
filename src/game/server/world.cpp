@@ -485,6 +485,8 @@ bool CProjectedDecal::KeyValue( const char *szKeyName, const char *szValue )
 //=======================
 LINK_ENTITY_TO_CLASS( worldspawn, CWorld );
 
+modelindex_t g_sModelIndexWorld = INVALID_MODEL_INDEX;
+
 BEGIN_MAPENTITY( CWorld, MAPENT_POINTCLASS )
 
 	// keyvalues are parsed from map, but not saved/loaded
@@ -642,7 +644,7 @@ void CWorld::Spawn( void )
 	SetLocalOrigin( vec3_origin );
 	SetLocalAngles( vec3_angle );
 	// NOTE:  SHOULD NEVER BE ANYTHING OTHER THAN 1!!!
-	SetModelIndex( 1 );
+	SetModelIndex( g_sModelIndexWorld );
 	// world model
 	SetModelName( AllocPooledString( modelinfo->GetModelName( GetModel() ) ) );
 	AddFlag( FL_WORLDBRUSH );

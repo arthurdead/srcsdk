@@ -133,7 +133,7 @@ void TE_BreakModel( IRecipientFilter& filter, float delay,
 	modelindex_t modelindex, int randomization, int count, float time, int flags )
 {
 	tempents->BreakModel( pos, angles, size, vel, randomization, time, count, modelindex, flags );
-	RecordBreakModel( pos, angles, size, vel, randomization, time, count, modelindex, flags ); 
+	RecordBreakModel( pos, angles, size, vel, modelindex, randomization, count, time, flags ); 
 }
 
 
@@ -147,7 +147,7 @@ void C_TEBreakModel::PostDataUpdate( DataUpdateType_t updateType )
 	tempents->BreakModel( m_vecOrigin, m_angRotation, m_vecSize, m_vecVelocity,
 		m_nRandomization, m_fTime, m_nCount, m_nModelIndex, m_nFlags );
 	RecordBreakModel( m_vecOrigin, m_angRotation, m_vecSize, m_vecVelocity,
-		m_nRandomization, m_fTime, m_nCount, m_nModelIndex, m_nFlags ); 
+		m_nModelIndex, m_nRandomization, m_nCount, m_fTime, m_nFlags ); 
 }
 
 void TE_BreakModel( IRecipientFilter& filter, float delay, KeyValues *pKeyValues )

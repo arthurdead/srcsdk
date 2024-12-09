@@ -483,8 +483,7 @@ void		UTIL_PredictedPosition( CBaseEntity *pTarget, const Vector &vecActualPosit
 void		UTIL_PredictedAngles( CBaseEntity *pTarget, const QAngle &angActualAngles, float flTimeDelta, QAngle *angPredictedAngles );
 
 void		UTIL_Beam( Vector &Start, Vector &End, modelindex_t nModelIndex, modelindex_t nHaloIndex, unsigned char FrameStart, unsigned char FrameRate,
-				float Life, unsigned char Width, unsigned char EndWidth, unsigned char FadeLength, unsigned char Noise, unsigned char Red, unsigned char Green,
-				unsigned char Blue, unsigned char Brightness, unsigned char Speed);
+				float Life, unsigned char Width, unsigned char EndWidth, unsigned char FadeLength, unsigned char Noise, color32 clr, unsigned char Speed);
 
 const char	*UTIL_VarArgs( PRINTF_FORMAT_STRING const char *format, ... ) FMTFUNCTION( 1, 2 );
 bool		UTIL_IsValidEntity( CBaseEntity *pEnt );

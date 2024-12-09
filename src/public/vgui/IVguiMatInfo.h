@@ -19,8 +19,16 @@ public:
 	// Add a virtual destructor to silence the clang warning.
 	// This is harmless but not important since the only derived class
 	// doesn't have a destructor.
-	virtual ~IVguiMatInfo() {}
+#ifdef __MINGW32__
+private:
+	virtual void __DTOR__() = 0;
+	~IVguiMatInfo() = delete;
+#else
+public:
+	virtual					~IVguiMatInfo( void ) { }
+#endif
 
+public:
 	// make sure to delete the returned object after use!
 	virtual IVguiMatInfoVar* FindVarFactory ( const char *varName, bool *found ) = 0;
 

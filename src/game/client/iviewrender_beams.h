@@ -130,11 +130,11 @@ public:
 	virtual	Beam_t	*CreateBeamPoints( BeamInfo_t &beamInfo ) = 0;
 	virtual Beam_t	*CreateBeamRing( BeamInfo_t &beamInfo ) = 0;
 	virtual Beam_t	*CreateBeamRingPoint( BeamInfo_t &beamInfo ) = 0;
-	virtual Beam_t	*CreateBeamCirclePoints( BeamInfo_t &beamInfo ) = 0;
+	virtual Beam_t	*CreateBeamCirclePoints( const BeamInfo_t &beamInfo ) = 0;
 	virtual Beam_t	*CreateBeamFollow( BeamInfo_t &beamInfo ) = 0;
 
 	virtual void	FreeBeam( Beam_t *pBeam ) = 0;
-	virtual void	UpdateBeamInfo( Beam_t *pBeam, BeamInfo_t &beamInfo ) = 0;
+	virtual void	UpdateBeamInfo( Beam_t *pBeam, const BeamInfo_t &beamInfo ) = 0;
 
 	// These will go away!
 	virtual void	CreateBeamEnts( int startEnt, int endEnt, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale,  
@@ -146,7 +146,7 @@ public:
 							float life, float width, float m_nEndWidth, float m_nFadeLength, float amplitude, 
 							float brightness, float speed, int startFrame, 
 							float framerate, float r, float g, float b ) = 0;
-	virtual void	CreateBeamPoints( Vector& start, Vector& end, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale,   
+	virtual void	CreateBeamPoints( const Vector& start, const Vector& end, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale,   
 							float life, float width, float m_nEndWidth, float m_nFadeLength, float amplitude, 
 							float brightness, float speed, int startFrame, 
 							float framerate, float r, float g, float b ) = 0;
@@ -158,7 +158,7 @@ public:
 							float life, float width, float m_nEndWidth, float m_nFadeLength, float amplitude, 
 							float brightness, float speed, int startFrame, 
 							float framerate, float r, float g, float b, int flags = 0 ) = 0;
-	virtual void	CreateBeamCirclePoints( int type, Vector& start, Vector& end, 
+	virtual void	CreateBeamCirclePoints( int type, const Vector& start, const Vector& end, 
 							modelindex_t modelIndex,  modelindex_t haloIndex,  float haloScale, float life, float width, 
 							float m_nEndWidth, float m_nFadeLength, float amplitude, float brightness, float speed, 
 							int startFrame, float framerate, float r, float g, float b ) = 0;

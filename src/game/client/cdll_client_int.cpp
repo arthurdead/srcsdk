@@ -2095,6 +2095,8 @@ void OnWorldSpawned()
 	g_bLevelParsed = true;
 }
 
+extern modelindex_t g_sModelIndexWorld;
+
 //-----------------------------------------------------------------------------
 // Purpose: Per level init
 //-----------------------------------------------------------------------------
@@ -2135,6 +2137,8 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 
 	// Always force reset to normal mode upon receipt of world in new map
 	modemanager->SwitchMode( CLIENTMODE_NORMAL, true );
+
+	g_sModelIndexWorld = modelinfo->GetModelIndex( pMapName );
 
 	// Get weapon precaches
 	W_Precache();
@@ -2248,6 +2252,8 @@ void CClientDll::LevelShutdown( void )
 
 	// Now do the post-entity shutdown of all systems
 	IGameSystem::LevelShutdownPostEntityAllSystems();
+
+	g_sModelIndexWorld = INVALID_MODEL_INDEX;
 
 	RecastMgr().Reset();
 

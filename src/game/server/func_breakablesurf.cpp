@@ -109,7 +109,7 @@ void CWindowPane::Die( void )
 					 &GetAbsOrigin(), &GetAbsAngles(), 
 					 &GetAbsVelocity(), &GetAbsOrigin(),
 					 WINDOW_PANEL_SIZE, WINDOW_PANEL_SIZE,WINDOW_SMALL_SHARD_SIZE,SHATTERSURFACE_GLASS,
-					 255,255,255,255,255,255);
+					 color24( 255,255,255 ), color24( 255,255,255) );
 
 	UTIL_Remove(this);
 }
@@ -1100,8 +1100,8 @@ void CBreakableSurface::CreateShards(const Vector &vBreakPos, const QAngle &vAng
 {
 	Vector	vAdjustedBreakPos = vBreakPos;
 	Vector	vAdjustedForce	 = vForce;
-	int		front_r,front_g,front_b;
-	int		back_r,back_g,back_b;
+	color24		front_clr;
+	color24		back_clr;
 
 
 	// UNDONE: For now hardcode these colors.  Later when used by more textures
@@ -1112,21 +1112,13 @@ void CBreakableSurface::CreateShards(const Vector &vBreakPos, const QAngle &vAng
 		// from the surface.
 		vAdjustedBreakPos  -=  8*m_vNormal; 
 		vAdjustedForce		= -0.75*vForce;
-		front_r				= 89;
-		front_g				= 120;
-		front_b				= 83;
-		back_r				= 99;
-		back_g				= 76;
-		back_b				= 21;
+		front_clr.SetColor( 89, 128, 83 );
+		back_clr.SetColor( 99, 76, 21 );
 	}
 	else
 	{
-		front_r				= 255;
-		front_g				= 255;
-		front_b				= 255;
-		back_r				= 255;
-		back_g				= 255;
-		back_b				= 255;
+		front_clr.SetColor( 255, 255, 255 );
+		back_clr.SetColor( 255, 255, 255 );
 	}
 	
 	CPASFilter filter( vAdjustedBreakPos );
@@ -1134,7 +1126,7 @@ void CBreakableSurface::CreateShards(const Vector &vBreakPos, const QAngle &vAng
 		&vAdjustedBreakPos, &vAngles, 
 		&vAdjustedForce, &vForcePos, 
 		flWidth, flHeight,WINDOW_SMALL_SHARD_SIZE,m_nSurfaceType,
-		front_r,front_g,front_b,back_r,back_g,back_b);//4);
+		front_clr,back_clr);//4);
 }
 
 //------------------------------------------------------------------------------

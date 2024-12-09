@@ -73,10 +73,7 @@ void CTEBeamEnts::Test( const Vector& current_origin, const QAngle& current_angl
 	m_fLife			= 2.0;
 	m_fWidth		= 1.0;
 	m_fAmplitude	= 1;
-	r				= 127;
-	g				= 63;
-	b				= 0;
-	a				= 150;
+	m_clr.SetColor( 127, 63, 0, 150 );
 	m_nSpeed		= 1;
 
 	CBroadcastRecipientFilter filter;
@@ -110,7 +107,7 @@ static CTEBeamEnts g_TEBeamEnts( "BeamEnts" );
 //-----------------------------------------------------------------------------
 void TE_BeamEnts( IRecipientFilter& filter, float delay,
 	int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-	float life, float width, float endWidth, int fadeLength, float amplitude, int r, int g, int b, int a, int speed )
+	float life, float width, float endWidth, int fadeLength, float amplitude, color32 clr, int speed )
 {
 	g_TEBeamEnts.m_nStartEntity = (start & 0x0FFF) | ((1 & 0xF)<<12);
 	g_TEBeamEnts.m_nEndEntity	= (end & 0x0FFF) | ((1 & 0xF)<<12);
@@ -124,10 +121,7 @@ void TE_BeamEnts( IRecipientFilter& filter, float delay,
 	g_TEBeamEnts.m_nFadeLength	= fadeLength;
 	g_TEBeamEnts.m_fAmplitude	= amplitude;
 	g_TEBeamEnts.m_nSpeed		= speed;
-	g_TEBeamEnts.r				= r;
-	g_TEBeamEnts.g				= g;
-	g_TEBeamEnts.b				= b;
-	g_TEBeamEnts.a				= a;
+	g_TEBeamEnts.m_clr				= clr;
 
 	// Send it over the wire
 	g_TEBeamEnts.Create( filter, delay );

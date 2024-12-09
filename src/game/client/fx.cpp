@@ -173,7 +173,7 @@ void FX_MuzzleEffect(
 	const QAngle &angles, 
 	float scale, 
 	ClientEntityHandle_t hEntity, 
-	unsigned char *pFlashColor,
+	color24 *pFlashColor,
 	bool bOneFrame )
 {
 	VPROF_BUDGET( "FX_MuzzleEffect", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
@@ -217,15 +217,11 @@ void FX_MuzzleEffect(
 
 		if ( !pFlashColor )
 		{
-			pParticle->m_uchColor[0]	= 255;
-			pParticle->m_uchColor[1]	= 255;
-			pParticle->m_uchColor[2]	= 255;
+			pParticle->m_uchColor.SetColor( 255, 255, 255 );
 		}
 		else
 		{
-			pParticle->m_uchColor[0]	= pFlashColor[0];
-			pParticle->m_uchColor[1]	= pFlashColor[1];
-			pParticle->m_uchColor[2]	= pFlashColor[2];
+			pParticle->m_uchColor	= *pFlashColor;
 		}
 
 		pParticle->m_uchStartAlpha	= 255;
@@ -285,7 +281,7 @@ void FX_MuzzleEffectAttached(
 	float scale, 
 	ClientEntityHandle_t hEntity, 
 	int attachmentIndex, 
-	unsigned char *pFlashColor,
+	color24 *pFlashColor,
 	bool bOneFrame )
 {
 	VPROF_BUDGET( "FX_MuzzleEffect", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
@@ -339,15 +335,11 @@ void FX_MuzzleEffectAttached(
 
 		if ( !pFlashColor )
 		{
-			pParticle->m_uchColor[0]	= 255;
-			pParticle->m_uchColor[1]	= 255;
-			pParticle->m_uchColor[2]	= 255;
+			pParticle->m_uchColor.SetColor( 255, 255, 255 );
 		}
 		else
 		{
-			pParticle->m_uchColor[0]	= pFlashColor[0];
-			pParticle->m_uchColor[1]	= pFlashColor[1];
-			pParticle->m_uchColor[2]	= pFlashColor[2];
+			pParticle->m_uchColor	= *pFlashColor;
 		}
 
 		pParticle->m_uchStartAlpha	= 255;
@@ -414,7 +406,7 @@ void FX_MuzzleEffectAttached(
 
 	// TODO - create a DmeConstantColorInitializer
 	KeyValues *pColor = pInitializers->FindKey( "DmeRandomInterpolatedColorInitializer", true );
-	Color color( pFlashColor ? pFlashColor[ 0 ] : 255, pFlashColor ? pFlashColor[ 1 ] : 255, pFlashColor ? pFlashColor[ 2 ] : 255, 255 );
+	Color color( pFlashColor ? pFlashColor->r() : 255, pFlashColor ? pFlashColor->g() : 255, pFlashColor ? pFlashColor->b() : 255, 255 );
 	pColor->SetColor( "color1", color );
 	pColor->SetColor( "color2", color );
 
@@ -467,7 +459,7 @@ DECLARE_CLIENT_EFFECT( MuzzleFlash, MuzzleFlashCallback );
 //			flRoll - 
 //			flRollDelta - 
 //-----------------------------------------------------------------------------
-CSmartPtr<CSimpleEmitter> FX_Smoke( const Vector &origin, const Vector &velocity, float scale, int numParticles, float flDietime, const color24 *pColor, int iAlpha, const char *pMaterial, float flRoll, float flRollDelta )
+CSmartPtr<CSimpleEmitter> FX_Smoke( const Vector &origin, const Vector &velocity, float scale, int numParticles, float flDietime, const color24 *pColor, unsigned char iAlpha, const char *pMaterial, float flRoll, float flRollDelta )
 {
 	VPROF_BUDGET( "FX_Smoke", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	CSmartPtr<CSimpleEmitter> pSimple = CSimpleEmitter::Create( "FX_Smoke" );
@@ -519,26 +511,26 @@ void FX_Smoke( const Vector &origin, const QAngle &angles, float scale, int numP
 		vecVelocity[2] += random_valve->RandomFloat( 4.0f, 16.0f );
 
 		// Color
-		unsigned char particlecolor[3];
+		color24 particlecolor;
 		if ( !pColor )
 		{
 			unsigned char color = random_valve->RandomInt( 64, 164 );
-			particlecolor[0] = color;
-			particlecolor[1] = color;
-			particlecolor[2] = color;
+			particlecolor.SetColor( color, color, color );
 		}
 		else
 		{
-			particlecolor[0] = pColor->r();
-			particlecolor[1] = pColor->g();
-			particlecolor[2] = pColor->b();
+			particlecolor = *pColor;
 		}
 
 		// Alpha
-		int alpha = iAlpha;
-		if ( alpha == -1 )
+		unsigned char alpha;
+		if ( iAlpha == -1 )
 		{
 			alpha = random_valve->RandomInt( 10, 25 );
+		}
+		else
+		{
+			alpha = (unsigned char)iAlpha;
 		}
 
 		// Scale
@@ -550,7 +542,7 @@ void FX_Smoke( const Vector &origin, const QAngle &angles, float scale, int numP
 
 		//pParticle->m_uchEndSize		= pParticle->m_uchStartSize*2;
 
-		FX_Smoke( origin, vecVelocity, iSize, 1, random_valve->RandomFloat( 0.5f, 1.0f ), particlecolor, alpha, "particle/particle_smokegrenade", flRoll, flRollDelta );
+		FX_Smoke( origin, vecVelocity, iSize, 1, random_valve->RandomFloat( 0.5f, 1.0f ), &particlecolor, alpha, "particle/particle_smokegrenade", flRoll, flRollDelta );
 	}
 }
 
@@ -635,15 +627,17 @@ public:
 			pParticle->m_vecVelocity = vecVelocity;
 
 			// Randomize the color a little
-			int color[3][2];
+			unsigned char color[3][2];
 			for( int i = 0; i < 3; ++i )
 			{
 				color[i][0] = MAX( 0, m_SpurtColor[i] - 64 );
 				color[i][1] = MIN( 255, m_SpurtColor[i] + 64 );
 			}
-			pParticle->m_uchColor[0] = random_valve->RandomInt( color[0][0], color[0][1] );
-			pParticle->m_uchColor[1] = random_valve->RandomInt( color[1][0], color[1][1] );
-			pParticle->m_uchColor[2] = random_valve->RandomInt( color[2][0], color[2][1] );
+			unsigned char r = random_valve->RandomInt( color[0][0], color[0][1] );
+			unsigned char g = random_valve->RandomInt( color[1][0], color[1][1] );
+			unsigned char b = random_valve->RandomInt( color[2][0], color[2][1] );
+
+			pParticle->m_uchColor.SetColor( r, g, b );
 
 			pParticle->m_uchStartAlpha = m_SpurtColor[3];
 			pParticle->m_uchEndAlpha = 0;
@@ -810,9 +804,7 @@ void FX_GunshipMuzzleEffect( const Vector &origin, const QAngle &angles, float s
 	pParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
 	pParticle->m_flRollDelta	= 0.15f;
 
-	pParticle->m_uchColor[0]	= 255;
-	pParticle->m_uchColor[1]	= 255;
-	pParticle->m_uchColor[2]	= 255;
+	pParticle->m_uchColor.SetColor( 255, 255, 255 );
 
 	pParticle->m_uchStartAlpha	= 255;
 	pParticle->m_uchEndAlpha	= 255;
@@ -968,9 +960,10 @@ void FX_Tesla( const CTeslaInfo &teslaInfo )
 					pParticle->m_vecVelocity = vec3_origin;
 					Vector color( 1,1,1 );
 					float  colorRamp = RandomFloat( 0.75f, 1.25f );
-					pParticle->m_uchColor[0]	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
-					pParticle->m_uchColor[1]	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
-					pParticle->m_uchColor[2]	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
+					unsigned char r	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
+					unsigned char g	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
+					unsigned char b	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
+					pParticle->m_uchColor.SetColor( r, g, b );
 					pParticle->m_uchStartSize	= RandomFloat( 6,13 );
 					pParticle->m_uchEndSize		= pParticle->m_uchStartSize - 2;
 					pParticle->m_uchStartAlpha	= 255;
@@ -1100,10 +1093,7 @@ void FX_BuildTeslaHitbox(
 		// Randomly place it
 		el->origin	= pEntity->WorldSpaceCenter() + RandomVector( -32, 32 );
 
-		el->color.r = 235;
-		el->color.g = 235;
-		el->color.b = 255;
-		el->color.exponent = 4;
+		el->color.SetColor( 235, 235, 235, 4 );
 
 		el->radius	= random_valve->RandomInt( 32, 128 );
 		el->decay	= el->radius / 0.1f;

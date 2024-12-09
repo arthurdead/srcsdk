@@ -65,8 +65,8 @@ END_MAPENTITY()
 
 
 IMPLEMENT_SERVERCLASS_ST( CFuncSmokeVolume, DT_FuncSmokeVolume )
-	SendPropInt( SENDINFO( m_Color1 ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
-	SendPropInt( SENDINFO( m_Color2 ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
+	SendPropColor32( SENDINFO( m_Color1 ) ),
+	SendPropColor32( SENDINFO( m_Color2 ) ),
 	SendPropString( SENDINFO( m_MaterialName ) ),
 	SendPropFloat( SENDINFO( m_ParticleDrawWidth ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO( m_ParticleSpacingDistance ), 0, SPROP_NOSCALE ),

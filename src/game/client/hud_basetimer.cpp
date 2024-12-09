@@ -47,7 +47,7 @@ void CHudBaseTimer::Paint()
 {
 	float alpha = m_flAlphaOverride / 255;
 	Color fgColor = GetFgColor();
-	fgColor[3] *= alpha;
+	fgColor.SetA( fgColor.a() * alpha );
 	SetFgColor( fgColor );
 	
 	surface()->DrawSetTextColor(GetFgColor());
@@ -64,7 +64,7 @@ void CHudBaseTimer::Paint()
 		{
 			// draw a percentage of the last one
 			Color col = GetFgColor();
-			col[3] *= fl;
+			col.SetA( col.a() * fl );
 			surface()->DrawSetTextColor(col);
 			PaintTime(m_hNumberGlowFont, digit_xpos, digit_ypos, m_iMinutes, m_iSeconds);
 		}

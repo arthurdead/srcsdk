@@ -20,7 +20,7 @@ static void RecvProxy_HDRColorScale( const CRecvProxyData *pData, void *pStruct,
 
 IMPLEMENT_CLIENTCLASS_DT_NOBASE( C_Sun, DT_Sun, CSun )
 	
-	RecvPropInt( RECVINFO(m_clrOverlay), 0, RecvProxy_Int32ToColor32 ),
+	RecvPropColor32( RECVINFO(m_clrOverlay) ),
 	RecvPropVector( RECVINFO( m_vDirection ) ),
 	RecvPropInt( RECVINFO( m_bOn ) ),
 	RecvPropInt( RECVINFO( m_nSize ) ),

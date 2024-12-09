@@ -102,10 +102,7 @@ void TE_BeamFollow( IRecipientFilter& filter, float delay,
 	g_TEBeamFollow.m_fWidth			= width;
 	g_TEBeamFollow.m_fEndWidth		= endWidth;
 	g_TEBeamFollow.m_nFadeLength	= fadeLength;
-	g_TEBeamFollow.r				= r;
-	g_TEBeamFollow.g				= g;
-	g_TEBeamFollow.b				= b;
-	g_TEBeamFollow.a				= a;
+	g_TEBeamFollow.m_clr.SetColor( r, g, b, a );
 
 	// Send it over the wire
 	g_TEBeamFollow.Create( filter, delay );

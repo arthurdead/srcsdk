@@ -24,10 +24,10 @@ DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_SENDPROP, "SendProp" );
 static CNonModifiedPointerProxy *s_pNonModifiedPointerProxyHead = NULL;
 
 
-void SendProxy_UInt8ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-void SendProxy_UInt16ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-void SendProxy_UInt32ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-void SendProxy_UInt64ToInt64( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+void SendProxy_UInt8( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+void SendProxy_UInt16( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+void SendProxy_UInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+void SendProxy_UInt64( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
 
 const char *s_ElementNames[MAX_ARRAY_ELEMENTS] =
 {
@@ -148,20 +148,20 @@ CNonModifiedPointerProxy::CNonModifiedPointerProxy( SendTableProxyFn fn )
 
 CStandardSendProxiesV1::CStandardSendProxiesV1()
 {
-	m_Int8ToInt32 = SendProxy_Int8ToInt32;
-	m_Int16ToInt32 = SendProxy_Int16ToInt32;
-	m_Int32ToInt32 = SendProxy_Int32ToInt32;
+	m_Int8 = SendProxy_Int8;
+	m_Int16 = SendProxy_Int16;
+	m_Int32 = SendProxy_Int32;
 
-	m_UInt8ToInt32 = SendProxy_UInt8ToInt32;
-	m_UInt16ToInt32 = SendProxy_UInt16ToInt32;
-	m_UInt32ToInt32 = SendProxy_UInt32ToInt32;
+	m_UInt8 = SendProxy_UInt8;
+	m_UInt16 = SendProxy_UInt16;
+	m_UInt32 = SendProxy_UInt32;
 	
-	m_FloatToFloat = SendProxy_FloatToFloat;
-	m_VectorToVector = SendProxy_VectorToVector;
+	m_Float = SendProxy_Float;
+	m_Vector = SendProxy_Vector;
 
 #ifdef DT_INT64_SUPPORTED
-	m_Int64ToInt64 = SendProxy_Int64ToInt64;
-	m_UInt64ToInt64 = SendProxy_UInt64ToInt64;
+	m_Int64 = SendProxy_Int64;
+	m_UInt64 = SendProxy_UInt64;
 #endif
 }
 
@@ -175,8 +175,8 @@ CStandardSendProxies::CStandardSendProxies()
 CStandardSendProxiesEx::CStandardSendProxiesEx()
 {
 #ifndef DT_INT64_SUPPORTED
-	m_Int64ToInt64 = SendProxy_Int64ToInt64;
-	m_UInt64ToInt64 = SendProxy_UInt64ToInt64;
+	m_Int64 = SendProxy_Int64;
+	m_UInt64 = SendProxy_UInt64;
 #endif
 }
 
@@ -186,7 +186,7 @@ CStandardSendProxiesEx g_StandardSendProxies;
 // ---------------------------------------------------------------------- //
 // Proxies.
 // ---------------------------------------------------------------------- //
-void SendProxy_AngleToFloat( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_FloatAngle( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	float angle;
 
@@ -196,7 +196,7 @@ void SendProxy_AngleToFloat( const SendProp *pProp, const void *pStruct, const v
 	Assert( IsFinite( pOut->m_Float ) );
 }
 
-void SendProxy_FloatToFloat( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_Float( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	pOut->m_Float = *((float*)pData);
 	Assert( IsFinite( pOut->m_Float ) );
@@ -204,86 +204,122 @@ void SendProxy_FloatToFloat( const SendProp *pProp, const void *pStruct, const v
 
 void SendProxy_QAngles( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
-	QAngle *v = (QAngle*)pData;
-	pOut->m_Vector[0] = anglemod( v->x );
-	pOut->m_Vector[1] = anglemod( v->y );
-	pOut->m_Vector[2] = anglemod( v->z );
-}
-
-void SendProxy_VectorToVector( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
-{
-	Vector& v = *(Vector*)pData;
+	const QAngle &v = *(QAngle*)pData;
 	Assert( v.IsValid() );
-	pOut->m_Vector[0] = v[0];
-	pOut->m_Vector[1] = v[1];
-	pOut->m_Vector[2] = v[2];
+	pOut->m_Angles = v;
 }
 
-void SendProxy_VectorXYToVectorXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_Vector( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
-	Vector& v = *(Vector*)pData;
+	const Vector& v = *(Vector*)pData;
 	Assert( v.IsValid() );
-	pOut->m_Vector[0] = v[0];
-	pOut->m_Vector[1] = v[1];
+	pOut->m_Vector = v;
 }
 
-void SendProxy_QuaternionToQuaternion( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_VectorXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
-	Quaternion& q = *(Quaternion*)pData;
+	const Vector& v = *(Vector*)pData;
+	Assert( IsFinite( v.x ) && IsFinite( v.y ) );
+	pOut->m_Vector.x = v.x;
+	pOut->m_Vector.y = v.y;
+}
+
+void SendProxy_Vector2D( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+{
+	const Vector2D& v = *(Vector2D*)pData;
+	Assert( v.IsValid() );
+	pOut->m_Vector2D = v;
+}
+
+void SendProxy_Quaternion( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+{
+	const Quaternion& q = *(Quaternion*)pData;
 	Assert( q.IsValid() );
-	pOut->m_Vector[0] = q[0];
-	pOut->m_Vector[1] = q[1];
-	pOut->m_Vector[2] = q[2];
-	pOut->m_Vector[3] = q[3];
+#if defined DT_QUATERNION_SUPPORTED || defined DT_INT64_SUPPORTED
+	pOut->m_Quaternion = q;
+#else
+	Error( "Quaternion sendprops are not supported" );
+#endif
 }
 
-void SendProxy_Int8ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_Int8( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
-	pOut->m_Int = *((const char*)pData);
+	pOut->m_Char = *((const char*)pData);
 }
 
-void SendProxy_Int16ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_UInt8( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
-	pOut->m_Int = *((short*)pData);
+	pOut->m_UChar = *((const unsigned char*)pData);
 }
 
-void SendProxy_Int32ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_Int16( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+{
+	pOut->m_Short = *((short*)pData);
+}
+
+void SendProxy_UInt16( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+{
+	pOut->m_UShort = *((unsigned short*)pData);
+}
+
+void SendProxy_Int32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	pOut->m_Int = *((int*)pData);
 }
 
-void SendProxy_Int64ToInt64( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_UInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
+	pOut->m_Int = *((unsigned int*)pData);
+}
+
+void SendProxy_Int64( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+{
+#if defined DT_QUATERNION_SUPPORTED || defined DT_INT64_SUPPORTED
 	pOut->m_Int64 = *((int64*)pData);
+#else
+	*((int64 *)pOut->m_IntPair) = *((int64*)pData);
+#endif
 }
 
-void SendProxy_UInt8ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_UInt64( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
-	pOut->m_Int = *((const unsigned char*)pData);
+#if defined DT_QUATERNION_SUPPORTED || defined DT_INT64_SUPPORTED
+	pOut->m_UInt64 = *((uint64*)pData);
+#else
+	*((uint64 *)pOut->m_UIntPair) = *((uint64*)pData);
+#endif
 }
 
-void SendProxy_UInt16ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_IntAddOne( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID)
 {
-	pOut->m_Int = *((unsigned short*)pData);
+	int *pInt = (int *)pVarData;
+
+	pOut->m_Int = (*pInt) + 1;
 }
 
-void SendProxy_UInt32ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_ShortAddOne( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID)
 {
-	*((unsigned long*)&pOut->m_Int) = *((unsigned long*)pData);
+	short *pInt = (short *)pVarData;
+
+	pOut->m_Short = (*pInt) + 1;
 }
 
-void SendProxy_UInt64ToInt64( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_Color32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
-	*((int64*)&pOut->m_Int64) = *((uint64*)pData);
+	pOut->m_Color32 = *((color32 *)pData);
 }
 
-void SendProxy_Color32ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_Color32E( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
-	//Always send/receive as little endian to preserve byte order across network byte swaps
-	pOut->m_Int = LittleDWord( *((uint32 *)pData) );
+	pOut->m_Color32E = *((ColorRGBExp32 *)pData);
 }
 
-void SendProxy_StringToString( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_Color24( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+{
+	pOut->m_Color24 = *((color24 *)pData);
+}
+
+void SendProxy_String( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	pOut->m_pString = (const char*)pData;
 }
@@ -400,7 +436,7 @@ SendProp SendPropFloat(
 {
 	SendProp ret;
 
-	if ( varProxy == SendProxy_FloatToFloat )
+	if ( varProxy == SendProxy_Float )
 	{
 		Assert( sizeofVar == 0 || sizeofVar == 4 );
 	}
@@ -451,7 +487,7 @@ SendProp SendPropVector(
 {
 	SendProp ret;
 
-	if(varProxy == SendProxy_VectorToVector)
+	if(varProxy == SendProxy_Vector )
 	{
 		Assert(sizeofVar == sizeof(Vector));
 	}
@@ -488,7 +524,7 @@ SendProp SendPropVectorXY(
 {
 	SendProp ret;
 
-	if(varProxy == SendProxy_VectorXYToVectorXY)
+	if(varProxy == SendProxy_VectorXY )
 	{
 		Assert(sizeofVar == sizeof(Vector));
 	}
@@ -524,7 +560,7 @@ SendProp SendPropQuaternion(
 {
 	SendProp ret;
 
-	if(varProxy == SendProxy_QuaternionToQuaternion)
+	if(varProxy == SendProxy_Quaternion )
 	{
 		Assert(sizeofVar == sizeof(Quaternion));
 	}
@@ -564,7 +600,7 @@ SendProp SendPropAngle(
 {
 	SendProp ret;
 
-	if(varProxy == SendProxy_AngleToFloat)
+	if(varProxy == SendProxy_FloatAngle )
 	{
 		Assert(sizeofVar == 4);
 	}
@@ -598,9 +634,9 @@ SendProp SendPropQAngles(
 {
 	SendProp ret;
 
-	if(varProxy == SendProxy_AngleToFloat)
+	if(varProxy == SendProxy_QAngles )
 	{
-		Assert(sizeofVar == 4);
+		Assert(sizeofVar == sizeof(QAngle));
 	}
 
 	if ( nBits == 32 )
@@ -636,24 +672,24 @@ SendProp SendPropInt(
 	{
 		if ( sizeofVar == 1 )
 		{
-			varProxy = SendProxy_Int8ToInt32;
+			varProxy = SendProxy_Int8;
 		}
 		else if ( sizeofVar == 2 )
 		{
-			varProxy = SendProxy_Int16ToInt32;
+			varProxy = SendProxy_Int16;
 		}
 		else if ( sizeofVar == 4 )
 		{
-			varProxy = SendProxy_Int32ToInt32;
+			varProxy = SendProxy_Int32;
 		}
 		else if ( sizeofVar == 8 )
 		{
-			varProxy = SendProxy_Int64ToInt64;
+			varProxy = SendProxy_Int64;
 		}
 		else
 		{
 			Assert(!"SendPropInt var has invalid size");
-			varProxy = SendProxy_Int8ToInt32;	// safest one...
+			varProxy = SendProxy_Int8;	// safest one...
 		}
 	}
 
@@ -690,19 +726,33 @@ SendProp SendPropInt(
 	ret.SetProxyFn( varProxy );
 	if( ret.GetFlags() & SPROP_UNSIGNED )
 	{
-		if( varProxy == SendProxy_Int8ToInt32 )
-			ret.SetProxyFn( SendProxy_UInt8ToInt32 );
+		if( varProxy == SendProxy_Int8 )
+			ret.SetProxyFn( SendProxy_UInt8 );
 		
-		else if( varProxy == SendProxy_Int16ToInt32 )
-			ret.SetProxyFn( SendProxy_UInt16ToInt32 );
+		else if( varProxy == SendProxy_Int16 )
+			ret.SetProxyFn( SendProxy_UInt16 );
 
-		else if( varProxy == SendProxy_Int32ToInt32 )
-			ret.SetProxyFn( SendProxy_UInt32ToInt32 );
-		else if( varProxy == SendProxy_Int64ToInt64 )
-			ret.SetProxyFn( SendProxy_UInt64ToInt64 );
+		else if( varProxy == SendProxy_Int32 )
+			ret.SetProxyFn( SendProxy_UInt32 );
+		else if( varProxy == SendProxy_Int64 )
+			ret.SetProxyFn( SendProxy_UInt64 );
 	}
 
 	return ret;
+}
+
+SendProp SendPropBool(
+	const char *pVarName,
+	int offset,
+	int sizeofVar )
+{
+	Assert( sizeofVar == sizeof( bool ) );
+	return SendPropInt( pVarName, offset, sizeofVar, 1, SPROP_UNSIGNED, SendProxy_UInt8 );
+}
+
+SendProp SendPropIntWithMinusOneFlag( const char *pVarName, int offset, int sizeofVar, int nBits, SendVarProxyFn proxyFn )
+{
+	return SendPropInt( pVarName, offset, sizeofVar, nBits, SPROP_UNSIGNED, proxyFn );
 }
 
 SendProp SendPropString(

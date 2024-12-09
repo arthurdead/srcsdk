@@ -30,7 +30,7 @@ public:
 
 public:
 	Vector			m_vecDirection;
-	int				r, g, b, a;
+	color32 m_clr;
 	int				m_nAmount;
 };
 
@@ -40,10 +40,7 @@ public:
 //-----------------------------------------------------------------------------
 IMPLEMENT_CLIENTCLASS_EVENT_DT(C_TEBloodStream, DT_TEBloodStream, CTEBloodStream)
 	RecvPropVector( RECVINFO(m_vecDirection)),
-	RecvPropInt( RECVINFO(r)),
-	RecvPropInt( RECVINFO(g)),
-	RecvPropInt( RECVINFO(b)),
-	RecvPropInt( RECVINFO(a)),
+	RecvPropInt( RECVINFO(m_clr)),
 	RecvPropInt( RECVINFO(m_nAmount)),
 END_RECV_TABLE()
 
@@ -55,7 +52,7 @@ C_TEBloodStream::C_TEBloodStream( void )
 {
 	m_vecOrigin.Init();
 	m_vecDirection.Init();
-	r = g = b = a = 0;
+	m_clr.SetColor( 0, 0, 0, 0 );
 	m_nAmount = 0;
 }
 
@@ -71,15 +68,13 @@ C_TEBloodStream::~C_TEBloodStream( void )
 // Recording 
 //-----------------------------------------------------------------------------
 static inline void RecordBloodStream( const Vector &start, const Vector &direction, 
-	int r, int g, int b, int a, int amount )
+	color32 clr, int amount )
 {
 	if ( !ToolsEnabled() )
 		return;
 
 	if ( clienttools->IsInRecordingMode() )
 	{
-		Color clr( r, g, b, a );
-
 		KeyValues *msg = new KeyValues( "TempEntity" );
 
  		msg->SetInt( "te", TE_BLOOD_STREAM );
@@ -101,9 +96,9 @@ static inline void RecordBloodStream( const Vector &start, const Vector &directi
 
 
 void TE_BloodStream( IRecipientFilter& filter, float delay,
-	const Vector* org, const Vector* direction, int r, int g, int b, int a, int amount )
+	const Vector* org, const Vector* direction, color32 clr, int amount )
 {
-	RecordBloodStream( *org, *direction, r, g, b, a, amount );
+	RecordBloodStream( *org, *direction, clr, amount );
 
 	CSmartPtr<CTEParticleRenderer> pRen = CTEParticleRenderer::Create( "TEBloodStream", *org );
 	if( !pRen )
@@ -125,8 +120,8 @@ void TE_BloodStream( IRecipientFilter& filter, float delay,
 		StandardParticle_t *p = pRen->AddParticle();
 		if(p)
 		{
-			p->SetColor(r * random_valve->RandomFloat(0.7, 1.0), g, b);
-			p->SetAlpha(a);
+			p->SetColor(clr.r() * random_valve->RandomFloat(0.7, 1.0), clr.g(), clr.b());
+			p->SetAlpha(clr.a());
 			p->m_Pos = *org;
 			pRen->SetParticleLifetime(p, 2);
 			pRen->SetParticleType(p, pt_vox_grav);
@@ -150,8 +145,8 @@ void TE_BloodStream( IRecipientFilter& filter, float delay,
 		if(p)
 		{
 			pRen->SetParticleLifetime(p, 3);
-			p->SetColor(r * random_valve->RandomFloat(0.7, 1.0), g, b);
-			p->SetAlpha(a);
+			p->SetColor(clr.r() * random_valve->RandomFloat(0.7, 1.0), clr.g(), clr.b());
+			p->SetAlpha(clr.a());
 			p->m_Pos = *org;
 			pRen->SetParticleType(p, pt_vox_slowgrav);
 			
@@ -177,8 +172,8 @@ void TE_BloodStream( IRecipientFilter& filter, float delay,
 				if(p)
 				{
 					pRen->SetParticleLifetime(p, 3);
-					p->SetColor(random_valve->RandomFloat(0.7, 1.0), g, b);
-					p->SetAlpha(a);
+					p->SetColor(clr.r() * random_valve->RandomFloat(0.7, 1.0), clr.g(), clr.b());
+					p->SetAlpha(clr.a());
 					p->m_Pos.Init(
 						(*org)[0] + random_valve->RandomFloat(-1,1),
 						(*org)[1] + random_valve->RandomFloat(-1,1),
@@ -205,7 +200,7 @@ void TE_BloodStream( IRecipientFilter& filter, float delay,
 void C_TEBloodStream::PostDataUpdate( DataUpdateType_t updateType )
 {
 	CBroadcastRecipientFilter filter;
-	TE_BloodStream( filter, 0.0f, &m_vecOrigin, &m_vecDirection, r, g, b, a, m_nAmount );
+	TE_BloodStream( filter, 0.0f, &m_vecOrigin, &m_vecDirection, m_clr, m_nAmount );
 }
 
 void TE_BloodStream( IRecipientFilter& filter, float delay, KeyValues *pKeyValues )
@@ -219,5 +214,5 @@ void TE_BloodStream( IRecipientFilter& filter, float delay, KeyValues *pKeyValue
 	vecDirection.z = pKeyValues->GetFloat( "directionz" );
 	Color c = pKeyValues->GetColor( "color" );
 	int nAmount = pKeyValues->GetInt( "amount" );
-	TE_BloodStream( filter, 0.0f, &vecOrigin, &vecDirection, c.r(), c.g(), c.b(), c.a(), nAmount );
+	TE_BloodStream( filter, 0.0f, &vecOrigin, &vecDirection, c, nAmount );
 }

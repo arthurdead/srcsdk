@@ -144,7 +144,6 @@ enum DVDMode_t
 };
 
 // In non-retail builds, enable the file blocking access tracking stuff...
-#if defined( TRACK_BLOCKING_IO )
 enum FileBlockingWarning_t
 {
 	// Report how long synchronous i/o took to complete
@@ -238,8 +237,6 @@ public:
 
 	virtual void	Reset() = 0;
 };
-
-#endif // TRACK_BLOCKING_IO
 
 enum FilesystemMountRetval_t
 {
@@ -480,6 +477,8 @@ public:
 	virtual bool			IsMD5RequestComplete( int iRequest, MD5Value_t *pMd5ValueOut ) = 0;
 };
 
+class IFileSystem;
+
 //-----------------------------------------------------------------------------
 // Base file system interface
 //-----------------------------------------------------------------------------
@@ -491,6 +490,12 @@ public:
 abstract_class IBaseFileSystem
 {
 public:
+#ifdef __MINGW32__
+	static IFileSystem *GetFullFilesystem();
+#else
+	IFileSystem *GetFullFilesystem();
+#endif
+
 	virtual int				Read( void* pOutput, int size, FileHandle_t file ) = 0;
 	virtual int				Write( void const* pInput, int size, FileHandle_t file ) = 0;
 
@@ -540,9 +545,72 @@ public:
 
 #define FILESYSTEM_INTERFACE_VERSION			"VFileSystem022"
 
+#ifdef __MINGW32__
+extern IBaseFileSystem *g_pBaseFileSystem;
+#endif
+
+#ifdef __MINGW32__
+abstract_class IFileSystem : public IAppSystem
+#else
 abstract_class IFileSystem : public IAppSystem, public IBaseFileSystem
+#endif
 {
 public:
+#ifdef __MINGW32__
+	int				Read( void* pOutput, int size, FileHandle_t file )
+	{ return g_pBaseFileSystem->Read(pOutput, size, file); }
+	int				Write( void const* pInput, int size, FileHandle_t file )
+	{ return g_pBaseFileSystem->Write(pInput, size, file); }
+
+	// if pathID is NULL, all paths will be searched for the file
+	FileHandle_t	Open( const char *pFileName, const char *pOptions, const char *pathID = NULL )
+	{ return g_pBaseFileSystem->Open(pFileName, pOptions, pathID); }
+	void			Close( FileHandle_t file )
+	{ g_pBaseFileSystem->Close(file); }
+
+	void			Seek( FileHandle_t file, int pos, FileSystemSeek_t seekType )
+	{ g_pBaseFileSystem->Seek(file, pos, seekType); }
+	unsigned int	Tell( FileHandle_t file )
+	{ return g_pBaseFileSystem->Tell(file); }
+	unsigned int	Size( FileHandle_t file )
+	{ return g_pBaseFileSystem->Size(file); }
+	unsigned int	Size( const char *pFileName, const char *ppathID = NULL )
+	{ return g_pBaseFileSystem->Size(pFileName, ppathID); }
+
+	void			Flush( FileHandle_t file )
+	{ g_pBaseFileSystem->Flush(file); }
+	bool			Precache( const char *pFileName, const char *ppathID = NULL )
+	{ return g_pBaseFileSystem->Precache(pFileName, ppathID); }
+
+	bool			FileExists( const char *pFileName, const char *ppathID = NULL )
+	{ return g_pBaseFileSystem->FileExists(pFileName, ppathID); }
+	bool			IsFileWritable( char const *pFileName, const char *ppathID = NULL )
+	{ return g_pBaseFileSystem->IsFileWritable(pFileName, ppathID); }
+	bool			SetFileWritable( char const *pFileName, bool writable, const char *ppathID = NULL )
+	{ return g_pBaseFileSystem->SetFileWritable(pFileName, writable, ppathID); }
+
+	long			GetFileTime( const char *pFileName, const char *ppathID = NULL )
+	{ return g_pBaseFileSystem->GetFileTime(pFileName, ppathID); }
+
+	//--------------------------------------------------------
+	// Reads/writes files to utlbuffers. Use this for optimal read performance when doing open/read/close
+	//--------------------------------------------------------
+	bool			ReadFile( const char *pFileName, const char *pPath, CUtlBuffer &buf, int nMaxBytes = 0, int nStartingByte = 0, FSAllocFunc_t pfnAlloc = NULL )
+	{ return g_pBaseFileSystem->ReadFile(pFileName, pPath, buf, nMaxBytes, nStartingByte, pfnAlloc); }
+	bool			WriteFile( const char *pFileName, const char *pPath, CUtlBuffer &buf )
+	{ return g_pBaseFileSystem->WriteFile(pFileName, pPath, buf); }
+	bool			UnzipFile( const char *pFileName, const char *pPath, const char *pDestination )
+	{ return g_pBaseFileSystem->UnzipFile(pFileName, pPath, pDestination); }
+#endif
+
+#ifdef __MINGW32__
+	static inline IBaseFileSystem *GetBaseFilesystem()
+	{ return g_pBaseFileSystem; }
+#else
+	inline IBaseFileSystem *GetBaseFilesystem()
+	{ return static_cast<IBaseFileSystem *>(this); }
+#endif
+
 	//--------------------------------------------------------
 	// Steam operations
 	//--------------------------------------------------------
@@ -807,8 +875,15 @@ public:
 
 	// If the "PreloadedData" hasn't been purged, then this'll try and instance the KeyValues using the fast path of compiled keyvalues loaded during startup.
 	// Otherwise, it'll just fall through to the regular KeyValues loading routines
+
+#ifdef __MINGW32__
+	virtual bool		LoadKeyValues( KeyValues& head, KeyValuesPreloadType_t type, char const *filename, char const *ppathID = NULL ) = 0;
+	virtual KeyValues	*LoadKeyValues( KeyValuesPreloadType_t type, char const *filename, char const *ppathID = NULL ) = 0;
+#else
 	virtual KeyValues	*LoadKeyValues( KeyValuesPreloadType_t type, char const *filename, char const *ppathID = NULL ) = 0;
 	virtual bool		LoadKeyValues( KeyValues& head, KeyValuesPreloadType_t type, char const *filename, char const *ppathID = NULL ) = 0;
+#endif
+
 	virtual bool		ExtractRootKeyName( KeyValuesPreloadType_t type, char *outbuf, size_t bufsize, char const *filename, char const *ppathID = NULL ) = 0;
 
 	virtual FSAsyncStatus_t	AsyncWrite(const char *pFileName, const void *pSrc, int nSrcBytes, bool bFreeMemory, bool bAppend = false, FSAsyncControl_t *pControl = NULL ) = 0;
@@ -943,6 +1018,17 @@ public:
 	HACKMGR_CLASS_API bool			IsSpecificDLCPresent( unsigned int nDLCPackage );
 };
 
+extern IFileSystem *g_pFullFileSystem;
+
+inline IFileSystem *IBaseFileSystem::GetFullFilesystem()
+{
+#ifdef __MINGW32__
+	return g_pFullFileSystem;
+#else
+	return (IFileSystem *)this;
+#endif
+}
+
 //-----------------------------------------------------------------------------
 // Memory file backing, which you can use to fake out the filesystem, caching data
 // in memory and have it associated with a file
@@ -995,7 +1081,5 @@ inline unsigned IFileSystem::GetOptimalReadSize( FileHandle_t hFile, unsigned nL
 #define AsyncRead( a, b ) AsyncReadCreditAlloc( a, __FILE__, __LINE__, b )
 #define AsyncReadMutiple( a, b, c ) AsyncReadMultipleCreditAlloc( a, b, __FILE__, __LINE__, c )
 #endif
-
-extern IFileSystem *g_pFullFileSystem;
 
 #endif // FILESYSTEM_H

@@ -75,7 +75,7 @@ void CBitmapButton::SetImage( ButtonImageType_t type, const char *pMaterialName,
 	m_bImageLoaded[type] = m_pImage[type].Init( GetVPanel(), pMaterialName );
 	if (m_bImageLoaded[type])
 	{
-		Color vcol( color.r, color.g, color.b, color.a );
+		Color vcol( color.r(), color.g(), color.b(), color.a() );
 		m_pImage[type].SetColor( vcol );
 	}
 }

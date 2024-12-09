@@ -413,10 +413,12 @@ bool PhysIsFinalTick()
 	return g_PhysicsHook.m_isFinalTick;
 }
 
+extern modelindex_t g_sModelIndexWorld;
+
 IPhysicsObject *PhysCreateWorld( CBaseEntity *pWorld )
 {
 	staticpropmgr->CreateVPhysicsRepresentations( physenv, &g_SolidSetup, pWorld );
-	return PhysCreateWorld_Shared( pWorld, modelinfo->GetVCollide(1), g_PhysDefaultObjectParams );
+	return PhysCreateWorld_Shared( pWorld, modelinfo->GetVCollide(g_sModelIndexWorld), g_PhysDefaultObjectParams );
 }
 
 

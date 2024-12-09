@@ -19,6 +19,7 @@ else
 	tier2_dep = declare_dependency(
 		sources: files(
 			join_paths(src_root_dir,'public','materialsystem','MaterialSystemUtil.cpp'),
+			join_paths(src_root_dir,'tier2','tier2.cpp'),
 		),
 		include_directories: include_directories(
 			join_paths(src_root_dir,'public','tier2')

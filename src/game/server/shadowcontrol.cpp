@@ -65,7 +65,7 @@ END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST_NOBASE(CShadowControl, DT_ShadowControl)
 	SendPropVector(SENDINFO(m_shadowDirection), -1,  SPROP_NOSCALE ),
-	SendPropInt(SENDINFO(m_shadowColor),	32, SPROP_UNSIGNED, SendProxy_Color32ToInt32),
+	SendPropColor32(SENDINFO(m_shadowColor)),
 	SendPropFloat(SENDINFO(m_flShadowMaxDist), 0, SPROP_NOSCALE ),
 	SendPropBool(SENDINFO(m_bDisableShadows)),
 	SendPropBool(SENDINFO(m_bEnableLocalLightShadows)),

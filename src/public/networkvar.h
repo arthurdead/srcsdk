@@ -238,11 +238,89 @@ static inline void DispatchNetworkStateChanged( T *pObj, void *pVar )
 		template< class T > \
 		NetworkVar_##name& operator=( T &&val ) = delete; \
 	public: \
-		NetworkVar_##name() : type() { this->NetworkStateChanged(); } \
+		NetworkVar_##name() : type() \
+		{ this->NetworkStateChanged(); } \
 		NetworkVar_##name( const type &val ) = delete; \
 		NetworkVar_##name( type &&val ) = delete; \
 		NetworkVar_##name( const NetworkVar_##name &val ) = delete; \
 		NetworkVar_##name( NetworkVar_##name &&val ) = delete; \
+		~NetworkVar_##name() {} \
+		type *operator&() { return static_cast<type *>(this); } \
+		const type *operator&() const { return static_cast<const type *>(this); } \
+		type & GetForModify( void ) { this->NetworkStateChanged(); return *static_cast<type *>(this); } \
+		virtual void NetworkStateChanged() \
+		{ \
+			DispatchNetworkStateChanged( (ThisClass_##name*)( ((char*)this) - GetOffset_##name() ) ); \
+		} \
+		virtual void NetworkStateChanged( void *pVar ) \
+		{ \
+			DispatchNetworkStateChanged( (ThisClass_##name*)( ((char*)this) - GetOffset_##name() ), pVar ); \
+		} \
+	}; \
+	NetworkVar_##name name; 
+
+#define CNetworkVarEmbeddedCopyable( type, name ) \
+	class NetworkVar_##name; \
+	friend class NetworkVar_##name; \
+	typedef ThisClass MakeANetworkVar_##name; \
+	static inline int GetOffset_##name() { return MyOffsetOf(ThisClass,name); } \
+	typedef ThisClass ThisClass_##name; \
+	class NetworkVar_##name final : public type \
+	{ \
+	public: \
+		NetworkVar_##name& operator=( const NetworkVar_##name &val ) \
+		{ \
+			this->type::operator=(static_cast<const type &>(val)); \
+			this->NetworkStateChanged(); \
+			return *this; \
+		} \
+		NetworkVar_##name& operator=( NetworkVar_##name &&val ) \
+		{ \
+			this->type::operator=(static_cast<type &&>(Move(val))); \
+			this->NetworkStateChanged(); \
+			val.NetworkStateChanged(); \
+			return *this; \
+		} \
+		NetworkVar_##name& operator=( const type &val ) \
+		{ \
+			this->type::operator=(val); \
+			this->NetworkStateChanged(); \
+			return *this; \
+		} \
+		NetworkVar_##name& operator=( type &&val ) \
+		{ \
+			this->type::operator=(Move(val)); \
+			this->NetworkStateChanged(); \
+			return *this; \
+		} \
+		template< class T > \
+		NetworkVar_##name& operator=( const T &val ) \
+		{ \
+			this->type::operator=(val); \
+			this->NetworkStateChanged(); \
+			return *this; \
+		} \
+		template< class T > \
+		NetworkVar_##name& operator=( T &&val ) \
+		{ \
+			this->type::operator=(Move(val)); \
+			this->NetworkStateChanged(); \
+			return *this; \
+		} \
+	public: \
+		NetworkVar_##name() : type() \
+		{ this->NetworkStateChanged(); } \
+		NetworkVar_##name( const type &val ) : type(val) \
+		{ this->NetworkStateChanged(); } \
+		NetworkVar_##name( type &&val ) : type(static_cast<type &&>(Move(val))) \
+		{ this->NetworkStateChanged(); } \
+		NetworkVar_##name( const NetworkVar_##name &val ) : type(static_cast<const type &>(val)) \
+		{ this->NetworkStateChanged(); } \
+		NetworkVar_##name( NetworkVar_##name &&val ) : type(static_cast<type &&>(Move(val))) \
+		{ \
+			this->NetworkStateChanged(); \
+			val.NetworkStateChanged(); \
+		} \
 		~NetworkVar_##name() {} \
 		type *operator&() { return static_cast<type *>(this); } \
 		const type *operator&() const { return static_cast<const type *>(this); } \
@@ -654,7 +732,7 @@ public:
 };
 
 template< class Type, class Changer >
-class CNetworkColor32Base : public CNetworkVarBaseImpl< Type, Changer >
+class CNetworkColorBaseImpl : public CNetworkVarBaseImpl< Type, Changer >
 {
 	typedef CNetworkVarBaseImpl< Type, Changer > base;
 
@@ -669,23 +747,13 @@ public:
 	{
 		this->SetColor( rVal, gVal, bVal );
 	}
-	inline void Init( byte rVal, byte gVal, byte bVal, byte aVal )
-	{
-		this->SetColor( rVal, gVal, bVal, aVal );
-	}
 
 	inline byte GetR() const { return this->m_Value.r(); }
 	inline byte GetG() const { return this->m_Value.g(); }
 	inline byte GetB() const { return this->m_Value.b(); }
-	inline byte GetA() const { return this->m_Value.a(); }
-	inline byte r() const { return this->m_Value.r(); }
-	inline byte g() const { return this->m_Value.g(); }
-	inline byte b() const { return this->m_Value.b(); }
-	inline byte a() const { return this->m_Value.a(); }
 	inline void SetR( byte val ) { this->SetVal( &Type::r, &Type::SetR, val ); }
 	inline void SetG( byte val ) { this->SetVal( &Type::g, &Type::SetG, val ); }
 	inline void SetB( byte val ) { this->SetVal( &Type::b, &Type::SetB, val ); }
-	inline void SetA( byte val ) { this->SetVal( &Type::a, &Type::SetA, val ); }
 
 	inline void SetColor( byte rVal, byte gVal, byte bVal )
 	{
@@ -693,15 +761,6 @@ public:
 		{
 			this->NetworkStateChanged();
 			this->m_Value.SetColor( rVal, gVal, bVal );
-		}
-	}
-
-	inline void SetColor( byte rVal, byte gVal, byte bVal, byte aVal )
-	{
-		if ( this->m_Value.r() != rVal || this->m_Value.g() != gVal || this->m_Value.b() != bVal || this->m_Value.a() != aVal )
-		{
-			this->NetworkStateChanged();
-			this->m_Value.SetColor( rVal, gVal, bVal, aVal );
 		}
 	}
 
@@ -717,45 +776,82 @@ protected:
 };
 
 template< class Type, class Changer >
-class CNetworkColor24Base : public CNetworkVarBaseImpl< Type, Changer >
+class CNetworkColor24Base : public CNetworkColorBaseImpl< Type, Changer >
 {
-	typedef CNetworkVarBaseImpl< Type, Changer > base;
+	typedef CNetworkColorBaseImpl< Type, Changer > base;
 
 public:
-	using CNetworkVarBaseImpl<Type, Changer>::CNetworkVarBaseImpl;
-	using CNetworkVarBaseImpl<Type, Changer>::operator=;
-	using CNetworkVarBaseImpl<Type, Changer>::operator!=;
-	using CNetworkVarBaseImpl<Type, Changer>::operator==;
-	using CNetworkVarBaseImpl<Type, Changer>::Set;
+	using CNetworkColorBaseImpl<Type, Changer>::CNetworkColorBaseImpl;
+	using CNetworkColorBaseImpl<Type, Changer>::operator=;
+	using CNetworkColorBaseImpl<Type, Changer>::operator!=;
+	using CNetworkColorBaseImpl<Type, Changer>::operator==;
+	using CNetworkColorBaseImpl<Type, Changer>::Set;
+};
 
-	inline void Init( byte rVal, byte gVal, byte bVal )
+template< class Type, class Changer >
+class CNetworkColor32Base : public CNetworkColorBaseImpl< Type, Changer >
+{
+	typedef CNetworkColorBaseImpl< Type, Changer > base;
+
+public:
+	using CNetworkColorBaseImpl<Type, Changer>::CNetworkColorBaseImpl;
+	using CNetworkColorBaseImpl<Type, Changer>::operator=;
+	using CNetworkColorBaseImpl<Type, Changer>::operator!=;
+	using CNetworkColorBaseImpl<Type, Changer>::operator==;
+	using CNetworkColorBaseImpl<Type, Changer>::Set;
+
+	using base::SetColor;
+	using base::Init;
+
+	inline void Init( byte rVal, byte gVal, byte bVal, byte aVal )
 	{
-		this->SetColor( rVal, gVal, bVal );
+		this->SetColor( rVal, gVal, bVal, aVal );
 	}
 
-	inline byte GetR() const { return this->m_Value.r(); }
-	inline byte GetG() const { return this->m_Value.g(); }
-	inline byte GetB() const { return this->m_Value.b(); }
-	inline void SetR( byte val ) { this->SetVal( &Type::r, &Type::SetR, val ); }
-	inline void SetG( byte val ) { this->SetVal( &Type::g, &Type::SetG, val ); }
-	inline void SetB( byte val ) { this->SetVal( &Type::b, &Type::SetB, val ); }
+	inline byte GetA() const { return this->m_Value.a(); }
+	inline byte a() const { return this->m_Value.a(); }
+	inline void SetA( byte val ) { this->SetVal( &Type::a, &Type::SetA, val ); }
 
-	inline void SetColor( byte rVal, byte gVal, byte bVal )
+	inline void SetColor( byte rVal, byte gVal, byte bVal, byte aVal )
 	{
-		if ( this->m_Value.r() != rVal || this->m_Value.g() != gVal || this->m_Value.b() != bVal )
+		if ( this->m_Value.r() != rVal || this->m_Value.g() != gVal || this->m_Value.b() != bVal || this->m_Value.a() != aVal )
 		{
 			this->NetworkStateChanged();
-			this->m_Value.SetColor( rVal, gVal, bVal );
+			this->m_Value.SetColor( rVal, gVal, bVal, aVal );
 		}
 	}
+};
 
-protected:
-	inline void SetVal( unsigned char (Type::*get_func)() const, void(Type::*set_func)(unsigned char), const byte &in )
+template< class Type, class Changer >
+class CNetworkColor32EBase : public CNetworkColorBaseImpl< Type, Changer >
+{
+	typedef CNetworkColorBaseImpl< Type, Changer > base;
+
+public:
+	using CNetworkColorBaseImpl<Type, Changer>::CNetworkColorBaseImpl;
+	using CNetworkColorBaseImpl<Type, Changer>::operator=;
+	using CNetworkColorBaseImpl<Type, Changer>::operator!=;
+	using CNetworkColorBaseImpl<Type, Changer>::operator==;
+	using CNetworkColorBaseImpl<Type, Changer>::Set;
+
+	using base::SetColor;
+	using base::Init;
+
+	inline void Init( byte rVal, byte gVal, byte bVal, byte eVal )
 	{
-		if ( (this->m_Value.*get_func)() != in )
+		this->SetColor( rVal, gVal, bVal, eVal );
+	}
+
+	inline byte GetE() const { return this->m_Value.e(); }
+	inline byte e() const { return this->m_Value.e(); }
+	inline void SetE( byte val ) { this->SetVal( &Type::e, &Type::SetE, val ); }
+
+	inline void SetColor( byte rVal, byte gVal, byte bVal, byte eVal )
+	{
+		if ( this->m_Value.r() != rVal || this->m_Value.g() != gVal || this->m_Value.b() != bVal || this->m_Value.e() != eVal )
 		{
 			this->NetworkStateChanged();
-			(this->m_Value.*set_func)( in );
+			this->m_Value.SetColor( rVal, gVal, bVal, eVal );
 		}
 	}
 };
@@ -790,6 +886,9 @@ public:
 	inline void SetY( float val ) { this->DetectChange( this->m_Value.y, val ); }
 	inline void SetZ( float val ) { this->DetectChange( this->m_Value.z, val ); }
 	inline void Set( int i, float val ) { this->DetectChange( this->m_Value[i], val ); }
+
+	float LengthSqr() const
+	{ return this->m_Value.LengthSqr(); }
 
 private:
 	inline void DetectChange( float &out, float in ) 
@@ -1376,6 +1475,10 @@ private:
 #define CNetworkColor32( name ) \
 	NETWORK_VAR_START( color32, name ) \
 	NETWORK_VAR_END( color32, name, CNetworkColor32Base, NetworkStateChanged )
+
+#define CNetworkColor32E( name ) \
+	NETWORK_VAR_START( ColorRGBExp32, name ) \
+	NETWORK_VAR_END( ColorRGBExp32, name, CNetworkColor32EBase, NetworkStateChanged )
 
 #define CNetworkColor24( name ) \
 	NETWORK_VAR_START( color24, name ) \

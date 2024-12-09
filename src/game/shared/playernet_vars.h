@@ -117,7 +117,7 @@ struct sky3dparams_t
 	CNetworkColor32( skycolor );
 
 	// 3d skybox fog data
-	CNetworkVarEmbedded( fogparams_t, fog );
+	CNetworkVarEmbeddedCopyable( fogparams_t, fog );
 };
 
 struct audioparams_t

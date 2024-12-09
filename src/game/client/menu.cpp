@@ -187,8 +187,8 @@ void CHudMenu::Paint()
 
 	//DrawTexturedBox( x - border/2, y - border/2, wide, tall, m_BoxColor, m_flSelectionAlphaOverride / 255.0f );
 
-	menuColor[3] = menuColor[3] * ( m_flSelectionAlphaOverride / 255.0f );
-	itemColor[3] = itemColor[3] * ( m_flSelectionAlphaOverride / 255.0f );
+	menuColor.SetA( menuColor.a() * ( m_flSelectionAlphaOverride / 255.0f ) );
+	itemColor.SetA( itemColor.a() * ( m_flSelectionAlphaOverride / 255.0f ) );
 
 	for ( int i = 0; i < c; i++ )
 	{
@@ -231,7 +231,7 @@ void CHudMenu::Paint()
 				{
 					// draw a percentage of the last one
 					Color col = clr;
-					col[3] *= fl;
+					col.SetA( col.a() * fl );
 					vgui::surface()->DrawSetTextColor(col);
 					PaintString( &g_szMenuString[ line->startchar ], drawLen, m_hItemFontPulsing, x, y );
 				}

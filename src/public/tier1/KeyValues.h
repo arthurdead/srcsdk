@@ -32,6 +32,7 @@ DECLARE_LOGGING_CHANNEL( LOG_KEYVALUES );
 	for ( KeyValues * kvValue = kvRoot->GetFirstValue(); kvValue != NULL; kvValue = kvValue->GetNextValue() )
 
 class IBaseFileSystem;
+class IFileSystem;
 class CUtlBuffer;
 typedef void * FileHandle_t;
 class CKeyValuesGrowableStringTable;
@@ -132,13 +133,17 @@ public:
 	void UsesEscapeSequences(bool state); // default false
 	void UsesConditionals(bool state); // default true
 	bool LoadFromFile( IBaseFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, bool refreshCache = false );
+	bool LoadFromFile( IFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, bool refreshCache = false );
 	bool SaveToFile( IBaseFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, bool sortKeys = false, bool bAllowEmptyString = false, bool bCacheResult = false );
+	bool SaveToFile( IFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, bool sortKeys = false, bool bAllowEmptyString = false, bool bCacheResult = false );
 
 	// Read from a buffer...  Note that the buffer must be null terminated
 	bool LoadFromBuffer( char const *resourceName, const char *pBuffer, IBaseFileSystem* pFileSystem = NULL, const char *pPathID = NULL );
+	bool LoadFromBuffer( char const *resourceName, const char *pBuffer, IFileSystem* pFileSystem, const char *pPathID = NULL );
 
 	// Read from a utlbuffer...
 	bool LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IBaseFileSystem* pFileSystem = NULL, const char *pPathID = NULL );
+	bool LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IFileSystem* pFileSystem, const char *pPathID = NULL );
 
 	// Assign keyvalues from a string
 	static KeyValues * FromString( char const *szName, char const *szStringVal );

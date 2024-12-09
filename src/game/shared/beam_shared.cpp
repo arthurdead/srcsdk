@@ -226,7 +226,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CSharedBeam, DT_Beam )
 	RecvPropInt(RECVINFO(m_nMinDXLevel)),
 
 	RecvPropVector(RECVINFO_NAME(m_vecNetworkOrigin, m_vecOrigin)),
-	RecvPropInt( RECVINFO_NAME(m_hNetworkMoveParent, moveparent), 0, RecvProxy_IntToMoveParent ),
+	RecvPropInt( RECVINFO_NAME(m_hNetworkMoveParent, moveparent), 0, RecvProxy_MoveParent ),
 
 	RecvPropDataTable( "beampredictable_id", 0, 0, &REFERENCE_RECV_TABLE( DT_BeamPredictableId ) ),
 

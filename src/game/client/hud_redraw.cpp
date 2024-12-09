@@ -127,10 +127,8 @@ void CHud::DrawProgressBar( int x, int y, int width, int height, float percentag
 	percentage = MIN( 1.0f, percentage );
 	percentage = MAX( 0.0f, percentage );
 
-	Color lowColor = clr;
-	lowColor[ 0 ] /= 2;
-	lowColor[ 1 ] /= 2;
-	lowColor[ 2 ] /= 2;
+	Color lowColor;
+	lowColor.SetColor( clr.r() / 2, clr.g() / 2, clr.b() / 2, clr.a() );
 
 	//Draw a vertical progress bar
 	if ( type == HUDPB_VERTICAL )

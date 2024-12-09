@@ -98,7 +98,7 @@ public:
 	
 	Vector			m_vWind;
 	float			m_flTwist;
-	int				m_iMaterialModel;
+	modelindex_t				m_iMaterialModel;
 
 private:
 	C_SmokeStack( const C_SmokeStack & );
@@ -133,7 +133,7 @@ IMPLEMENT_CLIENTCLASS_DT(C_SmokeStack, DT_SmokeStack, CSmokeStack)
 	RecvPropFloat(RECVINFO(m_flBaseSpread)),
 	RecvPropFloat(RECVINFO(m_flTwist)),
 	RecvPropFloat(RECVINFO(m_flRollSpeed )),
-	RecvPropIntWithMinusOneFlag( RECVINFO( m_iMaterialModel ) ),
+	RecvPropInt( RECVINFO( m_iMaterialModel ) ),
 
 	RecvPropVector( RECVINFO(m_AmbientLight.m_vPos) ),
 	RecvPropVector( RECVINFO(m_AmbientLight.m_vColor) ),
@@ -155,7 +155,7 @@ C_SmokeStack::C_SmokeStack()
 {
 	m_pParticleMgr = NULL;
 	m_MaterialHandle[0] = INVALID_MATERIAL_HANDLE;
-	m_iMaterialModel = -1;
+	m_iMaterialModel = INVALID_MODEL_INDEX;
 	
 	m_SpreadSpeed = 15;
 	m_Speed = 30;

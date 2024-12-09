@@ -50,7 +50,7 @@ IMPLEMENT_CLIENTCLASS_DT( C_EnvProjectedTexture, DT_EnvProjectedTexture, CEnvPro
 	RecvPropBool(	 RECVINFO( m_bLightOnlyTarget ) ),
 	RecvPropBool(	 RECVINFO( m_bLightWorld )		),
 	RecvPropBool(	 RECVINFO( m_bCameraSpace )		),
-	RecvPropInt(	 RECVINFO( m_LightColor ), 0, RecvProxy_Int32ToColor32 ),
+	RecvPropColor32(	 RECVINFO( m_LightColor ) ),
 	RecvPropFloat(	 RECVINFO( m_flAmbient )		),
 	RecvPropString(  RECVINFO( m_SpotlightTextureName ) ),
 	RecvPropInt(	 RECVINFO( m_nSpotlightTextureFrame ) ),

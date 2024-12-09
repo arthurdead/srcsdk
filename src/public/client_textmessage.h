@@ -8,11 +8,13 @@
 #define CLIENT_TEXTMESSAGE_H
 #pragma once
 
+#include "Color.h"
+
 struct client_textmessage_t
 {
 	int		effect;
-	byte	r1, g1, b1, a1;		// 2 colors for effects
-	byte	r2, g2, b2, a2;
+	color32 clr1;		// 2 colors for effects
+	color32 clr2;
 	float	x;
 	float	y;
 	float	fadein;
@@ -24,7 +26,7 @@ struct client_textmessage_t
 	const char *pMessage;
 	bool    bRoundedRectBackdropBox;
 	float	flBoxSize; // as a function of font height
-	byte	boxcolor[4];
+	color32	boxcolor;
 	char const *pClearMessage; // message to clear
 };
 

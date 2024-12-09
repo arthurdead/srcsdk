@@ -200,7 +200,7 @@ variant_t Variant_ParseInput(const inputdata_t &inputdata)
 }
 
 // Passes string variants to Variant_Parse
-variant_t Variant_ParseString(variant_t value)
+variant_t Variant_ParseString(const variant_t &value)
 {
 	if (value.FieldType() != FIELD_STRING)
 		return value;
@@ -208,7 +208,7 @@ variant_t Variant_ParseString(variant_t value)
 	return Variant_Parse(value.String());
 }
 
-bool Variant_Equal(variant_t val1, variant_t val2, bool bLenAllowed)
+bool Variant_Equal(const variant_t &val1, const variant_t &val2, bool bLenAllowed)
 {
 	//if (!val2.Convert(val1.FieldType()))
 	//	return false;
@@ -239,7 +239,7 @@ bool Variant_Equal(variant_t val1, variant_t val2, bool bLenAllowed)
 }
 
 // val1 > val2
-bool Variant_Greater(variant_t val1, variant_t val2, bool bLenAllowed)
+bool Variant_Greater(const variant_t &val1, const variant_t &val2, bool bLenAllowed)
 {
 	//if (!val2.Convert(val1.FieldType()))
 	//	return false;
@@ -268,7 +268,7 @@ bool Variant_Greater(variant_t val1, variant_t val2, bool bLenAllowed)
 }
 
 // val1 >= val2
-bool Variant_GreaterOrEqual(variant_t val1, variant_t val2, bool bLenAllowed)
+bool Variant_GreaterOrEqual(const variant_t &val1, const variant_t &val2, bool bLenAllowed)
 {
 	//if (!val2.Convert(val1.FieldType()))
 	//	return false;

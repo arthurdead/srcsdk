@@ -33,7 +33,7 @@ struct screenfade_t
 	float		Speed;		// How fast to fade (tics / second) (+ fade in, - fade out)
 	float		End;		// When the fading hits maximum
 	float		Reset;		// When to reset to not fading (for fadeout and hold)
-	byte		r, g, b, alpha;	// Fade color
+	color32 color;	// Fade color
 	int			Flags;		// Fading flags
 };
 
@@ -132,7 +132,7 @@ private:
 	CUtlVector<screentilt_t *>	m_TiltList;
 	QAngle m_vecTiltAppliedAngle;
 
-	int							m_FadeColorRGBA[4];
+	color32							m_FadeColorRGBA;
 	bool						m_bModulate;
 
 	friend void CC_Shake_Stop();
@@ -231,10 +231,11 @@ void __MsgFunc_Fade( bf_read &msg )
 	fade.duration = msg.ReadShort(); // fade lasts this long
 	fade.holdTime = msg.ReadShort(); // fade lasts this long
 	fade.fadeFlags = msg.ReadShort(); // fade type (in / out)
-	fade.r = msg.ReadByte(); // fade red
-	fade.g = msg.ReadByte(); // fade green
-	fade.b = msg.ReadByte(); // fade blue
-	fade.a = msg.ReadByte(); // fade blue
+	unsigned char r = msg.ReadByte(); // fade red
+	unsigned char g = msg.ReadByte(); // fade green
+	unsigned char b = msg.ReadByte(); // fade blue
+	unsigned char a = msg.ReadByte(); // fade blue
+	fade.color.SetColor( r, g, b, a );
 
 	GetViewEffects()->Fade( fade );
 }
@@ -756,10 +757,7 @@ void CViewEffects::Fade( const ScreenFade_t &data )
 	screenfade_t *pNewFade = new screenfade_t;
 	pNewFade->End	= data.duration * (1.0f/(float)(1<<SCREENFADE_FRACBITS));
 	pNewFade->Reset	= data.holdTime * (1.0f/(float)(1<<SCREENFADE_FRACBITS));
-	pNewFade->r		= data.r;
-	pNewFade->g		= data.g;
-	pNewFade->b		= data.b;
-	pNewFade->alpha	= data.a;
+	pNewFade->color		= data.color;
 	pNewFade->Flags	= data.fadeFlags;
 	pNewFade->Speed	= 0;
 
@@ -770,7 +768,7 @@ void CViewEffects::Fade( const ScreenFade_t &data )
 		{
 			if ( pNewFade->End )
 			{
-				pNewFade->Speed = -(float)pNewFade->alpha / pNewFade->End;
+				pNewFade->Speed = -(float)pNewFade->color.a() / pNewFade->End;
 			}
 
 			pNewFade->End	+= gpGlobals->curtime;
@@ -780,7 +778,7 @@ void CViewEffects::Fade( const ScreenFade_t &data )
 		{
 			if ( pNewFade->End )
 			{
-				pNewFade->Speed = (float)pNewFade->alpha / pNewFade->End;
+				pNewFade->Speed = (float)pNewFade->color.a() / pNewFade->End;
 			}
 
 			pNewFade->Reset	+= gpGlobals->curtime;
@@ -832,7 +830,11 @@ void CViewEffects::FadeCalculate( void )
 	}
 
 	m_bModulate = false;
-	m_FadeColorRGBA[0] = m_FadeColorRGBA[1] = m_FadeColorRGBA[2] = m_FadeColorRGBA[3] = 0;
+	m_FadeColorRGBA.SetColor( 0, 0, 0, 0 );
+
+	unsigned int r = 0;
+	unsigned int g = 0;
+	unsigned int b = 0;
 
 	// Cycle through all fades in the list and calculate the overall color/alpha
 	for ( i = 0; i < m_FadeList.Size(); i++ )
@@ -840,9 +842,9 @@ void CViewEffects::FadeCalculate( void )
 		screenfade_t *pFade = m_FadeList[i];
 
 		// Color
-		m_FadeColorRGBA[0] += pFade->r;
-		m_FadeColorRGBA[1] += pFade->g;
-		m_FadeColorRGBA[2] += pFade->b;
+		r += pFade->color.r();
+		g += pFade->color.g();
+		b += pFade->color.b();
 
 		// Fading...
 		int iFadeAlpha;
@@ -851,20 +853,20 @@ void CViewEffects::FadeCalculate( void )
 			iFadeAlpha = pFade->Speed * ( pFade->End - gpGlobals->curtime );
 			if ( pFade->Flags & FFADE_OUT )
 			{
-				iFadeAlpha += pFade->alpha;
+				iFadeAlpha += pFade->color.a();
 			}
-			iFadeAlpha = MIN( iFadeAlpha, pFade->alpha );
+			iFadeAlpha = MIN( iFadeAlpha, pFade->color.a() );
 			iFadeAlpha = MAX( 0, iFadeAlpha );
 		}
 		else
 		{
-			iFadeAlpha = pFade->alpha;
+			iFadeAlpha = pFade->color.a();
 		}
 
 		// Use highest alpha
-		if ( iFadeAlpha > m_FadeColorRGBA[3] )
+		if ( iFadeAlpha > m_FadeColorRGBA.a() )
 		{
-			m_FadeColorRGBA[3] = iFadeAlpha;
+			m_FadeColorRGBA.SetA( iFadeAlpha );
 		}
 
 		// Modulate?
@@ -877,9 +879,11 @@ void CViewEffects::FadeCalculate( void )
 	// Divide colors
 	if ( m_FadeList.Size() )
 	{
-		m_FadeColorRGBA[0] /= m_FadeList.Size();
-		m_FadeColorRGBA[1] /= m_FadeList.Size();
-		m_FadeColorRGBA[2] /= m_FadeList.Size();
+		r /= m_FadeList.Size();
+		g /= m_FadeList.Size();
+		b /= m_FadeList.Size();
+
+		m_FadeColorRGBA.SetColor( (unsigned char)r, (unsigned char)g, (unsigned char)b );
 	}
 }
 
@@ -939,9 +943,9 @@ void CViewEffects::GetFadeParams( byte *r, byte *g, byte *b, byte *a, bool *blen
 
 	FadeCalculate();
 
-	*r = m_FadeColorRGBA[0];
-	*g = m_FadeColorRGBA[1];
-	*b = m_FadeColorRGBA[2];
-	*a = m_FadeColorRGBA[3];
+	*r = m_FadeColorRGBA.r();
+	*g = m_FadeColorRGBA.g();
+	*b = m_FadeColorRGBA.b();
+	*a = m_FadeColorRGBA.a();
 	*blend = m_bModulate;
 }

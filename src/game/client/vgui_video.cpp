@@ -371,7 +371,7 @@ void VideoPanel::Paint( void )
 	flTopY = FLerp( 1, -1, 0, vh ,flTopY );
 	flBottomY = FLerp( 1, -1, 0, vh, flBottomY );
 
-	float alpha = ((float)GetFgColor()[3]/255.0f);
+	float alpha = ((float)GetFgColor().a()/255.0f);
 
 	for ( int corner=0; corner<4; corner++ )
 	{

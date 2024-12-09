@@ -82,7 +82,7 @@ public:
 	virtual	Beam_t		*CreateBeamPoints( BeamInfo_t &beamInfo );
 	virtual Beam_t		*CreateBeamRing( BeamInfo_t &beamInfo );
 	virtual Beam_t		*CreateBeamRingPoint( BeamInfo_t &beamInfo );
-	virtual Beam_t		*CreateBeamCirclePoints( BeamInfo_t &beamInfo );
+	virtual Beam_t		*CreateBeamCirclePoints( const BeamInfo_t &beamInfo );
 	virtual Beam_t		*CreateBeamFollow( BeamInfo_t &beamInfo );
 
 	virtual	void		CreateBeamEnts( int startEnt, int endEnt, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, 
@@ -94,7 +94,7 @@ public:
 							float life, float width, float endWidth, float fadeLength, float amplitude, 
 							float brightness, float speed, int startFrame, 
 							float framerate, float r, float g, float b );
-	virtual	void		CreateBeamPoints( Vector& start, Vector& end, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale,   
+	virtual	void		CreateBeamPoints( const Vector& start, const Vector& end, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale,   
 							float life, float width, float endWidth, float fadeLength, float amplitude, 
 							float brightness, float speed, int startFrame, 
 							float framerate, float r, float g, float b );
@@ -106,7 +106,7 @@ public:
 							float life, float width, float m_nEndWidth, float m_nFadeLength, float amplitude, 
 							float brightness, float speed, int startFrame, 
 							float framerate, float r, float g, float b, int flags );
-	virtual	void		CreateBeamCirclePoints( int type, Vector& start, Vector& end, 
+	virtual	void		CreateBeamCirclePoints( int type, const Vector& start, const Vector& end, 
 							modelindex_t modelIndex,  modelindex_t haloIndex,  float haloScale, float life, float width, 
 							float endWidth, float fadeLength, float amplitude, float brightness, float speed, 
 							int startFrame, float framerate, float r, float g, float b );
@@ -115,7 +115,7 @@ public:
 							float brightness );
 
 	virtual void		FreeBeam( Beam_t *pBeam ) { BeamFree( pBeam ); }
-	virtual void		UpdateBeamInfo( Beam_t *pBeam, BeamInfo_t &beamInfo );
+	virtual void		UpdateBeamInfo( Beam_t *pBeam, const BeamInfo_t &beamInfo );
 
 private:
 	void					FreeDeadTrails( BeamTrail_t **trail );
@@ -133,7 +133,7 @@ private:
 	void					ClipBeam( C_Beam *pcbeam, Beam_t *pbeamt );
 
 	// Creation
-	Beam_t					*CreateGenericBeam( BeamInfo_t &beamInfo );
+	Beam_t					*CreateGenericBeam( const BeamInfo_t &beamInfo );
 	void					SetupBeam( Beam_t *pBeam, const BeamInfo_t &beamInfo );
 	void					SetBeamAttributes( Beam_t *pBeam, const BeamInfo_t &beamInfo );
 	
@@ -790,7 +790,7 @@ int CViewRenderBeams::CullBeam( const Vector &start, const Vector &end, int pvsO
 //   Input: beamInfo -
 //  Output: Beam_t
 //-----------------------------------------------------------------------------
-Beam_t *CViewRenderBeams::CreateGenericBeam( BeamInfo_t &beamInfo )
+Beam_t *CViewRenderBeams::CreateGenericBeam( const BeamInfo_t &beamInfo )
 {
 #if 0
 	if ( BeamCreationAllowed() == false )
@@ -813,7 +813,7 @@ Beam_t *CViewRenderBeams::CreateGenericBeam( BeamInfo_t &beamInfo )
 	pBeam->die = gpGlobals->curtime;
 
 	// Need a valid model.
-	if ( beamInfo.m_nModelIndex < 0 )
+	if ( !beamInfo.m_nModelIndex.IsValid() )
 		return NULL;
 
 	// Set it up
@@ -996,12 +996,12 @@ Beam_t *CViewRenderBeams::CreateBeamEntPoint( BeamInfo_t &beamInfo )
 	}
 
 	// Model index.
-	if ( ( beamInfo.m_pszModelName ) && ( beamInfo.m_nModelIndex == -1 ) )
+	if ( ( beamInfo.m_pszModelName ) && ( !beamInfo.m_nModelIndex.IsValid() ) )
 	{
 		beamInfo.m_nModelIndex = modelinfo->GetModelIndex( beamInfo.m_pszModelName );
 	}
 
-	if ( ( beamInfo.m_pszHaloName ) && ( beamInfo.m_nHaloIndex == -1 ) )
+	if ( ( beamInfo.m_pszHaloName ) && ( !beamInfo.m_nHaloIndex.IsValid() ) )
 	{
 		beamInfo.m_nHaloIndex = modelinfo->GetModelIndex( beamInfo.m_pszHaloName );
 	}
@@ -1055,7 +1055,7 @@ Beam_t *CViewRenderBeams::CreateBeamEntPoint( BeamInfo_t &beamInfo )
 //			b - 
 // Output : Beam_t
 //-----------------------------------------------------------------------------
-void CViewRenderBeams::CreateBeamPoints( Vector& start, Vector& end, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, float life,  float width, 
+void CViewRenderBeams::CreateBeamPoints( const Vector& start, const Vector& end, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, float life,  float width, 
 										 float endWidth, float fadeLength,float amplitude, float brightness, float speed, int startFrame, 
 										 float framerate, float r, float g, float b )
 {
@@ -1092,12 +1092,12 @@ Beam_t *CViewRenderBeams::CreateBeamPoints( BeamInfo_t &beamInfo )
 		return NULL;
 
 	// Model index.
-	if ( ( beamInfo.m_pszModelName ) && ( beamInfo.m_nModelIndex == -1 ) )
+	if ( ( beamInfo.m_pszModelName ) && ( !beamInfo.m_nModelIndex.IsValid() ) )
 	{
 		beamInfo.m_nModelIndex = modelinfo->GetModelIndex( beamInfo.m_pszModelName );
 	}
 
-	if ( ( beamInfo.m_pszHaloName ) && ( beamInfo.m_nHaloIndex == -1 ) )
+	if ( ( beamInfo.m_pszHaloName ) && ( !beamInfo.m_nHaloIndex.IsValid() ) )
 	{
 		beamInfo.m_nHaloIndex = modelinfo->GetModelIndex( beamInfo.m_pszHaloName );
 	}
@@ -1135,7 +1135,7 @@ Beam_t *CViewRenderBeams::CreateBeamPoints( BeamInfo_t &beamInfo )
 //			b - 
 // Output : Beam_t
 //-----------------------------------------------------------------------------
-void CViewRenderBeams::CreateBeamCirclePoints( int type, Vector& start, Vector& end, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, float life, float width, 
+void CViewRenderBeams::CreateBeamCirclePoints( int type, const Vector& start, const Vector& end, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, float life, float width, 
 											   float endWidth, float fadeLength,float amplitude, float brightness, float speed, int startFrame, 
 											   float framerate, float r, float g, float b )
 {
@@ -1166,7 +1166,7 @@ void CViewRenderBeams::CreateBeamCirclePoints( int type, Vector& start, Vector& 
 //-----------------------------------------------------------------------------
 // Purpose: Creates a circular beam between two points.
 //-----------------------------------------------------------------------------
-Beam_t *CViewRenderBeams::CreateBeamCirclePoints( BeamInfo_t &beamInfo )
+Beam_t *CViewRenderBeams::CreateBeamCirclePoints( const BeamInfo_t &beamInfo )
 {
 	Beam_t *pBeam = CreateGenericBeam( beamInfo );
 	if ( !pBeam )
@@ -1451,7 +1451,7 @@ void CViewRenderBeams::FreeDeadTrails( BeamTrail_t **trail )
 //-----------------------------------------------------------------------------
 void CViewRenderBeams::UpdateBeam( Beam_t *pbeam, float frametime, C_Beam *pcbeam )
 {
-	if ( pbeam->modelIndex < 0 )
+	if ( !pbeam->modelIndex.IsValid() )
 	{
 		pbeam->die = gpGlobals->curtime;
 		return;
@@ -1933,7 +1933,7 @@ void CViewRenderBeams::DrawBeam( Beam_t *pbeam )
 	const model_t	*sprite;
 	const model_t	*halosprite = NULL;
 
-	if ( pbeam->modelIndex < 0 )
+	if ( !pbeam->modelIndex.IsValid() )
 	{
 		pbeam->die = gpGlobals->curtime;
 		return;
@@ -2037,7 +2037,7 @@ void CViewRenderBeams::DrawBeam( Beam_t *pbeam )
 //-----------------------------------------------------------------------------
 // Purpose: Update the beam 
 //-----------------------------------------------------------------------------
-void CViewRenderBeams::UpdateBeamInfo( Beam_t *pBeam, BeamInfo_t &beamInfo )
+void CViewRenderBeams::UpdateBeamInfo( Beam_t *pBeam, const BeamInfo_t &beamInfo )
 {
 	pBeam->attachment[0] = beamInfo.m_vecStart;
 	pBeam->attachment[1] = beamInfo.m_vecEnd;
@@ -2298,7 +2298,7 @@ void CViewRenderBeams::DrawBeam( C_Beam* pbeam, const RenderableInstance_t &inst
 
 	SetBeamAttributes( &beam, beamInfo );
 
-	if ( pbeam->m_nHaloIndex > 0 )
+	if ( pbeam->m_nHaloIndex.IsValid() )
 	{
 		// HACKHACK: heuristic to estimate proxy size.  Revisit this!
 		float size = 1.0f + (pbeam->m_fHaloScale * pbeam->m_fWidth / pbeam->m_fEndWidth);

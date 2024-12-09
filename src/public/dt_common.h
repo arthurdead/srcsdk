@@ -15,6 +15,7 @@
 #include "tier0/dbg.h"
 #include "tier1/strtools.h"
 #include <stddef.h>
+#include "mathlib/vector.h"
 
 #ifdef GNUC
 #undef offsetof
@@ -191,19 +192,40 @@ public:
 	{
 		float	m_Float;
 		int		m_Int;
+		unsigned int		m_UInt;
+		char		m_Char;
+		signed char		m_SChar;
+		unsigned char		m_UChar;
+		bool		m_Bool;
+		short		m_Short;
+		unsigned short		m_UShort;
 		const char	*m_pString;
 		void	*m_pData;	// For DataTables.
-#ifdef DT_QUATERNION_SUPPORTED
-		float	m_Vector[4];
-#else
-		float	m_Vector[3];
+#if defined DT_QUATERNION_SUPPORTED || defined DT_INT64_SUPPORTED
+		Quaternion	m_Quaternion;
 #endif
-
+		Vector2D	m_Vector2D;
+		Vector	m_Vector;
+		QAngle m_Angles;
+	#if defined DT_INT64_SUPPORTED || defined DT_QUATERNION_SUPPORTED
 		int64	m_Int64;
+		uint64	m_UInt64;
+	#else
+		int	m_IntPair[2];
+		uint	m_UIntPair[2];
+	#endif
+		color32 m_Color32;
+		ColorRGBExp32 m_Color32E;
+		color24 m_Color24;
 	};
 	SendPropType	m_Type;
 };
 
+#if !defined DT_INT64_SUPPORTED && !defined DT_QUATERNION_SUPPORTED
+COMPILE_TIME_ASSERT( sizeof(DVariant) == 16 );
+#elif defined DT_INT64_SUPPORTED || defined DT_QUATERNION_SUPPORTED
+COMPILE_TIME_ASSERT( sizeof(DVariant) == 24 );
+#endif
 
 // This can be used to set the # of bits used to transmit a number between 0 and nMaxElements-1.
 inline int NumBitsForCount( int nMaxElements )

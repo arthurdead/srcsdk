@@ -63,8 +63,8 @@ public:
 	float					m_flShardSize;
 	PMaterialHandle			m_pMaterialHandle;
 	int						m_nSurfaceType;
-	byte					m_uchFrontColor[3];
-	byte					m_uchBackColor[3];
+	color24					m_uchFrontColor;
+	color24					m_uchBackColor;
 };
 
 
@@ -80,12 +80,8 @@ IMPLEMENT_CLIENTCLASS_EVENT_DT(C_TEShatterSurface, DT_TEShatterSurface, CTEShatt
 	RecvPropFloat( RECVINFO(m_flHeight)),
 	RecvPropFloat( RECVINFO(m_flShardSize)),
 	RecvPropInt( RECVINFO(m_nSurfaceType)),	
-	RecvPropInt( RECVINFO(m_uchFrontColor[0])),
-	RecvPropInt( RECVINFO(m_uchFrontColor[1])),
-	RecvPropInt( RECVINFO(m_uchFrontColor[2])),
-	RecvPropInt( RECVINFO(m_uchBackColor[0])),
-	RecvPropInt( RECVINFO(m_uchBackColor[1])),
-	RecvPropInt( RECVINFO(m_uchBackColor[2])),
+	RecvPropColor24( RECVINFO(m_uchFrontColor)),
+	RecvPropColor24( RECVINFO(m_uchBackColor)),
 END_RECV_TABLE()
 
 
@@ -102,12 +98,8 @@ C_TEShatterSurface::C_TEShatterSurface( void )
 	m_flHeight			= 16.0;
 	m_flShardSize		= 3;
 	m_nSurfaceType		= SHATTERSURFACE_GLASS;
-	m_uchFrontColor[0]	= 255;
-	m_uchFrontColor[1]	= 255;
-	m_uchFrontColor[2]	= 255;
-	m_uchBackColor[0]	= 255;
-	m_uchBackColor[1]	= 255;
-	m_uchBackColor[2]	= 255;
+	m_uchFrontColor.SetColor( 255, 255, 255 );
+	m_uchBackColor.SetColor( 255, 255, 255 );
 }
 
 C_TEShatterSurface::~C_TEShatterSurface()
@@ -125,8 +117,8 @@ void C_TEShatterSurface::RecordShatterSurface( )
 
 	if ( clienttools->IsInRecordingMode() )
 	{
-		Color front( m_uchFrontColor[0], m_uchFrontColor[1], m_uchFrontColor[2], 255 );
-		Color back( m_uchBackColor[0], m_uchBackColor[1], m_uchBackColor[2], 255 );
+		Color front( m_uchFrontColor.r(), m_uchFrontColor.g(), m_uchFrontColor.b(), 255 );
+		Color back( m_uchBackColor.r(), m_uchBackColor.g(), m_uchBackColor.b(), 255 );
 
 		KeyValues *msg = new KeyValues( "TempEntity" );
 
@@ -241,12 +233,14 @@ void C_TEShatterSurface::PostDataUpdate( DataUpdateType_t updateType )
 				pParticle->m_vAngles			= m_vecAngles;
 				pParticle->m_flAngSpeed			= random_valve->RandomFloat(-400,400);
 
-				pParticle->m_uchFrontColor[0]	= (byte)(m_uchFrontColor[0] * vecColor.x );
-				pParticle->m_uchFrontColor[1]	= (byte)(m_uchFrontColor[1] * vecColor.y );
-				pParticle->m_uchFrontColor[2]	= (byte)(m_uchFrontColor[2] * vecColor.z );
-				pParticle->m_uchBackColor[0]	= (byte)(m_uchBackColor[0] * vecColor.x );
-				pParticle->m_uchBackColor[1]	= (byte)(m_uchBackColor[1] * vecColor.y );
-				pParticle->m_uchBackColor[2]	= (byte)(m_uchBackColor[2] * vecColor.z );
+				unsigned char fr	= (byte)(m_uchFrontColor.r() * vecColor.x );
+				unsigned char fg	= (byte)(m_uchFrontColor.g() * vecColor.y );
+				unsigned char fb	= (byte)(m_uchFrontColor.b() * vecColor.z );
+				pParticle->m_uchFrontColor.SetColor( fr, fg, fb );
+				unsigned char br	= (byte)(m_uchBackColor.r() * vecColor.x );
+				unsigned char bg	= (byte)(m_uchBackColor.g() * vecColor.y );
+				unsigned char bb	= (byte)(m_uchBackColor.b() * vecColor.z );
+				pParticle->m_uchBackColor.SetColor( br, bg, bb );
 			}
 
 			// Keep track of min and max speed for collision detection
@@ -279,7 +273,7 @@ void C_TEShatterSurface::PostDataUpdate( DataUpdateType_t updateType )
 void TE_ShatterSurface( IRecipientFilter& filter, float delay,
 	const Vector* pos, const QAngle* angle, const Vector* vForce, const Vector* vForcePos, 
 	float width, float height, float shardsize, ShatterSurface_t surfacetype,
-	int front_r, int front_g, int front_b, int back_r, int back_g, int back_b)
+	color24 front_clr, color24 back_clr)
 {
 	// Major hack to simulate receiving network message
 	__g_C_TEShatterSurface.m_vecOrigin = *pos;
@@ -290,12 +284,8 @@ void TE_ShatterSurface( IRecipientFilter& filter, float delay,
 	__g_C_TEShatterSurface.m_flHeight = height;
 	__g_C_TEShatterSurface.m_flShardSize = shardsize;
 	__g_C_TEShatterSurface.m_nSurfaceType = surfacetype;
-	__g_C_TEShatterSurface.m_uchFrontColor[0] = front_r;
-	__g_C_TEShatterSurface.m_uchFrontColor[1] = front_g;
-	__g_C_TEShatterSurface.m_uchFrontColor[2] = front_b;
-	__g_C_TEShatterSurface.m_uchBackColor[0] = back_r;
-	__g_C_TEShatterSurface.m_uchBackColor[1] = back_g;
-	__g_C_TEShatterSurface.m_uchBackColor[2] = back_b;
+	__g_C_TEShatterSurface.m_uchFrontColor = front_clr;
+	__g_C_TEShatterSurface.m_uchBackColor = back_clr;
 
 	__g_C_TEShatterSurface.PostDataUpdate( DATA_UPDATE_CREATED );
 }
@@ -323,6 +313,6 @@ void TE_ShatterSurface( IRecipientFilter& filter, float delay, KeyValues *pKeyVa
 	float flSize = pKeyValues->GetFloat( "size" );
 	ShatterSurface_t nSurfaceType = (ShatterSurface_t)pKeyValues->GetInt( "surfacetype" );
 	TE_ShatterSurface( filter, 0.0f, &vecOrigin, &angles, &vecForce, &vecForcePos,
-		flWidth, flHeight, flSize, nSurfaceType, front.r(), front.g(), front.b(),
-		back.r(), back.g(), back.b() );
+		flWidth, flHeight, flSize, nSurfaceType, front,
+		back );
 }

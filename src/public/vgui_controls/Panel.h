@@ -135,6 +135,7 @@ class IForceVirtualInheritancePanel
 
 class Panel : public IClientPanel, public virtual IForceVirtualInheritancePanel
 {
+public:
 	DECLARE_CLASS_SIMPLE_NOBASE( Panel );
 
 public:

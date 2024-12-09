@@ -80,7 +80,7 @@ public:
 		if ( !bBaseOnly )
 			m_pFileSystemPassThru = pFileSystemPassThru;
 		
-		BaseClass::InitPassThru( pFileSystemPassThru );
+		BaseClass::InitPassThru( pFileSystemPassThru ? pFileSystemPassThru->GetBaseFilesystem() : NULL );
 	}
 
 	// IAppSystem stuff.

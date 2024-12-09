@@ -34,9 +34,9 @@ public:
 	float		m_flLifeRemaining;	// How long it lives for.
 public:
 	
-	byte		m_uchFrontColor[3];	
+	color24		m_uchFrontColor;	
 	byte		m_uchSize;			
-	byte		m_uchBackColor[3];	
+	color24		m_uchBackColor;	
 	byte		m_pad;				// Pad to 8 bytes.
 };
 

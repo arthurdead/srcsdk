@@ -54,9 +54,9 @@ struct message_parms_t
 	int lines;
 	int lineLength;
 	int length;
-	int r, g, b;
+	color24 clr;
 	int text;
-	int fadeBlend;
+	unsigned char fadeBlend;
 	float charTime;
 	float fadeTime;
 	const char *vguiFontName;
@@ -86,7 +86,7 @@ public:
 		short		x, y;
 		wchar_t		ch;
 		byte		type;
-		byte		r, g, b, a;
+		color32 clr;
 	};
 
 	CHudMessage( const char *pElementName );
@@ -116,7 +116,7 @@ public:
 
 public: // ITextMessage
 	virtual void		SetPosition( int x, int y );
-	virtual void		AddChar( int r, int g, int b, int a, wchar_t ch );
+	virtual void		AddChar( color32 clr, wchar_t ch );
 
 	virtual void		GetLength( int *wide, int *tall, const char *string );
 	virtual int			GetFontInfo( FONTABC *pABCs, vgui::HFont hFont );
@@ -328,12 +328,12 @@ int CHudMessage::YPosition( float y, int height )
 //-----------------------------------------------------------------------------
 void CHudMessage::MessageScanNextChar( void )
 {
-	int srcRed, srcGreen, srcBlue, destRed, destGreen, destBlue;
-	int blend;
+	unsigned char srcRed, srcGreen, srcBlue, destRed, destGreen, destBlue;
+	unsigned char blend;
 
-	srcRed = m_parms.pMessage->r1;
-	srcGreen = m_parms.pMessage->g1;
-	srcBlue = m_parms.pMessage->b1;
+	srcRed = m_parms.pMessage->clr1.r();
+	srcGreen = m_parms.pMessage->clr1.g();
+	srcBlue = m_parms.pMessage->clr1.b();
 	blend = 0;	// Pure source
 
 	destRed = destGreen = destBlue = 0;
@@ -367,22 +367,19 @@ void CHudMessage::MessageScanNextChar( void )
 				blend = 0;	// pure dest
 			else
 			{
-				destRed = m_parms.pMessage->r2;
-				destGreen = m_parms.pMessage->g2;
-				destBlue = m_parms.pMessage->b2;
+				destRed = m_parms.pMessage->clr2.r();
+				destGreen = m_parms.pMessage->clr2.g();
+				destBlue = m_parms.pMessage->clr2.b();
 				blend = 255 - (deltaTime * (1.0/m_parms.pMessage->fxtime) * 255.0 + 0.5);
 			}
 		}
 		break;
 	}
-	if ( blend > 255 )
-		blend = 255;
-	else if ( blend < 0 )
-		blend = 0;
 
-	m_parms.r = ((srcRed * (255-blend)) + (destRed * blend)) >> 8;
-	m_parms.g = ((srcGreen * (255-blend)) + (destGreen * blend)) >> 8;
-	m_parms.b = ((srcBlue * (255-blend)) + (destBlue * blend)) >> 8;
+	unsigned char r = ((srcRed * (255-blend)) + (destRed * blend)) >> 8;
+	unsigned char g = ((srcGreen * (255-blend)) + (destGreen * blend)) >> 8;
+	unsigned char b = ((srcBlue * (255-blend)) + (destBlue * blend)) >> 8;
+	m_parms.clr.SetColor( r, g, b );
 
 #if 0
 	if ( m_parms.pMessage->effect == 1 && m_parms.charTime != 0 )
@@ -545,10 +542,10 @@ void CHudMessage::MessageDrawScan( client_textmessage_t *pMessage, float time )
 
 		float flAlphaScale = clamp( ( 255.0f - (float)m_parms.fadeBlend ) / 255.0f, 0.0f, 1.0f );
 		Color boxColor( 
-			pMessage->boxcolor[ 0 ],
-			pMessage->boxcolor[ 1 ],
-			pMessage->boxcolor[ 2 ], 
-			pMessage->boxcolor[ 3 ] * flAlphaScale );
+			pMessage->boxcolor.r(),
+			pMessage->boxcolor.g(),
+			pMessage->boxcolor.b(), 
+			pMessage->boxcolor.a() * flAlphaScale );
 
 		DrawBox( boxx, boxy, m_parms.totalWidth + 2.0f * flBoxPixels, m_parms.totalHeight + 2.0f * flBoxPixels * 0.5f, boxColor, 1.0f );
 	}
@@ -584,7 +581,7 @@ void CHudMessage::MessageDrawScan( client_textmessage_t *pMessage, float time )
 		{
 			m_parms.text = line[j];
 			MessageScanNextChar();
-			textmessage->AddChar( m_parms.r, m_parms.g, m_parms.b, 255 - m_parms.fadeBlend, m_parms.text );
+			textmessage->AddChar( color32( m_parms.clr.r(), m_parms.clr.g(), m_parms.clr.b(), 255 - m_parms.fadeBlend ), m_parms.text );
 		}
 
 		m_parms.y += vgui::surface()->GetFontTall( m_parms.font );
@@ -640,8 +637,8 @@ void CHudMessage::Paint()
 			int x = XPosition( m_pGameTitle->x, fullWidth, fullWidth );
 			int y = YPosition( m_pGameTitle->y, fullHeight );
 
-			m_iconTitleHalf->DrawSelf( x, y, Color( m_pGameTitle->r1, m_pGameTitle->g1, m_pGameTitle->b1, brightness * 255 ) );
-			m_iconTitleLife->DrawSelf( x + halfWidth, y, Color( m_pGameTitle->r1, m_pGameTitle->g1, m_pGameTitle->b1, brightness * 255 ) );
+			m_iconTitleHalf->DrawSelf( x, y, Color( m_pGameTitle->clr1.r(), m_pGameTitle->clr1.g(), m_pGameTitle->clr1.b(), brightness * 255 ) );
+			m_iconTitleLife->DrawSelf( x + halfWidth, y, Color( m_pGameTitle->clr1.r(), m_pGameTitle->clr1.g(), m_pGameTitle->clr1.b(), brightness * 255 ) );
 			drawn = 1;
 		}
 	}
@@ -798,11 +795,8 @@ void CHudMessage::MsgFunc_GameTitle( bf_read &msg )
 //	if ( READ_BYTE() )
 	{
 		ScreenFade_t sf;
-		memset( &sf, 0, sizeof( sf ) );
-		sf.a = 255;
-		sf.r = 0;
-		sf.g = 0;
-		sf.b = 0;
+		memset( (void *)&sf, 0, sizeof( sf ) );
+		sf.color.SetColor( 0, 0, 0, 255 );
 		sf.duration = (float)(1<<SCREENFADE_FRACBITS) * 5.0f;
 		sf.holdTime = (float)(1<<SCREENFADE_FRACBITS) * 1.0f;
 		sf.fadeFlags = FFADE_IN | FFADE_PURGE;
@@ -839,15 +833,19 @@ void CHudMessage::MsgFunc_HudMsg(bf_read &msg)
 	pNetMessage->x = msg.ReadFloat();
 	pNetMessage->y = msg.ReadFloat();
 
-	pNetMessage->r1 = msg.ReadByte();
-	pNetMessage->g1 = msg.ReadByte();
-	pNetMessage->b1 = msg.ReadByte();
-	pNetMessage->a1 = msg.ReadByte();
+	unsigned char r1 = msg.ReadByte();
+	unsigned char g1 = msg.ReadByte();
+	unsigned char b1 = msg.ReadByte();
+	unsigned char a1 = msg.ReadByte();
 
-	pNetMessage->r2 = msg.ReadByte();
-	pNetMessage->g2 = msg.ReadByte();
-	pNetMessage->b2 = msg.ReadByte();
-	pNetMessage->a2 = msg.ReadByte();
+	pNetMessage->clr1.SetColor( r1, g1, b1, a1 );
+
+	unsigned char r2 = msg.ReadByte();
+	unsigned char g2 = msg.ReadByte();
+	unsigned char b2 = msg.ReadByte();
+	unsigned char a2 = msg.ReadByte();
+
+	pNetMessage->clr2.SetColor( r2, g2, b2, a2 );
 
 	pNetMessage->effect = msg.ReadByte();
 
@@ -922,10 +920,7 @@ CHudMessage::message_t *CHudMessage::AllocMessage( void )
 	msg->x = 0;
 	msg->y = 0;
 	msg->ch = 0;
-	msg->r = 0;
-	msg->g = 0;
-	msg->b = 0;
-	msg->a = 0;
+	msg->clr.SetColor( 0, 0, 0, 0 );
 	msg->font = vgui::INVALID_FONT;
 
 	SetVisible( true );
@@ -962,7 +957,7 @@ void CHudMessage::SetPosition( int x, int y )
 //			ch - 
 // Output : int
 //-----------------------------------------------------------------------------
-void CHudMessage::AddChar( int r, int g, int b, int a, wchar_t ch )
+void CHudMessage::AddChar( color32 clr, wchar_t ch )
 {
 	message_t *msg = AllocMessage();
 	if ( !msg )
@@ -971,10 +966,7 @@ void CHudMessage::AddChar( int r, int g, int b, int a, wchar_t ch )
 	msg->type = TYPE_CHARACTER;
 
 	// Used fields
-	msg->r = r;
-	msg->g = g;
-	msg->b = b;
-	msg->a = a;
+	msg->clr = clr;
 	msg->ch = ch;
 }
 
@@ -1050,7 +1042,7 @@ void CHudMessage::PaintCharacters()
 
 				if ( msg->ch > 32 )
 				{
-					vgui::surface()->DrawSetTextColor( msg->r,  msg->g,  msg->b,  msg->a );
+					vgui::surface()->DrawSetTextColor( msg->clr.r(),  msg->clr.g(),  msg->clr.b(),  msg->clr.a() );
 					vgui::surface()->DrawSetTextPos( xpos, ypos );
 					vgui::surface()->DrawUnicodeChar( msg->ch );
 				}

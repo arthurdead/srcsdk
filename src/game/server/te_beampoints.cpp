@@ -69,10 +69,7 @@ void CTEBeamPoints::Test( const Vector& current_origin, const QAngle& current_an
 	m_fLife			= 2.0;
 	m_fWidth		= 1.0;
 	m_fAmplitude	= 1;
-	r				= 0;
-	g				= 63;
-	b				= 127;
-	a				= 150;
+	m_clr.SetColor( 0, 63, 127, 150 );
 	m_nSpeed		= 1;
 	
 	m_vecStartPoint = current_origin;
@@ -120,7 +117,7 @@ static CTEBeamPoints g_TEBeamPoints( "BeamPoints" );
 //-----------------------------------------------------------------------------
 void TE_BeamPoints( IRecipientFilter& filter, float delay,
 	const Vector* start, const Vector* end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-	float life, float width, float endWidth, int fadeLength, float amplitude, int r, int g, int b, int a, int speed )
+	float life, float width, float endWidth, int fadeLength, float amplitude, color32 clr, int speed )
 {
 	g_TEBeamPoints.m_vecStartPoint	= *start;
 	g_TEBeamPoints.m_vecEndPoint	= *end;
@@ -134,10 +131,7 @@ void TE_BeamPoints( IRecipientFilter& filter, float delay,
 	g_TEBeamPoints.m_nFadeLength	= fadeLength;
 	g_TEBeamPoints.m_fAmplitude		= amplitude;
 	g_TEBeamPoints.m_nSpeed			= speed;
-	g_TEBeamPoints.r				= r;
-	g_TEBeamPoints.g				= g;
-	g_TEBeamPoints.b				= b;
-	g_TEBeamPoints.a				= a;
+	g_TEBeamPoints.m_clr				= clr;
 
 	// Send it over the wire
 	g_TEBeamPoints.Create( filter, delay );

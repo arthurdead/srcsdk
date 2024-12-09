@@ -54,11 +54,11 @@ void TE_BeamEntPoint( IRecipientFilter& filter, float delay,
 	int	nStartEntity, const Vector *pStart, int nEndEntity, const Vector* pEnd, 
 	modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 	float life, float width, float endWidth, int fadeLength, float amplitude, 
-	int r, int g, int b, int a, int speed )
+	color32 clr, int speed )
 {
 	beams->CreateBeamEntPoint( nStartEntity, pStart, nEndEntity, pEnd, 
 		modelindex, haloindex, 0.0f, life,  width, endWidth, fadeLength, amplitude,
-		a, 0.1 * (float)speed, startframe, 0.1f * (float)framerate, r, g, b );
+		clr.a(), 0.1 * (float)speed, startframe, 0.1f * (float)framerate, clr.r(), clr.g(), clr.b() );
 }
 
 //-----------------------------------------------------------------------------
@@ -69,8 +69,8 @@ void C_TEBeamEntPoint::PostDataUpdate( DataUpdateType_t updateType )
 {
 	beams->CreateBeamEntPoint( m_nStartEntity, &m_vecStartPoint, m_nEndEntity, &m_vecEndPoint, 
 		m_nModelIndex, m_nHaloIndex, 0.0f,
-		m_fLife,  m_fWidth, m_fEndWidth, m_nFadeLength, m_fAmplitude, a, 0.1 * m_nSpeed, 
-		m_nStartFrame, 0.1 * m_nFrameRate, r, g, b );
+		m_fLife,  m_fWidth, m_fEndWidth, m_nFadeLength, m_fAmplitude, m_clr.a(), 0.1 * m_nSpeed, 
+		m_nStartFrame, 0.1 * m_nFrameRate, m_clr.r(), m_clr.g(), m_clr.b() );
 }
 
 IMPLEMENT_CLIENTCLASS_EVENT_DT(C_TEBeamEntPoint, DT_TEBeamEntPoint, CTEBeamEntPoint)

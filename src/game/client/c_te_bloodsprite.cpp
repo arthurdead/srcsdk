@@ -54,7 +54,7 @@ IMPLEMENT_CLIENTCLASS_EVENT( C_TEBloodSprite, DT_TEBloodSprite, CTEBloodSprite )
 BEGIN_RECV_TABLE_NOBASE(C_TEBloodSprite, DT_TEBloodSprite)
 	RecvPropVector( RECVINFO(m_vecOrigin)),
 	RecvPropVector( RECVINFO(m_vecDirection)),
-	RecvPropInt( RECVINFO(m_clr), SPROP_UNSIGNED, RecvProxy_Int32ToColor32 ),
+	RecvPropColor32( RECVINFO(m_clr) ),
 	RecvPropInt( RECVINFO(m_nSprayModel)),
 	RecvPropInt( RECVINFO(m_nDropModel)),
 	RecvPropInt( RECVINFO(m_nSize)),

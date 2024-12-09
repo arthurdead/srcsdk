@@ -4,6 +4,7 @@
 #include "createinterface.h"
 #include "filesystem.h"
 #include "tier0/icommandline.h"
+#include "filesystem_internal.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -43,15 +44,9 @@ void AddressManager::init()
 	if(initialized)
 		return;
 
-	if(!GetFilesystemInterfaceFactory()) {
+	IFileSystem *pFileSystem = GetFilesystem();
+	if(!pFileSystem)
 		return;
-	}
-
-	int status = IFACE_OK;
-	IFileSystem *pFileSystem = (IFileSystem *)GetFilesystemInterfaceFactory()(FILESYSTEM_INTERFACE_VERSION, &status);
-	if(!pFileSystem || status != IFACE_OK) {
-		return;
-	}
 
 	kv = new KeyValues("HackMgr");
 	if(!kv->LoadFromFile(pFileSystem, "hackmgr.vdf", "GAMEBIN")) {

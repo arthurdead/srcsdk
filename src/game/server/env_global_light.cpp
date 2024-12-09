@@ -94,7 +94,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE(CGlobalLight, DT_GlobalLight)
 	SendPropVector(SENDINFO(m_shadowDirection), -1,  SPROP_NOSCALE ),
 	SendPropBool(SENDINFO(m_bEnabled) ),
 	SendPropString(SENDINFO(m_TextureName)),
-	SendPropInt(SENDINFO (m_LightColor ),	32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
+	SendPropColor32(SENDINFO (m_LightColor ) ),
 	SendPropFloat( SENDINFO( m_flColorTransitionTime ) ),
 	SendPropFloat(SENDINFO(m_flSunDistance), 0, SPROP_NOSCALE ),
 	SendPropFloat(SENDINFO(m_flFOV), 0, SPROP_NOSCALE ),

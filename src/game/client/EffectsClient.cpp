@@ -23,10 +23,9 @@ public:
 
 	// Members of the IEffect interface
 	virtual void Beam( const Vector &Start, const Vector &End, modelindex_t nModelIndex, 
-		int nHaloIndex, unsigned char frameStart, unsigned char frameRate,
+		modelindex_t nHaloIndex, unsigned char frameStart, unsigned char frameRate,
 		float flLife, unsigned char width, unsigned char endWidth, unsigned char fadeLength, 
-		unsigned char noise, unsigned char red, unsigned char green,
-		unsigned char blue, unsigned char brightness, unsigned char speed);
+		unsigned char noise, color32 clr, unsigned char speed);
 	virtual void Smoke( const Vector &origin, modelindex_t modelIndex, float scale, float framerate );
 	virtual void Sparks( const Vector &position, int nMagnitude = 1, int nTrailLength = 1, const Vector *pvecDir = NULL );
 	virtual void Dust( const Vector &pos, const Vector &dir, float size, float speed );
@@ -102,10 +101,9 @@ void CEffectsClient::SuppressEffectsSounds( bool bSuppress )
 // Generates a beam
 //-----------------------------------------------------------------------------
 void CEffectsClient::Beam( const Vector &vecStartPoint, const Vector &vecEndPoint, 
-	modelindex_t nModelIndex, int nHaloIndex, unsigned char frameStart, unsigned char nFrameRate,
+	modelindex_t nModelIndex, modelindex_t nHaloIndex, unsigned char frameStart, unsigned char nFrameRate,
 	float flLife, unsigned char nWidth, unsigned char nEndWidth, unsigned char nFadeLength, 
-	unsigned char noise, unsigned char r, unsigned char g,
-	unsigned char b, unsigned char brightness, unsigned char nSpeed)
+	unsigned char noise, color32 clr, unsigned char nSpeed)
 {
 	Assert(0);
 //	CBroadcastRecipientFilter filter;

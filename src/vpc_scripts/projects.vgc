@@ -10,7 +10,7 @@
 
 $Project "client"
 {
-	"game\client\client_heist.vpc"		[($WIN32||$POSIX) && $HEIST]
+	"game\client\client_heist.vpc [$HEIST]
 }
 
 $Project "game_shader_dx9"
@@ -20,32 +20,32 @@ $Project "game_shader_dx9"
 
 $Project "server"
 {
-	"game\server\server_heist.vpc"		[($WIN32||$POSIX) && $HEIST]
+	"game\server\server_heist.vpc" [$HEIST]
 }
 
-$Project "gamepadui"
+$Project "fgdlib"
 {
-	"game\gamepadui\gamepadui_heist.vpc" [($WIN32||$POSIX) && $HEIST]
+	"fgdlib\fgdlib.vpc"
 }
 
 $Project "raytrace"
 {
-	"raytrace\raytrace.vpc" [$WIN32||$X360||$POSIX]
+	"raytrace\raytrace.vpc"
 }
 
 $Project "mathlib"
 {
-	"mathlib\mathlib.vpc" [!$GAME_ASW]
+	"mathlib\mathlib.vpc"
 }
 
 $Project "tier1"
 {
-	"tier1\tier1.vpc" 	[!$GAME_ASW]
+	"tier1\tier1.vpc"
 }
 
 $Project "vgui_controls"
 {
-	"vgui2\vgui_controls\vgui_controls.vpc" [$WIN32||$X360||$POSIX]
+	"vgui2\vgui_controls\vgui_controls.vpc"
 }
 
 $Project "video_services"
@@ -56,4 +56,44 @@ $Project "video_services"
 $Project "vaudio_minimp3"
 {
 	"vaudio_minimp3/vaudio_minimp3.vpc"
+}
+
+$Project "choreoobjects"
+{
+	"choreoobjects\choreoobjects.vpc"
+}
+
+$Project "game_loopback"
+{
+	"game_loopback\game_loopback.vpc"
+}
+
+$Project "gamepadui_redirect"
+{
+	"gamepadui_redirect\gamepadui_redirect.vpc"
+}
+
+$Project "gameui"
+{
+	"gameui\gameui.vpc"
+}
+
+$Project "matchmaking"
+{
+	"matchmaking\matchmaking.vpc"
+}
+
+$Project "matchmaking_ds"
+{
+	"matchmaking\matchmaking_ds.vpc"
+}
+
+$Project "responserules_runtime"
+{
+	"responserules\runtime\responserules_runtime.vpc"
+}
+
+$Project "serverbrowser_redirect"
+{
+	"serverbrowser_redirect\serverbrowser_redirect.vpc"
 }

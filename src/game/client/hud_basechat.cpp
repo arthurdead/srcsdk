@@ -371,9 +371,9 @@ void CBaseHudChatLine::PerformFadeout( void )
 	// Flash + Extra bright when new
 	float curtime = gpGlobals->curtime;
 
-	int lr = m_clrText[0];
-	int lg = m_clrText[1];
-	int lb = m_clrText[2];
+	unsigned char lr = m_clrText.r();
+	unsigned char lg = m_clrText.g();
+	unsigned char lb = m_clrText.b();
 	
 	if ( curtime >= m_flStartTime && curtime < m_flStartTime + CHATLINE_FLASH_TIME )
 	{
@@ -389,15 +389,14 @@ void CBaseHudChatLine::PerformFadeout( void )
 
 		frac *= (1.0f-frac1);
 
-		int r = lr, g = lg, b = lb;
+		unsigned char r = lr, g = lg, b = lb;
 
 		r = r + ( 255 - r ) * frac;
 		g = g + ( 255 - g ) * frac;
 		b = b + ( 255 - b ) * frac;
 	
 		// Draw a right facing triangle in red, faded out over time
-		int alpha = 63 + 192 * (1.0f - frac1 );
-		alpha = clamp( alpha, 0, 255 );
+		unsigned char alpha = 63 + 192 * (1.0f - frac1 );
 
 		wchar_t wbuf[4096];
 		GetText(0, wbuf, sizeof(wbuf));
@@ -411,8 +410,7 @@ void CBaseHudChatLine::PerformFadeout( void )
 	{
 		float frac = ( m_flExpireTime - curtime ) / CHATLINE_FADE_TIME;
 
-		int alpha = frac * 255;
-		alpha = clamp( alpha, 0, 255 );
+		unsigned char alpha = frac * 255;
 
 		wchar_t wbuf[4096];
 		GetText(0, wbuf, sizeof(wbuf));
@@ -812,7 +810,7 @@ CHudChatFilterPanel *CBaseHudChat::GetChatFilterPanel( void )
 			vgui::HScheme scheme = vgui::scheme()->LoadSchemeFromFileEx( enginevgui->GetPanel( PANEL_CLIENTDLL ), "resource/ChatScheme.res", "ChatScheme");
 
 			m_pFilterPanel->SetScheme( scheme );
-			m_pFilterPanel->InvalidateLayout( true, true );
+			//m_pFilterPanel->InvalidateLayout( true, true );
 			m_pFilterPanel->SetMouseInputEnabled( true );
 			m_pFilterPanel->SetPaintBackgroundType( 2 );
 			m_pFilterPanel->SetPaintBorderEnabled( true );
@@ -1450,7 +1448,7 @@ Color CBaseHudChat::GetTextColorForClient( TextColor colorNum, int clientIndex )
 		c = GetDefaultTextColor();
 	}
 
-	return Color( c[0], c[1], c[2], 255 );
+	return Color( c.r(), c.g(), c.b(), 255 );
 }
 
 //-----------------------------------------------------------------------------
@@ -1659,7 +1657,7 @@ void CBaseHudChatLine::Colorize( int alpha )
 			color = m_textRanges[i].color;
 			if ( !m_textRanges[i].preserveAlpha )
 			{
-				color[3] = alpha;
+				color.SetA( alpha );
 			}
 
 			InsertColorChange( color );

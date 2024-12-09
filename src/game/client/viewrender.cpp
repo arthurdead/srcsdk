@@ -6024,7 +6024,7 @@ bool CSkyboxView::Setup( const CViewSetupEx &view, int *pClearFlags, SkyboxVisib
 		color32 color = m_pSky3dParams->skycolor.Get();
 
 		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
-		pRenderContext->ClearColor4ub( color.r, color.g, color.b, color.a );
+		pRenderContext->ClearColor4ub( color.r(), color.g(), color.b(), color.a() );
 		pRenderContext.SafeRelease();
 	}
 	else if( r_skybox.GetBool() )

@@ -39,10 +39,7 @@ public:
 	CNetworkVector( m_vecDirection );
 	CNetworkModelIndex( m_nSprayModel );
 	CNetworkModelIndex( m_nDropModel );
-	CNetworkVar( int, r );
-	CNetworkVar( int, g );
-	CNetworkVar( int, b );
-	CNetworkVar( int, a );
+	CNetworkColor32( m_clr );
 	CNetworkVar( int, m_nSize );
 };
 
@@ -56,10 +53,7 @@ CTEBloodSprite::CTEBloodSprite( const char *name ) :
 	m_vecOrigin.Init();
 	m_nSprayModel = INVALID_MODEL_INDEX;
 	m_nDropModel = INVALID_MODEL_INDEX;
-	r = 0;
-	g = 0;
-	b = 0;
-	a = 0;
+	m_clr.SetColor( 0, 0, 0, 0 );
 	m_nSize = 0;
 }
 
@@ -78,10 +72,7 @@ CTEBloodSprite::~CTEBloodSprite( void )
 void CTEBloodSprite::Test( const Vector& current_origin, const QAngle& current_angles )
 {
 	// Fill in data
-	r = 255;
-	g = 255;
-	b = 63;
-	a = 255;
+	m_clr.SetColor( 255, 255, 63, 255 );
 	m_nSize	= 16;
 	m_vecOrigin = current_origin;
 	
@@ -105,10 +96,7 @@ void CTEBloodSprite::Test( const Vector& current_origin, const QAngle& current_a
 IMPLEMENT_SERVERCLASS_ST_NOBASE(CTEBloodSprite, DT_TEBloodSprite)
 	SendPropVector( SENDINFO(m_vecOrigin), -1, SPROP_COORD),
 	SendPropVector( SENDINFO(m_vecDirection), -1, SPROP_COORD),
-	SendPropInt( SENDINFO(r), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(g), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(b), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(a), 8, SPROP_UNSIGNED ),
+	SendPropColor32( SENDINFO(m_clr) ),
 	SendPropModelIndex( SENDINFO(m_nSprayModel) ),
 	SendPropModelIndex( SENDINFO(m_nDropModel) ),
 	SendPropInt( SENDINFO(m_nSize), 8, SPROP_UNSIGNED ),
@@ -131,15 +119,12 @@ static CTEBloodSprite g_TEBloodSprite( "Blood Sprite" );
 //			size - 
 //-----------------------------------------------------------------------------
 void TE_BloodSprite( IRecipientFilter& filter, float delay,
-	const Vector *org, const Vector *dir, int r, int g, int b, int a, int size )
+	const Vector *org, const Vector *dir, color32 clr, int size )
 {
 	// Set up parameters
 	g_TEBloodSprite.m_vecOrigin		= *org;
 	g_TEBloodSprite.m_vecDirection	= *dir;
-	g_TEBloodSprite.r = r;
-	g_TEBloodSprite.g = g;
-	g_TEBloodSprite.b = b;
-	g_TEBloodSprite.a = a;
+	g_TEBloodSprite.m_clr = clr;
 	g_TEBloodSprite.m_nSize = size;
 
 	// Implicit

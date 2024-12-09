@@ -80,20 +80,20 @@ class CStandardSendProxiesV1
 public:
 	CStandardSendProxiesV1();
 
-	SendVarProxyFn m_Int8ToInt32;
-	SendVarProxyFn m_Int16ToInt32;
-	SendVarProxyFn m_Int32ToInt32;
+	SendVarProxyFn m_Int8;
+	SendVarProxyFn m_Int16;
+	SendVarProxyFn m_Int32;
 
-	SendVarProxyFn m_UInt8ToInt32;
-	SendVarProxyFn m_UInt16ToInt32;
-	SendVarProxyFn m_UInt32ToInt32;
+	SendVarProxyFn m_UInt8;
+	SendVarProxyFn m_UInt16;
+	SendVarProxyFn m_UInt32;
 
-	SendVarProxyFn m_FloatToFloat;
-	SendVarProxyFn m_VectorToVector;
+	SendVarProxyFn m_Float;
+	SendVarProxyFn m_Vector;
 
 #ifdef DT_INT64_SUPPORTED
-	SendVarProxyFn m_Int64ToInt64;
-	SendVarProxyFn m_UInt64ToInt64;
+	SendVarProxyFn m_Int64;
+	SendVarProxyFn m_UInt64;
 #endif
 };
 
@@ -113,8 +113,8 @@ public:
 	CStandardSendProxiesEx();
 
 #ifndef DT_INT64_SUPPORTED
-	SendVarProxyFn m_Int64ToInt64;
-	SendVarProxyFn m_UInt64ToInt64;
+	SendVarProxyFn m_Int64;
+	SendVarProxyFn m_UInt64;
 #endif
 };
 
@@ -660,18 +660,24 @@ inline void SendTable::SetHasPropsEncodedAgainstTickcount( bool bState )
 // See the definition of SendVarProxyFn for information about these.
 // ------------------------------------------------------------------------ //
 void SendProxy_QAngles			( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_AngleToFloat		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_FloatToFloat		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_VectorToVector	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_VectorXYToVectorXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_QuaternionToQuaternion( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_FloatAngle		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Float		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Vector	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_VectorXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Vector2D( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Quaternion( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 
-void SendProxy_Int8ToInt32		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_Int16ToInt32		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_Int32ToInt32		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_Int64ToInt64		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_StringToString	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_Color32ToInt32	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Int8		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Int16		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Int32		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Int64		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_String	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Color32	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Color32E	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Color24	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+
+void SendProxy_IntAddOne( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_ShortAddOne( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
 
 // pData is the address of a data table.
 void* SendProxy_DataTableToDataTable( const SendProp *pProp, const void *pStructBase, const void *pData, CSendProxyRecipients *pRecipients, int objectID );
@@ -694,7 +700,7 @@ SendProp SendPropFloat(
 	int flags=0,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT,	// High value. If HIGH_DEFAULT, it's (1<<nBits).
-	SendVarProxyFn varProxy=SendProxy_FloatToFloat,
+	SendVarProxyFn varProxy=SendProxy_Float,
 	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
@@ -706,7 +712,7 @@ SendProp SendPropVector(
 	int flags=SPROP_NOSCALE,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT,	// High value. If HIGH_DEFAULT, it's (1<<nBits).
-	SendVarProxyFn varProxy=SendProxy_VectorToVector,
+	SendVarProxyFn varProxy=SendProxy_Vector,
 	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
@@ -718,7 +724,7 @@ SendProp SendPropVectorXY(
 	int flags=SPROP_NOSCALE,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT,	// High value. If HIGH_DEFAULT, it's (1<<nBits).
-	SendVarProxyFn varProxy=SendProxy_VectorXYToVectorXY,
+	SendVarProxyFn varProxy=SendProxy_VectorXY,
 	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
@@ -730,7 +736,7 @@ SendProp SendPropQuaternion(
 	int flags=SPROP_NOSCALE,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT,	// High value. If HIGH_DEFAULT, it's (1<<nBits).
-	SendVarProxyFn varProxy=SendProxy_QuaternionToQuaternion
+	SendVarProxyFn varProxy=SendProxy_Quaternion
 	);
 
 SendProp SendPropAngle(
@@ -739,7 +745,7 @@ SendProp SendPropAngle(
 	int sizeofVar=SIZEOF_IGNORE,
 	int nBits=32,
 	int flags=0,
-	SendVarProxyFn varProxy=SendProxy_AngleToFloat,
+	SendVarProxyFn varProxy=SendProxy_FloatAngle,
 	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
@@ -763,17 +769,54 @@ SendProp SendPropInt(
 	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
-inline SendProp SendPropModelIndex( const char *pVarName, int offset, int sizeofVar=SIZEOF_IGNORE, byte priority = SENDPROP_DEFAULT_PRIORITY )
+inline SendProp SendPropColor32(
+	const char *pVarName,
+	int offset,
+	int sizeofVar=SIZEOF_IGNORE,	// Handled by SENDINFO macro.
+	byte priority = SENDPROP_DEFAULT_PRIORITY
+	)
 {
-	return SendPropInt( pVarName, offset, sizeofVar, SP_MODEL_INDEX_BITS, 0, NULL, priority );
+	return SendPropInt( pVarName, offset, sizeofVar, 32, SPROP_UNSIGNED, SendProxy_Color32, priority );
 }
+
+inline SendProp SendPropColor32E(
+	const char *pVarName,
+	int offset,
+	int sizeofVar=SIZEOF_IGNORE,	// Handled by SENDINFO macro.
+	byte priority = SENDPROP_DEFAULT_PRIORITY
+	)
+{
+	return SendPropInt( pVarName, offset, sizeofVar, 32, SPROP_UNSIGNED, SendProxy_Color32E, priority );
+}
+
+inline SendProp SendPropColor24(
+	const char *pVarName,
+	int offset,
+	int sizeofVar=SIZEOF_IGNORE,	// Handled by SENDINFO macro.
+	byte priority = SENDPROP_DEFAULT_PRIORITY
+	)
+{
+	return SendPropInt( pVarName, offset, sizeofVar, 24, SPROP_UNSIGNED, SendProxy_Color24, priority );
+}
+
+SendProp SendPropBool(
+	const char *pVarName,
+	int offset,
+	int sizeofVar );
+
+SendProp SendPropIntWithMinusOneFlag(
+	const char *pVarName,
+	int offset,
+	int sizeofVar=SIZEOF_IGNORE,
+	int bits=-1,
+	SendVarProxyFn proxyFn=SendProxy_IntAddOne );
 
 SendProp SendPropString(
 	const char *pVarName,
 	int offset,
 	int bufferLen,
 	int flags=0,
-	SendVarProxyFn varProxy=SendProxy_StringToString,
+	SendVarProxyFn varProxy=SendProxy_String,
 	byte priority = SENDPROP_DEFAULT_PRIORITY);
 
 // The data table encoder looks at DVariant::m_pData.

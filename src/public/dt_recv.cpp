@@ -16,6 +16,11 @@ DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_RECVPROP, "RecvProp" );
 
 #if !defined(_STATIC_LINKED) || defined(CLIENT_DLL)
 
+void RecvProxy_UInt8   ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_UInt16  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_UInt32  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_UInt64  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+
 const char *s_ClientElementNames[MAX_ARRAY_ELEMENTS] =
 {
 	"000", "001", "002", "003", "004", "005", "006", "007", "008", "009", 
@@ -126,23 +131,28 @@ const char *s_ClientElementNames[MAX_ARRAY_ELEMENTS] =
 
 CStandardRecvProxies::CStandardRecvProxies()
 {
-	m_Int32ToInt8 = RecvProxy_Int32ToInt8;
-	m_Int32ToInt16 = RecvProxy_Int32ToInt16;
-	m_Int32ToInt32 = RecvProxy_Int32ToInt32;
+	m_Int8 = RecvProxy_Int8;
+	m_Int16 = RecvProxy_Int16;
+	m_Int32 = RecvProxy_Int32;
 
-	m_FloatToFloat = RecvProxy_FloatToFloat;
-	m_VectorToVector = RecvProxy_VectorToVector;
+	m_Float = RecvProxy_Float;
+	m_Vector = RecvProxy_Vector;
 
 #ifdef DT_INT64_SUPPORTED
-	m_Int64ToInt64 = RecvProxy_Int64ToInt64;
+	m_Int64 = RecvProxy_Int64;
 #endif
 }
 
 CStandardRecvProxiesEx::CStandardRecvProxiesEx()
 {
 #ifndef DT_INT64_SUPPORTED
-	m_Int64ToInt64 = RecvProxy_Int64ToInt64;
+	m_Int64 = RecvProxy_Int64;
 #endif
+
+	m_UInt8 = RecvProxy_UInt8;
+	m_UInt16 = RecvProxy_UInt16;
+	m_UInt32 = RecvProxy_UInt32;
+	m_UInt64 = RecvProxy_UInt64;
 }
 
 CStandardRecvProxiesEx g_StandardRecvProxies;
@@ -211,7 +221,7 @@ RecvProp RecvPropFloat(
 	RecvProp ret;
 
 #ifdef _DEBUG
-	if ( varProxy == RecvProxy_FloatToFloat )
+	if ( varProxy == RecvProxy_Float )
 	{
 		Assert( sizeofVar == 0 || sizeofVar == 4 );
 	}
@@ -237,9 +247,35 @@ RecvProp RecvPropVector(
 	RecvProp ret;
 
 #ifdef _DEBUG
-	if ( varProxy == RecvProxy_VectorToVector )
+	if ( varProxy == RecvProxy_Vector )
 	{
 		Assert( sizeofVar == sizeof( Vector ) );
+	}
+#endif
+
+	ret.m_pVarName = pVarName;
+	ret.SetOffset( offset );
+	ret.m_RecvType = DPT_Vector;
+	ret.m_Flags = flags;
+	ret.SetProxyFn( varProxy );
+
+	return ret;
+}
+
+RecvProp RecvPropQAngles(
+	const char *pVarName, 
+	int offset, 
+	int sizeofVar,
+	int flags, 
+	RecvVarProxyFn varProxy
+	)
+{
+	RecvProp ret;
+
+#ifdef _DEBUG
+	if ( varProxy == RecvProxy_QAngles )
+	{
+		Assert( sizeofVar == sizeof( QAngle ) );
 	}
 #endif
 
@@ -263,7 +299,7 @@ RecvProp RecvPropVectorXY(
 	RecvProp ret;
 
 #ifdef _DEBUG
-	if ( varProxy == RecvProxy_VectorToVector )
+	if ( varProxy == RecvProxy_VectorXY )
 	{
 		Assert( sizeofVar == sizeof( Vector ) );
 	}
@@ -289,7 +325,7 @@ RecvProp RecvPropQuaternion(
 	RecvProp ret;
 
 #ifdef _DEBUG
-	if ( varProxy == RecvProxy_QuaternionToQuaternion )
+	if ( varProxy == RecvProxy_Quaternion )
 	{
 		Assert( sizeofVar == sizeof( Quaternion ) );
 	}
@@ -323,24 +359,24 @@ RecvProp RecvPropInt(
 	{
 		if (sizeofVar == 1)
 		{
-			varProxy = RecvProxy_Int32ToInt8;
+			varProxy = RecvProxy_Int8;
 		}
 		else if (sizeofVar == 2)
 		{
-			varProxy = RecvProxy_Int32ToInt16;
+			varProxy = RecvProxy_Int16;
 		}
 		else if (sizeofVar == 4)
 		{
-			varProxy = RecvProxy_Int32ToInt32;
+			varProxy = RecvProxy_Int32;
 		}
 		else if (sizeofVar == 8)
 		{
-			varProxy = RecvProxy_Int64ToInt64;
+			varProxy = RecvProxy_Int64;
 		}
 		else
 		{
 			Assert(!"RecvPropInt var has invalid size");
-			varProxy = RecvProxy_Int32ToInt8;	// safest one...
+			varProxy = RecvProxy_Int8;	// safest one...
 		}
 	}
 
@@ -364,8 +400,35 @@ RecvProp RecvPropInt(
 
 	ret.m_Flags = flags;
 	ret.SetProxyFn( varProxy );
+	if( ret.GetFlags() & SPROP_UNSIGNED )
+	{
+		if( varProxy == RecvProxy_Int8 )
+			ret.SetProxyFn( RecvProxy_UInt8 );
+		
+		else if( varProxy == RecvProxy_Int16 )
+			ret.SetProxyFn( RecvProxy_UInt16 );
+
+		else if( varProxy == RecvProxy_Int32 )
+			ret.SetProxyFn( RecvProxy_UInt32 );
+		else if( varProxy == RecvProxy_Int64 )
+			ret.SetProxyFn( RecvProxy_UInt64 );
+	}
 
 	return ret;
+}
+
+RecvProp RecvPropBool(
+	const char *pVarName, 
+	int offset, 
+	int sizeofVar, RecvVarProxyFn proxyFn )
+{
+	Assert( sizeofVar == sizeof( bool ) );
+	return RecvPropInt( pVarName, offset, sizeofVar, 0, proxyFn );
+}
+
+RecvProp RecvPropIntWithMinusOneFlag( const char *pVarName, int offset, int sizeofVar, RecvVarProxyFn proxyFn )
+{
+	return RecvPropInt( pVarName, offset, sizeofVar, 0, proxyFn );
 }
 
 RecvProp RecvPropString(
@@ -466,77 +529,119 @@ RecvProp InternalRecvPropArray(
 // Proxies.
 // ---------------------------------------------------------------------- //
 
-void RecvProxy_FloatToFloat( const CRecvProxyData *pData, void *pStruct, void *pOut )
+void RecvProxy_Float( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	Assert( IsFinite( pData->m_Value.m_Float ) );
 	*((float*)pOut) = pData->m_Value.m_Float;
 }
 
-void RecvProxy_VectorToVector( const CRecvProxyData *pData, void *pStruct, void *pOut )
+void RecvProxy_Vector( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	const float *v = pData->m_Value.m_Vector;
-	
-	Assert( IsFinite( v[0] ) && IsFinite( v[1] ) && IsFinite( v[2] ) );
-	((float*)pOut)[0] = v[0];
-	((float*)pOut)[1] = v[1];
-	((float*)pOut)[2] = v[2];
+	const Vector &v = pData->m_Value.m_Vector;
+	Assert( v.IsValid() );
+	*((Vector*)pOut) = v;
 }
 
-void RecvProxy_VectorXYToVectorXY( const CRecvProxyData *pData, void *pStruct, void *pOut )
+void RecvProxy_QAngles( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	const float *v = pData->m_Value.m_Vector;
-	
-	Assert( IsFinite( v[0] ) && IsFinite( v[1] ) );
-	((float*)pOut)[0] = v[0];
-	((float*)pOut)[1] = v[1];
+	const QAngle &v = pData->m_Value.m_Angles;
+	Assert( v.IsValid() );
+	*((QAngle*)pOut) = v;
 }
 
-void RecvProxy_QuaternionToQuaternion( const CRecvProxyData *pData, void *pStruct, void *pOut )
+void RecvProxy_VectorXY( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	const float *v = pData->m_Value.m_Vector;
-	
-	Assert( IsFinite( v[0] ) && IsFinite( v[1] ) && IsFinite( v[2] ) && IsFinite( v[3] ) );
-	((float*)pOut)[0] = v[0];
-	((float*)pOut)[1] = v[1];
-	((float*)pOut)[2] = v[2];
-	((float*)pOut)[3] = v[3];
+	const Vector &v = pData->m_Value.m_Vector;
+	Assert( IsFinite( v.x ) && IsFinite( v.y ) );
+	((Vector*)pOut)->x = v.x;
+	((Vector*)pOut)->y = v.y;
 }
 
-void RecvProxy_Int32ToInt8( const CRecvProxyData *pData, void *pStruct, void *pOut )
+void RecvProxy_Vector2D( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	*((unsigned char*)pOut) = (unsigned char)pData->m_Value.m_Int;
+	const Vector2D &v = pData->m_Value.m_Vector2D;
+	Assert( v.IsValid() );
+	*((Vector2D*)pOut) = v;
 }
 
-void RecvProxy_Int32ToInt16( const CRecvProxyData *pData, void *pStruct, void *pOut )
+void RecvProxy_Quaternion( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	*((unsigned short*)pOut) = (unsigned short)pData->m_Value.m_Int;
+#if defined DT_QUATERNION_SUPPORTED || defined DT_INT64_SUPPORTED
+	const Quaternion *v = pData->m_Value.m_Quaternion;
+	Assert( v->IsValid() );
+	*((Quaternion*)pOut) = *v;
+#else
+	Error( "Quaternion recvprops are not supported" );
+#endif
 }
 
-void RecvProxy_Int32ToInt32( const CRecvProxyData *pData, void *pStruct, void *pOut )
+void RecvProxy_Int8( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	*((unsigned long*)pOut) = (unsigned long)pData->m_Value.m_Int;
+	*((char*)pOut) = pData->m_Value.m_Char;
 }
 
-void RecvProxy_Int64ToInt64( const CRecvProxyData *pData, void *pStruct, void *pOut )
+void RecvProxy_Int16( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	*((int64*)pOut) = (int64)pData->m_Value.m_Int64;
+	*((short*)pOut) = pData->m_Value.m_Short;
 }
 
-void RecvProxy_Int32ToColor32( const CRecvProxyData *pData, void *pStruct, void *pOut )
+void RecvProxy_Int32( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	//Always send/receive as little endian to preserve byte order across network byte swaps
+	*((int*)pOut) = pData->m_Value.m_Int;
+}
+
+void RecvProxy_UInt8( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	*((unsigned char*)pOut) = pData->m_Value.m_UChar;
+}
+
+void RecvProxy_UInt16( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	*((unsigned short*)pOut) = pData->m_Value.m_UShort;
+}
+
+void RecvProxy_UInt32( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	*((unsigned int*)pOut) = pData->m_Value.m_UInt;
+}
+
+void RecvProxy_Int64( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+#if defined DT_QUATERNION_SUPPORTED || defined DT_INT64_SUPPORTED
+	*((int64*)pOut) = pData->m_Value.m_Int64;
+#else
+	*((int64*)pOut) = *((int64 *)pData->m_Value.m_IntPair);
+#endif
+}
+
+void RecvProxy_UInt64( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+#if defined DT_QUATERNION_SUPPORTED || defined DT_INT64_SUPPORTED
+	*((uint64*)pOut) = pData->m_Value.m_UInt64;
+#else
+	*((uint64*)pOut) = *((uint64 *)pData->m_Value.m_UIntPair);
+#endif
+}
+
+void RecvProxy_Color32( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
 	color32 *pOutColor = (color32*)pOut;
-	uint32 inColor = LittleDWord((uint32)pData->m_Value.m_Int);
-
-	pOutColor->SetColor(
-		(unsigned char)((inColor >> 24) & 0xFF),
-		(unsigned char)((inColor >> 16) & 0xFF),
-		(unsigned char)((inColor >> 8) & 0xFF),
-		(unsigned char)(inColor & 0xFF)
-	);
+	*pOutColor = pData->m_Value.m_Color32;
 }
 
-void RecvProxy_StringToString( const CRecvProxyData *pData, void *pStruct, void *pOut )
+void RecvProxy_Color32E( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	ColorRGBExp32 *pOutColor = (ColorRGBExp32*)pOut;
+	*pOutColor = pData->m_Value.m_Color32E;
+}
+
+void RecvProxy_Color24( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	color24 *pOutColor = (color24*)pOut;
+	*pOutColor = pData->m_Value.m_Color24;
+}
+
+void RecvProxy_String( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	char *pStrOut = (char*)pOut;
 	if ( pData->m_pRecvProp->m_StringBufferSize <= 0 )
@@ -552,6 +657,20 @@ void RecvProxy_StringToString( const CRecvProxyData *pData, void *pStruct, void 
 	}
 	
 	pStrOut[pData->m_pRecvProp->m_StringBufferSize-1] = 0;
+}
+
+void RecvProxy_IntSubOne( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	int *pInt = (int *)pOut;
+	
+	*pInt = pData->m_Value.m_Int - 1;
+}
+
+void RecvProxy_ShortSubOne( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	short *pInt = (short *)pOut;
+	
+	*pInt = pData->m_Value.m_Short - 1;
 }
 
 void DataTableRecvProxy_StaticDataTable( const RecvProp *pProp, void **pOut, void *pData, int objectID )

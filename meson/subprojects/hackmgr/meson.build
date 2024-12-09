@@ -12,6 +12,7 @@ source_base = subproject('source_base')
 public_dir = join_paths(src_root_dir,'public')
 hackmgr_src_dir = join_paths(src_root_dir,'hackmgr')
 
+tier2 = subproject('tier2')
 tier1 = subproject('tier1')
 tier0 = subproject('tier0')
 vstdlib = subproject('vstdlib')
@@ -75,6 +76,7 @@ if build_libs
 		),
 		dependencies: [
 			tier1.get_variable('tier1_dep'),
+			tier2.get_variable('tier2_dep'),
 			mathlib.get_variable('mathlib_dep'),
 			source_base.get_variable('source_shared_lib_dep')
 		],

@@ -76,10 +76,7 @@ void CTEBeamEntPoint::Test( const Vector& current_origin, const QAngle& current_
 	m_fLife			= 2.0;
 	m_fWidth		= 1.0;
 	m_fAmplitude	= 1.0;
-	r				= 0;
-	g				= 63;
-	b				= 127;
-	a				= 150;
+	m_clr.SetColor( 0, 63, 127, 150 );
 	m_nSpeed		= 1;
 
 	m_vecEndPoint = current_origin;
@@ -128,7 +125,7 @@ static CTEBeamEntPoint g_TEBeamEntPoint( "BeamEntPoint" );
 void TE_BeamEntPoint( IRecipientFilter& filter, float delay,
 	int	nStartEntity, const Vector *start, int nEndEntity, const Vector* end, 
 	modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-	float life, float width, float endWidth, int fadeLength, float amplitude, int r, int g, int b, int a, int speed )
+	float life, float width, float endWidth, int fadeLength, float amplitude, color32 clr, int speed )
 {
 	g_TEBeamEntPoint.m_nStartEntity = (nStartEntity > 0) ? (nStartEntity & 0x0FFF) | ((1 & 0xF)<<12) : 0;
 	g_TEBeamEntPoint.m_nEndEntity	= (nEndEntity > 0) ? (nEndEntity & 0x0FFF) | ((1 & 0xF)<<12) : 0;
@@ -144,10 +141,7 @@ void TE_BeamEntPoint( IRecipientFilter& filter, float delay,
 	g_TEBeamEntPoint.m_nFadeLength	= fadeLength;
 	g_TEBeamEntPoint.m_fAmplitude	= amplitude;
 	g_TEBeamEntPoint.m_nSpeed		= speed;
-	g_TEBeamEntPoint.r				= r;
-	g_TEBeamEntPoint.g				= g;
-	g_TEBeamEntPoint.b				= b;
-	g_TEBeamEntPoint.a				= a;
+	g_TEBeamEntPoint.m_clr				= clr;
 
 	// Send it over the wire
 	g_TEBeamEntPoint.Create( filter, delay );

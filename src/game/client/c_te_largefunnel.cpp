@@ -107,18 +107,14 @@ void C_TELargeFunnel::CreateFunnel( void )
 				if( random_valve->RandomInt( 0, 10 ) < 5 )
 				{
 					// small green particle
-					pParticle->m_uchColor[0] = 0;
-					pParticle->m_uchColor[1] = 255;
-					pParticle->m_uchColor[2] = 0;
+					pParticle->m_uchColor.SetColor( 0, 255, 0 );
 				
 					pParticle->m_uchStartSize	= 4.0;
 				}
 				else
 				{
 					// large white particle
-					pParticle->m_uchColor[0] = 255;
-					pParticle->m_uchColor[1] = 255;
-					pParticle->m_uchColor[2] = 255;
+					pParticle->m_uchColor.SetColor( 255, 255, 255 );
 				
 					pParticle->m_uchStartSize	= 15.0;
 				}

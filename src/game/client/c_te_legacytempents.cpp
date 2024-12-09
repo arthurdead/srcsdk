@@ -1087,7 +1087,7 @@ void CTempEnts::PhysicsProp( modelindex_t modelindex, int skin, const Vector& po
 
 	if ( !model )
 	{
-		DevMsg("CTempEnts::PhysicsProp: model index %i not found\n", modelindex );
+		DevMsg("CTempEnts::PhysicsProp: model index %i not found\n", modelindex.GetRaw() );
 		return;
 	}
 
@@ -1154,7 +1154,7 @@ C_LocalTempEntity *CTempEnts::ClientProjectile( const Vector& vecOrigin, const V
 	model = modelinfo->GetModel( modelIndex );
 	if ( !model )
 	{
-		Warning("ClientProjectile: No model %d!\n", modelIndex);
+		Warning("ClientProjectile: No model %d!\n", modelIndex.GetRaw());
 		return NULL;
 	}
 
@@ -1211,7 +1211,7 @@ C_LocalTempEntity *CTempEnts::TempSprite( const Vector &pos, const Vector &dir, 
 	model = modelinfo->GetModel( modelIndex );
 	if ( !model )
 	{
-		Warning("No model %d!\n", modelIndex);
+		Warning("No model %d!\n", modelIndex.GetRaw());
 		return NULL;
 	}
 
@@ -1276,7 +1276,7 @@ void CTempEnts::Sprite_Spray( const Vector &pos, const Vector &dir, modelindex_t
 	
 	if ( !pModel )
 	{
-		Warning("No model %d!\n", modelIndex);
+		Warning("No model %d!\n", modelIndex.GetRaw());
 		return;
 	}
 
@@ -1324,7 +1324,7 @@ void CTempEnts::Sprite_Trail( const Vector &vecStart, const Vector &vecEnd, mode
 	
 	if ( !pModel )
 	{
-		Warning("No model %d!\n", modelIndex);
+		Warning("No model %d!\n", modelIndex.GetRaw());
 		return;
 	}
 
@@ -1409,7 +1409,7 @@ void CTempEnts::AttachTentToPlayer( int client, modelindex_t modelIndex, float z
 	
 	if ( !pModel )
 	{
-		Warning("No model %d!\n", modelIndex);
+		Warning("No model %d!\n", modelIndex.GetRaw());
 		return;
 	}
 
@@ -1577,7 +1577,7 @@ C_LocalTempEntity *CTempEnts::DefaultSprite( const Vector &pos, modelindex_t spr
 	pSprite = modelinfo->GetModel( spriteIndex );
 	if ( !spriteIndex || !pSprite || modelinfo->GetModelType( pSprite ) != mod_sprite )
 	{
-		DevWarning( 1,"No Sprite %d!\n", spriteIndex);
+		DevWarning( 1,"No Sprite %d!\n", spriteIndex.GetRaw());
 		return NULL;
 	}
 
@@ -1793,9 +1793,7 @@ void CTempEnts::MuzzleFlash_Shotgun_Firstperson( ClientEntityHandle_t hEntity, i
 
 		pParticle->m_vecVelocity.Init();
 
-		pParticle->m_uchColor[0]	= 255;
-		pParticle->m_uchColor[1]	= 255;
-		pParticle->m_uchColor[2]	= 200+random_valve->RandomInt(0,55);
+		pParticle->m_uchColor.SetColor( 255, 255, 200+random_valve->RandomInt(0,55) );
 
 		pParticle->m_uchStartAlpha	= 255;
 		pParticle->m_uchEndAlpha	= 255;
@@ -1863,9 +1861,7 @@ void CTempEnts::MuzzleFlash_Shotgun_Thirdperson( ClientEntityHandle_t hEntity, i
 
 			pParticle->m_vecVelocity	*= random_valve->RandomFloat( 64.0f, 256.0f );
 
-			pParticle->m_uchColor[0]	= 255;
-			pParticle->m_uchColor[1]	= 128;
-			pParticle->m_uchColor[2]	= 64;
+			pParticle->m_uchColor.SetColor( 255, 128, 64 );
 
 			pParticle->m_uchStartAlpha	= 255;
 			pParticle->m_uchEndAlpha	= 0;
@@ -1963,10 +1959,8 @@ void CTempEnts::MuzzleFlash_357_Firstperson( ClientEntityHandle_t hEntity, int a
 	pParticle->m_vecVelocity = forward * random_valve->RandomFloat( 8.0f, 64.0f );
 	pParticle->m_vecVelocity[2] += random_valve->RandomFloat( 4.0f, 16.0f );
 
-	int color = random_valve->RandomInt( 200, 255 );
-	pParticle->m_uchColor[0]	= color;
-	pParticle->m_uchColor[1]	= color;
-	pParticle->m_uchColor[2]	= color;
+	unsigned char color = random_valve->RandomInt( 200, 255 );
+	pParticle->m_uchColor.SetColor( color, color, color );
 
 	pParticle->m_uchStartAlpha	= random_valve->RandomInt( 64, 128 );
 	pParticle->m_uchEndAlpha	= 0;
@@ -1993,9 +1987,7 @@ void CTempEnts::MuzzleFlash_357_Firstperson( ClientEntityHandle_t hEntity, int a
 
 		pParticle->m_vecVelocity.Init();
 
-		pParticle->m_uchColor[0]	= 255;
-		pParticle->m_uchColor[1]	= 255;
-		pParticle->m_uchColor[2]	= 200+random_valve->RandomInt(0,55);
+		pParticle->m_uchColor.SetColor( 255, 255, 200+random_valve->RandomInt(0,55) );
 
 		pParticle->m_uchStartAlpha	= 255;
 		pParticle->m_uchEndAlpha	= 255;
@@ -2051,10 +2043,8 @@ void CTempEnts::MuzzleFlash_Pistol_Firstperson( ClientEntityHandle_t hEntity, in
 		pParticle->m_vecVelocity = forward * random_valve->RandomFloat( 48.0f, 64.0f );
 		pParticle->m_vecVelocity[2] += random_valve->RandomFloat( 4.0f, 16.0f );
 
-		int color = random_valve->RandomInt( 200, 255 );
-		pParticle->m_uchColor[0]	= color;
-		pParticle->m_uchColor[1]	= color;
-		pParticle->m_uchColor[2]	= color;
+		unsigned char color = random_valve->RandomInt( 200, 255 );
+		pParticle->m_uchColor.SetColor( color, color, color );
 
 		pParticle->m_uchStartAlpha	= random_valve->RandomInt( 64, 128 );
 		pParticle->m_uchEndAlpha	= 0;
@@ -2082,9 +2072,7 @@ void CTempEnts::MuzzleFlash_Pistol_Firstperson( ClientEntityHandle_t hEntity, in
 
 		pParticle->m_vecVelocity.Init();
 
-		pParticle->m_uchColor[0]	= 255;
-		pParticle->m_uchColor[1]	= 255;
-		pParticle->m_uchColor[2]	= 200+random_valve->RandomInt(0,55);
+		pParticle->m_uchColor.SetColor( 255, 255, 200+random_valve->RandomInt(0,55) );
 
 		pParticle->m_uchStartAlpha	= 255;
 		pParticle->m_uchEndAlpha	= 255;

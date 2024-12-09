@@ -649,6 +649,11 @@ void KeyValues::UsesConditionals(bool state)
 //-----------------------------------------------------------------------------
 // Purpose: Load keyValues from disk
 //-----------------------------------------------------------------------------
+bool KeyValues::LoadFromFile( IFileSystem *filesystem, const char *resourceName, const char *pathID, bool refreshCache )
+{
+	return LoadFromFile( filesystem ? filesystem->GetBaseFilesystem() : NULL, resourceName, pathID, refreshCache );
+}
+
 bool KeyValues::LoadFromFile( IBaseFileSystem *filesystem, const char *resourceName, const char *pathID, bool refreshCache )
 {
 	Assert(filesystem);
@@ -679,15 +684,17 @@ bool KeyValues::LoadFromFile( IBaseFileSystem *filesystem, const char *resourceN
 
 	s_LastFileLoadingFrom = (char*)resourceName;
 
+	IFileSystem *full_filesystem = filesystem->GetFullFilesystem();
+
 	// load file into a null-terminated buffer
 	int fileSize = filesystem->Size( f );
-	unsigned bufSize = ((IFileSystem *)filesystem)->GetOptimalReadSize( f, fileSize + 2 );
+	unsigned bufSize = full_filesystem->GetOptimalReadSize( f, fileSize + 2 );
 
-	char *buffer = (char*)((IFileSystem *)filesystem)->AllocOptimalReadBuffer( f, bufSize );
+	char *buffer = (char*)full_filesystem->AllocOptimalReadBuffer( f, bufSize );
 	Assert( buffer );
 	
 	// read into local buffer
-	bool bRetOK = ( ((IFileSystem *)filesystem)->ReadEx( buffer, bufSize, fileSize, f ) != 0 );
+	bool bRetOK = ( full_filesystem->ReadEx( buffer, bufSize, fileSize, f ) != 0 );
 
 	filesystem->Close( f );	// close file after reading
 
@@ -705,7 +712,7 @@ bool KeyValues::LoadFromFile( IBaseFileSystem *filesystem, const char *resourceN
 		KeyValuesSystem()->AddFileKeyValuesToCache( this, resourceName, pathID );
 	}
 
-	( (IFileSystem *)filesystem )->FreeOptimalReadBuffer( buffer );
+	full_filesystem->FreeOptimalReadBuffer( buffer );
 
 	COM_TimestampedLog("KeyValues::LoadFromFile(%s%s%s): End / Success", pathID ? pathID : "", pathID && resourceName ? "/" : "", resourceName ? resourceName : "");
 
@@ -716,7 +723,7 @@ KeyValues * KeyValues::FromString( char const *szName, char const *szStringVal )
 {
 	KeyValues *kv = new KeyValues( szName );
 
-	kv->LoadFromBuffer( NULL, szStringVal, NULL, NULL );
+	kv->LoadFromBuffer( NULL, szStringVal, (IBaseFileSystem *)NULL, NULL );
 
 	return kv;
 }
@@ -725,6 +732,11 @@ KeyValues * KeyValues::FromString( char const *szName, char const *szStringVal )
 // Purpose: Save the keyvalues to disk
 //			Creates the path to the file if it doesn't exist
 //-----------------------------------------------------------------------------
+bool KeyValues::SaveToFile( IFileSystem *filesystem, const char *resourceName, const char *pathID, bool sortKeys /*= false*/, bool bAllowEmptyString /*= false*/, bool bCacheResult /*= false*/ )
+{
+	return SaveToFile( filesystem ? filesystem->GetBaseFilesystem() : NULL, resourceName, pathID, sortKeys, bAllowEmptyString, bCacheResult );
+}
+
 bool KeyValues::SaveToFile( IBaseFileSystem *filesystem, const char *resourceName, const char *pathID, bool sortKeys /*= false*/, bool bAllowEmptyString /*= false*/, bool bCacheResult /*= false*/ )
 {
 	// create a write file
@@ -2271,6 +2283,11 @@ bool EvaluateConditional( const char *str, const char *file )
 //-----------------------------------------------------------------------------
 // Read from a buffer...
 //-----------------------------------------------------------------------------
+bool KeyValues::LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IFileSystem* pFileSystem, const char *pPathID )
+{
+	return LoadFromBuffer( resourceName, buf, pFileSystem ? pFileSystem->GetBaseFilesystem() : NULL, pPathID );
+}
+
 bool KeyValues::LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IBaseFileSystem* pFileSystem, const char *pPathID )
 {
 	KeyValues *pPreviousKey = NULL;
@@ -2407,6 +2424,11 @@ bool KeyValues::LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IBase
 //-----------------------------------------------------------------------------
 // Read from a buffer...
 //-----------------------------------------------------------------------------
+bool KeyValues::LoadFromBuffer( char const *resourceName, const char *pBuffer, IFileSystem* pFileSystem, const char *pPathID )
+{
+	return LoadFromBuffer( resourceName, pBuffer, pFileSystem ? pFileSystem->GetBaseFilesystem() : NULL, pPathID );
+}
+
 bool KeyValues::LoadFromBuffer( char const *resourceName, const char *pBuffer, IBaseFileSystem* pFileSystem, const char *pPathID )
 {
 	if ( !pBuffer )

@@ -100,8 +100,8 @@ public:
 	int				attachmentIndex[MAX_BEAM_ENTS];
 
 	// Model info
-	int				modelIndex;
-	int				haloIndex;
+	modelindex_t				modelIndex;
+	modelindex_t				haloIndex;
 
 	float			haloScale;
 	int				frameCount;

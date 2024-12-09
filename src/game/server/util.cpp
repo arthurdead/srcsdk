@@ -1614,7 +1614,7 @@ void UTIL_BloodStream( const Vector &origin, const Vector &direction, int color,
 		return;
 
 	CPVSFilter filter( origin );
-	te->BloodStream( filter, 0.0, &origin, &direction, 247, 63, 14, 255, MIN( amount, 255 ) );
+	te->BloodStream( filter, 0.0, &origin, &direction, color32( 247, 63, 14, 255 ), MIN( amount, 255 ) );
 }				
 
 
@@ -1893,8 +1893,7 @@ void UTIL_BubbleTrail( const Vector& from, const Vector& to, int count )
 //			Speed - 
 //-----------------------------------------------------------------------------
 void UTIL_Beam( Vector &Start, Vector &End, modelindex_t nModelIndex, modelindex_t nHaloIndex, unsigned char FrameStart, unsigned char FrameRate,
-				float Life, unsigned char Width, unsigned char EndWidth, unsigned char FadeLength, unsigned char Noise, unsigned char Red, unsigned char Green,
-				unsigned char Blue, unsigned char Brightness, unsigned char Speed)
+				float Life, unsigned char Width, unsigned char EndWidth, unsigned char FadeLength, unsigned char Noise, color32 clr, unsigned char Speed)
 {
 	CBroadcastRecipientFilter filter;
 
@@ -1910,10 +1909,7 @@ void UTIL_Beam( Vector &Start, Vector &End, modelindex_t nModelIndex, modelindex
 		EndWidth,
 		FadeLength,
 		Noise,
-		Red,
-		Green,
-		Blue,
-		Brightness,
+		clr,
 		Speed );
 }
 

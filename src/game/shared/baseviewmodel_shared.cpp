@@ -553,7 +553,7 @@ static void RecvProxy_Weapon( const CRecvProxyData *pData, void *pStruct, void *
 	CSharedBaseCombatWeapon *pOldWeapon = pViewModel->GetOwningWeapon();
 
 	// Chain through to the default recieve proxy ...
-	RecvProxy_IntToEHandle( pData, pStruct, pOut );
+	RecvProxy_EHandle( pData, pStruct, pOut );
 
 	// ... and reset our cycle index if the server is switching weapons on us
 	CSharedBaseCombatWeapon *pNewWeapon = pViewModel->GetOwningWeapon();
@@ -607,7 +607,7 @@ BEGIN_NETWORK_TABLE_NOBASE(CSharedBaseViewModel, DT_BaseViewModel)
 	RecvPropInt( RECVINFO( m_nMuzzleFlashParity )),
 
 #if !defined( INVASION_DLL ) && !defined( INVASION_CLIENT_DLL )
-	RecvPropArray(RecvPropFloat(RECVINFO(m_flPoseParameter[0]) ), m_flPoseParameter ),
+	RecvPropArray(RecvPropFloat(RECVINFO_ARRAY(m_flPoseParameter) ), m_flPoseParameter ),
 #endif
 #endif
 END_NETWORK_TABLE()

@@ -128,6 +128,11 @@ private:
 	void				UpdateControlPoint( ParticleEffectList_t *pEffect, int iPoint, bool bInitializing );
 
 private:
+	CParticleProperty(const CParticleProperty &) = delete;
+	CParticleProperty &operator=(const CParticleProperty &) = delete;
+	CParticleProperty(CParticleProperty &&) = delete;
+	CParticleProperty &operator=(CParticleProperty &&) = delete;
+
 	CSharedBaseEntity *m_pOuter;
 	CUtlVector<ParticleEffectList_t>	m_ParticleEffects;
 	int			m_iDormancyChangedAtFrame;

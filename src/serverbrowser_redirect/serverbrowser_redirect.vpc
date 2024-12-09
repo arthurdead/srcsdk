@@ -1,0 +1,20 @@
+//-----------------------------------------------------------------------------
+//	VAUDIO_MINIMP3.VPC
+//
+//	Project Script
+//-----------------------------------------------------------------------------
+
+// You may need to change the below SRCDIR macro
+// depending on where you place the .vpc in your Source SDK codebase.
+$Macro SRCDIR		".."
+$Macro OUTBINDIR	"$SRCDIR\..\game\bin"
+
+$Include "$SRCDIR\vpc_scripts\source_dll_base.vpc"
+
+$Project "ServerBrowser"
+{
+	$Folder	"Source Files"
+	{
+		$File	"serverbrowser_redirect.cpp"
+	}
+}

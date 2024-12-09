@@ -18,33 +18,33 @@ void TE_ArmorRicochet( IRecipientFilter& filter, float delay,
 void TE_BeamEntPoint( IRecipientFilter& filter, float delay,
 	int	nStartEntity, const Vector *start, int nEndEntity, const Vector* end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 	float life, float width, float endWidth, int fadeLength, float amplitude, 
-	int r, int g, int b, int a, int speed );
+	color32 clr, int speed );
 void TE_BeamEnts( IRecipientFilter& filter, float delay,
 	int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 	float life, float width, float endWidth, int fadeLength, float amplitude, 
-	int r, int g, int b, int a, int speed );
+	color32 clr, int speed );
 void TE_BeamFollow( IRecipientFilter& filter, float delay,
 	int iEntIndex, modelindex_t modelIndex, modelindex_t haloIndex, float life, float width, float endWidth, 
 	float fadeLength,float r, float g, float b, float a );
 void TE_BeamPoints( IRecipientFilter& filter, float delay,
 	const Vector* start, const Vector* end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 	float life, float width, float endWidth, int fadeLength, float amplitude, 
-	int r, int g, int b, int a, int speed );
+	color32 clr, int speed );
 void TE_BeamLaser( IRecipientFilter& filter, float delay,
 	int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-	float life, float width, float endWidth, int fadeLength, float amplitude, int r, int g, int b, int a, int speed );
+	float life, float width, float endWidth, int fadeLength, float amplitude, color32 clr, int speed );
 void TE_BeamRing( IRecipientFilter& filter, float delay,
 	int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-	float life, float width, int spread, float amplitude, int r, int g, int b, int a, int speed, int flags = 0 );
+	float life, float width, int spread, float amplitude, color32 clr, int speed, int flags = 0 );
 void TE_BeamRingPoint( IRecipientFilter& filter, float delay,
 	const Vector& center, float start_radius, float end_radius, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-	float life, float width, int spread, float amplitude, int r, int g, int b, int a, int speed, int flags = 0 );
+	float life, float width, int spread, float amplitude, color32 clr, int speed, int flags = 0 );
 void TE_BeamSpline( IRecipientFilter& filter, float delay,
 	int points, Vector* rgPoints );
 void TE_BloodStream( IRecipientFilter& filter, float delay,
-	const Vector* org, const Vector* dir, int r, int g, int b, int a, int amount );
+	const Vector* org, const Vector* dir, color32 clr, int amount );
 void TE_BloodSprite( IRecipientFilter& filter, float delay,
-	const Vector* org, const Vector *dir, int r, int g, int b, int a, int size );
+	const Vector* org, const Vector *dir, color32 clr, int size );
 void TE_BreakModel( IRecipientFilter& filter, float delay,
 	const Vector& pos, const QAngle &angles, const Vector& size, const Vector& vel, 
 	modelindex_t modelindex, int randomization, int count, float time, int flags );
@@ -59,13 +59,13 @@ void TE_BubbleTrail( IRecipientFilter& filter, float delay,
 void TE_Decal( IRecipientFilter& filter, float delay,
 	const Vector* pos, const Vector* start, int entity, int hitbox, int index );
 void TE_DynamicLight( IRecipientFilter& filter, float delay,
-	const Vector* org, int r, int g, int b, int exponent, float radius, float time, float decay );
+	const Vector* org, ColorRGBExp32 clr, float radius, float time, float decay );
 void TE_Explosion( IRecipientFilter& filter, float delay,
 	const Vector* pos, modelindex_t modelindex, float scale, int framerate, int flags, int radius, int magnitude, const Vector* normal = NULL, unsigned char materialType = 'C' );
 void TE_ShatterSurface( IRecipientFilter& filter, float delay,
 	const Vector* pos, const QAngle* angle, const Vector* vForce, const Vector* vForcePos, 
 	float width, float height, float shardsize, ShatterSurface_t surfacetype,
-	int front_r, int front_g, int front_b, int back_r, int back_g, int back_b);
+	color24 front_clr, color24 back_clr);
 void TE_GlowSprite( IRecipientFilter& filter, float delay,
 	const Vector* pos, modelindex_t modelindex, float life, float size, int brightness );
 void TE_FootprintDecal( IRecipientFilter& filter, float delay, const Vector *origin, const Vector* right, 
@@ -152,26 +152,26 @@ public:
 		int	nStartEntity, const Vector *pStart, int nEndEntity, const Vector* pEnd, 
 		modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 		float life, float width, float endWidth, int fadeLength, float amplitude, 
-		int r, int g, int b, int a, int speed )
+		color32 clr, int speed )
 	{
 		if ( !SuppressTE( filter ) )
 		{
 			TE_BeamEntPoint( filter, delay, nStartEntity, pStart, nEndEntity, pEnd, modelindex, haloindex, startframe, framerate,
-				life, width, endWidth, fadeLength, amplitude, r, g, b, a, speed );
+				life, width, endWidth, fadeLength, amplitude, clr, speed );
 		}
 	}
 
 	virtual void BeamEnts( IRecipientFilter& filter, float delay,
 		int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 		float life, float width, float endWidth, int fadeLength, float amplitude, 
-		int r, int g, int b, int a, int speed )
+		color32 clr, int speed )
 	{
 		if ( !SuppressTE( filter ) )
 		{
 			TE_BeamEnts( filter, delay,
 				start, end, modelindex, haloindex, startframe, framerate,
 				life, width, endWidth, fadeLength, amplitude, 
-				r, g, b, a, speed );
+				clr, speed );
 		}
 	}
 	virtual void BeamFollow( IRecipientFilter& filter, float delay,
@@ -188,47 +188,47 @@ public:
 	virtual void BeamPoints( IRecipientFilter& filter, float delay,
 		const Vector* start, const Vector* end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 		float life, float width, float endWidth, int fadeLength, float amplitude, 
-		int r, int g, int b, int a, int speed )
+		color32 clr, int speed )
 	{
 		if ( !SuppressTE( filter ) )
 		{
 			TE_BeamPoints( filter, delay,
 				start, end, modelindex, haloindex, startframe, framerate,
 				life, width, endWidth, fadeLength, amplitude, 
-				r, g, b, a, speed );
+				clr, speed );
 		}
 	}
 	virtual void BeamLaser( IRecipientFilter& filter, float delay,
 		int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-		float life, float width, float endWidth, int fadeLength, float amplitude, int r, int g, int b, int a, int speed )
+		float life, float width, float endWidth, int fadeLength, float amplitude, color32 clr, int speed )
 	{
 		if ( !SuppressTE( filter ) )
 		{
 			TE_BeamLaser( filter, delay,
 				start, end, modelindex, haloindex, startframe, framerate,
-				life, width, endWidth, fadeLength, amplitude, r, g, b, a, speed );
+				life, width, endWidth, fadeLength, amplitude, clr, speed );
 		}
 	}
 	virtual void BeamRing( IRecipientFilter& filter, float delay,
 		int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-		float life, float width, int spread, float amplitude, int r, int g, int b, int a, int speed, int flags )
+		float life, float width, int spread, float amplitude, color32 clr, int speed, int flags )
 	{
 		if ( !SuppressTE( filter ) )
 		{	
 			TE_BeamRing( filter, delay,
 				start, end, modelindex, haloindex, startframe, framerate,
-				life, width, spread, amplitude, r, g, b, a, speed, flags );
+				life, width, spread, amplitude, clr, speed, flags );
 		}
 	}
 	virtual void BeamRingPoint( IRecipientFilter& filter, float delay,
 		const Vector& center, float start_radius, float end_radius, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-		float life, float width, int spread, float amplitude, int r, int g, int b, int a, int speed, int flags )
+		float life, float width, int spread, float amplitude, color32 clr, int speed, int flags )
 	{
 		if ( !SuppressTE( filter ) )
 		{
 			TE_BeamRingPoint( filter, delay,
 				center, start_radius, end_radius, modelindex, haloindex, startframe, framerate,
-				life, width, spread, amplitude, r, g, b, a, speed, flags );
+				life, width, spread, amplitude, clr, speed, flags );
 		}
 	}
 	virtual void BeamSpline( IRecipientFilter& filter, float delay,
@@ -240,19 +240,19 @@ public:
 		}
 	}
 	virtual void BloodStream( IRecipientFilter& filter, float delay,
-		const Vector* org, const Vector* dir, int r, int g, int b, int a, int amount )
+		const Vector* org, const Vector* dir, color32 clr, int amount )
 	{
 		if ( !SuppressTE( filter ) )
 		{
-			TE_BloodStream( filter, delay, org, dir, r, g, b, a, amount );
+			TE_BloodStream( filter, delay, org, dir, clr, amount );
 		}
 	}
 	virtual void BloodSprite( IRecipientFilter& filter, float delay,
-		const Vector* org, const Vector *dir, int r, int g, int b, int a, int size )
+		const Vector* org, const Vector *dir, color32 clr, int size )
 	{
 		if ( !SuppressTE( filter ) )
 		{
-			TE_BloodSprite( filter, delay, org, dir, r, g, b, a, size );
+			TE_BloodSprite( filter, delay, org, dir, clr, size );
 		}
 	}
 	virtual void BreakModel( IRecipientFilter& filter, float delay,
@@ -307,11 +307,11 @@ public:
 		}
 	}
 	virtual void DynamicLight( IRecipientFilter& filter, float delay,
-		const Vector* org, int r, int g, int b, int exponent, float radius, float time, float decay )
+		const Vector* org, ColorRGBExp32 clr, float radius, float time, float decay )
 	{
 		if ( !SuppressTE( filter ) )
 		{
-			TE_DynamicLight( filter, delay, org, r, g, b, exponent, radius, time, decay );
+			TE_DynamicLight( filter, delay, org, clr, radius, time, decay );
 		}
 	}
 	virtual void Explosion( IRecipientFilter& filter, float delay,
@@ -325,12 +325,12 @@ public:
 	virtual void ShatterSurface( IRecipientFilter& filter, float delay,
 		const Vector* pos, const QAngle* angle, const Vector* vForce, const Vector* vForcePos, 
 		float width, float height, float shardsize, ShatterSurface_t surfacetype,
-		int front_r, int front_g, int front_b, int back_r, int back_g, int back_b)
+		color24 front_clr, color24 back_clr)
 	{
 		if ( !SuppressTE( filter ) )
 		{
 			TE_ShatterSurface( filter, delay, pos, angle, vForce, vForcePos, width, height, shardsize, surfacetype,
-				 front_r, front_g, front_b, back_r, back_g, back_b );
+				 front_clr, back_clr );
 		}
 	}
 	virtual void GlowSprite( IRecipientFilter& filter, float delay,

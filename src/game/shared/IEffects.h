@@ -37,8 +37,7 @@ public:
 	virtual void Beam( const Vector &Start, const Vector &End, modelindex_t nModelIndex, 
 		modelindex_t nHaloIndex, unsigned char frameStart, unsigned char frameRate,
 		float flLife, unsigned char width, unsigned char endWidth, unsigned char fadeLength, 
-		unsigned char noise, unsigned char red, unsigned char green,
-		unsigned char blue, unsigned char brightness, unsigned char speed) = 0;
+		unsigned char noise, color32 clr, unsigned char speed) = 0;
 
 	//-----------------------------------------------------------------------------
 	// Purpose: Emits smoke sprites.

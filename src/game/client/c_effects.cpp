@@ -926,10 +926,8 @@ void CClient_Precipitation::CreateAshParticle( void )
 			pParticle->m_vecVelocity = Vector( RandomFloat( -20.0f, 20.0f ), RandomFloat( -20.0f, 20.0f ), RandomFloat( -10, -15 ) );
 		}
 
-		float color = random_valve->RandomInt( 125, 225 );
-		pParticle->m_uchColor[0] = color;
-		pParticle->m_uchColor[1] = color;
-		pParticle->m_uchColor[2] = color;
+		unsigned char color = random_valve->RandomInt( 125, 225 );
+		pParticle->m_uchColor.SetColor( color, color, color );
 
 		pParticle->m_uchStartSize	= 1;
 		pParticle->m_uchEndSize		= 1;
@@ -1541,9 +1539,9 @@ Vector CEmberEmitter::UpdateColor( const SimpleParticle *pParticle )
 	Vector	color;
 	const float	ramp = 1.0f - ( pParticle->m_flLifetime / pParticle->m_flDieTime );
 
-	color[0] = ( (float) pParticle->m_uchColor[0] * ramp ) / 255.0f;
-	color[1] = ( (float) pParticle->m_uchColor[1] * ramp ) / 255.0f;
-	color[2] = ( (float) pParticle->m_uchColor[2] * ramp ) / 255.0f;
+	color[0] = ( (float) pParticle->m_uchColor.r() * ramp ) / 255.0f;
+	color[1] = ( (float) pParticle->m_uchColor.g() * ramp ) / 255.0f;
+	color[2] = ( (float) pParticle->m_uchColor.b() * ramp ) / 255.0f;
 
 	return color;
 }
@@ -1686,9 +1684,10 @@ void C_Embers::SpawnEmber( void )
 	sParticle->m_flLifetime = 0.0f;
 	sParticle->m_flDieTime	= m_nLifetime;
 
-	sParticle->m_uchColor[0]	= GetRenderColorR() * cScale;
-	sParticle->m_uchColor[1]	= GetRenderColorG() * cScale;
-	sParticle->m_uchColor[2]	= GetRenderColorB() * cScale;
+	unsigned char r	= GetRenderColorR() * cScale;
+	unsigned char g	= GetRenderColorG() * cScale;
+	unsigned char b	= GetRenderColorB() * cScale;
+	sParticle->m_uchColor.SetColor( r, g, b );
 	sParticle->m_uchStartAlpha	= 255;
 	sParticle->m_uchEndAlpha	= 0;
 	sParticle->m_uchStartSize	= 1;
@@ -1753,12 +1752,12 @@ END_RECV_TABLE()
 
 FORCEINLINE Vector Color32ToVector( const color32 &color )
 {
-	return Vector( color.r * (1.0/255.0f), color.g * (1.0/255.0f), color.b * (1.0/255.0f) );
+	return Vector( color.r() * (1.0/255.0f), color.g() * (1.0/255.0f), color.b() * (1.0/255.0f) );
 }
 
 FORCEINLINE Vector Color24ToVector( const color24 &color )
 {
-	return Vector( color.r * (1.0/255.0f), color.g * (1.0/255.0f), color.b * (1.0/255.0f) );
+	return Vector( color.r() * (1.0/255.0f), color.g() * (1.0/255.0f), color.b() * (1.0/255.0f) );
 }
 
 int	C_QuadraticBeam::DrawModel( int, const RenderableInstance_t & )
@@ -2379,9 +2378,10 @@ void CSnowFallManager::CreateSnowFallParticle( const Vector &vecParticleSpawn, i
 //	pParticle->m_uchColor[0] = 150;//color;
 //	pParticle->m_uchColor[1] = 175;//color;
 //	pParticle->m_uchColor[2] = 200;//color;
-	pParticle->m_uchColor[0] = r_SnowColorRed.GetInt();
-	pParticle->m_uchColor[1] = r_SnowColorGreen.GetInt();
-	pParticle->m_uchColor[2] = r_SnowColorBlue.GetInt();
+	unsigned char r = r_SnowColorRed.GetInt();
+	unsigned char g = r_SnowColorGreen.GetInt();
+	unsigned char b = r_SnowColorBlue.GetInt();
+	pParticle->m_uchColor.SetColor( r, g, b );
 
 	pParticle->m_uchStartSize = r_SnowStartSize.GetInt();
 	pParticle->m_uchEndSize = r_SnowEndSize.GetInt();

@@ -72,10 +72,7 @@ void CTEBeamRing::Test( const Vector& current_origin, const QAngle& current_angl
 	m_fLife			= 10.0;
 	m_fWidth		= 2.0;
 	m_fAmplitude	= 1;
-	r				= 255;
-	g				= 255;
-	b				= 0;
-	a				= 127;
+	m_clr.SetColor( 255, 255, 0, 127 );
 	m_nSpeed		= 5;
 
 	CBroadcastRecipientFilter filter;
@@ -110,7 +107,7 @@ static CTEBeamRing g_TEBeamRing( "BeamRing" );
 //-----------------------------------------------------------------------------
 void TE_BeamRing( IRecipientFilter& filter, float delay,
 	int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-	float life, float width, int spread, float amplitude, int r, int g, int b, int a, int speed, int flags )
+	float life, float width, int spread, float amplitude, color32 clr, int speed, int flags )
 {
 	g_TEBeamRing.m_nStartEntity = (start & 0x0FFF) | ((1 & 0xF)<<12);
 	g_TEBeamRing.m_nEndEntity	= (end & 0x0FFF) | ((1 & 0xF)<<12);
@@ -124,10 +121,7 @@ void TE_BeamRing( IRecipientFilter& filter, float delay,
 	g_TEBeamRing.m_nFadeLength	= 0;
 	g_TEBeamRing.m_fAmplitude	= amplitude;
 	g_TEBeamRing.m_nSpeed		= speed;
-	g_TEBeamRing.r				= r;
-	g_TEBeamRing.g				= g;
-	g_TEBeamRing.b				= b;
-	g_TEBeamRing.a				= a;
+	g_TEBeamRing.m_clr				= clr;
 	g_TEBeamRing.m_nFlags		= flags;
 
 	// Send it over the wire

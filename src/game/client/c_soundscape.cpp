@@ -412,6 +412,7 @@ bool C_SoundscapeSystem::Init()
 	}
 
 	KeyValues *manifest = new KeyValues( SOUNDSCAPE_MANIFEST_FILE );
+
 	if ( g_pFullFileSystem->LoadKeyValues( *manifest, IFileSystem::TYPE_SOUNDSCAPE, SOUNDSCAPE_MANIFEST_FILE, "GAME" ) )
 	{
 		for ( KeyValues *sub = manifest->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
@@ -438,7 +439,7 @@ bool C_SoundscapeSystem::Init()
 	}
 	else
 	{
-		Error( "Unable to load manifest file '%s'\n", SOUNDSCAPE_MANIFEST_FILE );
+		Warning( "Unable to load manifest file '%s'\n", SOUNDSCAPE_MANIFEST_FILE );
 	}
 
 	manifest->deleteThis();

@@ -73,13 +73,13 @@ class CStandardRecvProxies
 public:
 	CStandardRecvProxies();
 
-	RecvVarProxyFn m_Int32ToInt8;
-	RecvVarProxyFn m_Int32ToInt16;
-	RecvVarProxyFn m_Int32ToInt32;
-	RecvVarProxyFn m_FloatToFloat;
-	RecvVarProxyFn m_VectorToVector;
+	RecvVarProxyFn m_Int8;
+	RecvVarProxyFn m_Int16;
+	RecvVarProxyFn m_Int32;
+	RecvVarProxyFn m_Float;
+	RecvVarProxyFn m_Vector;
 #ifdef DT_INT64_SUPPORTED
-	RecvVarProxyFn m_Int64ToInt64;
+	RecvVarProxyFn m_Int64;
 #endif
 };
 
@@ -89,8 +89,13 @@ public:
 	CStandardRecvProxiesEx();
 
 #ifndef DT_INT64_SUPPORTED
-	RecvVarProxyFn m_Int64ToInt64;
+	RecvVarProxyFn m_Int64;
 #endif
+
+	RecvVarProxyFn m_UInt8;
+	RecvVarProxyFn m_UInt16;
+	RecvVarProxyFn m_UInt32;
+	RecvVarProxyFn m_UInt64;
 };
 
 extern CStandardRecvProxiesEx g_StandardRecvProxies;
@@ -342,16 +347,25 @@ inline bool RecvTable::IsInMainList() const
 #define RECVINFO_DTNAME(varName,remoteVarName) \
 	DT_VARNAME(remoteVarName), offsetof(currentRecvDTClass, varName)
 
-void RecvProxy_FloatToFloat  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_VectorToVector( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_VectorXYToVectorXY( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_QuaternionToQuaternion( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_Int32ToInt8   ( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_Int32ToInt16  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_StringToString( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_Int32ToInt32  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_Int64ToInt64  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_Int32ToColor32( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_Float  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_FloatAngle  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_Vector( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_VectorXY( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_Vector2D( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_Quaternion( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_QAngles( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_Int8   ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_UInt8   ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_Int16  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_String( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_Int32  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_Int64  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_Color32( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_Color32E( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_Color24( const CRecvProxyData *pData, void *pStruct, void *pOut );
+
+void RecvProxy_IntSubOne( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_ShortSubOne( const CRecvProxyData *pData, void *pStruct, void *pOut );
 
 // StaticDataTable does *pOut = pData.
 void DataTableRecvProxy_StaticDataTable(const RecvProp *pProp, void **pOut, void *pData, int objectID);
@@ -365,7 +379,7 @@ RecvProp RecvPropFloat(
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
 	int flags=0, 
-	RecvVarProxyFn varProxy=RecvProxy_FloatToFloat
+	RecvVarProxyFn varProxy=RecvProxy_Float
 	);
 
 RecvProp RecvPropVector(
@@ -373,7 +387,7 @@ RecvProp RecvPropVector(
 	int offset, 
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
 	int flags=0, 
-	RecvVarProxyFn varProxy=RecvProxy_VectorToVector
+	RecvVarProxyFn varProxy=RecvProxy_Vector
 	);
 
 RecvProp RecvPropVectorXY(
@@ -381,22 +395,25 @@ RecvProp RecvPropVectorXY(
 	int offset, 
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
 	int flags=0, 
-	RecvVarProxyFn varProxy=RecvProxy_VectorXYToVectorXY
+	RecvVarProxyFn varProxy=RecvProxy_VectorXY
 	);
 
 // This is here so the RecvTable can look more like the SendTable.
-#define RecvPropQAngles RecvPropVector
-
-#if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
+RecvProp RecvPropQAngles(
+	const char *pVarName, 
+	int offset, 
+	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
+	int flags=0, 
+	RecvVarProxyFn varProxy=RecvProxy_QAngles
+	);
 
 RecvProp RecvPropQuaternion(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
 	int flags=0, 
-	RecvVarProxyFn varProxy=RecvProxy_QuaternionToQuaternion
+	RecvVarProxyFn varProxy=RecvProxy_Quaternion
 	);
-#endif
 
 RecvProp RecvPropInt(
 	const char *pVarName, 
@@ -406,12 +423,54 @@ RecvProp RecvPropInt(
 	RecvVarProxyFn varProxy=0
 	);
 
+inline RecvProp RecvPropColor32(
+	const char *pVarName, 
+	int offset, 
+	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
+	RecvVarProxyFn varProxy=RecvProxy_Color32
+	)
+{
+	return RecvPropInt( pVarName, offset, sizeofVar, SPROP_UNSIGNED, varProxy );
+}
+
+inline RecvProp RecvPropColor32E(
+	const char *pVarName, 
+	int offset, 
+	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
+	RecvVarProxyFn varProxy=RecvProxy_Color32E
+	)
+{
+	return RecvPropInt( pVarName, offset, sizeofVar, SPROP_UNSIGNED, varProxy );
+}
+
+inline RecvProp RecvPropColor24(
+	const char *pVarName, 
+	int offset, 
+	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
+	RecvVarProxyFn varProxy=RecvProxy_Color24
+	)
+{
+	return RecvPropInt( pVarName, offset, sizeofVar, SPROP_UNSIGNED, varProxy );
+}
+
+RecvProp RecvPropBool(
+	const char *pVarName, 
+	int offset, 
+	int sizeofVar,
+	RecvVarProxyFn varProxy=RecvProxy_UInt8 );
+
+RecvProp RecvPropIntWithMinusOneFlag(
+	const char *pVarName, 
+	int offset, 
+	int sizeofVar=SIZEOF_IGNORE,
+	RecvVarProxyFn proxyFn=RecvProxy_IntSubOne );
+
 RecvProp RecvPropString(
 	const char *pVarName,
 	int offset,
 	int bufferSize,
 	int flags=0,
-	RecvVarProxyFn varProxy=RecvProxy_StringToString
+	RecvVarProxyFn varProxy=RecvProxy_String
 	);
 
 RecvProp RecvPropDataTable(

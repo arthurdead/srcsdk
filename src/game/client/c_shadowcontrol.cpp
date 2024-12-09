@@ -37,7 +37,7 @@ private:
 
 IMPLEMENT_CLIENTCLASS_DT(C_ShadowControl, DT_ShadowControl, CShadowControl)
 	RecvPropVector(RECVINFO(m_shadowDirection)),
-	RecvPropInt(RECVINFO(m_shadowColor), 0, RecvProxy_Int32ToColor32),
+	RecvPropColor32(RECVINFO(m_shadowColor)),
 	RecvPropFloat(RECVINFO(m_flShadowMaxDist)),
 	RecvPropBool(RECVINFO(m_bDisableShadows)),
 	RecvPropBool(RECVINFO(m_bEnableLocalLightShadows)),

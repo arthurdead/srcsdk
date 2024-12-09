@@ -1,0 +1,21 @@
+//-----------------------------------------------------------------------------
+//	FGDLIB.VPC
+//
+//	Project Script
+//-----------------------------------------------------------------------------
+
+$Macro SRCDIR		".."
+$Include "$SRCDIR\vpc_scripts\source_lib_base.vpc"
+
+$Project "choreoobjects"
+{
+	$Folder	"Source Files"
+	{
+		$File	"choreoactor.cpp"
+		$File	"choreochannel.cpp"
+		$File	"choreoevent.cpp"
+		$File	"choreoscene.cpp"
+		$File	"sceneimage.cpp"
+		$File	"scenetokenprocessor.cpp"
+	}
+}

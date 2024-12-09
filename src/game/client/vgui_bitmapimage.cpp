@@ -138,7 +138,7 @@ void BitmapImage::DoPaint( int x, int y, int wide, int tall, float yaw, float fl
 {
 	vgui::surface()->DrawSetTexture( m_nTextureId );
 
-	int r, g, b, a;
+	unsigned char r, g, b, a;
 	m_clr.GetColor( r, g, b, a );
 	a *= flAlphaModulate;
 	vgui::surface()->DrawSetColor( r, g, b, a );
@@ -222,7 +222,7 @@ Color BitmapImage::GetColor( )
 	return m_clr;
 }
 
-void BitmapImage::GetColor( int& r,int& g,int& b,int& a )
+void BitmapImage::GetColor( unsigned char& r,unsigned char& g,unsigned char& b,unsigned char& a )
 {
 	m_clr.GetColor( r,g,b,a );
 }

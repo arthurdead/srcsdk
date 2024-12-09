@@ -100,7 +100,7 @@ public:
 	bool IsPrecached() const
 	{ return value > 0; }
 	bool IsNetworked() const
-	{ return value < -1 && !(value & 1); }
+	{ return (value < -1 && !(value & 1)) || value > 0; }
 	bool IsClientSide() const
 	{ return value < -1 && (value & 1); }
 

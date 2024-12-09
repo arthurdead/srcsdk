@@ -180,8 +180,8 @@ void CHudAnimationInfo::PaintMappingInfo( int& x, int& y, Panel *element, PanelA
 			if ( dat && dat->GetDataType() == KeyValues::TYPE_COLOR )
 			{
 				col = dat->GetColor();
-				Q_snprintf( value, sizeof( value ), "%i, %i, %i, %i",
-					col[0], col[1], col[2], col[3] );
+				Q_snprintf( value, sizeof( value ), "%hu, %hu, %hu, %hu",
+					col.r(), col.g(), col.b(), col.a() );
 				pColor = &col;
 			}
 			else

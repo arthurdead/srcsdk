@@ -60,7 +60,7 @@ private:
 	};
 	// The bitmap to render
 	BitmapImage *m_pImage;
-	int m_r, m_g, m_b, m_a;
+	color32 m_clr;
 	bool m_bOwnsImage;
 
 	char			m_szMouseOverText[ MAX_ENTITY_MOUSEOVER ];

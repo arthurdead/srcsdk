@@ -17,14 +17,10 @@ class CRecvProxyData;
 
 
 // This converts the int stored in pData to an EHANDLE in pOut.
-void RecvProxy_IntToEHandle( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_EHandle( const CRecvProxyData *pData, void *pStruct, void *pOut );
 
-void RecvProxy_IntToMoveParent( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_IntSubOne( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_ShortSubOne( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_MoveParent( const CRecvProxyData *pData, void *pStruct, void *pOut );
 void RecvProxy_InterpolationAmountChanged( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_IntToModelIndex16_BackCompatible( const CRecvProxyData *pData, void *pStruct, void *pOut );
-void RecvProxy_IntToModelIndex32_BackCompatible( const CRecvProxyData *pData, void *pStruct, void *pOut );
 
 RecvProp RecvPropTime(
 	const char *pVarName, 
@@ -40,18 +36,7 @@ RecvProp RecvPropEHandle(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar=SIZEOF_IGNORE,
-	RecvVarProxyFn proxyFn=RecvProxy_IntToEHandle );
-
-RecvProp RecvPropBool(
-	const char *pVarName, 
-	int offset, 
-	int sizeofVar );
-
-RecvProp RecvPropIntWithMinusOneFlag(
-	const char *pVarName, 
-	int offset, 
-	int sizeofVar=SIZEOF_IGNORE,
-	RecvVarProxyFn proxyFn=RecvProxy_IntSubOne );
+	RecvVarProxyFn proxyFn=RecvProxy_EHandle );
 
 // Send a string_t as a string property.
 RecvProp RecvPropStringT(

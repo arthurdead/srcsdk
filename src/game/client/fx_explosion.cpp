@@ -113,9 +113,9 @@ public:
 		float	tLifetime = pParticle->m_flLifetime / pParticle->m_flDieTime;
 		float	ramp = Bias( 1.0f - tLifetime, 0.25f );
 
-		color[0] = ( (float) pParticle->m_uchColor[0] * ramp ) / 255.0f;
-		color[1] = ( (float) pParticle->m_uchColor[1] * ramp ) / 255.0f;
-		color[2] = ( (float) pParticle->m_uchColor[2] * ramp ) / 255.0f;
+		color[0] = ( (float) pParticle->m_uchColor.r() * ramp ) / 255.0f;
+		color[1] = ( (float) pParticle->m_uchColor.g() * ramp ) / 255.0f;
+		color[2] = ( (float) pParticle->m_uchColor.b() * ramp ) / 255.0f;
 
 		return color;
 	}
@@ -1148,9 +1148,11 @@ void C_WaterExplosionEffect::CreateDebris( void )
 			debugoverlay->AddLineOverlay( m_vecOrigin, m_vecOrigin + pParticle->m_vecVelocity, 255, 0, 0, false, 3 );
 			#endif
 
-			pParticle->m_uchColor[0] = m_vecColor.x * 255;
-			pParticle->m_uchColor[1] = m_vecColor.y * 255;
-			pParticle->m_uchColor[2] = m_vecColor.z * 255;
+			unsigned char r = m_vecColor.x * 255;
+			unsigned char g = m_vecColor.y * 255;
+			unsigned char b = m_vecColor.z * 255;
+
+			pParticle->m_uchColor.SetColor( r, g, b );
 			
 			pParticle->m_uchStartSize	= random_valve->RandomInt( 32, 64 );
 			pParticle->m_uchEndSize		= pParticle->m_uchStartSize * 2;
@@ -1276,9 +1278,11 @@ void C_WaterExplosionEffect::CreateMisc( void )
 		
 		colorRamp = random_valve->RandomFloat( 0.75f, 1.25f );
 
-		pParticle->m_uchColor[0]	= MIN( 1.0f, m_vecColor[0] * colorRamp ) * 255.0f;
-		pParticle->m_uchColor[1]	= MIN( 1.0f, m_vecColor[1] * colorRamp ) * 255.0f;
-		pParticle->m_uchColor[2]	= MIN( 1.0f, m_vecColor[2] * colorRamp ) * 255.0f;
+		unsigned char r	= MIN( 1.0f, m_vecColor[0] * colorRamp ) * 255.0f;
+		unsigned char g	= MIN( 1.0f, m_vecColor[1] * colorRamp ) * 255.0f;
+		unsigned char b	= MIN( 1.0f, m_vecColor[2] * colorRamp ) * 255.0f;
+
+		pParticle->m_uchColor.SetColor( r, g, b );
 		
 		pParticle->m_uchStartSize	= 24 * flScale * RemapValClamped( i, 7, 0, 1, 0.5f );
 		pParticle->m_uchEndSize		= MIN( 255, pParticle->m_uchStartSize * 2 );

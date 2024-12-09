@@ -551,7 +551,7 @@ void C_ParticleSmokeGrenade::UpdateDynamicLightList( const Vector &vMins, const 
 		else
 		{
 			CActiveLight *pOut = &m_ActiveLights[m_nActiveLights];
-			if ( (pIn->color.r != 0 || pIn->color.g != 0 || pIn->color.b != 0) && pIn->color.exponent != 0 )
+			if ( (pIn->color.r() != 0 || pIn->color.g() != 0 || pIn->color.b() != 0) && pIn->color.e() != 0 )
 			{
 				ColorRGBExp32ToVector( pIn->color, pOut->m_vColor );
 				pOut->m_vColor /= 255.0f;

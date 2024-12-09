@@ -40,8 +40,8 @@ public:
 	CNetworkVar( float, m_flHeight );
 	CNetworkVar( float, m_flShardSize );
 	CNetworkVar( int, m_nSurfaceType );
-	CNetworkArray( byte, m_uchFrontColor, 3 );
-	CNetworkArray( byte, m_uchBackColor, 3 );
+	CNetworkColor24( m_uchFrontColor );
+	CNetworkColor24( m_uchBackColor );
 };
 
 //-----------------------------------------------------------------------------
@@ -58,12 +58,8 @@ CTEShatterSurface::CTEShatterSurface( const char *name ) :
 	m_flWidth			= 16.0f;
 	m_flHeight			= 16.0f;
 	m_flShardSize		= 3.0f;
-	m_uchFrontColor.Set( 0, 255 );
-	m_uchFrontColor.Set( 1, 255 );
-	m_uchFrontColor.Set( 2, 255 );
-	m_uchBackColor.Set( 0, 255 );
-	m_uchBackColor.Set( 1, 255 );
-	m_uchBackColor.Set( 2, 255 );
+	m_uchFrontColor.SetColor( 255, 255, 255 );
+	m_uchBackColor.SetColor( 255, 255, 255 );
 }
 
 //-----------------------------------------------------------------------------
@@ -108,12 +104,8 @@ IMPLEMENT_SERVERCLASS_ST(CTEShatterSurface, DT_TEShatterSurface)
 	SendPropFloat( SENDINFO(m_flHeight), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO(m_flShardSize), 0, SPROP_NOSCALE ),
 	SendPropInt( SENDINFO(m_nSurfaceType), 2, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO_ARRAYELEM( m_uchFrontColor, 0 ), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO_ARRAYELEM( m_uchFrontColor, 1 ), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO_ARRAYELEM( m_uchFrontColor, 2 ), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO_ARRAYELEM( m_uchBackColor, 0 ), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO_ARRAYELEM( m_uchBackColor, 1 ), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO_ARRAYELEM( m_uchBackColor, 2 ), 8, SPROP_UNSIGNED ),
+	SendPropColor24( SENDINFO( m_uchFrontColor ) ),
+	SendPropColor24( SENDINFO( m_uchBackColor ) ),
 END_SEND_TABLE()
 
 
@@ -133,7 +125,7 @@ static CTEShatterSurface g_TEShatterSurface( "Surface Shatter" );
 void TE_ShatterSurface( IRecipientFilter& filter, float delay,
 	const Vector* pos, const QAngle* angle, const Vector* force, const Vector* forcepos, 
 	float width, float height, float shardsize, ShatterSurface_t surfacetype,
-	int front_r, int front_g, int front_b, int back_r, int back_g, int back_b)
+	color24 front_clr, color24 back_clr)
 {
 	g_TEShatterSurface.m_vecOrigin			= *pos;
 	g_TEShatterSurface.m_vecAngles			= *angle;
@@ -143,12 +135,8 @@ void TE_ShatterSurface( IRecipientFilter& filter, float delay,
 	g_TEShatterSurface.m_flHeight			= height;
 	g_TEShatterSurface.m_flShardSize		= shardsize;
 	g_TEShatterSurface.m_nSurfaceType		= surfacetype;
-	g_TEShatterSurface.m_uchFrontColor.Set( 0, front_r );
-	g_TEShatterSurface.m_uchFrontColor.Set( 1, front_g );
-	g_TEShatterSurface.m_uchFrontColor.Set( 2, front_b );
-	g_TEShatterSurface.m_uchBackColor.Set( 0, back_r );
-	g_TEShatterSurface.m_uchBackColor.Set( 1, back_g );
-	g_TEShatterSurface.m_uchBackColor.Set( 2, back_b );
+	g_TEShatterSurface.m_uchFrontColor.Set( front_clr );
+	g_TEShatterSurface.m_uchBackColor.Set( back_clr );
 
 	// Send it over the wire
 	g_TEShatterSurface.Create( filter, delay );

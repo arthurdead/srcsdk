@@ -301,21 +301,21 @@ static void RecvProxy_SolidFlags( const CRecvProxyData *pData, void *pStruct, vo
 static void RecvProxy_OBBMinsPreScaled( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	C_CollisionProperty *pProp = ((C_CollisionProperty*)pStruct);
-	Vector &vecMins = *((Vector*)pData->m_Value.m_Vector);
+	const Vector &vecMins = pData->m_Value.m_Vector;
 	pProp->SetCollisionBounds( vecMins, pProp->OBBMaxsPreScaled() );
 }
 
 static void RecvProxy_OBBMaxsPreScaled( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	C_CollisionProperty *pProp = ((C_CollisionProperty*)pStruct);
-	Vector &vecMaxs = *((Vector*)pData->m_Value.m_Vector);
+	const Vector &vecMaxs = pData->m_Value.m_Vector;
 	pProp->SetCollisionBounds( pProp->OBBMinsPreScaled(), vecMaxs );
 }
 
 static void RecvProxy_VectorDirtySurround( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	Vector &vecold = *((Vector*)pOut);
-	Vector vecnew( pData->m_Value.m_Vector[0], pData->m_Value.m_Vector[1], pData->m_Value.m_Vector[2] );
+	const Vector &vecnew = pData->m_Value.m_Vector;
 
 	if ( vecold != vecnew )
 	{

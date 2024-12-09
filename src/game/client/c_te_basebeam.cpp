@@ -73,7 +73,7 @@ BEGIN_RECV_TABLE_NOBASE( C_TEBaseBeam, DT_BaseBeam )
 	RecvPropInt( RECVINFO(m_nFadeLength)),
 	RecvPropFloat( RECVINFO(m_fAmplitude)),
 	RecvPropInt( RECVINFO(m_nSpeed)),
-	RecvPropInt( RECVINFO(m_clr), SPROP_UNSIGNED, RecvProxy_Int32ToColor32 ),
+	RecvPropColor32( RECVINFO(m_clr) ),
 	RecvPropInt( RECVINFO(m_nFlags)),
 END_RECV_TABLE()
 

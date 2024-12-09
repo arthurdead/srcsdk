@@ -7,6 +7,8 @@ $Games
 	"HEIST"
 }
 
+$Conditional "SDK2013MP" "1"
+
 $Conditional "SOURCESDK" "1"
 
 $Include "vpc_scripts\projects.vgc"

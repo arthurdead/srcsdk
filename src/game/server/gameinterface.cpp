@@ -877,6 +877,8 @@ extern void W_Precache(void);
 
 extern ConVar sv_stepsize;
 
+extern modelindex_t g_sModelIndexWorld;
+
 // Called any time a new level is started (after GameInit() also on level transitions within a game)
 bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool background )
 {
@@ -995,6 +997,8 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 
 	// Call all registered precachers.
 	CPrecacheRegister::Precache();
+
+	g_sModelIndexWorld = modelinfo->GetModelIndex( pMapName );
 
 	// =================================================
 	//	Initialize NPC Relationships

@@ -33,10 +33,7 @@ public:
 
 public:
 	CNetworkVector( m_vecDirection );
-	CNetworkVar( int, r );
-	CNetworkVar( int, g );
-	CNetworkVar( int, b );
-	CNetworkVar( int, a );
+	CNetworkColor32( m_clr );
 	CNetworkVar( int, m_nAmount );
 };
 
@@ -48,10 +45,7 @@ CTEBloodStream::CTEBloodStream( const char *name ) :
 	BaseClass( name )
 {
 	m_vecDirection.Init();
-	r = 0;
-	g = 0;
-	b = 0;
-	a = 0;
+	m_clr.SetColor( 0, 0, 0, 0 );
 	m_nAmount = 0;
 }
 
@@ -70,10 +64,7 @@ CTEBloodStream::~CTEBloodStream( void )
 void CTEBloodStream::Test( const Vector& current_origin, const QAngle& current_angles )
 {
 	// Fill in data
-	r = 247;
-	g = 0;
-	b = 0;
-	a = 255;
+	m_clr.SetColor( 247, 0, 0, 255 );
 	m_nAmount	= random_valve->RandomInt(50, 150);
 	m_vecOrigin = current_origin;
 	
@@ -95,10 +86,7 @@ void CTEBloodStream::Test( const Vector& current_origin, const QAngle& current_a
 
 IMPLEMENT_SERVERCLASS_ST(CTEBloodStream, DT_TEBloodStream)
 	SendPropVector( SENDINFO(m_vecDirection), 11, 0, -10.0, 10.0 ),
-	SendPropInt( SENDINFO(r), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(g), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(b), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(a), 8, SPROP_UNSIGNED ),
+	SendPropColor32( SENDINFO(m_clr) ),
 	SendPropInt( SENDINFO(m_nAmount), 8, SPROP_UNSIGNED ),
 END_SEND_TABLE()
 
@@ -120,14 +108,11 @@ static CTEBloodStream g_TEBloodStream( "Blood Stream" );
 //			amount - 
 //-----------------------------------------------------------------------------
 void TE_BloodStream( IRecipientFilter& filter, float delay,
-	const Vector* org, const Vector* dir, int r, int g, int b, int a, int amount )
+	const Vector* org, const Vector* dir, color32 clr, int amount )
 {
 	g_TEBloodStream.m_vecOrigin = *org;
 	g_TEBloodStream.m_vecDirection = *dir;	
-	g_TEBloodStream.r = r;
-	g_TEBloodStream.g = g;
-	g_TEBloodStream.b = b;
-	g_TEBloodStream.a = a;
+	g_TEBloodStream.m_clr = clr;
 	g_TEBloodStream.m_nAmount = amount;
 
 	// Send it over the wire

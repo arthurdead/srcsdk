@@ -1104,7 +1104,7 @@ void CHudCloseCaption::Paint( void )
 	rcText.top = rcText.bottom - m_nCurrentHeight - 2 * CC_INSET;
  
 	Color bgColor = GetBgColor();
-   	bgColor[3] = m_flBackgroundAlpha;
+   	bgColor.SetA( m_flBackgroundAlpha );
 	DrawBox( rcText.left, MAX(rcText.top,0), rcText.right - rcText.left, rcText.bottom - MAX(rcText.top,0), bgColor, m_flCurrentAlpha );
 
 	if ( !visibleitems.Count() )
@@ -1927,7 +1927,7 @@ void CHudCloseCaption::DrawStream( wrect_t &rcText, wrect_t &rcWindow, CCloseCap
 
 		Color useColor = wu->GetColor();
 
-		useColor[ 3 ] *= flLineAlpha;
+		useColor.SetA( useColor.a() * flLineAlpha );
 
 		if ( !item->IsValid() )
 		{

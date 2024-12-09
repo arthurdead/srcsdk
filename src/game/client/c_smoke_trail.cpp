@@ -93,9 +93,9 @@ public:
 		float	tLifetime = pParticle->m_flLifetime / pParticle->m_flDieTime;
 		float	ramp = 1.0f - tLifetime;
 
-		color[0] = ( (float) pParticle->m_uchColor[0] * ramp ) / 255.0f;
-		color[1] = ( (float) pParticle->m_uchColor[1] * ramp ) / 255.0f;
-		color[2] = ( (float) pParticle->m_uchColor[2] * ramp ) / 255.0f;
+		color[0] = ( (float) pParticle->m_uchColor.r() * ramp ) / 255.0f;
+		color[1] = ( (float) pParticle->m_uchColor.g() * ramp ) / 255.0f;
+		color[2] = ( (float) pParticle->m_uchColor.b() * ramp ) / 255.0f;
 
 		return color;
 	}
@@ -337,9 +337,11 @@ void C_SmokeTrail::Update( float fTimeDelta )
 		offsetColor[1] = clamp( offsetColor[1], 0.0f, 1.0f );
 		offsetColor[2] = clamp( offsetColor[2], 0.0f, 1.0f );
 
-		pParticle->m_uchColor[0]	= offsetColor[0]*255.0f;
-		pParticle->m_uchColor[1]	= offsetColor[1]*255.0f;
-		pParticle->m_uchColor[2]	= offsetColor[2]*255.0f;
+		unsigned char r	= offsetColor[0]*255.0f;
+		unsigned char g	= offsetColor[1]*255.0f;
+		unsigned char b	= offsetColor[2]*255.0f;
+
+		pParticle->m_uchColor.SetColor( r, g, b );
 		
 		pParticle->m_uchStartSize	= m_StartSize;
 		pParticle->m_uchEndSize		= m_EndSize;
@@ -690,9 +692,7 @@ void C_RocketTrail::Update( float fTimeDelta )
 
 		pParticle->m_vecVelocity.Init();
 
-		pParticle->m_uchColor[0]	= 255;
-		pParticle->m_uchColor[1]	= 255;
-		pParticle->m_uchColor[2]	= 255;
+		pParticle->m_uchColor.SetColor( 255, 255, 255 );
 
 		pParticle->m_uchStartAlpha	= 255;
 		pParticle->m_uchEndAlpha	= 128;
@@ -743,9 +743,11 @@ void C_RocketTrail::Update( float fTimeDelta )
 				offsetColor[1] = clamp( offsetColor[1], 0.0f, 1.0f );
 				offsetColor[2] = clamp( offsetColor[2], 0.0f, 1.0f );
 
-				pParticle->m_uchColor[0]	= offsetColor[0]*255.0f;
-				pParticle->m_uchColor[1]	= offsetColor[1]*255.0f;
-				pParticle->m_uchColor[2]	= offsetColor[2]*255.0f;
+				unsigned char r	= offsetColor[0]*255.0f;
+				unsigned char g	= offsetColor[1]*255.0f;
+				unsigned char b	= offsetColor[2]*255.0f;
+
+				pParticle->m_uchColor.SetColor( r, g, b );
 				
 				pParticle->m_uchStartSize	= m_StartSize * random_valve->RandomFloat( 0.75f, 1.25f );
 				pParticle->m_uchEndSize		= m_EndSize * random_valve->RandomFloat( 1.0f, 1.25f );
@@ -799,9 +801,11 @@ void C_RocketTrail::Update( float fTimeDelta )
 				offsetColor[1] = clamp( offsetColor[1], 0.0f, 1.0f );
 				offsetColor[2] = clamp( offsetColor[2], 0.0f, 1.0f );
 
-				pParticle->m_uchColor[0]	= offsetColor[0]*255.0f;
-				pParticle->m_uchColor[1]	= offsetColor[1]*255.0f;
-				pParticle->m_uchColor[2]	= offsetColor[2]*255.0f;
+				unsigned char r	= offsetColor[0]*255.0f;
+				unsigned char g	= offsetColor[1]*255.0f;
+				unsigned char b	= offsetColor[2]*255.0f;
+
+				pParticle->m_uchColor.SetColor( r, g, b );
 				
 				pParticle->m_uchStartSize	= 8.0f;
 				pParticle->m_uchEndSize		= 32.0f;
@@ -867,9 +871,9 @@ Vector SporeEffect::UpdateColor( const SimpleParticle *pParticle )
 	Vector	color;
 	float	ramp = ((float)pParticle->m_uchStartAlpha/255.0f) * sin( M_PI * (pParticle->m_flLifetime / pParticle->m_flDieTime) );//1.0f - ( pParticle->m_flLifetime / pParticle->m_flDieTime );
 
-	color[0] = ( (float) pParticle->m_uchColor[0] * ramp ) / 255.0f;
-	color[1] = ( (float) pParticle->m_uchColor[1] * ramp ) / 255.0f;
-	color[2] = ( (float) pParticle->m_uchColor[2] * ramp ) / 255.0f;
+	color[0] = ( (float) pParticle->m_uchColor.r() * ramp ) / 255.0f;
+	color[1] = ( (float) pParticle->m_uchColor.g() * ramp ) / 255.0f;
+	color[2] = ( (float) pParticle->m_uchColor.b() * ramp ) / 255.0f;
 
 	return color;
 }
@@ -1000,9 +1004,7 @@ void C_SporeExplosion::AddParticles( void )
 		sParticle->m_flRoll			= 0;
 		sParticle->m_flRollDelta	= 0;
 
-		sParticle->m_uchColor[0]	= 225;
-		sParticle->m_uchColor[1]	= 140;
-		sParticle->m_uchColor[2]	= 64;
+		sParticle->m_uchColor.SetColor( 244, 140, 64 );
 		sParticle->m_uchStartAlpha	= random_valve->RandomInt( 128, 255 );
 		sParticle->m_uchEndAlpha	= 0;
 		sParticle->m_uchStartSize	= random_valve->RandomInt( 1, 2 );
@@ -1024,9 +1026,7 @@ void C_SporeExplosion::AddParticles( void )
 	sParticle->m_flRoll			= random_valve->RandomFloat( 0, 360 );
 	sParticle->m_flRollDelta	= random_valve->RandomFloat( -2.0f, 2.0f );
 
-	sParticle->m_uchColor[0]	= 225;
-	sParticle->m_uchColor[1]	= 140;
-	sParticle->m_uchColor[2]	= 64;
+	sParticle->m_uchColor.SetColor( 255, 140, 64 );
 	sParticle->m_uchStartAlpha	= random_valve->RandomInt( 32, 64 );
 	sParticle->m_uchEndAlpha	= 0;
 	sParticle->m_uchStartSize	= m_flStartSize;
@@ -1289,9 +1289,7 @@ void C_SporeTrail::AddParticles( void )
 	sParticle->m_flLifetime		= 0.0f;
 	sParticle->m_flDieTime		= 0.5f;
 
-	sParticle->m_uchColor[0]	= 225;
-	sParticle->m_uchColor[1]	= 140;
-	sParticle->m_uchColor[2]	= 64;
+	sParticle->m_uchColor.SetColor( 255, 140, 64 );
 	sParticle->m_uchStartAlpha	= random_valve->RandomInt( 64, 128 );
 	sParticle->m_uchEndAlpha	= 0;
 
@@ -1526,9 +1524,7 @@ void C_FireTrail::Update( float fTimeDelta )
 				pParticle->m_vecVelocity *= random_valve->RandomFloat( MIN_SPEED, MAX_SPEED );
 				pParticle->m_vecVelocity[2] += 50;//random_valve->RandomFloat( 32, 64 );
 				
-				pParticle->m_uchColor[0]	= 255.0f;
-				pParticle->m_uchColor[1]	= 255.0f;
-				pParticle->m_uchColor[2]	= 255.0f;
+				pParticle->m_uchColor.SetColor( 255, 255, 255 );
 				
 				pParticle->m_uchStartSize	= STARTSIZE * 2.0f;
 				pParticle->m_uchEndSize		= STARTSIZE * 0.5f;
@@ -1558,9 +1554,7 @@ void C_FireTrail::Update( float fTimeDelta )
 			pParticle->m_vecVelocity *= random_valve->RandomFloat( MIN_SPEED, MAX_SPEED );
 			pParticle->m_vecVelocity[2] += random_valve->RandomFloat( 50, 100 );
 			
-			pParticle->m_uchColor[0]	= 255.0f * 0.5f;
-			pParticle->m_uchColor[1]	= 245.0f * 0.5f;
-			pParticle->m_uchColor[2]	= 205.0f * 0.5f;
+			pParticle->m_uchColor.SetColor( 255 / 2, 245 / 2, 205 / 2 );
 			
 			pParticle->m_uchStartSize	= 16 * random_valve->RandomFloat( 0.75f, 1.25f );
 			pParticle->m_uchEndSize		= pParticle->m_uchStartSize * 2.5f;
@@ -1815,9 +1809,11 @@ void C_DustTrail::Update( float fTimeDelta )
 		offsetColor[1] = clamp( offsetColor[1], 0.0f, 1.0f );
 		offsetColor[2] = clamp( offsetColor[2], 0.0f, 1.0f );
 
-		pParticle->m_uchColor[0]	= offsetColor[0]*255.0f;
-		pParticle->m_uchColor[1]	= offsetColor[1]*255.0f;
-		pParticle->m_uchColor[2]	= offsetColor[2]*255.0f;
+		unsigned char r	= offsetColor[0]*255.0f;
+		unsigned char g	= offsetColor[1]*255.0f;
+		unsigned char b	= offsetColor[2]*255.0f;
+
+		pParticle->m_uchColor.SetColor( r, g, b );
 		
 		pParticle->m_uchStartSize	= m_StartSize;
 		pParticle->m_uchEndSize		= m_EndSize;

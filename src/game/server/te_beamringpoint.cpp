@@ -75,10 +75,7 @@ void CTEBeamRingPoint::Test( const Vector& current_origin, const QAngle& current
 	m_fLife			= 10.0;
 	m_fWidth		= 2.0;
 	m_fAmplitude	= 1;
-	r				= 255;
-	g				= 255;
-	b				= 0;
-	a				= 127;
+	m_clr.SetColor( 255, 255, 0, 127 );
 	m_nSpeed		= 5;
 
 	CBroadcastRecipientFilter filter;
@@ -98,7 +95,7 @@ static CTEBeamRingPoint g_TEBeamRingPoint( "BeamRingPoint" );
 
 void TE_BeamRingPoint( IRecipientFilter& filter, float delay,
 	const Vector& center, float start_radius, float end_radius, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
-	float life, float width, int spread, float amplitude, int r, int g, int b, int a, int speed, int flags )
+	float life, float width, int spread, float amplitude, color32 clr, int speed, int flags )
 {
 	g_TEBeamRingPoint.m_vecCenter	= center;
 	g_TEBeamRingPoint.m_flStartRadius = start_radius;
@@ -113,10 +110,7 @@ void TE_BeamRingPoint( IRecipientFilter& filter, float delay,
 	g_TEBeamRingPoint.m_nFadeLength	= 0;
 	g_TEBeamRingPoint.m_fAmplitude	= amplitude;
 	g_TEBeamRingPoint.m_nSpeed		= speed;
-	g_TEBeamRingPoint.r				= r;
-	g_TEBeamRingPoint.g				= g;
-	g_TEBeamRingPoint.b				= b;
-	g_TEBeamRingPoint.a				= a;
+	g_TEBeamRingPoint.m_clr				= clr;
 	g_TEBeamRingPoint.m_nFlags		= flags;
 
 	// Send it over the wire

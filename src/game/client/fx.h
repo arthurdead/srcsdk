@@ -60,11 +60,11 @@ void FX_Explosion( const Vector& origin, const Vector& normal, char materialType
 void FX_ConcussiveExplosion( const Vector& origin, const Vector& normal ); 
 void FX_DustImpact( const Vector &origin, trace_t *tr, int iScale );
 void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale );
-void FX_MuzzleEffect( const Vector &origin, const QAngle &angles, float scale, ClientEntityHandle_t hEntity, unsigned char *pFlashColor = NULL, bool bOneFrame = false );
-void FX_MuzzleEffectAttached( float scale, ClientEntityHandle_t hEntity, int attachmentIndex, unsigned char *pFlashColor = NULL, bool bOneFrame = false  );
-void FX_StriderMuzzleEffect( const Vector &origin, const QAngle &angles, float scale, ClientEntityHandle_t hEntity, unsigned char *pFlashColor = NULL );
-void FX_GunshipMuzzleEffect( const Vector &origin, const QAngle &angles, float scale, ClientEntityHandle_t hEntity, unsigned char *pFlashColor = NULL );
-CSmartPtr<CSimpleEmitter> FX_Smoke( const Vector &origin, const Vector &velocity, float scale, int numParticles, float flDietime, const color24 *pColor, int iAlpha, const char *pMaterial, float flRoll, float flRollDelta );
+void FX_MuzzleEffect( const Vector &origin, const QAngle &angles, float scale, ClientEntityHandle_t hEntity, color24 *pFlashColor = NULL, bool bOneFrame = false );
+void FX_MuzzleEffectAttached( float scale, ClientEntityHandle_t hEntity, int attachmentIndex, color24 *pFlashColor = NULL, bool bOneFrame = false  );
+void FX_StriderMuzzleEffect( const Vector &origin, const QAngle &angles, float scale, ClientEntityHandle_t hEntity, color24 *pFlashColor = NULL );
+void FX_GunshipMuzzleEffect( const Vector &origin, const QAngle &angles, float scale, ClientEntityHandle_t hEntity, color24 *pFlashColor = NULL );
+CSmartPtr<CSimpleEmitter> FX_Smoke( const Vector &origin, const Vector &velocity, float scale, int numParticles, float flDietime, const color24 *pColor, unsigned char iAlpha, const char *pMaterial, float flRoll, float flRollDelta );
 void FX_Smoke( const Vector &origin, const QAngle &angles, float scale, int numParticles, const color24 *pColor = NULL, int iAlpha = -1 );
 void FX_Dust( const Vector &vecOrigin, const Vector &vecDirection, float flSize, float flSpeed );
 void FX_CreateGaussExplosion( const Vector &pos, const Vector &dir, int type );

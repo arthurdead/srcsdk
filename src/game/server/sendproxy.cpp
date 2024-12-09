@@ -15,7 +15,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-void SendProxy_EHandleToInt( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_EHandle( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID)
 {
 	CBaseHandle *pHandle = (CBaseHandle*)pVarData;
 
@@ -30,29 +30,12 @@ void SendProxy_EHandleToInt( const SendProp *pProp, const void *pStruct, const v
 	}
 }
 
-void SendProxy_IntAddOne( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_ModelIndex( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID)
 {
-	int *pInt = (int *)pVarData;
-
-	pOut->m_Int = (*pInt) + 1;
+	modelindex_t *pHandle = (modelindex_t*)pVarData;
+	Assert( pHandle->IsNetworked() );
+	pOut->m_Int = pHandle->GetRaw();
 }
-
-void SendProxy_ShortAddOne( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID)
-{
-	short *pInt = (short *)pVarData;
-
-	pOut->m_Int = (*pInt) + 1;
-}
-
-SendProp SendPropBool(
-	const char *pVarName,
-	int offset,
-	int sizeofVar )
-{
-	Assert( sizeofVar == sizeof( bool ) );
-	return SendPropInt( pVarName, offset, sizeofVar, 1, SPROP_UNSIGNED );
-}
-
 
 SendProp SendPropEHandle(
 	const char *pVarName,
@@ -62,11 +45,6 @@ SendProp SendPropEHandle(
 	SendVarProxyFn proxyFn )
 {
 	return SendPropInt( pVarName, offset, sizeofVar, NUM_NETWORKED_EHANDLE_BITS, SPROP_UNSIGNED|flags, proxyFn );
-}
-
-SendProp SendPropIntWithMinusOneFlag( const char *pVarName, int offset, int sizeofVar, int nBits, SendVarProxyFn proxyFn )
-{
-	return SendPropInt( pVarName, offset, sizeofVar, nBits, SPROP_UNSIGNED, proxyFn );
 }
 
 //-----------------------------------------------------------------------------
@@ -173,7 +151,7 @@ SendProp SendPropPredictableId(
 	return SendPropInt( pVarName, offset, sizeofVar, PREDICTABLE_ID_BITS, SPROP_UNSIGNED, SendProxy_PredictableIdToInt );
 }
 
-void SendProxy_StringT_To_String( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_StringT( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
 {
 	string_t &str = *((string_t*)pVarData);
 	pOut->m_pString = (char*)STRING( str );
@@ -185,7 +163,7 @@ SendProp SendPropStringT( const char *pVarName, int offset, int sizeofVar )
 	// Make sure it's the right type.
 	Assert( sizeofVar == sizeof( string_t ) );
 
-	return SendPropString( pVarName, offset, DT_MAX_STRING_BUFFERSIZE, 0, SendProxy_StringT_To_String );
+	return SendPropString( pVarName, offset, DT_MAX_STRING_BUFFERSIZE, 0, SendProxy_StringT );
 }
 
 void* SendProxy_SendMinimalDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
