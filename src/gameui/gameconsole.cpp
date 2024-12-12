@@ -61,7 +61,7 @@ CGameConsole::~CGameConsole()
 void CGameConsole::Initialize()
 {
 	m_pConsole = new CGameConsoleDialog(); // we add text before displaying this so set it up now!
-	//vgui::SETUP_PANEL( m_pConsole );
+	vgui::SETUP_PANEL( m_pConsole );
 
 	// set the console to taking up most of the right-half of the screen
 	int swide, stall;

@@ -556,7 +556,7 @@ void CBaseAnimating::InputSetModelScale( inputdata_t &inputdata )
 void CBaseAnimating::InputSetModel( inputdata_t &inputdata )
 {
 	const char *szModel = inputdata.value.String();
-	if (PrecacheModel(szModel, false).IsValid())
+	if (IsValidModelIndex( PrecacheModel(szModel, false) ))
 	{
 		SetModelName(AllocPooledString(szModel));
 		SetModel(szModel);

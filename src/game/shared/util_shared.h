@@ -425,6 +425,14 @@ void		UTIL_DecalTrace( trace_t *pTrace, char const *decalName );
 bool		UTIL_IsSpaceEmpty( CSharedBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax );
 bool		UTIL_IsSpaceEmpty( CSharedBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax, unsigned int mask, ITraceFilter *pFilter );
 
+// ----------------------------------------------------------------------------- //
+// This is a cache of preloaded keyvalues.
+// ----------------------------------------------------------------------------- // 
+
+KeyValues* CacheKeyValuesForFile( const char *pFilename, const char *pPathID );
+
+void ClearKeyValuesCache();
+
 // 
 // Read a possibly-encrypted KeyValues file in. 
 // If pICEKey is NULL, then it appends .txt to the filename and loads it as an unencrypted file.

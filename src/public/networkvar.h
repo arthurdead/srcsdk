@@ -340,7 +340,7 @@ template<typename T>
 FORCEINLINE void NetworkVarConstruct( T &x ) { x = T(); }
 FORCEINLINE void NetworkVarConstruct( color32 &x ) { x.SetColor( 255, 255, 255, 255 ); }
 FORCEINLINE void NetworkVarConstruct( color24 &x ) { x.SetColor( 255, 255, 255 ); }
-FORCEINLINE void NetworkVarConstruct( modelindex_t &x ) { x.Clear(); }
+FORCEINLINE void NetworkVarConstruct( modelindex_t &x ) { x = INVALID_MODEL_INDEX; }
 template<typename T>
 FORCEINLINE void NetworkVarConstruct( CUtlVector<T> &x ) { x.Purge(); }
 
@@ -1241,26 +1241,6 @@ public:
 	using CNetworkVarBaseImpl<Type, Changer>::operator==;
 	using CNetworkVarBaseImpl<Type, Changer>::operator!=;
 	using CNetworkVarBaseImpl<Type, Changer>::Set;
-
-	bool IsValid() const
-	{ return this->m_Value.IsValid(); }
-
-	bool IsDynamic() const
-	{ return this->m_Value.IsDynamic(); }
-	bool IsPrecached() const
-	{ return this->m_Value.IsPrecached(); }
-	bool IsNetworked() const
-	{ return this->m_Value.IsNetworked(); }
-	bool IsClientSide() const
-	{ return this->m_Value.IsClientSide(); }
-
-	bool IsLoaded() const
-	{ return this->m_Value.IsLoaded(); }
-
-	bool operator!() const
-	{ return !this->IsValid(); }
-	explicit operator bool() const
-	{ return this->IsValid(); }
 };
 
 #define CNetworkModelIndex( name ) \

@@ -280,7 +280,7 @@ int CCollisionEvent::ShouldCollide_2( IPhysicsObject *pObj0, IPhysicsObject *pOb
 		if ( (gameFlags0 | gameFlags1) & FVPHYSICS_NO_SELF_COLLISIONS )
 			return 0;
 
-		unsigned int collset = (unsigned int)pEntity0->GetModelIndex().GetRaw();
+		unsigned int collset = (unsigned int)pEntity0->GetModelIndex();
 
 		IPhysicsCollisionSet *pSet = physics->FindCollisionSet( collset );
 		if ( pSet )

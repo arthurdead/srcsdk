@@ -33,7 +33,7 @@ ConVar spec_autodirector( "spec_autodirector", "1", FCVAR_CLIENTDLL | FCVAR_CLIE
 static Vector WALL_MIN(-WALL_OFFSET,-WALL_OFFSET,-WALL_OFFSET);
 static Vector WALL_MAX(WALL_OFFSET,WALL_OFFSET,WALL_OFFSET);
 
-ConVar tv_transmitall( "tv_transmitall", "0", FCVAR_REPLICATED, "Transmit all entities (not only director view)" );
+ConVar tv_transmitall( "tv_transmitall", "0", FCVAR_CLIENTDLL | FCVAR_REPLICATED, "Transmit all entities (not only director view)" );
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction

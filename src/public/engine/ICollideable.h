@@ -12,6 +12,7 @@
 #include "tier0/platform.h"
 #include "const.h"
 #include "mathlib/mathlib.h"
+#include "ivmodelinfo.h"
 
 enum SolidType_t;
 class IHandleEntity;
@@ -22,7 +23,6 @@ class QAngle;
 class CGameTrace;
 typedef CGameTrace trace_t;
 class IClientUnknown;
-struct modelindex_t;
 
 abstract_class ICollideable
 {

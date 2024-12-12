@@ -1778,7 +1778,7 @@ void CBasePlayer::PlayerDeathThink(void)
 		PackDeadPlayerItems();
 	}
 
-	if (GetModelIndex() && (!IsSequenceFinished()) && (m_lifeState == LIFE_DYING))
+	if (IsValidModelIndex(GetModelIndex()) && (!IsSequenceFinished()) && (m_lifeState == LIFE_DYING))
 	{
 		StudioFrameAdvance( );
 

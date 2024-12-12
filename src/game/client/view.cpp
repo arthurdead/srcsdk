@@ -74,7 +74,7 @@ extern ConVar sensitivity;
 
 ConVar zoom_sensitivity_ratio( "zoom_sensitivity_ratio", "1.0", 0, "Additional mouse sensitivity scale factor applied when FOV is zoomed in." );
 
-ConVar  sv_restrict_aspect_ratio_fov( "sv_restrict_aspect_ratio_fov", "1", FCVAR_REPLICATED, 
+ConVar  sv_restrict_aspect_ratio_fov( "sv_restrict_aspect_ratio_fov", "1", FCVAR_CLIENTDLL | FCVAR_REPLICATED, 
 									 "This can be used to limit the effective FOV of users using wide-screen\n"
 									 "resolutions with aspect ratios wider than 1.85:1 (slightly wider than 16:9).\n"
 									 "    0 = do not cap effective FOV\n"

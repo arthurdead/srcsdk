@@ -1014,7 +1014,7 @@ void ClientModeShared::Enable()
 void ClientModeShared::EnableWithRootPanel( vgui::VPANEL pRoot )
 {
 	// Add our viewport to the root panel.
-	if( pRoot != 0 )
+	if( pRoot != vgui::INVALID_VPANEL )
 	{
 		m_pViewport->SetParent( pRoot );
 	}
@@ -1041,7 +1041,7 @@ void ClientModeShared::Disable()
 	vgui::VPANEL pRoot = VGui_GetClientDLLRootPanel();
 
 	// Remove our viewport from the root panel.
-	if( pRoot != 0 )
+	if( pRoot != vgui::INVALID_VPANEL )
 	{
 		m_pViewport->SetParent( vgui::INVALID_VPANEL );
 	}
@@ -1056,7 +1056,7 @@ void ClientModeShared::Layout(bool bForce /*= false*/)
 	int wide, tall;
 
 	// Make the viewport fill the root panel.
-	if( pRoot != 0 )
+	if( pRoot != vgui::INVALID_VPANEL )
 	{
 		vgui::ipanel()->GetSize(pRoot, wide, tall);
 

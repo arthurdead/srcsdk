@@ -989,7 +989,7 @@ void C_BaseAnimating::OnModelLoadComplete( const model_t* pModel )
 void C_BaseAnimating::ValidateModelIndex()
 {
 	BaseClass::ValidateModelIndex();
-	Assert( GetModelIndex().IsValid() || m_AutoRefModelIndex.IsValid() );
+	Assert( IsValidModelIndex( GetModelIndex() ) || m_AutoRefModelIndex.IsValid() );
 }
 
 CStudioHdr *C_BaseAnimating::OnNewModel()
@@ -1025,8 +1025,8 @@ CStudioHdr *C_BaseAnimating::OnNewModel()
 	{
 		// XXX what's authoritative? the model pointer or the model index? what a mess.
 		nNewIndex = modelinfo->GetModelIndex( modelinfo->GetModelName( GetModel() ) );
-		Assert( IsDynamicModelIndex( nNewIndex ) || !nNewIndex.IsValid() || modelinfo->GetModel( nNewIndex ) == GetModel() );
-		if ( IsDynamicModelIndex( nNewIndex ) || !nNewIndex.IsValid() )
+		Assert( IsDynamicModelIndex( nNewIndex ) || !IsValidModelIndex( nNewIndex ) || modelinfo->GetModel( nNewIndex ) == GetModel() );
+		if ( IsDynamicModelIndex( nNewIndex ) || !IsValidModelIndex( nNewIndex ) )
 			nNewIndex = GetModelIndex();
 	}
 
@@ -7004,7 +7004,7 @@ bool C_BoneFollower::TestCollision( const Ray_t &ray, unsigned int mask, trace_t
 	Assert( pCollide && pCollide->solidCount > m_solidIndex );
 	if ( !pCollide )
 	{
-		DevWarning("Failed to get collision model (%d, %d), %s (%s)\n", m_modelIndex.GetRaw(), m_solidIndex, modelinfo->GetModelName(modelinfo->GetModel(m_modelIndex)), IsDormant() ? "dormant" : "active" );
+		DevWarning("Failed to get collision model (%d, %d), %s (%s)\n", (int)m_modelIndex, m_solidIndex, modelinfo->GetModelName(modelinfo->GetModel(m_modelIndex)), IsDormant() ? "dormant" : "active" );
 		return false;
 	}
 

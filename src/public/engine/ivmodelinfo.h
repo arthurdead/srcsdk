@@ -61,64 +61,26 @@ protected:
 	~IModelLoadCallback();
 };
 
-struct modelindex_t
+enum class modelindex_t : int
 {
-public:
-	constexpr modelindex_t()
-		: value( -1 )
-	{
-	}
-
-	modelindex_t(int) = delete;
-	modelindex_t &operator=(int) = delete;
-
-	modelindex_t(const modelindex_t &) = default;
-	modelindex_t &operator=(const modelindex_t &) = default;
-
-	bool operator==(const modelindex_t &other) const
-	{ return value == other.value; }
-	bool operator!=(const modelindex_t &other) const
-	{ return value != other.value; }
-
-	bool operator>=(const modelindex_t &other) const
-	{ return value >= other.value; }
-	bool operator<=(const modelindex_t &other) const
-	{ return value <= other.value; }
-	bool operator>(const modelindex_t &other) const
-	{ return value > other.value; }
-	bool operator<(const modelindex_t &other) const
-	{ return value < other.value; }
-
-	bool IsValid() const
-	{ return value < -1 || value > 0; }
-
-	void Clear()
-	{ value = -1; }
-
-	bool IsDynamic() const
-	{ return value < -1; }
-	bool IsPrecached() const
-	{ return value > 0; }
-	bool IsNetworked() const
-	{ return (value < -1 && !(value & 1)) || value > 0; }
-	bool IsClientSide() const
-	{ return value < -1 && (value & 1); }
-
-	bool IsLoaded() const;
-
-	bool operator!() const
-	{ return !IsValid(); }
-	explicit operator bool() const
-	{ return IsValid(); }
-
-	int GetRaw() const
-	{ return value; }
-
-private:
-	int value;
 };
 
-constexpr inline const modelindex_t INVALID_MODEL_INDEX;
+inline const modelindex_t INVALID_MODEL_INDEX = (modelindex_t)-1;
+
+// MODEL INDEX RULES
+// If index >= 0, then index references the precached model string table
+// If index == -1, then the model is invalid
+// If index < -1, then the model is DYNAMIC and has a DYNAMIC INDEX of (-2 - index)
+// - if the dynamic index is ODD, then the model is CLIENT ONLY
+//   and has a m_LocalDynamicModels lookup index of (dynamic index)>>1
+// - if the dynamic index is EVEN, then the model is NETWORKED
+//   and has a dynamic model string table index of (dynamic index)>>1
+
+inline bool IsDynamicModelIndex( modelindex_t modelindex ) { return (int)modelindex < -1; }
+inline bool IsClientOnlyModelIndex( modelindex_t modelindex ) { return (int)modelindex < -1 && ((int)modelindex & 1); }
+inline bool IsNetworkedModelIndex( modelindex_t modelindex ) { return (int)modelindex == -1 || (int)modelindex > 0 || ((int)modelindex < -1 && !((int)modelindex & 1)); }
+inline bool IsValidModelIndex( modelindex_t modelindex ) { return (int)modelindex < -1 || (int)modelindex > 0; }
+inline bool IsPrecachedModelIndex( modelindex_t modelindex ) { return (int)modelindex > 0; }
 
 //-----------------------------------------------------------------------------
 // Purpose: Automate refcount tracking on a model index
@@ -142,7 +104,7 @@ public:
 	void Clear() { Set( INVALID_MODEL_INDEX ); }
 
 	bool IsValid() const
-	{ return m_nIndex.IsValid(); }
+	{ return IsValidModelIndex( m_nIndex ); }
 
 	operator modelindex_t () const { return m_nIndex; }
 };
@@ -155,18 +117,6 @@ public:
 // change this when the new version is incompatable with the old
 #define VMODELINFO_CLIENT_INTERFACE_VERSION		"VModelInfoClient006"
 #define VMODELINFO_SERVER_INTERFACE_VERSION		"VModelInfoServer004"
-
-// MODEL INDEX RULES
-// If index >= 0, then index references the precached model string table
-// If index == -1, then the model is invalid
-// If index < -1, then the model is DYNAMIC and has a DYNAMIC INDEX of (-2 - index)
-// - if the dynamic index is ODD, then the model is CLIENT ONLY
-//   and has a m_LocalDynamicModels lookup index of (dynamic index)>>1
-// - if the dynamic index is EVEN, then the model is NETWORKED
-//   and has a dynamic model string table index of (dynamic index)>>1
-
-inline bool IsDynamicModelIndex( modelindex_t modelindex ) { return modelindex.IsDynamic(); }
-inline bool IsClientOnlyModelIndex( modelindex_t modelindex ) { return modelindex.IsClientSide(); }
 
 abstract_class IVModelInfo
 {
@@ -297,13 +247,13 @@ extern IVModelInfo *modelinfo;
 #endif
 
 #if defined CLIENT_DLL || defined TOOL_DLL || defined GAME_DLL
-inline bool modelindex_t::IsLoaded() const
+inline bool IsModelIndexLoaded( modelindex_t modelindex )
 {
-	if( value > 0 )
+	if( IsPrecachedModelIndex( modelindex ) )
 		return true;
 
-	if( value < -1 )
-		return !modelinfo->IsDynamicModelLoading( *this );
+	if( IsDynamicModelIndex( modelindex ) )
+		return !modelinfo->IsDynamicModelLoading( modelindex );
 
 	return false;
 }

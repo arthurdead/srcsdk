@@ -253,7 +253,7 @@ bool C_PhysPropClientside::Initialize()
 
 	if ( !PhysModelParseSolid( tmpSolid, this, GetModelIndex() ) )
 	{
-		DevMsg("C_PhysPropClientside::Initialize: PhysModelParseSolid failed for entity %i.\n", GetModelIndex().GetRaw() );
+		DevMsg("C_PhysPropClientside::Initialize: PhysModelParseSolid failed for entity %i.\n", (int)GetModelIndex() );
 		return false;
 	}
 	else

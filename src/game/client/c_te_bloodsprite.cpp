@@ -94,8 +94,8 @@ static inline void RecordBloodSprite( const Vector &start, const Vector &directi
 
 	if ( clienttools->IsInRecordingMode() )
 	{
-		const model_t* pSprayModel = (nSprayModelIndex.IsValid()) ? modelinfo->GetModel( nSprayModelIndex ) : NULL;
-		const model_t* pDropModel = (nDropModelIndex.IsValid()) ? modelinfo->GetModel( nDropModelIndex ) : NULL;
+		const model_t* pSprayModel = IsValidModelIndex(nSprayModelIndex) ? modelinfo->GetModel( nSprayModelIndex ) : NULL;
+		const model_t* pDropModel = IsValidModelIndex(nDropModelIndex) ? modelinfo->GetModel( nDropModelIndex ) : NULL;
 		const char *pSprayModelName = pSprayModel ? modelinfo->GetModelName( pSprayModel ) : "";
 		const char *pDropModelName = pDropModel ? modelinfo->GetModelName( pDropModel ) : "";
 

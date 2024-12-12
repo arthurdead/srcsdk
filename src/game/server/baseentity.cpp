@@ -3483,7 +3483,7 @@ bool CBaseEntity::IsViewable( void )
 			return true;
 		}
 	}
-	else if (GetModelIndex().IsValid())
+	else if (IsValidModelIndex(GetModelIndex()))
 	{
 		// check for total transparency???
 		return true;
@@ -3813,7 +3813,7 @@ int CBaseEntity::UpdateTransmitState()
 
 	if ( !IsEFlagSet( EFL_FORCE_CHECK_TRANSMIT ) )
 	{
-		if ( !GetModelIndex() || !GetModelName() )
+		if ( !IsValidModelIndex(GetModelIndex()) || !GetModelName() )
 		{
 			return SetTransmitState( FL_EDICT_DONTSEND );
 		}
@@ -4879,7 +4879,7 @@ void CBaseEntity::PrecacheModelComponents( modelindex_t nModelIndex )
 	// sounds
 	{
 		const char *name = modelinfo->GetModelName( pModel );
-		if ( !g_ModelSoundsCache.EntryExists( name ) )
+		if ( !ModelSoundsCache_EntryExists( name ) )
 		{
 			char extension[ 8 ];
 			Q_ExtractFileExtension( name, extension, sizeof( extension ) );
@@ -4902,8 +4902,8 @@ void CBaseEntity::PrecacheModelComponents( modelindex_t nModelIndex )
 			}
 		}
 
-		CModelSoundsCache *entry = g_ModelSoundsCache.Get( name );
-		Assert( entry );
+		CModelSoundsCache *entry = ModelSoundsCache_Get( name );
+		//Assert( entry );
 		if ( entry )
 		{
 			entry->PrecacheSoundList();

@@ -810,7 +810,7 @@ CHudChatFilterPanel *CBaseHudChat::GetChatFilterPanel( void )
 			vgui::HScheme scheme = vgui::scheme()->LoadSchemeFromFileEx( enginevgui->GetPanel( PANEL_CLIENTDLL ), "resource/ChatScheme.res", "ChatScheme");
 
 			m_pFilterPanel->SetScheme( scheme );
-			//m_pFilterPanel->InvalidateLayout( true, true );
+			m_pFilterPanel->InvalidateLayout( true, true );
 			m_pFilterPanel->SetMouseInputEnabled( true );
 			m_pFilterPanel->SetPaintBackgroundType( 2 );
 			m_pFilterPanel->SetPaintBorderEnabled( true );

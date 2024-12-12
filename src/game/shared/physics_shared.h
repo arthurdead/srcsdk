@@ -12,6 +12,7 @@
 #include "ehandle.h"
 #include "shareddefs.h"
 #include "vcollide_parse.h"
+#include "engine/ivmodelinfo.h"
 
 #ifdef GAME_DLL
 class CBaseEntity;
@@ -29,8 +30,6 @@ class IPhysicsObject;
 class IPhysicsObjectPairHash;
 class CSoundPatch;
 class IGameSystem;
-
-struct modelindex_t;
 
 extern IPhysicsObject		*g_PhysWorldObject;
 extern IPhysics				*physics;

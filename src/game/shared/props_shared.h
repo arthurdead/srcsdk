@@ -179,6 +179,8 @@ public:
 	CPropData( void );
 
 	// Inherited from IAutoServerSystem
+	virtual bool Init();
+	virtual void Shutdown();
 	virtual void LevelInitPreEntity( void );
 	virtual void LevelShutdownPostEntity( void );
 

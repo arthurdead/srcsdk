@@ -100,7 +100,9 @@ class ConCommandBase
 {
 	friend class CCvar;
 	friend class ConVar;
+#ifdef __MINGW32__
 	friend class ConVarBase;
+#endif
 	friend class ConCommand;
 	friend void ConVar_Register( int nCVarFlag, IConCommandBaseAccessor *pAccessor );
 	friend void ConVar_PublishToVXConsole();
@@ -516,7 +518,9 @@ public:
 	int GetFlags() const;
 
 protected:
+#ifdef __MINGW32__
 	friend class ConVar;
+#endif
 	friend struct IConVarRef;
 
 private:
@@ -647,7 +651,13 @@ public:
 	IConVarRef() = delete;
 
 	IConVarRef( ConVar *var_ )
-	{ var = var_->m_pIConVar; }
+	{
+	#ifdef __MINGW32__
+		var = var_->m_pIConVar;
+	#else
+		var = static_cast<DO_NOT_USE_IConVar *>(var_);
+	#endif
+	}
 
 	~IConVarRef() {}
 

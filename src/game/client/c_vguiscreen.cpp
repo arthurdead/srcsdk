@@ -45,40 +45,6 @@ CLIENTEFFECT_MATERIAL( "engine/writez" )
 CLIENTEFFECT_REGISTER_END()
 
 
-// ----------------------------------------------------------------------------- //
-// This is a cache of preloaded keyvalues.
-// ----------------------------------------------------------------------------- // 
-
-CUtlDict<KeyValues*, int> g_KeyValuesCache;
-
-KeyValues* CacheKeyValuesForFile( const char *pFilename )
-{
-	MEM_ALLOC_CREDIT();
-	int i = g_KeyValuesCache.Find( pFilename );
-	if ( i == g_KeyValuesCache.InvalidIndex() )
-	{
-		KeyValues *rDat = new KeyValues( pFilename );
-		rDat->LoadFromFile( g_pFullFileSystem, pFilename, NULL );
-		g_KeyValuesCache.Insert( pFilename, rDat );
-		return rDat;		
-	}
-	else
-	{
-		return g_KeyValuesCache[i];
-	}
-}
-
-void ClearKeyValuesCache()
-{
-	MEM_ALLOC_CREDIT();
-	for ( int i=g_KeyValuesCache.First(); i != g_KeyValuesCache.InvalidIndex(); i=g_KeyValuesCache.Next( i ) )
-	{
-		g_KeyValuesCache[i]->deleteThis();
-	}
-	g_KeyValuesCache.Purge();
-}
-
-
 IMPLEMENT_CLIENTCLASS_DT(C_VGuiScreen, DT_VGuiScreen, CVGuiScreen)
 	RecvPropFloat( RECVINFO(m_flWidth) ),
 	RecvPropFloat( RECVINFO(m_flHeight) ),
@@ -876,7 +842,7 @@ bool CVGuiScreenPanel::Init( KeyValues* pKeyValues, VGuiScreenInitData_t* pInitD
 	const char *pResFile = pKeyValues->GetString( "resfile" );
 	if (pResFile[0] != 0)
 	{
-		KeyValues *pCachedKeyValues = CacheKeyValuesForFile( pResFile );
+		KeyValues *pCachedKeyValues = CacheKeyValuesForFile( pResFile, "GAME" );
 		LoadControlSettings( pResFile, NULL, pCachedKeyValues );
 	}
 

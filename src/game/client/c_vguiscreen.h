@@ -199,9 +199,5 @@ void DeactivateVguiScreen( C_BaseEntity *pVguiScreen );
 void SetVGuiScreenButtonState( C_BaseEntity *pVguiScreen, uint64 nButtonState );
 
 
-// Called at shutdown.
-void ClearKeyValuesCache();
-
-
 #endif // C_VGUISCREEN_H
   

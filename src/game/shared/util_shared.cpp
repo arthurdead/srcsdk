@@ -1118,6 +1118,35 @@ void UTIL_StringToIntArray_PreserveArray( int *pVector, int count, const char *p
 	}
 }
 
+static CUtlDict<KeyValues*, int> s_KeyValuesCache;
+
+KeyValues* CacheKeyValuesForFile( const char *pFilename, const char *pPathID )
+{
+	MEM_ALLOC_CREDIT();
+	int i = s_KeyValuesCache.Find( pFilename );
+	if ( i == s_KeyValuesCache.InvalidIndex() )
+	{
+		KeyValues *rDat = new KeyValues( pFilename );
+		rDat->LoadFromFile( g_pFullFileSystem, pFilename, pPathID, false );
+		s_KeyValuesCache.Insert( pFilename, rDat );
+		return rDat;		
+	}
+	else
+	{
+		return s_KeyValuesCache[i];
+	}
+}
+
+void ClearKeyValuesCache()
+{
+	MEM_ALLOC_CREDIT();
+	for ( int i=s_KeyValuesCache.First(); i != s_KeyValuesCache.InvalidIndex(); i=s_KeyValuesCache.Next( i ) )
+	{
+		s_KeyValuesCache[i]->deleteThis();
+	}
+	s_KeyValuesCache.Purge();
+}
+
 KeyValues* ReadKVFile( IFileSystem *filesystem, const char *szFilenameWithoutExtension, const char *pSearchPath )
 {
 	Assert( strchr( szFilenameWithoutExtension, '.' ) == NULL );

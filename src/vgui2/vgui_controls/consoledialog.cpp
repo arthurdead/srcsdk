@@ -302,7 +302,7 @@ CConsolePanel::CConsolePanel( vgui::Panel *pParent, const char *pName, bool bSta
 	// create controls
 	m_pHistory = new RichText(this, "ConsoleHistory");
 	m_pHistory->SetAllowKeyBindingChainToParent( false );
-	//SETUP_PANEL( m_pHistory );
+	SETUP_PANEL( m_pHistory );
 	m_pHistory->SetVerticalScrollbar( !m_bStatusVersion );
 	if ( m_bStatusVersion )
 	{

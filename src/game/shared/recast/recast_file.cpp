@@ -62,7 +62,7 @@ static char *RecastGetBspFilename( const char *navFilename )
 	static char bspFilename[256];
 
 #ifdef CLIENT_DLL
-	V_snprintf( bspFilename, sizeof( bspFilename ), FORMAT_BSPFILE, engine->GetLevelName() );
+	V_strncpy( bspFilename, engine->GetLevelName(), sizeof( bspFilename ) );
 #else
 	V_snprintf( bspFilename, sizeof( bspFilename ), FORMAT_BSPFILE, STRING( gpGlobals->mapname ) );
 #endif // CLIENT_DLL
@@ -247,9 +247,8 @@ bool CRecastMgr::Load()
 
 	char filename[256];
 #ifdef CLIENT_DLL
-	V_snprintf( filename, sizeof( filename ), "%s", engine->GetLevelName() );
-	V_StripExtension( filename, filename, 256 );
-	V_snprintf( filename, sizeof( filename ), "%s.%s", filename, EXT_NAVFILE );
+	V_strncpy( filename, engine->GetLevelName(), sizeof( filename ) );
+	V_SetExtension( filename, EXT_NAVFILE, sizeof( filename ) );
 #else
 	V_snprintf( filename, sizeof( filename ), FORMAT_NAVFILE, STRING( gpGlobals->mapname ) );
 #endif // CLIENT_DLL

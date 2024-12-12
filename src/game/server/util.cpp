@@ -1510,7 +1510,7 @@ void UTIL_SetModel( CBaseEntity *pEntity, const char *pModelName )
 {
 	// check to see if model was properly precached
 	modelindex_t i = modelinfo->GetModelIndex( pModelName );
-	if ( !i.IsValid() )	
+	if ( !IsValidModelIndex(i) )	
 	{
 		Log_Warning(LOG_MODEL,"%i/%s - %s:  UTIL_SetModel:  not precached: %s\n", pEntity->entindex(),
 			STRING( pEntity->GetEntityName() ),

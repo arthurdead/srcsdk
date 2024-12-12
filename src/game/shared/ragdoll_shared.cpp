@@ -260,7 +260,7 @@ static void RagdollCreateObjects( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragd
 		}
 		else if ( !strcmpi( pBlock, "collisionrules" ) )
 		{
-			unsigned int collset = (unsigned int)params.modelIndex.GetRaw();
+			unsigned int collset = (unsigned int)params.modelIndex;
 
 			IPhysicsCollisionSet *pSet = physics->FindOrCreateCollisionSet( collset, ragdoll.listCount );
 			CRagdollCollisionRules rules(pSet);
@@ -307,7 +307,7 @@ static void RagdollCreateDestrObjects( IPhysicsEnvironment *pPhysEnv, ragdoll_t 
 		}
 		else if ( !strcmpi( pBlock, "collisionrules" ) )
 		{
-			unsigned int collset = (unsigned int)params.modelIndex.GetRaw();
+			unsigned int collset = (unsigned int)params.modelIndex;
 
 			IPhysicsCollisionSet *pSet = physics->FindOrCreateCollisionSet( collset, ragdoll.listCount );
 			CRagdollCollisionRules rules( pSet );
@@ -332,7 +332,7 @@ void RagdollSetupCollisions( ragdoll_t &ragdoll, vcollide_t *pCollide, modelinde
 	if (!pCollide)
 		return;
 
-	unsigned int collset = (unsigned int)modelIndex.GetRaw();
+	unsigned int collset = (unsigned int)modelIndex;
 
 	IPhysicsCollisionSet *pSet = physics->FindCollisionSet( collset );
 	if ( !pSet )

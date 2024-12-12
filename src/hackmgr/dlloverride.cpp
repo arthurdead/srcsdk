@@ -246,22 +246,22 @@ HACKMGR_API void HackMgr_SetEngineVideoServicesPtr(IVideoServices *pOldInter, IV
 	int vtable_size = CVideoServicesRedirect::vtable_size;
 	int vtable_mem_size = (sizeof(generic_plain_mfp_t) * CVideoServicesRedirect::vtable_size);
 
-	generic_vtable_t source_vtable = NULL;
-	generic_vtable_t target_vtable = NULL;
-
-#if defined __GNUC__ && defined __linux__
-	source_vtable = vtable_from_object(CVideoServicesRedirect::source);
+	generic_vtable_t source_vtable = hackmgr::target_runtime::vtable_from_object(CVideoServicesRedirect::source);
 
 	page_info page_access = page_info(source_vtable, vtable_mem_size);
-	page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
-
-	target_vtable = vtable_from_object(&s_VideoRedirect);
-
-	page_access = page_info(target_vtable, vtable_mem_size);
+#ifdef __linux__
 	page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
 #else
-	Assert(0);
-	DebuggerBreak();
+	page_access.protect(PAGE_EXECUTE_READWRITE);
+#endif
+
+	generic_vtable_t target_vtable = hackmgr::target_runtime::vtable_from_object(&s_VideoRedirect);
+
+	page_access = page_info(target_vtable, vtable_mem_size);
+#ifdef __linux__
+	page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
+#else
+	page_access.protect(PAGE_EXECUTE_READWRITE);
 #endif
 
 	for(int i = 0; i < vtable_size; ++i) {
@@ -286,22 +286,22 @@ HACKMGR_API void HackMgr_SetEnginePhysicsPtr(IPhysics *pOldInter, IPhysics *pNew
 	int vtable_size = CPhysicsRedirect::vtable_size;
 	int vtable_mem_size = (sizeof(generic_plain_mfp_t) * CPhysicsRedirect::vtable_size);
 
-	generic_vtable_t source_vtable = NULL;
-	generic_vtable_t target_vtable = NULL;
-
-#if defined __GNUC__ && defined __linux__
-	source_vtable = vtable_from_object(CPhysicsRedirect::source);
+	generic_vtable_t source_vtable = hackmgr::target_runtime::vtable_from_object(CPhysicsRedirect::source);
 
 	page_info page_access = page_info(source_vtable, vtable_mem_size);
-	page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
-
-	target_vtable = vtable_from_object(&s_PhysicsRedirect);
-
-	page_access = page_info(target_vtable, vtable_mem_size);
+#ifdef __linux__
 	page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
 #else
-	Assert(0);
-	DebuggerBreak();
+	page_access.protect(PAGE_EXECUTE_READWRITE);
+#endif
+
+	generic_vtable_t target_vtable = hackmgr::target_runtime::vtable_from_object(&s_PhysicsRedirect);
+
+	page_access = page_info(target_vtable, vtable_mem_size);
+#ifdef __linux__
+	page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
+#else
+	page_access.protect(PAGE_EXECUTE_READWRITE);
 #endif
 
 	for(int i = 0; i < vtable_size; ++i) {
@@ -399,12 +399,10 @@ HACKMGR_EXECUTE_ON_LOAD_BEGIN(1)
 
 HackMgr_InitCommandLine();
 
-#if defined __GNUC__ && defined __linux__
 #ifndef SWDS
-CVideoServicesRedirect::vtable_size = vfunc_index(&IVideoServices::GetCodecName) + 1;
+CVideoServicesRedirect::vtable_size = hackmgr::compiler_native::vfunc_index_single(&IVideoServices::GetCodecName) + 1;
 #endif
-CPhysicsRedirect::vtable_size = vfunc_index(&IPhysics::DestroyAllCollisionSets) + 1;
-#endif
+CPhysicsRedirect::vtable_size = hackmgr::compiler_native::vfunc_index_single(&IPhysics::DestroyAllCollisionSets) + 1;
 
 int status = IFACE_OK;
 

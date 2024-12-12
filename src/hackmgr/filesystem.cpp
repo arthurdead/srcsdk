@@ -64,6 +64,4 @@ if(path[0] != '\0') {
 	pFileSystem->AddSearchPath(path, "GAME_NOBSP", PATH_ADD_TO_TAIL);
 }
 
-DebuggerBreak();
-
 HACKMGR_EXECUTE_ON_LOAD_END

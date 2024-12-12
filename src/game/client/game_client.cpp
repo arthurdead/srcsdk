@@ -105,6 +105,18 @@ extern void HUDMinModeChangedCallBack( IConVarRef var, const char *pOldString, f
 // This gets called one time when the game is initialied
 void InitializeClientCvars( void )
 {
+	//TODO!!! Arthurdead: this is defined somewhere else??
+	ConVarBase *tmp_props_break_max_pieces = g_pCVar->FindVarBase("props_break_max_pieces");
+	if(tmp_props_break_max_pieces) {
+		tmp_props_break_max_pieces->AddFlags( FCVAR_GAMEDLL|FCVAR_REPLICATED );
+	}
+
+	g_pCVar->FindVarBase("tv_transmitall")->AddFlags( FCVAR_GAMEDLL|FCVAR_REPLICATED );
+	g_pCVar->FindVarBase("sv_restrict_aspect_ratio_fov")->AddFlags( FCVAR_GAMEDLL|FCVAR_REPLICATED );
+	g_pCVar->FindVarBase("sv_client_predict")->AddFlags( FCVAR_GAMEDLL|FCVAR_REPLICATED );
+	g_pCVar->FindVarBase("sv_client_max_interp_ratio")->AddFlags( FCVAR_GAMEDLL|FCVAR_REPLICATED );
+	g_pCVar->FindVarBase("sv_client_min_interp_ratio")->AddFlags( FCVAR_GAMEDLL|FCVAR_REPLICATED );
+
 	// Register cvars here:
 	ConVar_Register( FCVAR_CLIENTDLL, &g_ClientConVarAccessor );
 

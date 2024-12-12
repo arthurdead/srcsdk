@@ -774,7 +774,7 @@ void CTempEnts::FizzEffect( C_BaseEntity *pent, modelindex_t modelIndex, int den
 	Vector			origin;
 	Vector			mins, maxs;
 
-	if ( !pent->GetModel() || !modelIndex ) 
+	if ( !pent->GetModel() || !IsValidModelIndex(modelIndex) ) 
 		return;
 
 	model = modelinfo->GetModel( modelIndex );
@@ -838,7 +838,7 @@ void CTempEnts::Bubbles( const Vector &mins, const Vector &maxs, float height, m
 	float				sine, cosine;
 	Vector				origin;
 
-	if ( !modelIndex ) 
+	if ( !IsValidModelIndex(modelIndex) ) 
 		return;
 
 	model = modelinfo->GetModel( modelIndex );
@@ -893,7 +893,7 @@ void CTempEnts::BubbleTrail( const Vector &start, const Vector &end, float flWat
 	float				dist, angle;
 	Vector				origin;
 
-	if ( !modelIndex ) 
+	if ( !IsValidModelIndex(modelIndex) ) 
 		return;
 
 	model = modelinfo->GetModel( modelIndex );
@@ -982,7 +982,7 @@ void CTempEnts::BreakModel( const Vector &pos, const QAngle &angles, const Vecto
 	C_LocalTempEntity			*pTemp;
 	const model_t		*pModel;
 
-	if (!modelIndex) 
+	if (!IsValidModelIndex(modelIndex)) 
 		return;
 
 	pModel = modelinfo->GetModel( modelIndex );
@@ -1087,7 +1087,7 @@ void CTempEnts::PhysicsProp( modelindex_t modelindex, int skin, const Vector& po
 
 	if ( !model )
 	{
-		DevMsg("CTempEnts::PhysicsProp: model index %i not found\n", modelindex.GetRaw() );
+		DevMsg("CTempEnts::PhysicsProp: model index %i not found\n", (int)modelindex );
 		return;
 	}
 
@@ -1148,13 +1148,13 @@ C_LocalTempEntity *CTempEnts::ClientProjectile( const Vector& vecOrigin, const V
 	C_LocalTempEntity	*pTemp;
 	const model_t		*model;
 
-	if ( !modelIndex ) 
+	if ( !IsValidModelIndex(modelIndex) ) 
 		return NULL;
 
 	model = modelinfo->GetModel( modelIndex );
 	if ( !model )
 	{
-		Warning("ClientProjectile: No model %d!\n", modelIndex.GetRaw());
+		Warning("ClientProjectile: No model %d!\n", (int)modelIndex);
 		return NULL;
 	}
 
@@ -1205,13 +1205,13 @@ C_LocalTempEntity *CTempEnts::TempSprite( const Vector &pos, const Vector &dir, 
 	const model_t		*model;
 	int					frameCount;
 
-	if ( !modelIndex ) 
+	if ( !IsValidModelIndex(modelIndex) ) 
 		return NULL;
 
 	model = modelinfo->GetModel( modelIndex );
 	if ( !model )
 	{
-		Warning("No model %d!\n", modelIndex.GetRaw());
+		Warning("No model %d!\n", (int)modelIndex);
 		return NULL;
 	}
 
@@ -1276,7 +1276,7 @@ void CTempEnts::Sprite_Spray( const Vector &pos, const Vector &dir, modelindex_t
 	
 	if ( !pModel )
 	{
-		Warning("No model %d!\n", modelIndex.GetRaw());
+		Warning("No model %d!\n", (int)modelIndex);
 		return;
 	}
 
@@ -1324,7 +1324,7 @@ void CTempEnts::Sprite_Trail( const Vector &vecStart, const Vector &vecEnd, mode
 	
 	if ( !pModel )
 	{
-		Warning("No model %d!\n", modelIndex.GetRaw());
+		Warning("No model %d!\n", (int)modelIndex);
 		return;
 	}
 
@@ -1409,7 +1409,7 @@ void CTempEnts::AttachTentToPlayer( int client, modelindex_t modelIndex, float z
 	
 	if ( !pModel )
 	{
-		Warning("No model %d!\n", modelIndex.GetRaw());
+		Warning("No model %d!\n", (int)modelIndex);
 		return;
 	}
 
@@ -1527,7 +1527,7 @@ void CTempEnts::BloodSprite( const Vector &org, color32 clr, modelindex_t modelI
 	const model_t			*model;
 
 	//Validate the model first
-	if ( modelIndex && (model = modelinfo->GetModel( modelIndex ) ) != NULL )
+	if ( IsValidModelIndex(modelIndex) && (model = modelinfo->GetModel( modelIndex ) ) != NULL )
 	{
 		C_LocalTempEntity		*pTemp;
 		int						frameCount = modelinfo->GetModelFrameCount( model );
@@ -1575,9 +1575,9 @@ C_LocalTempEntity *CTempEnts::DefaultSprite( const Vector &pos, modelindex_t spr
 		return NULL;
 
 	pSprite = modelinfo->GetModel( spriteIndex );
-	if ( !spriteIndex || !pSprite || modelinfo->GetModelType( pSprite ) != mod_sprite )
+	if ( !IsValidModelIndex(spriteIndex) || !pSprite || modelinfo->GetModelType( pSprite ) != mod_sprite )
 	{
-		DevWarning( 1,"No Sprite %d!\n", spriteIndex.GetRaw());
+		DevWarning( 1,"No Sprite %d!\n", (int)spriteIndex);
 		return NULL;
 	}
 

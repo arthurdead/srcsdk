@@ -79,8 +79,8 @@ bool IsStaticPointEntity( CSharedBaseEntity *pEnt )
 	if ( pEnt->GetMoveParent() )
 		return false;
 
-	if ( !pEnt->GetModelIndex() )
-		return 1;
+	if ( !IsValidModelIndex( pEnt->GetModelIndex() ) )
+		return true;
 
 	if ( FClassnameIs( pEnt, "info_target" ) || FClassnameIs( pEnt, "info_landmark" ) || 
 		FClassnameIs( pEnt, "path_corner" ) )

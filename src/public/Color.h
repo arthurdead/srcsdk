@@ -16,8 +16,15 @@ public:
 	// constructors
 	Color24()
 	{
-		SetColor(255, 255, 255);
+		SetColor( 255, 255, 255 );
 	}
+
+	Color24( const Color24 &rhs ) = default;
+	Color24 &operator=( const Color24 &rhs ) = default;
+	Color24( Color24 &&rhs ) = default;
+	Color24 &operator=( Color24 &&rhs ) = default;
+	~Color24() = default;
+
 	Color24(unsigned char _r,unsigned char _g,unsigned char _b)
 	{
 		SetColor(_r, _g, _b);
@@ -63,25 +70,16 @@ public:
 
 	bool operator==(const Color24 &rhs) const
 	{
-		return r_ == rhs.r_ && g_ == rhs.g_ && b_ == rhs.b_;
+		return r() == rhs.r() &&
+				g() == rhs.g() &&
+				b() == rhs.b();
 	}
 
 	bool operator!=(const Color24 &rhs) const
 	{
-		return r_ != rhs.r_ || g_ != rhs.g_ || b_ != rhs.b_;
-	}
-
-	Color24( const Color24 &rhs )
-		: r_(rhs.r_), g_(rhs.g_), b_(rhs.b_)
-	{
-	}
-
-	Color24 &operator=( const Color24 &rhs )
-	{
-		r_ = rhs.r_;
-		g_ = rhs.g_;
-		b_ = rhs.b_;
-		return *this;
+		return r() != rhs.r() ||
+				g() != rhs.g() ||
+				b() != rhs.b();
 	}
 
 private:
@@ -104,8 +102,15 @@ public:
 	// constructors
 	Color()
 	{
-		SetColor(255, 255, 255, 255);
+		SetColor( 255, 255, 255, 255 );
 	}
+
+	Color( const Color &rhs ) = default;
+	Color &operator=( const Color &rhs ) = default;
+	Color( Color &&rhs ) = default;
+	Color &operator=( Color &&rhs ) = default;
+	~Color() = default;
+
 	Color(unsigned char _r,unsigned char _g,unsigned char _b)
 	{
 		SetColor(_r, _g, _b, 255);
@@ -127,17 +132,17 @@ public:
 	// a - alpha component, controls transparency (0 - transparent, 255 - opaque);
 	void SetColor(unsigned char _r, unsigned char _g, unsigned char _b)
 	{
-		_clr = static_cast<unsigned int>(_r);
-		_clr |= (static_cast<unsigned int>(_g) << 8);
-		_clr |= (static_cast<unsigned int>(_b) << 16);
+		_color[0] = _r;
+		_color[1] = _g;
+		_color[2] = _b;
 	}
 
 	void SetColor(unsigned char _r, unsigned char _g, unsigned char _b, unsigned char _a)
 	{
-		_clr = static_cast<unsigned int>(_r);
-		_clr |= (static_cast<unsigned int>(_g) << 8);
-		_clr |= (static_cast<unsigned int>(_b) << 16);
-		_clr |= (static_cast<unsigned int>(_a) << 24);
+		_color[0] = _r;
+		_color[1] = _g;
+		_color[2] = _b;
+		_color[3] = _a;
 	}
 
 	void SetColor(Color24 other)
@@ -149,26 +154,22 @@ public:
 
 	void SetR(unsigned char _r)
 	{
-		_clr &= ~static_cast<unsigned int>(0xFF);
-		_clr |= static_cast<unsigned int>(_r);
+		_color[0] = _r;
 	}
 
 	void SetG(unsigned char _g)
 	{
-		_clr &= ~(static_cast<unsigned int>(0xFF) << 8);
-		_clr |= (static_cast<unsigned int>(_g) << 8);
+		_color[1] = _g;
 	}
 
 	void SetB(unsigned char _b)
 	{
-		_clr &= ~(static_cast<unsigned int>(0xFF) << 16);
-		_clr |= (static_cast<unsigned int>(_b) << 16);
+		_color[2] = _b;
 	}
 
 	void SetA(unsigned char _a)
 	{
-		_clr &= ~(static_cast<unsigned int>(0xFF) << 24);
-		_clr |= (static_cast<unsigned int>(_a) << 24);
+		_color[3] = _a;
 	}
 
 	void GetColor(unsigned char &_r, unsigned char &_g, unsigned char &_b, unsigned char &_a) const
@@ -179,37 +180,32 @@ public:
 		_a = a();
 	}
 
-	inline unsigned char r() const	{ return _clr & 0xFF; }
-	inline unsigned char g() const	{ return (_clr >> 8) & 0xFF; }
-	inline unsigned char b() const	{ return (_clr >> 16) & 0xFF; }
-	inline unsigned char a() const	{ return (_clr >> 24) & 0xFF; }
+	inline unsigned char r() const	{ return _color[0]; }
+	inline unsigned char g() const	{ return _color[1]; }
+	inline unsigned char b() const	{ return _color[2]; }
+	inline unsigned char a() const	{ return _color[3]; }
 
 	bool operator==(const Color &rhs) const
 	{
-		return _clr == rhs._clr;
+		return r() == rhs.r() &&
+				g() == rhs.g() &&
+				b() == rhs.b() &&
+				a() == rhs.a();
 	}
 
 	bool operator!=(const Color &rhs) const
 	{
-		return _clr != rhs._clr;
-	}
-
-	Color( const Color &rhs )
-		: _clr(rhs._clr)
-	{
-	}
-
-	Color &operator=( const Color &rhs )
-	{
-		_clr = rhs._clr;
-		return *this;
+		return r() != rhs.r() ||
+				g() != rhs.g() ||
+				b() != rhs.b() ||
+				a() != rhs.a();
 	}
 
 	operator FatColor32() const;
 	operator Color24() const { return Color24( r(), g(), b() ); }
 
 private:
-	unsigned int _clr;
+	unsigned char _color[4];
 };
 
 typedef Color Color32;
@@ -221,8 +217,15 @@ struct ColorRGBExp32
 	// constructors
 	ColorRGBExp32()
 	{
-		SetColor(255, 255, 255, 127);
+		SetColor( 255, 255, 255, 127 );
 	}
+
+	ColorRGBExp32( const ColorRGBExp32 &rhs ) = default;
+	ColorRGBExp32 &operator=( const ColorRGBExp32 &rhs ) = default;
+	ColorRGBExp32( ColorRGBExp32 &&rhs ) = default;
+	ColorRGBExp32 &operator=( ColorRGBExp32 &&rhs ) = default;
+	~ColorRGBExp32() = default;
+
 	ColorRGBExp32(unsigned char _r,unsigned char _g,unsigned char _b)
 	{
 		SetColor(_r, _g, _b, 127);
@@ -239,17 +242,17 @@ struct ColorRGBExp32
 	// a - alpha component, controls transparency (0 - transparent, 255 - opaque);
 	void SetColor(unsigned char _r, unsigned char _g, unsigned char _b)
 	{
-		_clr = static_cast<unsigned int>(_r);
-		_clr |= (static_cast<unsigned int>(_g) << 8);
-		_clr |= (static_cast<unsigned int>(_b) << 16);
+		r_ = _r;
+		g_ = _g;
+		b_ = _b;
 	}
 
 	void SetColor(unsigned char _r, unsigned char _g, unsigned char _b, signed char _e)
 	{
-		_clr = static_cast<unsigned int>(_r);
-		_clr |= (static_cast<unsigned int>(_g) << 8);
-		_clr |= (static_cast<unsigned int>(_b) << 16);
-		_clr |= (static_cast<unsigned int>(_e) << 24);
+		r_ = _r;
+		g_ = _g;
+		b_ = _b;
+		e_ = _e;
 	}
 
 	void SetColor(Color24 other)
@@ -259,26 +262,22 @@ struct ColorRGBExp32
 
 	void SetR(unsigned char _r)
 	{
-		_clr &= ~static_cast<unsigned int>(0xFF);
-		_clr |= static_cast<unsigned int>(_r);
+		r_ = _r;
 	}
 
 	void SetG(unsigned char _g)
 	{
-		_clr &= ~(static_cast<unsigned int>(0xFF) << 8);
-		_clr |= (static_cast<unsigned int>(_g) << 8);
+		g_ = _g;
 	}
 
 	void SetB(unsigned char _b)
 	{
-		_clr &= ~(static_cast<unsigned int>(0xFF) << 16);
-		_clr |= (static_cast<unsigned int>(_b) << 16);
+		b_ = _b;
 	}
 
 	void SetE(signed char _e)
 	{
-		_clr &= ~(static_cast<unsigned int>(0xFF) << 24);
-		_clr |= (static_cast<unsigned int>(_e) << 24);
+		e_ = _e;
 	}
 
 	void GetColor(unsigned char &_r, unsigned char &_g, unsigned char &_b, signed char &_e) const
@@ -289,36 +288,34 @@ struct ColorRGBExp32
 		_e = e();
 	}
 
-	inline unsigned char r() const	{ return _clr & 0xFF; }
-	inline unsigned char g() const	{ return (_clr >> 8) & 0xFF; }
-	inline unsigned char b() const	{ return (_clr >> 16) & 0xFF; }
-	inline signed char e() const	{ return (_clr >> 24) & 0xFF; }
+	inline unsigned char r() const	{ return r_; }
+	inline unsigned char g() const	{ return g_; }
+	inline unsigned char b() const	{ return b_; }
+	inline signed char e() const	{ return e_; }
 
 	bool operator==(const ColorRGBExp32 &rhs) const
 	{
-		return _clr == rhs._clr;
+		return r() == rhs.r() &&
+				g() == rhs.g() &&
+				b() == rhs.b() &&
+				e() == rhs.e();
 	}
 
 	bool operator!=(const ColorRGBExp32 &rhs) const
 	{
-		return _clr != rhs._clr;
-	}
-
-	ColorRGBExp32( const ColorRGBExp32 &rhs )
-		: _clr(rhs._clr)
-	{
-	}
-
-	ColorRGBExp32 &operator=( const ColorRGBExp32 &rhs )
-	{
-		_clr = rhs._clr;
-		return *this;
+		return r() != rhs.r() ||
+				g() != rhs.g() ||
+				b() != rhs.b() ||
+				e() != rhs.e();
 	}
 
 	operator Color24() const { return Color24( r(), g(), b() ); }
 
 private:
-	unsigned int _clr;
+	unsigned char r_;
+	unsigned char g_;
+	unsigned char b_;
+	signed char e_;
 };
 
 class FatColor32
@@ -327,8 +324,15 @@ public:
 	// constructors
 	FatColor32()
 	{
-		SetColor(255, 255, 255, 255);
+		SetColor( 255, 255, 255, 255 );
 	}
+
+	FatColor32( const FatColor32 &rhs ) = default;
+	FatColor32 &operator=( const FatColor32 &rhs ) = default;
+	FatColor32( FatColor32 &&rhs ) = default;
+	FatColor32 &operator=( FatColor32 &&rhs ) = default;
+	~FatColor32() = default;
+
 	FatColor32(unsigned char _r,unsigned char _g,unsigned char _b,unsigned char _a=255)
 	{
 		SetColor(_r, _g, _b, _a);
@@ -343,12 +347,19 @@ public:
 	// g - green component (0-255)
 	// b - blue component (0-255)
 	// a - alpha component, controls transparency (0 - transparent, 255 - opaque);
-	void SetColor(unsigned char _r, unsigned char _g, unsigned char _b, unsigned char _a = 255)
+	void SetColor(unsigned char _r, unsigned char _g, unsigned char _b, unsigned char _a)
 	{
-		_clr_lo = static_cast<unsigned long long>(_r);
-		_clr_lo |= (static_cast<unsigned long long>(_g) << 32);
-		_clr_hi = static_cast<unsigned long long>(_b);
-		_clr_hi |= (static_cast<unsigned long long>(_a) << 32);
+		r_ = _r;
+		g_ = _g;
+		b_ = _b;
+		a_ = _a;
+	}
+
+	void SetColor(unsigned char _r, unsigned char _g, unsigned char _b)
+	{
+		r_ = _r;
+		g_ = _g;
+		b_ = _b;
 	}
 
 	void SetColor(Color24 other)
@@ -371,32 +382,28 @@ public:
 
 	void SetR(unsigned char _r)
 	{
-		_clr_lo &= ~static_cast<unsigned long long>(0xFFFFFFFF);
-		_clr_lo |= static_cast<unsigned long long>(_r);
+		r_ = _r;
 	}
 
 	void SetG(unsigned char _g)
 	{
-		_clr_lo &= ~(static_cast<unsigned long long>(0xFFFFFFFF) << 32);
-		_clr_lo |= (static_cast<unsigned long long>(_g) << 32);
+		g_ = _g;
 	}
 
 	void SetB(unsigned char _b)
 	{
-		_clr_hi &= ~static_cast<unsigned long long>(0xFFFFFFFF);
-		_clr_hi |= static_cast<unsigned long long>(_b);
+		b_ = _b;
 	}
 
 	void SetA(unsigned char _a)
 	{
-		_clr_hi &= ~(static_cast<unsigned long long>(0xFFFFFFFF) << 32);
-		_clr_hi |= static_cast<unsigned long long>(_a);
+		a_ = _a;
 	}
 
-	inline unsigned char r() const	{ return _clr_lo & 0xFF; }
-	inline unsigned char g() const	{ return (_clr_lo >> 32) & 0xFF; }
-	inline unsigned char b() const	{ return _clr_hi & 0xFF; }
-	inline unsigned char a() const	{ return (_clr_hi >> 32) & 0xFF; }
+	inline unsigned char r() const	{ return r_; }
+	inline unsigned char g() const	{ return g_; }
+	inline unsigned char b() const	{ return b_; }
+	inline unsigned char a() const	{ return a_; }
 
 	bool operator==(const FatColor32 &rhs) const
 	{
@@ -414,24 +421,14 @@ public:
 				a() != rhs.a();
 	}
 
-	FatColor32( const FatColor32 &rhs )
-		: _clr_lo(rhs._clr_lo), _clr_hi(rhs._clr_hi)
-	{
-	}
-
-	FatColor32 &operator=( const FatColor32 &rhs )
-	{
-		_clr_lo = rhs._clr_lo;
-		_clr_hi = rhs._clr_hi;
-		return *this;
-	}
-
 	operator Color32() { return Color32( r(), g(), b(), a() ); }
 	operator Color24() { return Color24( r(), g(), b() ); }
 
 private:
-	unsigned long long _clr_lo;
-	unsigned long long _clr_hi;
+	unsigned int r_;
+	unsigned int g_;
+	unsigned int b_;
+	unsigned int a_;
 };
 
 typedef FatColor32 colorVec;

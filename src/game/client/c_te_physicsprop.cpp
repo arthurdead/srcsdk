@@ -91,7 +91,7 @@ static inline void RecordPhysicsProp( const Vector& start, const QAngle &angles,
 
 	if ( clienttools->IsInRecordingMode() )
 	{
-		const model_t* pModel = (nModelIndex.IsValid()) ? modelinfo->GetModel( nModelIndex ) : NULL;
+		const model_t* pModel = IsValidModelIndex(nModelIndex) ? modelinfo->GetModel( nModelIndex ) : NULL;
 		const char *pModelName = pModel ? modelinfo->GetModelName( pModel ) : "";
 
 		KeyValues *msg = new KeyValues( "TempEntity" );

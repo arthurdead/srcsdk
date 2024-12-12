@@ -795,6 +795,8 @@ void CServerGameDLL::DLLShutdown( void )
 	gamestatsuploader->InitConnection();
 
 	gameeventmanager = NULL;
+
+	ClearKeyValuesCache();
 	
 	DisconnectTier3Libraries();
 	DisconnectTier2Libraries();
@@ -878,6 +880,9 @@ extern void W_Precache(void);
 extern ConVar sv_stepsize;
 
 extern modelindex_t g_sModelIndexWorld;
+
+modelindex_t g_sModelIndexEmpty = INVALID_MODEL_INDEX;
+modelindex_t g_sModelIndexError = INVALID_MODEL_INDEX;
 
 // Called any time a new level is started (after GameInit() also on level transitions within a game)
 bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool background )
@@ -971,6 +976,18 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 	// Only allow precaching between LevelInitPreEntity and PostEntity
 	CBaseEntity::SetAllowPrecache( true );
 
+	char mapname[ 256 ];
+	V_snprintf( mapname, sizeof( mapname ), "maps/%s.bsp", pMapName );
+
+	g_sModelIndexEmpty = engine->PrecacheModel( "models/empty.mdl" );
+	g_sModelIndexWorld = engine->PrecacheModel( mapname );
+	g_sModelIndexError = engine->PrecacheModel( "models/error.mdl" );
+
+	g_WorldEntity = (CWorld *)CreateEntityByName("worldspawn", 0);
+	g_WorldEntity->SetLocalOrigin( vec3_origin );
+	g_WorldEntity->SetLocalAngles( vec3_angle );
+	DispatchSpawn(g_WorldEntity);
+
 	COM_TimestampedLog( "IGameSystem::LevelInitPreEntityAllSystems" );
 	IGameSystem::LevelInitPreEntityAllSystems();
 
@@ -998,8 +1015,6 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 	// Call all registered precachers.
 	CPrecacheRegister::Precache();
 
-	g_sModelIndexWorld = modelinfo->GetModelIndex( pMapName );
-
 	// =================================================
 	//	Initialize NPC Relationships
 	// =================================================
@@ -1009,11 +1024,6 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 	g_EventQueue.Init();
 
 	SetupDefaultLightstyle();
-
-	g_WorldEntity = (CWorld *)CreateEntityByName("worldspawn", 0);
-	g_WorldEntity->SetLocalOrigin( vec3_origin );
-	g_WorldEntity->SetLocalAngles( vec3_angle );
-	DispatchSpawn(g_WorldEntity);
 
 	COM_TimestampedLog( "g_pGameRules->CreateStandardEntities()" );
 	// Create the player resource

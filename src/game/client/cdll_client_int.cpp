@@ -2097,6 +2097,9 @@ void OnWorldSpawned()
 
 extern modelindex_t g_sModelIndexWorld;
 
+modelindex_t g_sModelIndexEmpty = INVALID_MODEL_INDEX;
+modelindex_t g_sModelIndexError = INVALID_MODEL_INDEX;
+
 //-----------------------------------------------------------------------------
 // Purpose: Per level init
 //-----------------------------------------------------------------------------
@@ -2138,13 +2141,9 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 	// Always force reset to normal mode upon receipt of world in new map
 	modemanager->SwitchMode( CLIENTMODE_NORMAL, true );
 
-	g_sModelIndexWorld = modelinfo->GetModelIndex( pMapName );
-
-	// Get weapon precaches
-	W_Precache();
-
-	// Call all registered precachers.
-	CPrecacheRegister::Precache();
+	g_sModelIndexEmpty = modelinfo->GetModelIndex( "models/empty.mdl" );
+	g_sModelIndexWorld = modelinfo->GetModelIndex( engine->GetLevelName() );
+	g_sModelIndexError = modelinfo->GetModelIndex( "models/error.mdl" );
 
 	// don't set direct because of FCVAR_USERINFO
 	if ( !cl_predict->GetInt() )
@@ -2153,6 +2152,12 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 	}
 
 	IGameSystem::LevelInitPreEntityAllSystems();
+
+	// Get weapon precaches
+	W_Precache();
+
+	// Call all registered precachers.
+	CPrecacheRegister::Precache();
 
 	RecastMgr().Load();
 

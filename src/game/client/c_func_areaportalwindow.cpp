@@ -94,7 +94,7 @@ int C_FuncAreaPortalWindow::DrawModel( int flags, const RenderableInstance_t &in
 
 	// Draw the optional foreground model next.
 	// Only use the alpha in the texture from the thing in the front.
-	if (m_iBackgroundModelIndex.IsValid())
+	if (IsValidModelIndex( m_iBackgroundModelIndex ))
 	{
 		render->SetBlend( 1 );
 		model_t *pBackground = ( model_t * )modelinfo->GetModel( m_iBackgroundModelIndex );

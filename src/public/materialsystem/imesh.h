@@ -1882,7 +1882,7 @@ inline void CVertexBuilder::Color4ubv( color32 rgba )
 {
 	Assert( m_pColor && m_pCurrColor );
 	#ifdef OPENGL_SWAP_COLORS
-		unsigned int col = rgba[0] | (rgba[1] << 8) | (rgba[2] << 16) | (rgba[3] << 24);	// r, g, b, a in memory
+		unsigned int col = rgba.r() | (rgba.g() << 8) | (rgba.b() << 16) | (rgba.a() << 24);	// r, g, b, a in memory
 	#else
 		unsigned int col = rgba.b() | (rgba.g() << 8) | (rgba.r() << 16) | (rgba.a() << 24);
 	#endif

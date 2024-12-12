@@ -445,7 +445,7 @@ bool C_BaseCombatWeapon::GetShootPosition( Vector &vOrigin, QAngle &vAngles )
 //-----------------------------------------------------------------------------
 bool C_BaseCombatWeapon::ShouldDraw( void )
 {
-	if ( !m_iWorldModelIndex.IsValid() )
+	if ( !IsValidModelIndex( m_iWorldModelIndex ) )
 		return false;
 
 	// FIXME: All weapons with owners are set to transmit in CBaseCombatWeapon::UpdateTransmitState,

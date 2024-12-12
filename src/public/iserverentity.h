@@ -12,6 +12,7 @@
 
 #include "iserverunknown.h"
 #include "string_t.h"
+#include "engine/ivmodelinfo.h"
 #if defined GAME_DLL || defined CLIENT_DLL
 #include "ehandle.h"
 #else
@@ -24,7 +25,6 @@ class ICollideable;
 class IServerNetworkable;
 class Vector;
 class QAngle;
-struct modelindex_t;
 
 // This class is how the engine talks to entities in the game DLL.
 // CBaseEntity implements this interface.

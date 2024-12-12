@@ -43,7 +43,7 @@ public:
 
 	// colors
 	virtual Color GetColor(const char *colorName, Color defaultColor) = 0;
-	
+
 	// Get the number of borders
 	virtual int GetBorderCount() const = 0;
 

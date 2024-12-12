@@ -115,7 +115,7 @@ IPhysicsObject *PhysModelCreateBox( CSharedBaseEntity *pEntity, const Vector &mi
 	Vector dims = maxs - mins;
 	solid.params.volume = dims.x * dims.y * dims.z;
 
-	if ( modelIndex )
+	if ( IsValidModelIndex( modelIndex ) )
 	{
 		const model_t *model = modelinfo->GetModel( modelIndex );
 		if ( model )
@@ -153,7 +153,7 @@ IPhysicsObject *PhysModelCreateSphere( CSharedBaseEntity *pEntity, float radius,
 	//PhysGetDefaultAABBSolid( solid );
 	solid.params = g_PhysDefaultObjectParams;
 
-	if ( modelIndex )
+	if ( IsValidModelIndex( modelIndex ) )
 	{
 		const model_t *model = modelinfo->GetModel( modelIndex );
 		if ( model )
@@ -188,7 +188,7 @@ IPhysicsObject *PhysModelCreateOBB( CSharedBaseEntity *pEntity, const Vector &mi
 	Vector dims = maxs - mins;
 	solid.params.volume = dims.x * dims.y * dims.z;
 
-	if ( modelIndex )
+	if ( IsValidModelIndex( modelIndex ) )
 	{
 		const model_t *model = modelinfo->GetModel( modelIndex );
 		if ( model )

@@ -4208,7 +4208,7 @@ int PropBreakablePrecacheAll( string_t modelName )
 	for ( int i = 0; i < iBreakables; i++ )
 	{
 		string_t breakModelName = AllocPooledString(list[i].modelName);
-		if ( !modelIndex.IsValid() )
+		if ( !IsValidModelIndex(modelIndex) )
 		{
 			iBreakables--;
 			continue;
@@ -4247,7 +4247,7 @@ bool PropBreakableCapEdictsOnCreateAll( CUtlVector<breakmodel_t> &list, IPhysics
 				for ( int i = 0; i < list.Count(); i++ )
 				{
 					modelindex_t modelIndex = modelinfo->GetModelIndex( list[i].modelName );
-					if ( !modelIndex.IsValid() )
+					if ( !IsValidModelIndex(modelIndex) )
 						continue;
 					numToCreate++;
 				}

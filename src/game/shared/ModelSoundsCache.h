@@ -37,7 +37,8 @@ private:
 };
 #pragma pack()
 
-extern CUtlCachedFileData< CModelSoundsCache > g_ModelSoundsCache;
+extern bool ModelSoundsCache_EntryExists( const char *name );
+extern CModelSoundsCache *ModelSoundsCache_Get( const char *name );
 
 extern CStudioHdr *ModelSoundsCache_LoadModel( char const *filename );
 extern void ModelSoundsCache_PrecacheScriptSound( const char *soundname );

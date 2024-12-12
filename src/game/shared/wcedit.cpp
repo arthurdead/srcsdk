@@ -47,7 +47,7 @@ bool NWCEdit::IsWCVersionValid(void)
 	char mapname[MAX_PATH];
 	int mapversion;
 #ifdef GAME_DLL
-	V_strncpy(mapname, STRING(gpGlobals->mapname), sizeof(mapname));
+	V_snprintf(mapname, sizeof(mapname), "maps/%s.bsp", STRING(gpGlobals->mapname));
 	mapversion = gpGlobals->mapversion;
 #else
 	V_strncpy(mapname, engine->GetLevelName(), sizeof(mapname));

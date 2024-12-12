@@ -154,8 +154,12 @@ void InitializeServerCvars( void )
 	//TODO!!! Arthurdead: this is defined somewhere else??
 	ConVarBase *tmp_props_break_max_pieces = g_pCVar->FindVarBase("props_break_max_pieces");
 	if(tmp_props_break_max_pieces) {
-		tmp_props_break_max_pieces->AddFlags( FCVAR_REPLICATED );
+		tmp_props_break_max_pieces->AddFlags( FCVAR_CLIENTDLL|FCVAR_REPLICATED );
 	}
+
+	g_pCVar->FindVarBase("tv_transmitall")->AddFlags( FCVAR_GAMEDLL|FCVAR_REPLICATED );
+	g_pCVar->FindVarBase("sv_restrict_aspect_ratio_fov")->AddFlags( FCVAR_GAMEDLL|FCVAR_REPLICATED );
+	g_pCVar->FindVarBase("sv_client_predict")->AddFlags( FCVAR_GAMEDLL|FCVAR_REPLICATED );
 
 	// Register cvars here:
 	ConVar_Register( FCVAR_GAMEDLL, &g_ServerConVarAccessor ); 
@@ -173,7 +177,9 @@ void InitializeServerCvars( void )
 	sv_minupdaterate = g_pCVar->FindVarBase( "sv_minupdaterate" );
 	sv_maxupdaterate = g_pCVar->FindVarBase( "sv_maxupdaterate" );
 	sv_client_min_interp_ratio = g_pCVar->FindVarBase( "sv_client_min_interp_ratio" );
+	sv_client_min_interp_ratio->AddFlags( FCVAR_GAMEDLL|FCVAR_REPLICATED );
 	sv_client_max_interp_ratio = g_pCVar->FindVarBase( "sv_client_max_interp_ratio" );
+	sv_client_max_interp_ratio->AddFlags( FCVAR_GAMEDLL|FCVAR_REPLICATED );
 
 #ifndef SWDS
 	if(!g_bDedicatedServer) {
@@ -215,11 +221,7 @@ void InitializeServerCvars( void )
 
 #ifndef SWDS
 	if(!g_bTextMode) {
-		if(!engine->IsDedicatedServer()) {
-			cl_hud_minmode = g_pCVar->FindVarBase("cl_hud_minmode");
-		} else {
-			cl_hud_minmode = new ConVar( "cl_hud_minmode", "0", FCVAR_ARCHIVE, "Set to 1 to turn on the advanced minimalist HUD mode." );
-		}
+		cl_hud_minmode = g_pCVar->FindVarBase("cl_hud_minmode");
 	}
 #endif
 }

@@ -813,7 +813,7 @@ Beam_t *CViewRenderBeams::CreateGenericBeam( const BeamInfo_t &beamInfo )
 	pBeam->die = gpGlobals->curtime;
 
 	// Need a valid model.
-	if ( !beamInfo.m_nModelIndex.IsValid() )
+	if ( !IsValidModelIndex( beamInfo.m_nModelIndex ) )
 		return NULL;
 
 	// Set it up
@@ -996,12 +996,12 @@ Beam_t *CViewRenderBeams::CreateBeamEntPoint( BeamInfo_t &beamInfo )
 	}
 
 	// Model index.
-	if ( ( beamInfo.m_pszModelName ) && ( !beamInfo.m_nModelIndex.IsValid() ) )
+	if ( ( beamInfo.m_pszModelName ) && ( !IsValidModelIndex( beamInfo.m_nModelIndex ) ) )
 	{
 		beamInfo.m_nModelIndex = modelinfo->GetModelIndex( beamInfo.m_pszModelName );
 	}
 
-	if ( ( beamInfo.m_pszHaloName ) && ( !beamInfo.m_nHaloIndex.IsValid() ) )
+	if ( ( beamInfo.m_pszHaloName ) && ( !IsValidModelIndex( beamInfo.m_nHaloIndex ) ) )
 	{
 		beamInfo.m_nHaloIndex = modelinfo->GetModelIndex( beamInfo.m_pszHaloName );
 	}
@@ -1092,12 +1092,12 @@ Beam_t *CViewRenderBeams::CreateBeamPoints( BeamInfo_t &beamInfo )
 		return NULL;
 
 	// Model index.
-	if ( ( beamInfo.m_pszModelName ) && ( !beamInfo.m_nModelIndex.IsValid() ) )
+	if ( ( beamInfo.m_pszModelName ) && ( !IsValidModelIndex( beamInfo.m_nModelIndex ) ) )
 	{
 		beamInfo.m_nModelIndex = modelinfo->GetModelIndex( beamInfo.m_pszModelName );
 	}
 
-	if ( ( beamInfo.m_pszHaloName ) && ( !beamInfo.m_nHaloIndex.IsValid() ) )
+	if ( ( beamInfo.m_pszHaloName ) && ( !IsValidModelIndex( beamInfo.m_nHaloIndex ) ) )
 	{
 		beamInfo.m_nHaloIndex = modelinfo->GetModelIndex( beamInfo.m_pszHaloName );
 	}
@@ -1451,7 +1451,7 @@ void CViewRenderBeams::FreeDeadTrails( BeamTrail_t **trail )
 //-----------------------------------------------------------------------------
 void CViewRenderBeams::UpdateBeam( Beam_t *pbeam, float frametime, C_Beam *pcbeam )
 {
-	if ( !pbeam->modelIndex.IsValid() )
+	if ( !IsValidModelIndex( pbeam->modelIndex ) )
 	{
 		pbeam->die = gpGlobals->curtime;
 		return;
@@ -1933,7 +1933,7 @@ void CViewRenderBeams::DrawBeam( Beam_t *pbeam )
 	const model_t	*sprite;
 	const model_t	*halosprite = NULL;
 
-	if ( !pbeam->modelIndex.IsValid() )
+	if ( !IsValidModelIndex( pbeam->modelIndex ) )
 	{
 		pbeam->die = gpGlobals->curtime;
 		return;
@@ -2298,7 +2298,7 @@ void CViewRenderBeams::DrawBeam( C_Beam* pbeam, const RenderableInstance_t &inst
 
 	SetBeamAttributes( &beam, beamInfo );
 
-	if ( pbeam->m_nHaloIndex.IsValid() )
+	if ( IsValidModelIndex(pbeam->m_nHaloIndex) )
 	{
 		// HACKHACK: heuristic to estimate proxy size.  Revisit this!
 		float size = 1.0f + (pbeam->m_fHaloScale * pbeam->m_fWidth / pbeam->m_fEndWidth);

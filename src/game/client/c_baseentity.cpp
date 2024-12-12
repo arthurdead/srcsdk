@@ -3134,7 +3134,7 @@ void C_BaseEntity::ValidateModelIndex( void )
 
 		if ( IsLocalPlayerUsingVisionFilterFlags( flags ) )
 		{
-			if ( modelindex.IsValid() )
+			if ( IsValidModelIndex( modelindex ) )
 			{
 				SetModelByIndex( modelindex );
 				return;
@@ -3370,7 +3370,7 @@ bool C_BaseEntity::SetModel( const char *pModelName )
 	{
 		modelindex_t nModelIndex = modelinfo->GetModelIndex( pModelName );
 		SetModelByIndex( nModelIndex );
-		return ( nModelIndex.IsValid() );
+		return IsValidModelIndex( nModelIndex );
 	}
 	else
 	{
@@ -4005,7 +4005,7 @@ void C_BaseEntity::GetColorModulation( float* color )
 //-----------------------------------------------------------------------------
 CollideType_t C_BaseEntity::GetCollideType( void )
 {
-	if ( !m_nModelIndex || !m_pModel )
+	if ( !IsValidModelIndex( m_nModelIndex ) || !m_pModel )
 		return ENTITY_SHOULD_NOT_COLLIDE;
 
 	if ( !IsSolid( ) )
@@ -6064,7 +6064,6 @@ int C_BaseEntity::ComputePackedSize_R( datamap_t *map )
 		switch ( field->fieldType )
 		{
 		default:
-		case FIELD_MODELINDEX:
 		case FIELD_MODELNAME:
 		case FIELD_SOUNDNAME:
 		case FIELD_TIME:
@@ -6094,6 +6093,7 @@ int C_BaseEntity::ComputePackedSize_R( datamap_t *map )
 		case FIELD_VECTOR2D:
 		case FIELD_QUATERNION:
 		case FIELD_VECTOR4D:
+		case FIELD_MODELINDEX:
 		case FIELD_INTEGER:
 		case FIELD_INTEGER64:
 		case FIELD_EHANDLE:

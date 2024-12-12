@@ -206,7 +206,7 @@ CStudioHdr *ModelSoundsCache_LoadModel( const char *filename )
 #else
 	modelindex_t idx = modelinfo->GetModelIndex( filename );
 #endif
-	if ( idx.IsValid() )
+	if ( IsValidModelIndex( idx ) )
 	{
 		model_t *mdl = (model_t *)modelinfo->GetModel( idx );
 		if ( mdl )
@@ -238,7 +238,17 @@ CUtlCachedFileData< CModelSoundsCache > g_ModelSoundsCache(
 #else
 	"modelsounds_client.cache"
 #endif
-	, MODELSOUNDSCACHE_VERSION, 0, UTL_CACHED_FILE_USE_FILESIZE, false );																  
+	, MODELSOUNDSCACHE_VERSION, 0, UTL_CACHED_FILE_USE_FILESIZE, false );
+
+bool ModelSoundsCache_EntryExists( const char *name )
+{
+	return g_ModelSoundsCache.EntryExists( name );
+}
+
+CModelSoundsCache *ModelSoundsCache_Get( const char *name )
+{
+	return g_ModelSoundsCache.Get( name );
+}
 
 void ClearModelSoundsCache()
 {

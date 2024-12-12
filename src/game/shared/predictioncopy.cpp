@@ -301,30 +301,34 @@ void CPredictionCopy::DescribeInt( difftype_t dt, int *outvalue, const int *inva
 		ReportFieldsDiffer( "int differs (net %i pred %i) diff(%i)\n", invalue[i], outvalue[i], outvalue[i] - invalue[i] );
 	}
 
-#if defined( CLIENT_DLL )
-	bool described = false;
-	if ( m_pCurrentField->fieldType == FIELD_MODELINDEX || m_pCurrentField->flags & FTYPEDESC_MODELINDEX )
-	{
-		modelindex_t modelindex = *reinterpret_cast<modelindex_t *>(&outvalue[0]);
-		model_t const *m = modelinfo->GetModel( modelindex );
-		if ( m )
-		{
-			described = true;
-			char shortfile[ 512 ];
-			shortfile[ 0 ] = 0;
-			Q_FileBase( modelinfo->GetModelName( m ), shortfile, sizeof( shortfile ) );
-
-			DescribeFields( dt, "integer (%i->%s)\n", outvalue[0], shortfile );
-		}
-	}
-
-	if ( !described )
-	{
-		DescribeFields( dt, "integer (%i)\n", outvalue[0] );
-	}
-#else
 	DescribeFields( dt, "integer (%i)\n", outvalue[0] );
-#endif
+}
+
+void CPredictionCopy::DescribeModelindex( difftype_t dt, modelindex_t *outvalue, const modelindex_t *invalue, int count )
+{
+	if ( !m_bErrorCheck )
+		return;
+
+	if ( dt == DIFFERS )
+	{
+		int i = 0;
+		ReportFieldsDiffer( "int differs (net %i pred %i) diff(%i)\n", (int)invalue[i], (int)outvalue[i], (int)outvalue[i] - (int)invalue[i] );
+	}
+
+	modelindex_t modelindex = *reinterpret_cast<modelindex_t *>(&outvalue[0]);
+	model_t const *m = modelinfo->GetModel( modelindex );
+	if ( m )
+	{
+		char shortfile[ 512 ];
+		shortfile[ 0 ] = 0;
+		Q_FileBase( modelinfo->GetModelName( m ), shortfile, sizeof( shortfile ) );
+
+		DescribeFields( dt, "modelindex (%i->%s)\n", outvalue[0], shortfile );
+	}
+	else
+	{
+		DescribeFields( dt, "modelindex (%i->NULL)\n", outvalue[0] );
+	}
 }
 
 void CPredictionCopy::DescribeInt64( difftype_t dt, int64 *outvalue, const int64 *invalue, int count )
@@ -346,30 +350,28 @@ void CPredictionCopy::WatchInt( difftype_t dt, int *outvalue, const int *invalue
 	if ( m_pWatchField != m_pCurrentField )
 		return;
 
-#if defined( CLIENT_DLL )
-	bool described = false;
-	if ( m_pCurrentField->fieldType == FIELD_MODELINDEX || m_pCurrentField->flags & FTYPEDESC_MODELINDEX )
-	{
-		modelindex_t modelindex = *reinterpret_cast<modelindex_t *>(&outvalue[0]);
-		model_t const *m = modelinfo->GetModel( modelindex );
-		if ( m )
-		{
-			described = true;
-			char shortfile[ 512 ];
-			shortfile[ 0 ] = 0;
-			Q_FileBase( modelinfo->GetModelName( m ), shortfile, sizeof( shortfile ) );
-
-			WatchMsg( "integer (%i->%s)", outvalue[0], shortfile );
-		}
-	}
-
-	if ( !described )
-	{
-		WatchMsg( "integer (%i)", outvalue[0] );
-	}
-#else
 	WatchMsg( "integer (%i)", outvalue[0] );
-#endif
+}
+
+void CPredictionCopy::WatchModelindex( difftype_t dt, modelindex_t *outvalue, const modelindex_t *invalue, int count )
+{
+	if ( m_pWatchField != m_pCurrentField )
+		return;
+
+	modelindex_t modelindex = *reinterpret_cast<modelindex_t *>(&outvalue[0]);
+	model_t const *m = modelinfo->GetModel( modelindex );
+	if ( m )
+	{
+		char shortfile[ 512 ];
+		shortfile[ 0 ] = 0;
+		Q_FileBase( modelinfo->GetModelName( m ), shortfile, sizeof( shortfile ) );
+
+		WatchMsg( "modelindex (%i->%s)", outvalue[0], shortfile );
+	}
+	else
+	{
+		WatchMsg( "modelindex (%i->NULL)", outvalue[0] );
+	}
 }
 
 void CPredictionCopy::WatchInt64( difftype_t dt, int64 *outvalue, const int64 *invalue, int count )
@@ -685,6 +687,17 @@ void CPredictionCopy::CopyInt64( difftype_t dt, int64 *outvalue, const int64 *in
 	CopyData( dt, sizeof(int64) * count, (char *)outvalue, (const char *)invalue );
 }
 
+void CPredictionCopy::CopyModelindex( difftype_t dt, modelindex_t *outvalue, const modelindex_t *invalue, int count )
+{
+	if ( !m_bPerformCopy )
+		return;
+
+	if ( dt == IDENTICAL )
+		return;
+
+	CopyData( dt, sizeof(modelindex_t) * count, (char *)outvalue, (const char *)invalue );
+}
+
 CPredictionCopy::difftype_t CPredictionCopy::CompareInt( int *outvalue, const int *invalue, int count )
 {
 	if ( !m_bErrorCheck )
@@ -698,6 +711,26 @@ CPredictionCopy::difftype_t CPredictionCopy::CompareInt( int *outvalue, const in
 				continue;
 
 			ReportFieldsDiffer( "int differs (net %i pred %i) diff(%i)\n", invalue[i], outvalue[i], outvalue[i] - invalue[i] );
+			return DIFFERS;
+		}
+	}
+
+	return IDENTICAL;
+}
+
+CPredictionCopy::difftype_t CPredictionCopy::CompareModelindex( modelindex_t *outvalue, const modelindex_t *invalue, int count )
+{
+	if ( !m_bErrorCheck )
+		return DIFFERS;
+
+	if ( CanCheck() )
+	{
+		for ( int i = 0; i < count; i++ )
+		{
+			if ( outvalue[ i ] == invalue[ i ] )
+				continue;
+
+			ReportFieldsDiffer( "int differs (net %i pred %i) diff(%i)\n", (int)invalue[i], (int)outvalue[i], (int)outvalue[i] - (int)invalue[i] );
 			return DIFFERS;
 		}
 	}
@@ -1165,10 +1198,6 @@ void CPredictionCopy::CopyFields( int chain_count, datamap_t *pRootMap, typedesc
 			}
 			break;
 
-		case FIELD_MODELINDEX:
-			Assert( 0 );
-			break;
-
 		case FIELD_MODELNAME:
 		case FIELD_SOUNDNAME:
 			Assert( 0 );
@@ -1229,6 +1258,15 @@ void CPredictionCopy::CopyFields( int chain_count, datamap_t *pRootMap, typedesc
 				CopyInt64( difftype, (int64 *)pOutputData, (int64 const *)pInputData, fieldSize );
 				if ( m_bErrorCheck && m_bShouldDescribe ) DescribeInt64( difftype, (int64 *)pOutputData, (int64 const *)pInputData, fieldSize );
 				if ( bShouldWatch ) WatchInt64( difftype, (int64 *)pOutputData, (int64 const *)pInputData, fieldSize );
+			}
+			break;
+
+		case FIELD_MODELINDEX:
+			{
+				difftype = CompareModelindex( (modelindex_t *)pOutputData, (modelindex_t const *)pInputData, fieldSize );
+				CopyModelindex( difftype, (modelindex_t *)pOutputData, (modelindex_t const *)pInputData, fieldSize );
+				if ( m_bErrorCheck && m_bShouldDescribe ) DescribeModelindex( difftype, (modelindex_t *)pOutputData, (modelindex_t const *)pInputData, fieldSize );
+				if ( bShouldWatch ) WatchModelindex( difftype, (modelindex_t *)pOutputData, (modelindex_t const *)pInputData, fieldSize );
 			}
 			break;
 
@@ -1614,6 +1652,14 @@ void CPredictionDescribeData::DescribeInt( const int *invalue, int count )
 	}
 }
 
+void CPredictionDescribeData::DescribeModelindex( const modelindex_t *invalue, int count )
+{
+	for ( int i = 0; i < count; ++i )
+	{
+		Describe( "[%i] modelindex (%i)\n", i, (int)invalue[i] );
+	}
+}
+
 void CPredictionDescribeData::DescribeInt64( const int64 *invalue, int count )
 {
 	for ( int i = 0; i < count; ++i )
@@ -1746,10 +1792,6 @@ void CPredictionDescribeData::DescribeFields_R( int chain_count, datamap_t *pRoo
 		case FIELD_SOUNDNAME:
 			Assert( 0 );
 			break;
-			
-		case FIELD_MODELINDEX:
-			Assert( 0 );
-			break;
 
 		case FIELD_CUSTOM:
 			Assert( 0 );
@@ -1781,7 +1823,9 @@ void CPredictionDescribeData::DescribeFields_R( int chain_count, datamap_t *pRoo
 		case FIELD_INTEGER:
 			DescribeInt( (int const *)pInputData, fieldSize );
 			break;
-			
+		case FIELD_MODELINDEX:
+			DescribeModelindex( (modelindex_t const *)pInputData, fieldSize );
+			break;
 		case FIELD_SHORT:
 			DescribeShort( (short const *)pInputData, fieldSize );
 			break;
@@ -1923,8 +1967,10 @@ void CValueChangeTracker::GetValue( char *buf, size_t bufsize )
 		break;
 	case FIELD_INTEGER:
 	case FIELD_TICK:
-	case FIELD_MODELINDEX:
 		Q_snprintf( buf, bufsize, "%i", *(const int*)pInputData );
+		break;
+	case FIELD_MODELINDEX:
+		Q_snprintf( buf, bufsize, "%i", (int)*(const modelindex_t*)pInputData );
 		break;
 
 	case FIELD_SHORT:

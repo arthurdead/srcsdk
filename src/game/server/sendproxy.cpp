@@ -33,8 +33,10 @@ void SendProxy_EHandle( const SendProp *pProp, const void *pStruct, const void *
 void SendProxy_ModelIndex( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID)
 {
 	modelindex_t *pHandle = (modelindex_t*)pVarData;
-	Assert( pHandle->IsNetworked() );
-	pOut->m_Int = pHandle->GetRaw();
+	if( (int)*pHandle == 0 )
+		*pHandle = INVALID_MODEL_INDEX;
+	Assert( IsNetworkedModelIndex( *pHandle ) );
+	pOut->m_Int = (int)*pHandle;
 }
 
 SendProp SendPropEHandle(

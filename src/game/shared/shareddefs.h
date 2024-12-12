@@ -1195,7 +1195,7 @@ typedef unsigned int vision_filter_t;
 struct VisionModelIndex_t
 {
 	vision_filter_t flags;
-	modelindex_t modelindex;
+	modelindex_t modelindex = INVALID_MODEL_INDEX;
 };
 
 enum tprbGameInfo_e

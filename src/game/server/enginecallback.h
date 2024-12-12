@@ -113,7 +113,10 @@ void MessageWriteEHandle( CBaseEntity *pEntity ); //encoded as a long
 void MessageWriteBitVecIntegral( const Vector& vecValue );
 
 inline void MessageWriteModelIndex( modelindex_t iValue )
-{ MessageWriteWord( iValue.GetRaw() ); }
+{
+	Assert( IsNetworkedModelIndex( iValue ) );
+	MessageWriteWord( (int)iValue );
+}
 
 inline void MessageWriteRGBA( color32 iValue )
 {

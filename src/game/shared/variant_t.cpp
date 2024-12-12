@@ -318,9 +318,7 @@ void variant_t::Set( fieldtype_t ftype, void *data )
 	case FIELD_VECTOR:
 	case FIELD_POSITION_VECTOR:
 	{
-		vecVal[0] = ((float *)data)[0];
-		vecVal[1] = ((float *)data)[1];
-		vecVal[2] = ((float *)data)[2];
+		vecVal = *((Vector *)data);
 		break;
 	}
 
@@ -371,9 +369,7 @@ void variant_t::SetOther( void *data )
 	case FIELD_VECTOR:
 	case FIELD_POSITION_VECTOR:
 	{
-		((float *)data)[0] = vecVal[0];
-		((float *)data)[1] = vecVal[1];
-		((float *)data)[2] = vecVal[2];
+		*((Vector *)data) = vecVal;
 		break;
 	}
 

@@ -198,6 +198,29 @@ CPropData::CPropData( void ) :
 //-----------------------------------------------------------------------------
 // Inherited from IAutoServerSystem
 //-----------------------------------------------------------------------------
+bool CPropData::Init()
+{
+	m_pKVPropData = new KeyValues( "PropDatafile" );
+	if ( !m_pKVPropData->LoadFromFile( g_pFullFileSystem, "scripts/propdata.txt", "MOD" ) )
+	{
+		m_pKVPropData->deleteThis();
+		m_pKVPropData = NULL;
+		return false;
+	}
+
+	m_bPropDataLoaded = true;
+	return true;
+}
+
+void CPropData::Shutdown()
+{
+	if ( m_pKVPropData )
+	{
+		m_pKVPropData->deleteThis();
+		m_pKVPropData = NULL;
+	}
+}
+
 void CPropData::LevelInitPreEntity( void )
 {
 	m_BreakableChunks.RemoveAll();
@@ -209,11 +232,6 @@ void CPropData::LevelInitPreEntity( void )
 //-----------------------------------------------------------------------------
 void CPropData::LevelShutdownPostEntity( void )
 {
-	if ( m_pKVPropData )
-	{
-		m_pKVPropData->deleteThis();
-		m_pKVPropData = NULL;
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -221,16 +239,6 @@ void CPropData::LevelShutdownPostEntity( void )
 //-----------------------------------------------------------------------------
 void CPropData::ParsePropDataFile( void )
 {
-	m_pKVPropData = new KeyValues( "PropDatafile" );
-	if ( !m_pKVPropData->LoadFromFile( g_pFullFileSystem, "scripts/propdata.txt" ) )
-	{
-		m_pKVPropData->deleteThis();
-		m_pKVPropData = NULL;
-		return;
-	}
-
-	m_bPropDataLoaded = true;
-
 	// Now try and parse out the breakable section
 	KeyValues *pBreakableSection = m_pKVPropData->FindKey( "BreakableModels" );
 	if ( pBreakableSection )
@@ -1051,7 +1059,7 @@ void PropBreakableCreateAll( modelindex_t modelindex, IPhysicsObject *pPhysics, 
 		{
 			const char* modelName = list[i].modelName;
 			modelindex_t modelIndex = modelinfo->GetModelIndex( modelName );
-			if ( !modelIndex.IsValid() )
+			if ( !IsValidModelIndex( modelIndex ) )
 			{
 				Warning( "Unable to create non-precached breakmodel %s\n", modelName );
 				continue;
@@ -1206,7 +1214,7 @@ void PropBreakableCreateAll( modelindex_t modelindex, IPhysicsObject *pPhysics, 
 
 				Q_strncpy( breakModel.modelName, g_PropDataSystem.GetRandomChunkModel(STRING(pBreakableInterface->GetBreakableModel()), pBreakableInterface->GetMaxBreakableSize()), sizeof(breakModel.modelName) );
 
-				if ( !modelinfo->GetModelIndex( breakModel.modelName ).IsValid() )
+				if ( !IsValidModelIndex( modelinfo->GetModelIndex( breakModel.modelName ) ) )
 				{
 					// This model doesn't exist!
 					DevWarning( "PropBreakableCreateAll: Could not create model %s\n", breakModel.modelName );
@@ -1452,7 +1460,7 @@ CSharedBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, modelinde
 		for ( int i = 0; i < list.Count(); i++ )
 		{
 			modelindex_t modelIndex = modelinfo->GetModelIndex( list[i].modelName );
-			if ( !modelIndex.IsValid() )
+			if ( !IsValidModelIndex( modelIndex ) )
 				continue;
 
 			// Skip multiplayer pieces that should be spawning on the other dll
@@ -1632,7 +1640,7 @@ CSharedBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, modelinde
 
 				Q_strncpy( breakModel.modelName, g_PropDataSystem.GetRandomChunkModel(STRING(pBreakableInterface->GetBreakableModel()), pBreakableInterface->GetMaxBreakableSize()), sizeof(breakModel.modelName) );
 
-				if ( !modelinfo->GetModelIndex( breakModel.modelName ).IsValid() )
+				if ( !IsValidModelIndex( modelinfo->GetModelIndex( breakModel.modelName ) ) )
 				{
 					// This model doesn't exist!
 					DevWarning( "PropBreakableCreateAll: Could not create model %s\n", breakModel.modelName );
