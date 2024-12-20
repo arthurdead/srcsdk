@@ -33,12 +33,12 @@ public:
 	virtual void	Precache( void );
 	virtual void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	virtual bool	KeyValue( const char *szKeyName, const char *szValue );
-	virtual int		UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 
 	// Input handlers
-	void InputOpen( inputdata_t &inputdata );
-	void InputClose( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
+	void InputOpen( inputdata_t &&inputdata );
+	void InputClose( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
 
 	virtual bool	UpdateVisibility( const Vector &vOrigin, float fovDistanceAdjustFactor, bool &bIsOpenOnClient );
 
@@ -57,7 +57,7 @@ LINK_ENTITY_TO_CLASS( func_areaportal, CAreaPortal );
 
 BEGIN_MAPENTITY( CAreaPortal )
 
-	DEFINE_KEYFIELD( m_portalNumber, FIELD_INTEGER, "portalnumber" ),
+	DEFINE_KEYFIELD_AUTO( m_portalNumber, "portalnumber" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Open",  InputOpen ),
@@ -97,7 +97,7 @@ void CAreaPortal::Precache( void )
 //------------------------------------------------------------------------------
 // Purpose :
 //------------------------------------------------------------------------------
-void CAreaPortal::InputClose( inputdata_t &inputdata )
+void CAreaPortal::InputClose( inputdata_t &&inputdata )
 {
 	m_state = AREAPORTAL_CLOSED;
 	UpdateState();
@@ -107,7 +107,7 @@ void CAreaPortal::InputClose( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose :
 //------------------------------------------------------------------------------
-void CAreaPortal::InputOpen( inputdata_t &inputdata )
+void CAreaPortal::InputOpen( inputdata_t &&inputdata )
 {
 	m_state = AREAPORTAL_OPEN;
 	UpdateState();
@@ -117,7 +117,7 @@ void CAreaPortal::InputOpen( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose :
 //------------------------------------------------------------------------------
-void CAreaPortal::InputToggle( inputdata_t &inputdata )
+void CAreaPortal::InputToggle( inputdata_t &&inputdata )
 {
 	m_state = ((m_state == AREAPORTAL_OPEN) ? AREAPORTAL_CLOSED : AREAPORTAL_OPEN);
 	UpdateState();
@@ -185,7 +185,7 @@ bool CAreaPortal::UpdateState()
 }
 
 
-int CAreaPortal::UpdateTransmitState()
+EdictStateFlags_t CAreaPortal::UpdateTransmitState()
 {
 	// Our brushes are kept around so don't transmit anything since we don't want to draw them.
 	return SetTransmitState( FL_EDICT_DONTSEND );
@@ -207,10 +207,10 @@ public:
 	void Activate();
 	bool UpdateVisibility( const Vector &vOrigin, float fovDistanceAdjustFactor, bool &bIsOpenOnClient );
 
-	void InputDisableOneWay( inputdata_t &inputdata );
-	void InputEnableOneWay( inputdata_t &inputdata );
-	void InputToggleOneWay( inputdata_t &inputdata );
-	void InputInvertOneWay( inputdata_t &inputdata );
+	void InputDisableOneWay( inputdata_t &&inputdata );
+	void InputEnableOneWay( inputdata_t &&inputdata );
+	void InputToggleOneWay( inputdata_t &&inputdata );
+	void InputInvertOneWay( inputdata_t &&inputdata );
 
 protected:
 	void RemoteUpdate( bool IsOpen );
@@ -231,10 +231,10 @@ private:
 LINK_ENTITY_TO_CLASS( func_areaportal_oneway, CAreaPortalOneWay );
 
 BEGIN_MAPENTITY( CAreaPortalOneWay )
-	DEFINE_KEYFIELD( m_vecOpenVector, FIELD_VECTOR, "onewayfacing" ),
-	DEFINE_KEYFIELD( m_bAvoidPop, FIELD_BOOLEAN, "avoidpop" ),
-	DEFINE_KEYFIELD( m_vecOrigin_, FIELD_VECTOR, "origin_" ),
-	DEFINE_KEYFIELD( m_strGroupName, FIELD_STRING, "group" ),
+	DEFINE_KEYFIELD_AUTO( m_vecOpenVector, "onewayfacing" ),
+	DEFINE_KEYFIELD_AUTO( m_bAvoidPop, "avoidpop" ),
+	DEFINE_KEYFIELD_AUTO( m_vecOrigin_, "origin_" ),
+	DEFINE_KEYFIELD_AUTO( m_strGroupName, "group" ),
 	DEFINE_FIELD( m_bOneWayActive, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_hNextPortal, FIELD_EHANDLE ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableOneWay", InputDisableOneWay ),
@@ -278,25 +278,25 @@ void CAreaPortalOneWay::Activate()
 }
 
 // Disable the CAPOW (becomes a normal AP)
-void CAreaPortalOneWay::InputDisableOneWay( inputdata_t &inputdata )
+void CAreaPortalOneWay::InputDisableOneWay( inputdata_t &&inputdata )
 {
 	m_bOneWayActive = false;
 }
 
 // Re-enable the CAPOW
-void CAreaPortalOneWay::InputEnableOneWay( inputdata_t &inputdata )
+void CAreaPortalOneWay::InputEnableOneWay( inputdata_t &&inputdata )
 {
 	m_bOneWayActive = true;
 }
 
 // Toggle CAPOW
-void CAreaPortalOneWay::InputToggleOneWay( inputdata_t &inputdata )
+void CAreaPortalOneWay::InputToggleOneWay( inputdata_t &&inputdata )
 {
 	m_bOneWayActive = !m_bOneWayActive;
 }
 
 // Flip the one way direction
-void CAreaPortalOneWay::InputInvertOneWay( inputdata_t &inputdata )
+void CAreaPortalOneWay::InputInvertOneWay( inputdata_t &&inputdata )
 {
 	m_vecOpenVector.Negate();
 }

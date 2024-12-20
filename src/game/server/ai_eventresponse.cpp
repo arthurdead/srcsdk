@@ -167,9 +167,9 @@ public:
 	DECLARE_DATADESC();
 
 	void	Spawn();
-	void 	InputTriggerResponseEvent( inputdata_t &inputdata );
-	void 	InputForceTriggerResponseEvent( inputdata_t &inputdata );
-	void 	InputForceTriggerResponseEventNoCancel( inputdata_t &inputdata );
+	void 	InputTriggerResponseEvent( inputdata_t &&inputdata );
+	void 	InputForceTriggerResponseEvent( inputdata_t &&inputdata );
+	void 	InputForceTriggerResponseEventNoCancel( inputdata_t &&inputdata );
 };
 
 LINK_ENTITY_TO_CLASS( ai_npc_eventresponsesystem, CNPCEventResponseSystemEntity );
@@ -193,7 +193,7 @@ void CNPCEventResponseSystemEntity::Spawn( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CNPCEventResponseSystemEntity::InputTriggerResponseEvent( inputdata_t &inputdata )
+void CNPCEventResponseSystemEntity::InputTriggerResponseEvent( inputdata_t &&inputdata )
 {
 	NPCEventResponse()->TriggerEvent( inputdata.value.String(), false, false );
 }
@@ -201,7 +201,7 @@ void CNPCEventResponseSystemEntity::InputTriggerResponseEvent( inputdata_t &inpu
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CNPCEventResponseSystemEntity::InputForceTriggerResponseEvent( inputdata_t &inputdata )
+void CNPCEventResponseSystemEntity::InputForceTriggerResponseEvent( inputdata_t &&inputdata )
 {
 	NPCEventResponse()->TriggerEvent( inputdata.value.String(), true, true );
 }
@@ -209,7 +209,7 @@ void CNPCEventResponseSystemEntity::InputForceTriggerResponseEvent( inputdata_t 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CNPCEventResponseSystemEntity::InputForceTriggerResponseEventNoCancel( inputdata_t &inputdata )
+void CNPCEventResponseSystemEntity::InputForceTriggerResponseEventNoCancel( inputdata_t &&inputdata )
 {
 	NPCEventResponse()->TriggerEvent( inputdata.value.String(), true, false );
 }

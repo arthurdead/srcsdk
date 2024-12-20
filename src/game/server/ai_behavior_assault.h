@@ -65,7 +65,7 @@ class CAI_AssaultGoal : public CAI_GoalEntity
 	int				m_RallySelectMethod;
 	int				m_BranchMethod;
 
-	void InputBeginAssault( inputdata_t &inputdata );
+	void InputBeginAssault( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -163,17 +163,17 @@ public:
 		m_flAssaultPointTolerance = CUE_POINT_TOLERANCE;
 	}
 
-	void 			InputSetClearOnContact( inputdata_t &inputdata )
+	void 			InputSetClearOnContact( inputdata_t &&inputdata )
 	{
 		m_bClearOnContact = inputdata.value.Bool();
 	}
 
-	void 			InputSetAllowDiversion( inputdata_t &inputdata )
+	void 			InputSetAllowDiversion( inputdata_t &&inputdata )
 	{
 		m_bAllowDiversion = inputdata.value.Bool();
 	}
 
-	void 			InputSetForceClear( inputdata_t &inputdata )
+	void 			InputSetForceClear( inputdata_t &&inputdata )
 	{
 		m_bInputForcedClear = inputdata.value.Bool();
 	}

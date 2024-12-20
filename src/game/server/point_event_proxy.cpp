@@ -22,7 +22,7 @@ public:
 	DECLARE_MAPENTITY();
 
 private:
-	void InputGenerateEvent( inputdata_t &inputdata );
+	void InputGenerateEvent( inputdata_t &&inputdata );
 	
 	string_t	m_iszEventName;
 	bool		m_bActivatorAsUserID;
@@ -33,8 +33,8 @@ LINK_ENTITY_TO_CLASS( point_event_proxy, CPointEventProxy );
 
 BEGIN_MAPENTITY( CPointEventProxy )
 
-	DEFINE_KEYFIELD( m_iszEventName, FIELD_STRING, "EventName" ),
-	DEFINE_KEYFIELD( m_bActivatorAsUserID, FIELD_BOOLEAN, "ActivatorAsUserID" ),
+	DEFINE_KEYFIELD_AUTO( m_iszEventName, "EventName" ),
+	DEFINE_KEYFIELD_AUTO( m_bActivatorAsUserID, "ActivatorAsUserID" ),
 	
 	DEFINE_INPUTFUNC( FIELD_VOID, "GenerateEvent", InputGenerateEvent ),
 
@@ -44,7 +44,7 @@ END_MAPENTITY()
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for showing the message and/or playing the sound.
 //-----------------------------------------------------------------------------
-void CPointEventProxy::InputGenerateEvent( inputdata_t &inputdata )
+void CPointEventProxy::InputGenerateEvent( inputdata_t &&inputdata )
 {
 	IGameEvent * event = gameeventmanager->CreateEvent( m_iszEventName.ToCStr() );
 	if ( event )

@@ -192,9 +192,12 @@ public:
 
 	virtual void Spawn( void );
 
+#ifndef CLIENT_DLL
 	// CGameRules chains its NetworkStateChanged calls to here, since this
 	// is the actual entity that will send the data.
 	static void NotifyNetworkStateChanged();
+	static void NotifyNetworkStateChanged( unsigned short offset );
+#endif
 
 private:
 #ifdef CLIENT_DLL
@@ -216,7 +219,7 @@ extern CSharedGameRulesProxy *g_pGameRulesProxy;
 	#define CGameRules C_GameRules
 #endif
 
-abstract_class CGameRules : public CMemZeroOnNew, public CAutoGameSystemPerFrame, public CGameEventListener
+abstract_class CGameRules : public CMemZeroOnNew, public CAutoGameSystemPerFrame, public CGameEventListener, public INetworkableObject
 {
 public:
 	DECLARE_CLASS( CGameRules, CAutoGameSystemPerFrame );
@@ -263,19 +266,6 @@ public:
 	virtual bool ShouldCollide( int collisionGroup0, int collisionGroup1 );
 
 	virtual int DefaultFOV( void ) { return 90; }
-
-	// This function is here for our CNetworkVars.
-	inline void NetworkStateChanged()
-	{
-		// Forward the call to the entity that will send the data.
-		CSharedGameRulesProxy::NotifyNetworkStateChanged();
-	}
-
-	inline void NetworkStateChanged( void *pVar )
-	{
-		// Forward the call to the entity that will send the data.
-		CSharedGameRulesProxy::NotifyNetworkStateChanged();
-	}
 
 	// Get the view vectors for this mod.
 	virtual const CViewVectors* GetViewVectors() const;
@@ -336,6 +326,18 @@ public:
 	bool GetVoiceMenuLabels( int iMenu, KeyValues *pKV );
 	
 #else
+	// This function is here for our CNetworkVars.
+	inline void NetworkStateChanged()
+	{
+		// Forward the call to the entity that will send the data.
+		CSharedGameRulesProxy::NotifyNetworkStateChanged();
+	}
+
+	inline void NetworkStateChanged( unsigned short offset )
+	{
+		// Forward the call to the entity that will send the data.
+		CSharedGameRulesProxy::NotifyNetworkStateChanged( offset );
+	}
 
 	virtual void Status( void (*print) (const char *fmt, ...) ) {}
 

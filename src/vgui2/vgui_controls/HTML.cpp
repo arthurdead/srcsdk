@@ -1215,14 +1215,14 @@ void HTML::BrowserNeedsPaint(HTML_NeedsPaint_t* pCallback)
 		tt = m_allocedTextureHeight;
 	}
 
-	if (m_iHTMLTextureID != 0 && ((_vbar->IsVisible() && pCallback->unScrollY > 0 && abs((int)pCallback->unScrollY - m_scrollVertical.m_nScroll) > 5) || (_hbar->IsVisible() && pCallback->unScrollX > 0 && abs((int)pCallback->unScrollX - m_scrollHorizontal.m_nScroll) > 5)))
+	if (m_iHTMLTextureID != INVALID_TEXTURE && ((_vbar->IsVisible() && pCallback->unScrollY > 0 && abs((int)pCallback->unScrollY - m_scrollVertical.m_nScroll) > 5) || (_hbar->IsVisible() && pCallback->unScrollX > 0 && abs((int)pCallback->unScrollX - m_scrollHorizontal.m_nScroll) > 5)))
 	{
 		m_bNeedsFullTextureUpload = true;
 		return;
 	}
 
 	// update the vgui texture
-	if (m_bNeedsFullTextureUpload || m_iHTMLTextureID == 0 || tw != (int)pCallback->unWide || tt != (int)pCallback->unTall)
+	if (m_bNeedsFullTextureUpload || m_iHTMLTextureID == INVALID_TEXTURE || tw != (int)pCallback->unWide || tt != (int)pCallback->unTall)
 	{
 		m_bNeedsFullTextureUpload = false;
 		if (m_iHTMLTextureID != INVALID_TEXTURE)

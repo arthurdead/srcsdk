@@ -19,6 +19,7 @@
 #include "iserverunknown.h"
 #include "ehandle.h"
 #include "iserverentitylist.h"
+#include "shareddefs.h"
 
 class CBaseEntity;
 
@@ -130,7 +131,7 @@ public:
 	void AddListenerEntity( IEntityListener *pListener );
 	void RemoveListenerEntity( IEntityListener *pListener );
 
-	void ReportEntityFlagsChanged( CBaseEntity *pEntity, uint64 flagsOld, uint64 flagsNow );
+	void ReportEntityFlagsChanged( CBaseEntity *pEntity, EntityBehaviorFlags_t flagsOld, EntityBehaviorFlags_t flagsNow );
 
 	// Schedule this entity for notification once client messages have been sent
 	void AddPostClientMessageEntity( CBaseEntity *pEntity );

@@ -25,7 +25,7 @@ public:
 
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 
-	virtual int  UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 	virtual void SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
 
 	virtual void Spawn( void );
@@ -36,10 +36,10 @@ public:
 	void	Disable( void );
 	void	Enable( void );
 
-	void	InputDisable( inputdata_t &inputdata );
-	void	InputEnable( inputdata_t &inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
 
-	void	InputSetDisplayText( inputdata_t &inputdata );
+	void	InputSetDisplayText( inputdata_t &&inputdata );
 
 private:
 
@@ -81,13 +81,13 @@ BEGIN_MAPENTITY( CMovieDisplay )
 
 	DEFINE_AUTO_ARRAY_KEYFIELD( m_szDisplayText, FIELD_CHARACTER, "displaytext" ),
 
-	DEFINE_KEYFIELD( m_strMovieFilename, FIELD_STRING, "moviefilename" ),
+	DEFINE_KEYFIELD_AUTO( m_strMovieFilename, "moviefilename" ),
 
-	DEFINE_KEYFIELD( m_strGroupName, FIELD_STRING, "groupname" ),
+	DEFINE_KEYFIELD_AUTO( m_strGroupName, "groupname" ),
 
-	DEFINE_KEYFIELD( m_iScreenWidth, FIELD_INTEGER, "width" ),
-	DEFINE_KEYFIELD( m_iScreenHeight, FIELD_INTEGER, "height" ),
-	DEFINE_KEYFIELD( m_bLooping, FIELD_BOOLEAN, "looping" ),
+	DEFINE_KEYFIELD_AUTO( m_iScreenWidth, "width" ),
+	DEFINE_KEYFIELD_AUTO( m_iScreenHeight, "height" ),
+	DEFINE_KEYFIELD_AUTO( m_bLooping, "looping" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -140,7 +140,7 @@ bool CMovieDisplay::KeyValue( const char *szKeyName, const char *szValue )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-int CMovieDisplay::UpdateTransmitState()
+EdictStateFlags_t CMovieDisplay::UpdateTransmitState()
 {
 	if ( m_bDoFullTransmit )
 	{
@@ -245,7 +245,7 @@ void CMovieDisplay::Enable( void )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CMovieDisplay::InputDisable( inputdata_t &inputdata )
+void CMovieDisplay::InputDisable( inputdata_t &&inputdata )
 {
 	Disable();
 }
@@ -253,7 +253,7 @@ void CMovieDisplay::InputDisable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CMovieDisplay::InputEnable( inputdata_t &inputdata )
+void CMovieDisplay::InputEnable( inputdata_t &&inputdata )
 {
 	Enable();
 }
@@ -261,7 +261,7 @@ void CMovieDisplay::InputEnable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CMovieDisplay::InputSetDisplayText( inputdata_t &inputdata )
+void CMovieDisplay::InputSetDisplayText( inputdata_t &&inputdata )
 {
 	Q_strcpy( m_szDisplayText.GetForModify(), inputdata.value.String() );
 }

@@ -22,14 +22,14 @@ public:
 		Reset( -1 );
 	}
 
-	void	Reset( int command )
+	void	Reset( unsigned short command )
 	{
 		m_nCurrentCommand = command;
 		m_nCount = 0;
 		memset( m_Entries, 0, sizeof( m_Entries ) );
 	}
 
-	int		AddEntry( int command, int hash )
+	unsigned char		AddEntry( unsigned short command, unsigned short hash )
 	{
 		// Clear list if command number changes
 		if ( command != m_nCurrentCommand )
@@ -48,16 +48,16 @@ private:
 
 	enum
 	{
-		MAX_ENTRIES = 256,
+		MAX_ENTRIES = 255,
 	};
 
 	struct entry
 	{
-		int		hash;
-		int		count;
+		unsigned short		hash : 12;
+		unsigned char		count;
 	};
 
-	entry			*FindOrAddEntry( int hash )
+	entry			*FindOrAddEntry( unsigned short hash )
 	{
 		int i;
 		for ( i = 0; i < m_nCount; i++ )
@@ -79,8 +79,8 @@ private:
 		return e;
 	}
 
-	int				m_nCurrentCommand;
-	int				m_nCount;
+	unsigned short				m_nCurrentCommand : 10;
+	unsigned char				m_nCount;
 	entry			m_Entries[ MAX_ENTRIES ];
 };
 
@@ -91,7 +91,11 @@ static CPredictableIdHelper g_Helper;
 //-----------------------------------------------------------------------------
 CPredictableId::CPredictableId( void )
 {
-	memset( &m_PredictableID, 0, sizeof( m_PredictableID ) );
+	ack_ = false;
+	player_ = 0;
+	command_ = 0;
+	hash_ = 0;
+	instance_ = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -103,51 +107,39 @@ void CPredictableId::ResetInstanceCounters( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Is the Id being used
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool CPredictableId::IsActive( void ) const
-{
-	if ( *(const int *)&m_PredictableID == 0 )
-		return false;
-
-	return true;
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : playerIndex - 
 //-----------------------------------------------------------------------------
-void CPredictableId::SetPlayer( int playerIndex )
+void CPredictableId::SetPlayer( unsigned char playerIndex )
 {
-	m_PredictableID.player = (unsigned int)playerIndex;
+	player_ = playerIndex;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int CPredictableId::GetPlayer( void ) const
+unsigned char CPredictableId::GetPlayer( void ) const
 {
-	return (int)m_PredictableID.player;
+	return player_;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int CPredictableId::GetCommandNumber( void ) const
+unsigned short CPredictableId::GetCommandNumber( void ) const
 {
-	return (int)m_PredictableID.command;
+	return command_;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : commandNumber - 
 //-----------------------------------------------------------------------------
-void CPredictableId::SetCommandNumber( int commandNumber )
+void CPredictableId::SetCommandNumber( unsigned short commandNumber )
 {
-	m_PredictableID.command = (unsigned int)commandNumber;
+	command_ = commandNumber;
 }
 
 /*
@@ -167,7 +159,7 @@ bool CPredictableId::IsCommandNumberEqual( int testNumber ) const
 //			line - 
 // Output : static int
 //-----------------------------------------------------------------------------
-static int ClassFileLineHash( const char *classname, const char *module, int line )
+static CRC32_t ClassFileLineHash( const char *classname, const char *module, int line )
 {
 	CRC32_t retval;
 
@@ -189,7 +181,7 @@ static int ClassFileLineHash( const char *classname, const char *module, int lin
 
 	CRC32_Final( &retval );
 
-	return (int)retval;
+	return retval;
 }
 
 //-----------------------------------------------------------------------------
@@ -200,15 +192,15 @@ static int ClassFileLineHash( const char *classname, const char *module, int lin
 //			*module - 
 //			line - 
 //-----------------------------------------------------------------------------
-void CPredictableId::Init( int player, int command, const char *classname, const char *module, int line )
+void CPredictableId::Init( unsigned char player, unsigned short command, const char *classname, const char *module, int line )
 {
 	SetPlayer( player );
 	SetCommandNumber( command );
 
-	m_PredictableID.hash = ClassFileLineHash( classname, module, line );
+	hash_ = (unsigned short)ClassFileLineHash( classname, module, line );
 
 	// Use helper to determine instance number this command
-	int instance = g_Helper.AddEntry( command, m_PredictableID.hash );
+	unsigned char instance = g_Helper.AddEntry( command, hash_ );
 
 	// Set appropriate instance number
 	SetInstanceNumber( instance );
@@ -218,27 +210,27 @@ void CPredictableId::Init( int player, int command, const char *classname, const
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int CPredictableId::GetHash( void ) const
+unsigned short CPredictableId::GetHash( void ) const
 {
-	return (int)m_PredictableID.hash;
+	return hash_;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : counter - 
 //-----------------------------------------------------------------------------
-void CPredictableId::SetInstanceNumber( int counter )
+void CPredictableId::SetInstanceNumber( unsigned char counter )
 {
-	m_PredictableID.instance = (unsigned int)counter;
+	instance_ = counter;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int CPredictableId::GetInstanceNumber( void ) const
+unsigned char CPredictableId::GetInstanceNumber( void ) const
 {
-	return (int)m_PredictableID.instance;
+	return instance_;
 }
 
 // Client only
@@ -248,7 +240,7 @@ int CPredictableId::GetInstanceNumber( void ) const
 //-----------------------------------------------------------------------------
 void CPredictableId::SetAcknowledged( bool ack )
 {
-	m_PredictableID.ack = ack ? 1 : 0;
+	ack_ = ack;
 }
 
 //-----------------------------------------------------------------------------
@@ -257,25 +249,7 @@ void CPredictableId::SetAcknowledged( bool ack )
 //-----------------------------------------------------------------------------
 bool CPredictableId::GetAcknowledged( void ) const
 {
-	return m_PredictableID.ack ? true : false;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : int
-//-----------------------------------------------------------------------------
-int CPredictableId::GetRaw( void ) const
-{
-	return *(int *)&m_PredictableID;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : raw - 
-//-----------------------------------------------------------------------------
-void CPredictableId::SetRaw( int raw )
-{
-	*(int *)&m_PredictableID = raw;
+	return ack_;
 }
 
 //-----------------------------------------------------------------------------
@@ -301,7 +275,7 @@ bool CPredictableId::operator ==( const CPredictableId& other ) const
 
 bool CPredictableId::operator !=( const CPredictableId& other ) const
 {
-	return !(*this == other);
+	return !operator ==( other );
 }
 
 //-----------------------------------------------------------------------------
@@ -312,8 +286,10 @@ const char *CPredictableId::Describe( void ) const
 {
 	static char desc[ 128 ];
 
-	Q_snprintf( desc, sizeof( desc ), "pl(%i) cmd(%i) hash(%i) inst(%i) ack(%s)",
-		GetPlayer(),
+	CSharedBasePlayer *pPlayer = UTIL_PlayerByIndex( GetPlayer() );
+
+	Q_snprintf( desc, sizeof( desc ), "pl(%s)#%hhu cmd(%hu) hash(%hu) inst(%hhu) ack(%s)",
+		pPlayer ? pPlayer->GetPlayerName() : "NULL", GetPlayer(),
 		GetCommandNumber(),
 		GetHash(),
 		GetInstanceNumber() ,

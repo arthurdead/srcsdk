@@ -10,9 +10,9 @@
 
 #pragma once
 
-enum NPC_STATE
+enum NPC_STATE : unsigned char
 {
-	NPC_STATE_INVALID = -1,
+	NPC_STATE_INVALID = (unsigned char)-1,
 	NPC_STATE_NONE = 0,
 	NPC_STATE_IDLE,
 	NPC_STATE_ALERT,

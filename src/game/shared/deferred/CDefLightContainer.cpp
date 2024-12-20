@@ -93,7 +93,7 @@ void CDeferredLightContainer::Activate()
 	AddEffects( EF_NODRAW );
 }
 
-int CDeferredLightContainer::UpdateTransmitState()
+EdictStateFlags_t CDeferredLightContainer::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }

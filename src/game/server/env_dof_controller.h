@@ -29,22 +29,22 @@ public:
 
 	virtual void	Spawn( void );
 	virtual void	Activate( void );
-	virtual int		UpdateTransmitState( void );
+	virtual EdictStateFlags_t		UpdateTransmitState( void );
 	void			SetControllerState( DOFControlSettings_t setting );
 
 	void	UpdateParamBlend( void );
 
 	// Inputs
-	void	InputSetNearBlurDepth( inputdata_t &inputdata );
-	void	InputSetNearFocusDepth( inputdata_t &inputdata );
-	void	InputSetFarFocusDepth( inputdata_t &inputdata );
-	void	InputSetFarBlurDepth( inputdata_t &inputdata );
-	void	InputSetNearBlurRadius( inputdata_t &inputdata );
-	void	InputSetFarBlurRadius( inputdata_t &inputdata );
-	void	InputBlendDOFScale( inputdata_t &inputdata );
+	void	InputSetNearBlurDepth( inputdata_t &&inputdata );
+	void	InputSetNearFocusDepth( inputdata_t &&inputdata );
+	void	InputSetFarFocusDepth( inputdata_t &&inputdata );
+	void	InputSetFarBlurDepth( inputdata_t &&inputdata );
+	void	InputSetNearBlurRadius( inputdata_t &&inputdata );
+	void	InputSetFarBlurRadius( inputdata_t &&inputdata );
+	void	InputBlendDOFScale( inputdata_t &&inputdata );
 	
-	void	InputSetFocusTarget( inputdata_t &inputdata );
-	void	InputSetFocusTargetRange( inputdata_t &inputdata );
+	void	InputSetFocusTarget( inputdata_t &&inputdata );
+	void	InputSetFocusTargetRange( inputdata_t &&inputdata );
 
 private:
 	float	m_flFocusTargetRange;

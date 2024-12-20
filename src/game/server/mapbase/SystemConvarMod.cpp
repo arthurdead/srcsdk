@@ -202,7 +202,7 @@ LINK_ENTITY_TO_CLASS( mapbase_convar_mod, CMapbaseCVarModEntity );
 BEGIN_DATADESC( CMapbaseCVarModEntity )
 
 	DEFINE_UTLVECTOR( m_ModifiedConvars, FIELD_EMBEDDED ),
-	DEFINE_KEYFIELD( m_bUseServer, FIELD_BOOLEAN, "UseServer" ),
+	DEFINE_KEYFIELD_AUTO( m_bUseServer, "UseServer" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
@@ -289,12 +289,12 @@ void CMapbaseCVarModEntity::OnRestore( void )
 	}
 }
 
-void CMapbaseCVarModEntity::InputActivate(inputdata_t &inputdata)
+void CMapbaseCVarModEntity::InputActivate( inputdata_t &&inputdata )
 {
 	CVEnt_Activate(this);
 }
 
-void CMapbaseCVarModEntity::InputDeactivate(inputdata_t &inputdata)
+void CMapbaseCVarModEntity::InputDeactivate( inputdata_t &&inputdata )
 {
 	CVEnt_Deactivate(this);
 }

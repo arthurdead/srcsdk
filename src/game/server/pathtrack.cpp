@@ -17,10 +17,10 @@
 //-----------------------------------------------------------------------------
 BEGIN_MAPENTITY( CPathTrack )
 
-	DEFINE_KEYFIELD( m_flRadius,	FIELD_FLOAT, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "radius" ),
 
-	DEFINE_KEYFIELD( m_altName,		FIELD_STRING, "altpath" ),
-	DEFINE_KEYFIELD( m_eOrientationType, FIELD_INTEGER, "orientationtype" ),
+	DEFINE_KEYFIELD_AUTO( m_altName, "altpath" ),
+	DEFINE_KEYFIELD_AUTO( m_eOrientationType, "orientationtype" ),
 	
 	DEFINE_INPUTFUNC( FIELD_VOID, "InPass", InputPass ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "InTeleport",  InputTeleport ),
@@ -216,7 +216,7 @@ void CPathTrack::DisableAlternatePath( void )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CPathTrack::InputEnableAlternatePath( inputdata_t &inputdata )
+void CPathTrack::InputEnableAlternatePath( inputdata_t &&inputdata )
 {
 	EnableAlternatePath();
 }
@@ -225,7 +225,7 @@ void CPathTrack::InputEnableAlternatePath( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CPathTrack::InputDisableAlternatePath( inputdata_t &inputdata )
+void CPathTrack::InputDisableAlternatePath( inputdata_t &&inputdata )
 {
 	DisableAlternatePath();
 }
@@ -234,7 +234,7 @@ void CPathTrack::InputDisableAlternatePath( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CPathTrack::InputToggleAlternatePath( inputdata_t &inputdata )
+void CPathTrack::InputToggleAlternatePath( inputdata_t &&inputdata )
 {
 	ToggleAlternatePath();
 }
@@ -275,7 +275,7 @@ void CPathTrack::DisablePath( void )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CPathTrack::InputEnablePath( inputdata_t &inputdata )
+void CPathTrack::InputEnablePath( inputdata_t &&inputdata )
 {
 	EnablePath();
 }
@@ -284,7 +284,7 @@ void CPathTrack::InputEnablePath( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CPathTrack::InputDisablePath( inputdata_t &inputdata )
+void CPathTrack::InputDisablePath( inputdata_t &&inputdata )
 {
 	DisablePath();
 }
@@ -293,7 +293,7 @@ void CPathTrack::InputDisablePath( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CPathTrack::InputTogglePath( inputdata_t &inputdata )
+void CPathTrack::InputTogglePath( inputdata_t &&inputdata )
 {
 	TogglePath();
 }
@@ -561,7 +561,7 @@ CPathTrack *CPathTrack::Instance( edict_t *pent )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPathTrack::InputPass( inputdata_t &inputdata )
+void CPathTrack::InputPass( inputdata_t &&inputdata )
 {
 	m_OnPass.FireOutput( inputdata.pActivator, this );
 
@@ -576,7 +576,7 @@ void CPathTrack::InputPass( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPathTrack::InputTeleport( inputdata_t &inputdata )
+void CPathTrack::InputTeleport( inputdata_t &&inputdata )
 {
 	m_OnTeleport.FireOutput( inputdata.pActivator, this );
 }

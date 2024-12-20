@@ -10,11 +10,12 @@
 
 #pragma once
 
+#include "tier0/platform.h"
 
 //-----------------------------------------------------------------------------
 // channels
 //-----------------------------------------------------------------------------
-enum
+enum SoundChannel_t : int
 {
 	CHAN_REPLACE	= -1,
 	CHAN_AUTO		= 0,
@@ -48,7 +49,7 @@ enum
 // Don't change this without consulting Kelly or Wedge (sjb).
 #define ATTN_GUNFIRE	0.27f
 
-enum soundlevel_t
+enum soundlevel_t : unsigned int
 {
 	SNDLVL_NONE			= 0,
 
@@ -123,7 +124,7 @@ inline float SNDLVL_TO_ATTN(soundlevel_t s)
 //-----------------------------------------------------------------------------
 // Flags to be or-ed together for the iFlags field
 //-----------------------------------------------------------------------------
-enum SoundFlags_t
+enum SoundFlags_t : unsigned int
 {
 	SND_NOFLAGS			= 0,			// to keep the compiler happy
 	SND_CHANGE_VOL		= (1<<0),		// change sound vol
@@ -141,6 +142,8 @@ enum SoundFlags_t
 
 	SND_DO_NOT_OVERWRITE_EXISTING_ON_CHANNEL = (1<<10),
 };
+
+FLAGENUM_OPERATORS( SoundFlags_t, unsigned int )
 
 #define SND_FLAG_BITS_ENCODE 11
 

@@ -33,9 +33,9 @@ public:
 protected:
 
 	// Input handlers.
-	void InputTurnOn(inputdata_t &data);
-	void InputTurnOff(inputdata_t &data);
-	void InputToggle(inputdata_t &data);
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
 
 // Stuff from the datatable.
 public:

@@ -22,12 +22,12 @@ public:
 					CFuncOccluder();
 
 	virtual void	Spawn( void );
-	virtual int		UpdateTransmitState( void );
+	virtual EdictStateFlags_t UpdateTransmitState( void );
 
 	// Input handlers
-	void InputActivate( inputdata_t &inputdata );
-	void InputDeactivate( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
+	void InputActivate( inputdata_t &&inputdata );
+	void InputDeactivate( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
@@ -47,10 +47,10 @@ END_SEND_TABLE()
 
 BEGIN_MAPENTITY( CFuncOccluder )
 
-	DEFINE_KEYFIELD( m_bActive, FIELD_BOOLEAN, "StartActive" ),
+	DEFINE_KEYFIELD_AUTO( m_bActive, "StartActive" ),
 
 	// NOTE: This keyfield is computed + inserted by VBSP
-	DEFINE_KEYFIELD( m_nOccluderIndex, FIELD_INTEGER, "occludernumber" ),
+	DEFINE_KEYFIELD_AUTO( m_nOccluderIndex, "occludernumber" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Deactivate",  InputDeactivate ),
@@ -88,7 +88,7 @@ void CFuncOccluder::Spawn( void )
 //------------------------------------------------------------------------------
 // Purpose :
 //------------------------------------------------------------------------------
-void CFuncOccluder::InputDeactivate( inputdata_t &inputdata )
+void CFuncOccluder::InputDeactivate( inputdata_t &&inputdata )
 {
 	m_bActive = false;
 }
@@ -97,7 +97,7 @@ void CFuncOccluder::InputDeactivate( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose :
 //------------------------------------------------------------------------------
-void CFuncOccluder::InputActivate( inputdata_t &inputdata )
+void CFuncOccluder::InputActivate( inputdata_t &&inputdata )
 {
 	m_bActive = true;
 }
@@ -106,7 +106,7 @@ void CFuncOccluder::InputActivate( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose :
 //------------------------------------------------------------------------------
-void CFuncOccluder::InputToggle( inputdata_t &inputdata )
+void CFuncOccluder::InputToggle( inputdata_t &&inputdata )
 {
 	m_bActive = !m_bActive;
 }
@@ -115,7 +115,7 @@ void CFuncOccluder::InputToggle( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // We always want to transmit these bad boys
 //------------------------------------------------------------------------------
-int CFuncOccluder::UpdateTransmitState()
+EdictStateFlags_t CFuncOccluder::UpdateTransmitState()
 {
 	// ALWAYS transmit to all clients.
 	return SetTransmitState( FL_EDICT_ALWAYS );

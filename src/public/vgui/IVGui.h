@@ -20,11 +20,7 @@ class KeyValues;
 namespace vgui
 {
 
-enum class HContext: int
-{
-
-};
-
+enum HContext: int;
 inline const HContext DEFAULT_VGUI_CONTEXT = ((HContext)~0);
 
 //-----------------------------------------------------------------------------

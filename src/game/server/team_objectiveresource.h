@@ -28,7 +28,7 @@ public:
 	~CBaseTeamObjectiveResource();
 
 	virtual void Spawn( void );
-	virtual int  UpdateTransmitState(void);
+	virtual EdictStateFlags_t UpdateTransmitState(void);
 
 	virtual void ObjectiveThink( void );
 

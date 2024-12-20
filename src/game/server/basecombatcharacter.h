@@ -27,6 +27,7 @@
 #include "physics_impact_damage.h"
 #include "basecombatcharacter_shared.h"
 #include "recast/recast_imgr.h"
+#include "ammodef.h"
 
 class CScriptedTarget;
 typedef CHandle<CBaseCombatWeapon> CBaseCombatWeaponHandle;
@@ -35,7 +36,7 @@ typedef CHandle<CBaseCombatWeapon> CBaseCombatWeaponHandle;
 //  Capability Bits
 // -------------------------------------
 
-enum Capability_t 
+enum Capability_t : unsigned int
 {
 	bits_CAP_MOVE_GROUND			= 0x00000001, // walk/run
 	bits_CAP_MOVE_JUMP				= 0x00000002, // jump/leap
@@ -70,12 +71,14 @@ enum Capability_t
 	bits_CAP_AIM_GUN				= 0x20000000, // Use arms to aim gun, not just body
 	bits_CAP_NO_HIT_SQUADMATES		= 0x40000000, // none
 	bits_CAP_SIMPLE_RADIUS_DAMAGE	= 0x80000000, // Do not use robust radius damage model on this character.
+
+	bits_CAP_DOORS_GROUP =   (bits_CAP_AUTO_DOORS | bits_CAP_OPEN_DOORS),
+	bits_CAP_RANGE_ATTACK_GROUP = (bits_CAP_WEAPON_RANGE_ATTACK1 | bits_CAP_WEAPON_RANGE_ATTACK2),
+	bits_CAP_MELEE_ATTACK_GROUP = (bits_CAP_WEAPON_MELEE_ATTACK1 | bits_CAP_WEAPON_MELEE_ATTACK2),
+	bits_CAP_MOVE_GROUP =  (bits_CAP_MOVE_GROUND | bits_CAP_MOVE_JUMP | bits_CAP_MOVE_FLY | bits_CAP_MOVE_CLIMB | bits_CAP_MOVE_CRAWL | bits_CAP_MOVE_SWIM),
 };
 
-#define bits_CAP_DOORS_GROUP    (bits_CAP_AUTO_DOORS | bits_CAP_OPEN_DOORS)
-#define bits_CAP_RANGE_ATTACK_GROUP	(bits_CAP_WEAPON_RANGE_ATTACK1 | bits_CAP_WEAPON_RANGE_ATTACK2)
-#define bits_CAP_MELEE_ATTACK_GROUP	(bits_CAP_WEAPON_MELEE_ATTACK1 | bits_CAP_WEAPON_MELEE_ATTACK2)
-#define bits_CAP_MOVE_GROUP    (bits_CAP_MOVE_GROUND | bits_CAP_MOVE_JUMP | bits_CAP_MOVE_FLY | bits_CAP_MOVE_CLIMB | bits_CAP_MOVE_CRAWL | bits_CAP_MOVE_SWIM)
+FLAGENUM_OPERATORS( Capability_t, unsigned int )
 
 class CBaseCombatWeapon;
 
@@ -115,11 +118,11 @@ public:
 
 	virtual const impactdamagetable_t	&GetPhysicsImpactDamageTable( void );
 
-	int					TakeHealth( float flHealth, int bitsDamageType );
+	int					TakeHealth( float flHealth, DamageTypes_t bitsDamageType );
 	void				CauseDeath( const CTakeDamageInfo &info );
 
-	virtual	bool		FVisible ( CBaseEntity *pEntity, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL ); // true iff the parameter can be seen by me.
-	virtual bool		FVisible( const Vector &vecTarget, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL )	{ return BaseClass::FVisible( vecTarget, traceMask, ppBlocker ); }
+	virtual	bool		FVisible ( CBaseEntity *pEntity, ContentsFlags_t traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL ); // true iff the parameter can be seen by me.
+	virtual bool		FVisible( const Vector &vecTarget, ContentsFlags_t traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL )	{ return BaseClass::FVisible( vecTarget, traceMask, ppBlocker ); }
 	static void			ResetVisibilityCache( CBaseCombatCharacter *pBCC = NULL );
 
 	virtual bool		ShouldUseVisibilityCache( CBaseEntity *pEntity );
@@ -205,12 +208,12 @@ public:
 	// -----------------------
 	// Ammo
 	// -----------------------
-	virtual int			GiveAmmo( int iCount, int iAmmoIndex, bool bSuppressSound = false );
+	virtual int			GiveAmmo( int iCount, AmmoIndex_t iAmmoIndex, bool bSuppressSound = false );
 	int					GiveAmmo( int iCount, const char *szName, bool bSuppressSound = false );
-	virtual void		RemoveAmmo( int iCount, int iAmmoIndex );
+	virtual void		RemoveAmmo( int iCount, AmmoIndex_t iAmmoIndex );
 	virtual void		RemoveAmmo( int iCount, const char *szName );
 	void				RemoveAllAmmo( );
-	virtual int			GetAmmoCount( int iAmmoIndex ) const;
+	virtual int			GetAmmoCount( AmmoIndex_t iAmmoIndex ) const;
 	int					GetAmmoCount( char *szName ) const;
 
 	virtual Activity	NPC_TranslateActivity( Activity baseAct );
@@ -240,7 +243,7 @@ public:
 	virtual	bool		Weapon_CanSwitchTo(CBaseCombatWeapon *pWeapon);
 	virtual bool		Weapon_SlotOccupied( CBaseCombatWeapon *pWeapon );
 	virtual CBaseCombatWeapon *Weapon_GetSlot( int slot ) const;
-	CBaseCombatWeapon	*Weapon_GetWpnForAmmo( int iAmmoIndex );
+	CBaseCombatWeapon	*Weapon_GetWpnForAmmo( AmmoIndex_t iAmmoIndex );
 
 
 	// For weapon strip
@@ -268,8 +271,8 @@ public:
 
 	virtual void 			OnFriendDamaged( CBaseCombatCharacter *pSquadmate, CBaseEntity *pAttacker ) {}
 	virtual void 			NotifyFriendsOfDamage( CBaseEntity *pAttackerEntity ) {}
-	virtual bool			HasEverBeenInjured( int team = TEAM_ANY ) const;			// return true if we have ever been injured by a member of the given team
-	virtual float			GetTimeSinceLastInjury( int team = TEAM_ANY ) const;		// return time since we were hurt by a member of the given team
+	virtual bool			HasEverBeenInjured( Team_t team = TEAM_ANY ) const;			// return true if we have ever been injured by a member of the given team
+	virtual float			GetTimeSinceLastInjury( Team_t team = TEAM_ANY ) const;		// return time since we were hurt by a member of the given team
 
 
 	virtual void			OnPlayerKilledOther( CBaseEntity *pVictim, const CTakeDamageInfo &info ) {}
@@ -277,7 +280,7 @@ public:
 		// utility function to calc damage force
 	virtual Vector					CalcDamageForceVector( const CTakeDamageInfo &info );
 
-	virtual int				BloodColor();
+	virtual BloodColor_t				BloodColor();
 	virtual Activity		GetDeathActivity( void );
 
 	virtual bool			CorpseGib( const CTakeDamageInfo &info );
@@ -294,17 +297,17 @@ public:
 	virtual bool			ShouldDropActiveWeaponWhenKilled() { return true; }
 
 	// Killed a character
-	void InputKilledNPC( inputdata_t &inputdata );
-	void InputGiveWeapon( inputdata_t &inputdata );
-	void InputDropWeapon( inputdata_t &inputdata );
-	void InputPickupWeaponInstant( inputdata_t &inputdata );
+	void InputKilledNPC( inputdata_t &&inputdata );
+	void InputGiveWeapon( inputdata_t &&inputdata );
+	void InputDropWeapon( inputdata_t &&inputdata );
+	void InputPickupWeaponInstant( inputdata_t &&inputdata );
 	COutputEvent	m_OnWeaponEquip;
 	COutputEvent	m_OnWeaponDrop;
 
-	virtual void	InputHolsterWeapon( inputdata_t &inputdata );
-	virtual void	InputHolsterAndDestroyWeapon( inputdata_t &inputdata );
-	virtual void	InputUnholsterWeapon( inputdata_t &inputdata );
-	void			InputSwitchToWeapon( inputdata_t &inputdata );
+	virtual void	InputHolsterWeapon( inputdata_t &&inputdata );
+	virtual void	InputHolsterAndDestroyWeapon( inputdata_t &&inputdata );
+	virtual void	InputUnholsterWeapon( inputdata_t &&inputdata );
+	void			InputSwitchToWeapon( inputdata_t &&inputdata );
 
 	COutputEHANDLE	m_OnKilledEnemy;
 	COutputEHANDLE	m_OnKilledPlayer;
@@ -335,8 +338,8 @@ public:
 	CBaseEntity				*FindHealthItem( const Vector &vecPosition, const Vector &range );
 
 
-	virtual CBaseEntity		*CheckTraceHullAttack( float flDist, const Vector &mins, const Vector &maxs, float flDamage, int iDmgType, float forceScale = 1.0f, bool bDamageAnyNPC = false );
-	virtual CBaseEntity		*CheckTraceHullAttack( const Vector &vStart, const Vector &vEnd, const Vector &mins, const Vector &maxs, float flDamage, int iDmgType, float flForceScale = 1.0f, bool bDamageAnyNPC = false );
+	virtual CBaseEntity		*CheckTraceHullAttack( float flDist, const Vector &mins, const Vector &maxs, float flDamage, DamageTypes_t iDmgType, float forceScale = 1.0f, bool bDamageAnyNPC = false );
+	virtual CBaseEntity		*CheckTraceHullAttack( const Vector &vStart, const Vector &vEnd, const Vector &mins, const Vector &maxs, float flDamage, DamageTypes_t iDmgType, float flForceScale = 1.0f, bool bDamageAnyNPC = false );
 
 	virtual CBaseCombatCharacter *MyCombatCharacterPointer( void ) { return this; }
 
@@ -356,7 +359,7 @@ public:
 	virtual int				IRelationPriority( CBaseEntity *pTarget );
 
 	void					AddRelationship( const char *pszRelationship, CBaseEntity *pActivator );
-	void					InputSetRelationship( inputdata_t &inputdata );
+	void					InputSetRelationship( inputdata_t &&inputdata );
 
 	virtual void			SetLightingOriginRelative( CBaseEntity *pLightingOrigin );
 
@@ -372,8 +375,8 @@ public:
 	virtual bool ExitVehicle( void ) { return false; }
 
 	// Blood color (see BLOOD_COLOR_* macros in baseentity.h)
-	void SetBloodColor( int nBloodColor );
-	void InputSetBloodColor( inputdata_t &inputdata );
+	void SetBloodColor( BloodColor_t nBloodColor );
+	void InputSetBloodColor( inputdata_t &&inputdata );
 
 	// Weapons..
 	CBaseCombatWeapon*	GetActiveWeapon() const;
@@ -433,7 +436,7 @@ public:
 	// FIXME: The following 3 methods are backdoor hack methods
 	
 	// This is a sort of hack back-door only used by physgun!
-	void SetAmmoCount( int iCount, int iAmmoIndex );
+	void SetAmmoCount( int iCount, AmmoIndex_t iAmmoIndex );
 
 	// This is a hack to blat out the current active weapon...
 	// Used by weapon_slam + game_ui
@@ -491,7 +494,7 @@ public:
 	void SetLastHitGroup( int nHitGroup )	{ m_LastHitGroup = nHitGroup; }
 
 public:
-	CNetworkVar( float, m_flNextAttack );			// cannot attack again until this time
+	CNetworkTime( m_flNextAttack );			// cannot attack again until this time
 
 private:
 	NavMeshType_t		m_navMeshType;
@@ -500,7 +503,7 @@ private:
 	void				DestroyGlowEffect( void );
 
 protected:
-	int			m_bloodColor;			// color of blood particless
+	BloodColor_t			m_bloodColor;			// color of blood particless
 
 	// -------------------
 	// combat ability data
@@ -580,7 +583,7 @@ protected:
 	enum { MAX_DAMAGE_TEAMS = 4 };
 	struct DamageHistory
 	{
-		int team;					// which team hurt us (TEAM_INVALID means slot unused)
+		Team_t team;					// which team hurt us (TEAM_INVALID means slot unused)
 		IntervalTimer interval;		// how long has it been
 	};
 	DamageHistory m_damageHistory[ MAX_DAMAGE_TEAMS ];
@@ -612,7 +615,7 @@ inline void	CBaseCombatCharacter::PowerupThink( int iPowerup )						{ return; }
 
 EXTERN_SEND_TABLE(DT_BaseCombatCharacter);
 
-void RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, float flRadius, int iClassIgnore, CBaseEntity *pEntityIgnore );
+void RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, float flRadius, Class_T iClassIgnore, CBaseEntity *pEntityIgnore );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -623,16 +626,16 @@ public:
 	// It does have a base, but we'll never network anything below here..
 	DECLARE_CLASS_NOBASE( CTraceFilterMelee );
 	
-	CTraceFilterMelee( const IHandleEntity *passentity, int collisionGroup, CTakeDamageInfo *dmgInfo, float flForceScale, bool bDamageAnyNPC )
+	CTraceFilterMelee( const IHandleEntity *passentity, Collision_Group_t collisionGroup, CTakeDamageInfo *dmgInfo, float flForceScale, bool bDamageAnyNPC )
 		: m_pPassEnt(passentity), m_collisionGroup(collisionGroup), m_dmgInfo(dmgInfo), m_pHit(NULL), m_flForceScale(flForceScale), m_bDamageAnyNPC(bDamageAnyNPC)
 	{
 	}
 	
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 
 public:
 	const IHandleEntity *m_pPassEnt;
-	int					m_collisionGroup;
+	Collision_Group_t					m_collisionGroup;
 	CTakeDamageInfo		*m_dmgInfo;
 	CBaseEntity			*m_pHit;
 	float				m_flForceScale;

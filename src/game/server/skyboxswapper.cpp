@@ -22,7 +22,7 @@ public:
 	virtual void Spawn( void );
 	virtual void Precache( void );
 
-	void InputTrigger( inputdata_t &inputdata );
+	void InputTrigger( inputdata_t &&inputdata );
 
 protected:
 	string_t m_iszSkyboxName;
@@ -31,7 +31,7 @@ protected:
 LINK_ENTITY_TO_CLASS(skybox_swapper, CSkyboxSwapper);
 
 BEGIN_MAPENTITY( CSkyboxSwapper )
-	DEFINE_KEYFIELD( m_iszSkyboxName, FIELD_STRING, "SkyboxName" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSkyboxName, "SkyboxName" ),
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "Trigger", InputTrigger),
 END_MAPENTITY()
@@ -70,7 +70,7 @@ extern ConVar sv_skyname;
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that triggers the skybox swap.
 //-----------------------------------------------------------------------------
-void CSkyboxSwapper::InputTrigger( inputdata_t &inputdata )
+void CSkyboxSwapper::InputTrigger( inputdata_t &&inputdata )
 {
 	sv_skyname.SetValue( m_iszSkyboxName.ToCStr() );
 }

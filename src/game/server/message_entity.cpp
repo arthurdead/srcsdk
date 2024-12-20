@@ -44,9 +44,9 @@ public:
 
 	virtual void UpdateOnRemove();
 
-	void	InputEnable( inputdata_t &inputdata );
-	void	InputDisable( inputdata_t &inputdata );
-	virtual void	InputSetMessage( inputdata_t &inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
+	virtual void	InputSetMessage( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -62,9 +62,9 @@ LINK_ENTITY_TO_CLASS( point_message, CMessageEntity );
 
 BEGIN_MAPENTITY( CMessageEntity )
 
-	DEFINE_KEYFIELD( m_radius, FIELD_INTEGER, "radius" ),
-	DEFINE_KEYFIELD( m_messageText, FIELD_STRING, "message" ),
-	DEFINE_KEYFIELD( m_bDeveloperOnly, FIELD_BOOLEAN, "developeronly" ),
+	DEFINE_KEYFIELD_AUTO( m_radius, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_messageText, "message" ),
+	DEFINE_KEYFIELD_AUTO( m_bDeveloperOnly, "developeronly" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID,	 "Enable", InputEnable ),
@@ -162,7 +162,7 @@ void CMessageEntity::DrawOverlays(void)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CMessageEntity::InputEnable( inputdata_t &inputdata )
+void CMessageEntity::InputEnable( inputdata_t &&inputdata )
 {
 	m_bEnabled = true;
 }
@@ -170,7 +170,7 @@ void CMessageEntity::InputEnable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CMessageEntity::InputDisable( inputdata_t &inputdata )
+void CMessageEntity::InputDisable( inputdata_t &&inputdata )
 {
 	m_bEnabled = false;
 }
@@ -178,7 +178,7 @@ void CMessageEntity::InputDisable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CMessageEntity::InputSetMessage( inputdata_t &inputdata )
+void CMessageEntity::InputSetMessage( inputdata_t &&inputdata )
 {
 	char newmessage[256];
 	Q_strncpy(newmessage, inputdata.value.String(), sizeof(newmessage));
@@ -215,7 +215,7 @@ public:
 	bool	KeyValue(const char *szKeyName, const char *szValue);
 	void	SetMessage(const char *szValue);
 	void	DrawOverlays(void);
-	void	InputSetMessage( inputdata_t &inputdata );
+	void	InputSetMessage( inputdata_t &&inputdata );
 
 	CUtlVector<string_t> m_messageLines;
 
@@ -294,7 +294,7 @@ void CMessageEntityLocalized::SetMessage(const char *szValue)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CMessageEntityLocalized::InputSetMessage( inputdata_t &inputdata )
+void CMessageEntityLocalized::InputSetMessage( inputdata_t &&inputdata )
 {
 	SetMessage(inputdata.value.String());
 }

@@ -39,14 +39,15 @@ void SendProxy_ModelIndex( const SendProp *pProp, const void *pStruct, const voi
 	pOut->m_Int = (int)*pHandle;
 }
 
-SendProp SendPropEHandle(
+SendPropEx SendPropEHandle(
 	const char *pVarName,
 	int offset,
 	int sizeofVar,
-	int flags,
-	SendVarProxyFn proxyFn )
+	DTFlags_t flags,
+	SendVarProxyFn proxyFn,
+	DTPriority_t priority )
 {
-	return SendPropInt( pVarName, offset, sizeofVar, NUM_NETWORKED_EHANDLE_BITS, SPROP_UNSIGNED|flags, proxyFn );
+	return SendPropInt( pVarName, offset, sizeofVar, NUM_NETWORKED_EHANDLE_BITS, SPROP_UNSIGNED|flags, proxyFn, priority );
 }
 
 //-----------------------------------------------------------------------------
@@ -77,11 +78,8 @@ void* SendProxy_OnlyToTeam( const SendProp *pProp, const void *pStruct, const vo
 }
 REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_OnlyToTeam );
 
-#define TIME_BITS 24
-
 // This table encodes edict data.
-#if 0
-static void SendProxy_Time( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_Time( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
 {
 	float clock_base = floor( gpGlobals->curtime );
 	float t = *( float * )pVarData;
@@ -94,7 +92,6 @@ static void SendProxy_Time( const SendProp *pProp, const void *pStruct, const vo
 
 	pOut->m_Int = addt;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -104,17 +101,14 @@ static void SendProxy_Time( const SendProp *pProp, const void *pStruct, const vo
 //			pId - 
 // Output : SendProp
 //-----------------------------------------------------------------------------
-SendProp SendPropTime(
+SendPropEx SendPropTime(
 	const char *pVarName,
 	int offset,
-	int sizeofVar )
+	int sizeofVar,
+	DTPriority_t priority )
 {
-//	return SendPropInt( pVarName, offset, sizeofVar, TIME_BITS, 0, SendProxy_Time );
-	// FIXME:  Re-enable above when it doesn't cause lots of deltas
-	return SendPropFloat( pVarName, offset, sizeofVar, -1, SPROP_NOSCALE );
+	return SendPropInt( pVarName, offset, sizeofVar, TIME_BITS, SPROP_NONE, SendProxy_Time, priority );
 }
-
-#define PREDICTABLE_ID_BITS 31
 
 //-----------------------------------------------------------------------------
 // Purpose: Converts a predictable Id to an integer
@@ -124,17 +118,14 @@ SendProp SendPropTime(
 //			iElement - 
 //			objectID - 
 //-----------------------------------------------------------------------------
-static void SendProxy_PredictableIdToInt( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_PredictableId( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
 {
 	CPredictableId* pId = ( CPredictableId * )pVarData;
-	if ( pId )
-	{
-		pOut->m_Int = pId->GetRaw();
-	}
-	else
-	{
-		pOut->m_Int = 0;
-	}
+#if defined DT_QUATERNION_SUPPORTED || defined DT_INT64_SUPPORTED
+	*((CPredictableId *)&pOut->m_UInt64) = *pId;
+#else
+	*((CPredictableId *)pOut->m_UIntPair) = *pId;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -145,12 +136,12 @@ static void SendProxy_PredictableIdToInt( const SendProp *pProp, const void *pSt
 //			pId - 
 // Output : SendProp
 //-----------------------------------------------------------------------------
-SendProp SendPropPredictableId(
+SendPropEx SendPropPredictableId(
 	const char *pVarName,
 	int offset,
-	int sizeofVar )
+	int sizeofVar, DTPriority_t priority )
 {
-	return SendPropInt( pVarName, offset, sizeofVar, PREDICTABLE_ID_BITS, SPROP_UNSIGNED, SendProxy_PredictableIdToInt );
+	return SendPropInt( pVarName, offset, sizeofVar, PREDICTABLE_ID_BITS, SPROP_UNSIGNED, SendProxy_PredictableId, priority );
 }
 
 void SendProxy_StringT( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
@@ -160,12 +151,12 @@ void SendProxy_StringT( const SendProp *pProp, const void *pStruct, const void *
 }
 
 
-SendProp SendPropStringT( const char *pVarName, int offset, int sizeofVar )
+SendPropEx SendPropStringT( const char *pVarName, int offset, int sizeofVar, DTPriority_t priority )
 {
 	// Make sure it's the right type.
 	Assert( sizeofVar == sizeof( string_t ) );
 
-	return SendPropString( pVarName, offset, DT_MAX_STRING_BUFFERSIZE, 0, SendProxy_StringT );
+	return SendPropString( pVarName, offset, DT_MAX_STRING_BUFFERSIZE, SPROP_NONE, SendProxy_StringT, priority );
 }
 
 void* SendProxy_SendMinimalDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )

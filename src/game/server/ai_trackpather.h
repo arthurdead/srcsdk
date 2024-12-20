@@ -61,7 +61,7 @@ protected:
 	void SetTrack( CBaseEntity *pGoalEnt );
 
 	// Fly to a particular track point via the path
-	virtual void InputFlyToPathTrack( inputdata_t &inputdata );
+	virtual void InputFlyToPathTrack( inputdata_t &&inputdata );
 
 	// Updates the nav target if we've reached it
 	void UpdateTrackNavigation( void );
@@ -155,18 +155,18 @@ private:
 	CPathTrack		*BestPointOnPath( CPathTrack *pPath, const Vector &targetPos, float avoidRadius, bool visible, bool bFarthestPointOnPath );
 
 	// Input methods
-	void InputSetTrack( inputdata_t &inputdata );
-	void InputChooseFarthestPathPoint( inputdata_t &inputdata );
-	void InputChooseNearestPathPoint( inputdata_t &inputdata );
-	void InputStartBreakableMovement( inputdata_t &inputdata );
-	void InputStopBreakableMovement( inputdata_t &inputdata );
-	void InputStartPatrol( inputdata_t &inputdata );
-	void InputStopPatrol( inputdata_t &inputdata );
-	void InputStartLeading( inputdata_t &inputdata );
-	void InputStopLeading( inputdata_t &inputdata );
+	void InputSetTrack( inputdata_t &&inputdata );
+	void InputChooseFarthestPathPoint( inputdata_t &&inputdata );
+	void InputChooseNearestPathPoint( inputdata_t &&inputdata );
+	void InputStartBreakableMovement( inputdata_t &&inputdata );
+	void InputStopBreakableMovement( inputdata_t &&inputdata );
+	void InputStartPatrol( inputdata_t &&inputdata );
+	void InputStopPatrol( inputdata_t &&inputdata );
+	void InputStartLeading( inputdata_t &&inputdata );
+	void InputStopLeading( inputdata_t &&inputdata );
 
 	// Obsolete, for backward compatibility
-	void InputStartPatrolBreakable( inputdata_t &inputdata );
+	void InputStartPatrolBreakable( inputdata_t &&inputdata );
 
 	// Flies to a point on a track
 	void FlyToPathTrack( string_t strTrackName );

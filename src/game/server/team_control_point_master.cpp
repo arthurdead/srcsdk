@@ -11,17 +11,17 @@
 #include "teamplayroundbased_gamerules.h"
 
 BEGIN_MAPENTITY( CTeamControlPointMaster )
-	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
-	DEFINE_KEYFIELD( m_iszCapLayoutInHUD, FIELD_STRING, "caplayout" ),
-	DEFINE_KEYFIELD( m_iInvalidCapWinner, FIELD_INTEGER, "cpm_restrict_team_cap_win" ),
-	DEFINE_KEYFIELD( m_bSwitchTeamsOnWin, FIELD_BOOLEAN, "switch_teams" ),
-	DEFINE_KEYFIELD( m_bScorePerCapture, FIELD_BOOLEAN, "score_style" ),
-	DEFINE_KEYFIELD( m_bPlayAllRounds, FIELD_BOOLEAN, "play_all_rounds" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_iszCapLayoutInHUD, "caplayout" ),
+	DEFINE_KEYFIELD_AUTO( m_iInvalidCapWinner, "cpm_restrict_team_cap_win" ),
+	DEFINE_KEYFIELD_AUTO( m_bSwitchTeamsOnWin, "switch_teams" ),
+	DEFINE_KEYFIELD_AUTO( m_bScorePerCapture, "score_style" ),
+	DEFINE_KEYFIELD_AUTO( m_bPlayAllRounds, "play_all_rounds" ),
 
-	DEFINE_KEYFIELD( m_flPartialCapturePointsRate, FIELD_FLOAT, "partial_cap_points_rate" ),
+	DEFINE_KEYFIELD_AUTO( m_flPartialCapturePointsRate, "partial_cap_points_rate" ),
 
-	DEFINE_KEYFIELD( m_flCustomPositionX, FIELD_FLOAT, "custom_position_x" ),
-	DEFINE_KEYFIELD( m_flCustomPositionY, FIELD_FLOAT, "custom_position_y" ),
+	DEFINE_KEYFIELD_AUTO( m_flCustomPositionX, "custom_position_x" ),
+	DEFINE_KEYFIELD_AUTO( m_flCustomPositionY, "custom_position_y" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -713,7 +713,7 @@ void CTeamControlPointMaster::CheckWinConditions( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPointMaster::InputSetWinner( inputdata_t &input )
+void CTeamControlPointMaster::InputSetWinner( inputdata_t &&inputdata )
 {
 	int iTeam = input.value.Int();
 	InternalSetWinner( iTeam );
@@ -723,7 +723,7 @@ void CTeamControlPointMaster::InputSetWinner( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPointMaster::InputSetWinnerAndForceCaps( inputdata_t &input )
+void CTeamControlPointMaster::InputSetWinnerAndForceCaps( inputdata_t &&inputdata )
 {
 	int iTeam = input.value.Int();
 
@@ -815,7 +815,7 @@ void CTeamControlPointMaster::HandleRandomOwnerControlPoints( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPointMaster::InputRoundSpawn( inputdata_t &input )
+void CTeamControlPointMaster::InputRoundSpawn( inputdata_t &&inputdata )
 {
 	//clear out old control points
 	m_ControlPoints.RemoveAll();
@@ -865,7 +865,7 @@ void CTeamControlPointMaster::InputRoundSpawn( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPointMaster::InputRoundActivate( inputdata_t &input )
+void CTeamControlPointMaster::InputRoundActivate( inputdata_t &&inputdata )
 {
 	// if we're using mini-rounds and haven't picked one yet, find one to play
 	if ( PlayingMiniRounds() && GetCurrentRound() == NULL )
@@ -894,7 +894,7 @@ void CTeamControlPointMaster::InputRoundActivate( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPointMaster::InputSetCapLayout( inputdata_t &inputdata )
+void CTeamControlPointMaster::InputSetCapLayout( inputdata_t &&inputdata )
 {
 	m_iszCapLayoutInHUD = inputdata.value.StringID();
 	g_pObjectiveResource->SetCapLayoutInHUD( STRING(m_iszCapLayoutInHUD) );
@@ -903,7 +903,7 @@ void CTeamControlPointMaster::InputSetCapLayout( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPointMaster::InputSetCapLayoutCustomPositionX( inputdata_t &inputdata )
+void CTeamControlPointMaster::InputSetCapLayoutCustomPositionX( inputdata_t &&inputdata )
 {
 	m_flCustomPositionX = inputdata.value.Float();
 	g_pObjectiveResource->SetCapLayoutCustomPosition( m_flCustomPositionX, m_flCustomPositionY );
@@ -912,7 +912,7 @@ void CTeamControlPointMaster::InputSetCapLayoutCustomPositionX( inputdata_t &inp
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPointMaster::InputSetCapLayoutCustomPositionY( inputdata_t &inputdata )
+void CTeamControlPointMaster::InputSetCapLayoutCustomPositionY( inputdata_t &&inputdata )
 {
 	m_flCustomPositionY = inputdata.value.Float();
 	g_pObjectiveResource->SetCapLayoutCustomPosition( m_flCustomPositionX, m_flCustomPositionY );
@@ -1120,7 +1120,7 @@ int	CTeamControlPointMaster::GetBaseControlPoint( int iTeam )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPointMaster::InputEnable( inputdata_t &input )
+void CTeamControlPointMaster::InputEnable( inputdata_t &&inputdata )
 { 
 	m_bDisabled = false;
 }
@@ -1128,7 +1128,7 @@ void CTeamControlPointMaster::InputEnable( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPointMaster::InputDisable( inputdata_t &input )
+void CTeamControlPointMaster::InputDisable( inputdata_t &&inputdata )
 { 
 	m_bDisabled = true;
 }

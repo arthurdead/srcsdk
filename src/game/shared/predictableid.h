@@ -10,6 +10,7 @@
 #pragma once
 
 #include "tier0/platform.h"
+#include "datamap.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Wraps 32bit predictID to allow access and creation
@@ -18,24 +19,21 @@ class CPredictableId
 {
 public:
 	// Construction
-					CPredictableId( void );
+	CPredictableId( void );
 
 	static void		ResetInstanceCounters( void );
 
-	// Is the Id being used
-	bool			IsActive( void ) const;
-
 	// Call this to set from data
-	void			Init( int player, int command, const char *classname, const char *module, int line );
+	void			Init( unsigned char player, unsigned short command, const char *classname, const char *module, int line );
 
 	// Get player index
-	int				GetPlayer( void ) const;
+	unsigned char				GetPlayer( void ) const;
 	// Get hash value
-	int				GetHash( void ) const;
+	unsigned short				GetHash( void ) const;
 	// Get index number
-	int				GetInstanceNumber( void ) const;
+	unsigned char				GetInstanceNumber( void ) const;
 	// Get command number
-	int				GetCommandNumber( void ) const;
+	unsigned short				GetCommandNumber( void ) const;
 
 	// Check command number
 //	bool			IsCommandNumberEqual( int testNumber ) const;
@@ -44,33 +42,57 @@ public:
 	void			SetAcknowledged( bool ack );
 	bool			GetAcknowledged( void ) const;
 
-	// For conversion to/from integer
-	int				GetRaw( void ) const;
-	void			SetRaw( int raw );
-
 	char const		*Describe( void ) const;
 
 	// Equality test
 	bool operator ==( const CPredictableId& other ) const;
 	bool operator !=( const CPredictableId& other ) const;
 private:
-	void			SetCommandNumber( int commandNumber );
-	void			SetPlayer( int playerIndex );
-	void			SetInstanceNumber( int counter );
+	void			SetCommandNumber( unsigned short commandNumber );
+	void			SetPlayer( unsigned char playerIndex );
+	void			SetInstanceNumber( unsigned char counter );
 
 	// Encoding bits, should total 32
-	struct bitfields
-	{
-		 unsigned int ack		: 1;	// 1
-		 unsigned int player	: 5;	// 6
-		 unsigned int command	: 10;	// 16
-		 unsigned int hash		: 12;	// 28
-		 unsigned int instance	: 4;	// 32
-	} m_PredictableID;
+	unsigned short hash_ : 12;
+	unsigned short command_ : 10;
+	unsigned char player_ : 5;
+	unsigned char instance_ : 4;
+	bool ack_ : 1;
 };
 
-// This can be empty, the class has a proper constructor
-FORCEINLINE void NetworkVarConstruct( CPredictableId &x ) {}
+inline const CPredictableId INVALID_PREDICTABLE_ID;
 
+// This can be empty, the class has a proper constructor
+FORCEINLINE void NetworkVarConstruct( CPredictableId &x ) { x = INVALID_PREDICTABLE_ID; }
+
+template< class Changer >
+class CNetworkVarBase<CPredictableId, Changer> final
+{
+private:
+	CNetworkVarBase() = delete;
+	~CNetworkVarBase() = delete;
+};
+
+template< class Changer >
+class CNetworkPredictableIdBase : public CNetworkVarBaseImpl< CPredictableId, Changer >
+{
+	typedef CNetworkVarBaseImpl< CPredictableId, Changer > base;
+
+public:
+	using CNetworkVarBaseImpl<CPredictableId, Changer>::CNetworkVarBaseImpl;
+	using base::operator=;
+	using base::operator==;
+	using base::operator!=;
+	using base::Set;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkPredictableIdBase<C>>
+{
+	using type = CPredictableId;
+};
+
+DECLARE_FIELD_INFO( FIELD_PREDICTABLEID,		 CPredictableId ) 
+DECLARE_FIELD_NETWORK_INFO( FIELD_PREDICTABLEID, CNetworkPredictableIdBase )
 
 #endif // PREDICTABLEID_H

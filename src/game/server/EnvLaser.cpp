@@ -17,9 +17,9 @@ LINK_ENTITY_TO_CLASS( env_laser, CEnvLaser );
 
 BEGIN_MAPENTITY( CEnvLaser )
 
-	DEFINE_KEYFIELD( m_iszLaserTarget, FIELD_STRING, "LaserTarget" ),
-	DEFINE_KEYFIELD( m_iszSpriteName, FIELD_STRING, "EndSprite" ),
-	DEFINE_KEYFIELD( m_flStartFrame, FIELD_FLOAT, "framestart" ),
+	DEFINE_KEYFIELD_AUTO( m_iszLaserTarget, "LaserTarget" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSpriteName, "EndSprite" ),
+	DEFINE_KEYFIELD_AUTO( m_flStartFrame, "framestart" ),
 
 	// Input functions
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
@@ -132,7 +132,7 @@ int CEnvLaser::IsOn( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvLaser::InputTurnOn( inputdata_t &inputdata )
+void CEnvLaser::InputTurnOn( inputdata_t &&inputdata )
 {
 	if (!IsOn())
 	{
@@ -144,7 +144,7 @@ void CEnvLaser::InputTurnOn( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvLaser::InputTurnOff( inputdata_t &inputdata )
+void CEnvLaser::InputTurnOff( inputdata_t &&inputdata )
 {
 	if (IsOn())
 	{
@@ -156,7 +156,7 @@ void CEnvLaser::InputTurnOff( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvLaser::InputToggle( inputdata_t &inputdata )
+void CEnvLaser::InputToggle( inputdata_t &&inputdata )
 {
 	if ( IsOn() )
 	{

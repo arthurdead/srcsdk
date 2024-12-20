@@ -5,35 +5,36 @@
 // $NoKeywords: $
 //=============================================================================//
 
-#ifndef PLAYERSTATE_H
-#define PLAYERSTATE_H
+#ifndef PLAYERSTATE_ENGINE_H
+#define PLAYERSTATE_ENGINE_H
 #pragma once
 
 #include "edict.h"
 #include "networkvar.h"
-// Only care about this stuff in game/client .dlls
-#if defined( CLIENT_DLL )
-#include "predictable_entity.h"
-#endif
 
-class CPlayerState
+class CPlayerStateEngine
 {
 public:
-	DECLARE_CLASS_NOBASE( CPlayerState );
-	DECLARE_EMBEDDED_NETWORKVAR();
+	friend class CPlayerStateGame;
+
+	DECLARE_CLASS_NOBASE( CPlayerStateEngine );
+	virtual void NetworkStateChanged() = 0;
+	virtual void NetworkStateChanged( void *pProp ) = 0;
 	
 	// This virtual method is necessary to generate a vtable in all cases
 	// (DECLARE_PREDICTABLE will generate a vtable also)!
-	virtual ~CPlayerState() {}
+	virtual ~CPlayerStateEngine() {}
 
+protected:
 	// true if the player is dead
-	CNetworkVar( bool, deadflag );	
+	bool deadflag_DO_NOT_USE;	
+
+public:
 	// Viewing angle (player only)
 	QAngle		v_angle;		
 	
 // The client .dll only cares about deadflag
 //  the game and engine .dlls need to worry about the rest of this data
-#if !defined( CLIENT_DLL )
 	// Player's network name
 	string_t	netname;
 	// 0:nothing, 1:force view angles, 2:add avelocity
@@ -45,11 +46,6 @@ public:
 	bool		replay;
 	int			frags;
 	int			deaths;
-#endif
-
-#if defined( CLIENT_DLL )
-	DECLARE_PREDICTABLE();
-#endif
 };
 
 #endif // PLAYERSTATE_H

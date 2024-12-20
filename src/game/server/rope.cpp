@@ -57,14 +57,14 @@ END_SEND_TABLE()
 
 BEGIN_MAPENTITY( CRopeKeyframe )
 
-	DEFINE_KEYFIELD( m_iNextLinkName,	FIELD_STRING,	"NextKey" ),
-	DEFINE_KEYFIELD( m_Slack,			FIELD_INTEGER,	"Slack" ),
-	DEFINE_KEYFIELD( m_Width,			FIELD_FLOAT,	"Width" ),
-	DEFINE_KEYFIELD( m_TextureScale,		FIELD_FLOAT,	"TextureScale" ),
+	DEFINE_KEYFIELD_AUTO( m_iNextLinkName, "NextKey" ),
+	DEFINE_KEYFIELD_AUTO( m_Slack, "Slack" ),
+	DEFINE_KEYFIELD_AUTO( m_Width, "Width" ),
+	DEFINE_KEYFIELD_AUTO( m_TextureScale, "TextureScale" ),
 
-	DEFINE_KEYFIELD( m_Subdiv,			FIELD_INTEGER,	"Subdiv" ),
+	DEFINE_KEYFIELD_AUTO( m_Subdiv, "Subdiv" ),
 
-	DEFINE_KEYFIELD( m_flScrollSpeed,	FIELD_FLOAT,	"ScrollSpeed" ),
+	DEFINE_KEYFIELD_AUTO( m_flScrollSpeed, "ScrollSpeed" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT,	"SetScrollSpeed",	InputSetScrollSpeed ),
@@ -564,7 +564,7 @@ void CRopeKeyframe::PropagateForce(CBaseEntity *pActivator, CBaseEntity *pCaller
 // Purpose: Set an instaneous force on the rope.
 // Input  : Force vector.
 //------------------------------------------------------------------------------
-void CRopeKeyframe::InputSetForce( inputdata_t &inputdata )
+void CRopeKeyframe::InputSetForce( inputdata_t &&inputdata )
 {
 	Vector vecForce;
 	inputdata.value.Vector3D(vecForce);
@@ -575,7 +575,7 @@ void CRopeKeyframe::InputSetForce( inputdata_t &inputdata )
 // Purpose: Breaks the rope if able
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CRopeKeyframe::InputBreak( inputdata_t &inputdata )
+void CRopeKeyframe::InputBreak( inputdata_t &&inputdata )
 {
 	//Route through the damage code
 	Break(inputdata.pActivator);
@@ -585,7 +585,7 @@ void CRopeKeyframe::InputBreak( inputdata_t &inputdata )
 // Purpose: Sets the slack
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CRopeKeyframe::InputSetSlack( inputdata_t &inputdata )
+void CRopeKeyframe::InputSetSlack( inputdata_t &&inputdata )
 {
 	m_Slack = inputdata.value.Int();
 
@@ -602,7 +602,7 @@ void CRopeKeyframe::InputSetSlack( inputdata_t &inputdata )
 // Purpose: Sets the width
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CRopeKeyframe::InputSetWidth( inputdata_t &inputdata )
+void CRopeKeyframe::InputSetWidth( inputdata_t &&inputdata )
 {
 	m_Width = inputdata.value.Float();
 }
@@ -611,7 +611,7 @@ void CRopeKeyframe::InputSetWidth( inputdata_t &inputdata )
 // Purpose: Sets the subdivision
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CRopeKeyframe::InputSetSubdivision( inputdata_t &inputdata )
+void CRopeKeyframe::InputSetSubdivision( inputdata_t &&inputdata )
 {
 	m_Subdiv = inputdata.value.Int();
 
@@ -846,7 +846,7 @@ bool CRopeKeyframe::KeyValue( const char *szKeyName, const char *szValue )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that sets the scroll speed.
 //-----------------------------------------------------------------------------
-void CRopeKeyframe::InputSetScrollSpeed( inputdata_t &inputdata )
+void CRopeKeyframe::InputSetScrollSpeed( inputdata_t &&inputdata )
 {
 	m_flScrollSpeed = inputdata.value.Float();
 }
@@ -858,7 +858,7 @@ void CRopeKeyframe::SetMaterial( const char *pName )
 	m_iRopeMaterialModelIndex = PrecacheModel( STRING( m_strRopeMaterialModel ) );
 }
 
-int CRopeKeyframe::UpdateTransmitState()
+EdictStateFlags_t CRopeKeyframe::UpdateTransmitState()
 {
 	// Certain entities like sprites and ropes are strewn throughout the level and they rarely change.
 	// For these entities, it's more efficient to transmit them once and then always leave them on

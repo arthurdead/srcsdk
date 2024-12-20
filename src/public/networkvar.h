@@ -19,6 +19,7 @@
 #endif
 
 #include "engine/ivmodelinfo.h"
+#include "studio.h"
 
 #ifdef NULL
 #undef NULL
@@ -176,502 +177,572 @@ typedef C_BaseEntity CGameBaseEntity;
 class CGameBaseEntity;
 #endif
 
-class CAutoInitEntPtr
+abstract_class INetworkableObject
 {
-public:
-	CAutoInitEntPtr()
-	{
-		m_pEnt = NULL;
-	}
-	CGameBaseEntity *m_pEnt;
+protected:
+#ifndef CLIENT_DLL
+	virtual void NetworkStateChanged() = 0;
+	virtual void NetworkStateChanged( unsigned short offset ) = 0;
+#endif
 };
 
-//TODO: Currently, these don't get the benefit of tracking changes to individual vars.
-// Would be nice if they did.
-#define DECLARE_NETWORKVAR_CHAIN() \
-	template <typename T> friend int ServerClassInit(T *);	\
-	template <typename T> friend int ClientClassInit(T *); \
-	CAutoInitEntPtr __m_pChainEntity; \
-	virtual void NetworkStateChanged() { CHECK_USENETWORKVARS { if(__m_pChainEntity.m_pEnt) { __m_pChainEntity.m_pEnt->NetworkStateChanged(); } } } \
-	virtual void NetworkStateChanged( void *pVar ) { CHECK_USENETWORKVARS { if(__m_pChainEntity.m_pEnt) { __m_pChainEntity.m_pEnt->NetworkStateChanged(); } } }
-
-#define IMPLEMENT_NETWORKVAR_CHAIN( varName ) \
-	(varName)->__m_pChainEntity.m_pEnt = this;
-
-
-
 // Use this macro when you want to embed a structure inside your entity and have CNetworkVars in it.
+#ifndef CLIENT_DLL
 template< class T >
 static inline void DispatchNetworkStateChanged( T *pObj )
 {
 	CHECK_USENETWORKVARS pObj->NetworkStateChanged();
 }
 template< class T >
-static inline void DispatchNetworkStateChanged( T *pObj, void *pVar )
+static inline void DispatchNetworkStateChanged( T *pObj, unsigned short offset )
 {
-	CHECK_USENETWORKVARS pObj->NetworkStateChanged( pVar );
+	CHECK_USENETWORKVARS pObj->NetworkStateChanged( offset );
 }
+#endif
 
-
+#ifndef CLIENT_DLL
 #define DECLARE_EMBEDDED_NETWORKVAR() \
 	template <typename T> friend int ServerClassInit(T *);	\
 	template <typename T> friend int ClientClassInit(T *); \
-	virtual void NetworkStateChanged() {} \
-	virtual void NetworkStateChanged( void *pProp ) {}
+	virtual void NetworkStateChanged() override = 0; \
+	virtual void NetworkStateChanged( unsigned short offset ) override = 0;
+#else
+#define DECLARE_EMBEDDED_NETWORKVAR() \
+	template <typename T> friend int ServerClassInit(T *);	\
+	template <typename T> friend int ClientClassInit(T *);
+#endif
 
-// NOTE: Assignment operator is disabled because it doesn't call copy constructors of scalar types within the aggregate, so they are not marked changed
-#define CNetworkVarEmbedded( type, name ) \
-	class NetworkVar_##name; \
-	friend class NetworkVar_##name; \
-	typedef ThisClass MakeANetworkVar_##name; \
-	static inline int GetOffset_##name() { return MyOffsetOf(ThisClass,name); } \
-	typedef ThisClass ThisClass_##name; \
-	class NetworkVar_##name final : public type \
-	{ \
-	public: \
-		NetworkVar_##name& operator=( const NetworkVar_##name &val ) = delete; \
-		NetworkVar_##name& operator=( NetworkVar_##name &&val ) = delete; \
-		NetworkVar_##name& operator=( const type &val ) = delete; \
-		NetworkVar_##name& operator=( type &&val ) = delete; \
-		template< class T > \
-		NetworkVar_##name& operator=( const T &val ) = delete; \
-		template< class T > \
-		NetworkVar_##name& operator=( T &&val ) = delete; \
-	public: \
-		NetworkVar_##name() : type() \
-		{ this->NetworkStateChanged(); } \
-		NetworkVar_##name( const type &val ) = delete; \
-		NetworkVar_##name( type &&val ) = delete; \
-		NetworkVar_##name( const NetworkVar_##name &val ) = delete; \
-		NetworkVar_##name( NetworkVar_##name &&val ) = delete; \
-		~NetworkVar_##name() {} \
-		type *operator&() { return static_cast<type *>(this); } \
-		const type *operator&() const { return static_cast<const type *>(this); } \
-		type & GetForModify( void ) { this->NetworkStateChanged(); return *static_cast<type *>(this); } \
-		virtual void NetworkStateChanged() \
-		{ \
-			DispatchNetworkStateChanged( (ThisClass_##name*)( ((char*)this) - GetOffset_##name() ) ); \
-		} \
-		virtual void NetworkStateChanged( void *pVar ) \
-		{ \
-			DispatchNetworkStateChanged( (ThisClass_##name*)( ((char*)this) - GetOffset_##name() ), pVar ); \
-		} \
-	}; \
-	NetworkVar_##name name; 
-
-#define CNetworkVarEmbeddedCopyable( type, name ) \
-	class NetworkVar_##name; \
-	friend class NetworkVar_##name; \
-	typedef ThisClass MakeANetworkVar_##name; \
-	static inline int GetOffset_##name() { return MyOffsetOf(ThisClass,name); } \
-	typedef ThisClass ThisClass_##name; \
-	class NetworkVar_##name final : public type \
-	{ \
-	public: \
-		NetworkVar_##name& operator=( const NetworkVar_##name &val ) \
-		{ \
-			this->type::operator=(static_cast<const type &>(val)); \
-			this->NetworkStateChanged(); \
-			return *this; \
-		} \
-		NetworkVar_##name& operator=( NetworkVar_##name &&val ) \
-		{ \
-			this->type::operator=(static_cast<type &&>(Move(val))); \
-			this->NetworkStateChanged(); \
-			val.NetworkStateChanged(); \
-			return *this; \
-		} \
-		NetworkVar_##name& operator=( const type &val ) \
-		{ \
-			this->type::operator=(val); \
-			this->NetworkStateChanged(); \
-			return *this; \
-		} \
-		NetworkVar_##name& operator=( type &&val ) \
-		{ \
-			this->type::operator=(Move(val)); \
-			this->NetworkStateChanged(); \
-			return *this; \
-		} \
-		template< class T > \
-		NetworkVar_##name& operator=( const T &val ) \
-		{ \
-			this->type::operator=(val); \
-			this->NetworkStateChanged(); \
-			return *this; \
-		} \
-		template< class T > \
-		NetworkVar_##name& operator=( T &&val ) \
-		{ \
-			this->type::operator=(Move(val)); \
-			this->NetworkStateChanged(); \
-			return *this; \
-		} \
-	public: \
-		NetworkVar_##name() : type() \
-		{ this->NetworkStateChanged(); } \
-		NetworkVar_##name( const type &val ) : type(val) \
-		{ this->NetworkStateChanged(); } \
-		NetworkVar_##name( type &&val ) : type(static_cast<type &&>(Move(val))) \
-		{ this->NetworkStateChanged(); } \
-		NetworkVar_##name( const NetworkVar_##name &val ) : type(static_cast<const type &>(val)) \
-		{ this->NetworkStateChanged(); } \
-		NetworkVar_##name( NetworkVar_##name &&val ) : type(static_cast<type &&>(Move(val))) \
-		{ \
-			this->NetworkStateChanged(); \
-			val.NetworkStateChanged(); \
-		} \
-		~NetworkVar_##name() {} \
-		type *operator&() { return static_cast<type *>(this); } \
-		const type *operator&() const { return static_cast<const type *>(this); } \
-		type & GetForModify( void ) { this->NetworkStateChanged(); return *static_cast<type *>(this); } \
-		virtual void NetworkStateChanged() \
-		{ \
-			DispatchNetworkStateChanged( (ThisClass_##name*)( ((char*)this) - GetOffset_##name() ) ); \
-		} \
-		virtual void NetworkStateChanged( void *pVar ) \
-		{ \
-			DispatchNetworkStateChanged( (ThisClass_##name*)( ((char*)this) - GetOffset_##name() ), pVar ); \
-		} \
-	}; \
-	NetworkVar_##name name; 
+#define DECLARE_EMBEDDED_NETWORKVAR_NOCHECK() \
+	template <typename T> friend int ServerClassInit(T *);	\
+	template <typename T> friend int ClientClassInit(T *);
 
 template<typename T>
-FORCEINLINE void NetworkVarConstruct( T &x ) { x = T(); }
+FORCEINLINE void NetworkVarConstruct( T &x ) { Construct(&x); }
 FORCEINLINE void NetworkVarConstruct( color32 &x ) { x.SetColor( 255, 255, 255, 255 ); }
 FORCEINLINE void NetworkVarConstruct( color24 &x ) { x.SetColor( 255, 255, 255 ); }
 FORCEINLINE void NetworkVarConstruct( modelindex_t &x ) { x = INVALID_MODEL_INDEX; }
 template<typename T>
 FORCEINLINE void NetworkVarConstruct( CUtlVector<T> &x ) { x.Purge(); }
 
+template<typename T>
+struct networkvar_type_traits
+{
+	using base_type = T;
+	using const_ref = const T &;
+
+	static base_type &GetRef(base_type &val)
+	{
+		return val;
+	}
+	static const base_type &GetRef(const base_type &val)
+	{
+		return val;
+	}
+
+	static base_type *GetPtr(base_type &val)
+	{
+		return &val;
+	}
+	static const base_type *GetPtr(const base_type &val)
+	{
+		return &val;
+	}
+};
+
+template<typename T>
+struct networkvar_type_traits<T *>
+{
+	using base_type = T;
+	using const_ref = const T *;
+
+	static base_type &GetRef(base_type *val)
+	{
+		return *val;
+	}
+	static const base_type &GetRef(const base_type *val)
+	{
+		return *val;
+	}
+
+	static base_type *GetPtr(base_type *val)
+	{
+		return val;
+	}
+	static const base_type *GetPtr(const base_type *val)
+	{
+		return val;
+	}
+};
+
 template< class Type, class Changer >
 class CNetworkVarBaseImpl
 {
 public:
+	using BaseElemType_t = Type;
+
 	inline CNetworkVarBaseImpl()
 	{
-		NetworkVarConstruct( m_Value );
+		NetworkVarConstruct( this->GetValue_location() );
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 	}
 
 	inline explicit CNetworkVarBaseImpl( const Type &val )
-	: m_Value( val )
 	{
-		this->NetworkStateChanged();
+		CopyConstruct( &this->GetValue_location(), val );
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 	}
 
 	inline explicit CNetworkVarBaseImpl( Type &&val )
-	: m_Value( Move(val) )
 	{
-		this->NetworkStateChanged();
+		MoveConstruct( &this->GetValue_location(), Move( val ) );
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 	}
 
 	template< class C >
 	inline explicit CNetworkVarBaseImpl( const C &val )
-	: m_Value( val )
 	{
-		this->NetworkStateChanged();
+		CopyConstruct( &this->GetValue_location(), val );
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 	}
 
 	template< class C >
 	inline explicit CNetworkVarBaseImpl( C &&val )
-	: m_Value( Move(val) )
 	{
-		this->NetworkStateChanged();
+		MoveConstruct( &this->GetValue_location(), Move( val ) );
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 	}
 
 	inline CNetworkVarBaseImpl( const CNetworkVarBaseImpl &other )
-	: m_Value( other.m_Value )
 	{
-		this->NetworkStateChanged();
+		CopyConstruct( &this->GetValue_location(), other.GetValue_location() );
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 	}
 
 	inline CNetworkVarBaseImpl( CNetworkVarBaseImpl &&other )
-	: m_Value( Move(other.m_Value) )
 	{
-		this->NetworkStateChanged();
-		other.NetworkStateChanged();
+		MoveConstruct( &this->GetValue_location(), Move( other.GetValue_location() ) );
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+		other.CallOuterNetworkStateChanged();
+	#endif
 	}
 
 	template< class C, class H >
 	inline CNetworkVarBaseImpl( const CNetworkVarBaseImpl<C, H> &other )
-	: m_Value( other.m_Value )
 	{
-		this->NetworkStateChanged();
+		CopyConstruct( &this->GetValue_location(), other.GetValue_location() );
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 	}
 
 	template< class C, class H >
 	inline CNetworkVarBaseImpl( CNetworkVarBaseImpl<C, H> &&other )
-	: m_Value( Move(other.m_Value) )
 	{
-		this->NetworkStateChanged();
-		other.NetworkStateChanged();
+		MoveConstruct( &this->GetValue_location(), Move( other.GetValue_location() ) );
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+		other.CallOuterNetworkStateChanged();
+	#endif
 	}
 
 	CNetworkVarBaseImpl& operator=( const CNetworkVarBaseImpl &val ) 
 	{ 
-		if ( this->m_Value != val.m_Value )
-		{
-			this->NetworkStateChanged();
-			this->m_Value = val.m_Value;
-		}
+		this->Set( val.GetValue_location() );
 		return *this;
 	}
 
 	CNetworkVarBaseImpl& operator=( CNetworkVarBaseImpl &&val ) 
 	{ 
-		if ( this->m_Value != val.m_Value )
-		{
-			this->NetworkStateChanged();
-			val.NetworkStateChanged();
-			this->m_Value = Move(val.m_Value);
-		}
+		this->Set( Move( val ) );
 		return *this;
 	}
 
 	template< class C, class H >
 	CNetworkVarBaseImpl& operator=( const CNetworkVarBaseImpl<C, H> &val ) 
 	{ 
-		if ( this->m_Value != val.m_Value )
-		{
-			this->NetworkStateChanged();
-			this->m_Value = val.m_Value;
-		}
+		this->Set( val.GetValue_location() );
 		return *this;
 	}
 
 	template< class C, class H >
 	CNetworkVarBaseImpl& operator=( CNetworkVarBaseImpl<C, H> &&val ) 
 	{ 
-		if ( this->m_Value != val.m_Value )
-		{
-			this->NetworkStateChanged();
-			val.NetworkStateChanged();
-			this->m_Value = Move(val.m_Value);
-		}
+		this->Set( Move( val ) );
 		return *this;
 	}
 
 	template< class C >
 	CNetworkVarBaseImpl& operator=( const C &val ) 
 	{ 
-		if ( this->m_Value != val )
-		{
-			this->NetworkStateChanged();
-			this->m_Value = val;
-		}
+		this->Set( val );
 		return *this;
 	}
 
 	template< class C >
 	CNetworkVarBaseImpl& operator=( C &&val ) 
 	{ 
-		if ( this->m_Value != val )
-		{
-			this->NetworkStateChanged();
-			this->m_Value = Move(val);
-		}
+		this->Set( Move( val ) );
 		return *this;
 	}
 
 	template< class C >
 	void SetDirect( const C &val )
 	{
-		this->NetworkStateChanged();
-		this->m_Value = val;
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
+		this->GetValue_location() = val;
 	}
 
 	template< class C >
 	void SetDirect( C &&val )
 	{
-		this->NetworkStateChanged();
-		this->m_Value = Move(val);
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
+		this->GetValue_location() = Move(val);
+	}
+
+	template< class C, class H >
+	void SetDirect( CNetworkVarBaseImpl<C, H> &&val ) 
+	{ 
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+		val.CallOuterNetworkStateChanged();
+	#endif
+		this->GetValue_location() = Move(val.GetValue_location());
 	}
 
 	template< class C >
 	void Set( const C &val )
 	{
-		if ( this->m_Value != val )
+	#ifndef CLIENT_DLL
+		if ( this->GetValue_location() != val )
 		{
-			this->NetworkStateChanged();
-			this->m_Value = val;
+			this->SetDirect( val );
 		}
+	#else
+		this->SetDirect( val );
+	#endif
 	}
 
 	template< class C >
 	void Set( C &&val )
 	{
-		if ( this->m_Value != val )
+	#ifndef CLIENT_DLL
+		if ( this->GetValue_location() != val )
 		{
-			this->NetworkStateChanged();
-			this->m_Value = Move(val);
+			this->SetDirect( Move( val ) );
 		}
-	}
-	
-	Type& GetForModify()
-	{
-		this->NetworkStateChanged();
-		return this->m_Value;
-	}
-
-	Type& GetWithoutModify()
-	{
-		return this->m_Value;
+	#else
+		this->SetDirect( Move( val ) );
+	#endif
 	}
 
 	bool operator==( const Type &val ) const
-	{ return (this->m_Value == val); }
+	{ return (this->GetValue_location() == val); }
 	bool operator!=( const Type &val ) const
-	{ return (this->m_Value != val); }
+	{ return (this->GetValue_location() != val); }
 
 	bool operator==( const CNetworkVarBaseImpl &val ) const
-	{ return (this->m_Value == val.m_Value); }
+	{ return (this->GetValue_location() == val.GetValue_location()); }
 	bool operator!=( const CNetworkVarBaseImpl &val ) const
-	{ return (this->m_Value != val.m_Value); }
+	{ return (this->GetValue_location() != val.GetValue_location()); }
 
 	template< class C, class H >
 	bool operator==( const CNetworkVarBaseImpl<C, H> &val ) const
-	{ return (this->m_Value == val.m_Value); }
+	{ return (this->GetValue_location() == val.GetValue_location()); }
 	template< class C, class H >
 	bool operator!=( const CNetworkVarBaseImpl<C, H> &val ) const
-	{ return (this->m_Value != val.m_Value); }
+	{ return (this->GetValue_location() != val.GetValue_location()); }
 
 	template< class C >
 	bool operator==( const C &val ) const
-	{ return (this->m_Value == val); }
+	{ return (this->GetValue_location() == val); }
 	template< class C >
 	bool operator!=( const C &val ) const
-	{ return (this->m_Value != val); }
+	{ return (this->GetValue_location() != val); }
 
-	operator const Type&() const 
+	operator typename networkvar_type_traits<Type>::const_ref() const 
 	{
-		return this->m_Value; 
+		return this->GetValue_location();
 	}
-	
-	const Type& Get() const 
+
+	const typename networkvar_type_traits<Type>::base_type *operator&() const
 	{
-		return this->m_Value; 
+		return networkvar_type_traits<Type>::GetPtr(this->GetValue_location());
 	}
-	
-	const Type* operator->() const 
+
+	const typename networkvar_type_traits<Type>::base_type* operator->() const 
 	{
-		return &this->m_Value; 
+		return networkvar_type_traits<Type>::GetPtr(this->GetValue_location()); 
+	}
+
+	const typename networkvar_type_traits<Type>::base_type &Get() const
+	{
+		return networkvar_type_traits<Type>::GetRef(this->GetValue_location()); 
+	}
+
+	typename networkvar_type_traits<Type>::const_ref GetRaw() const
+	{
+		return this->GetValue_location(); 
+	}
+
+	typename networkvar_type_traits<Type>::base_type& GetForModify()
+	{
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
+		return networkvar_type_traits<Type>::GetRef(this->GetValue_location());
+	}
+
+	Type& GetForModifyRaw()
+	{
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
+		return this->GetValue_location();
+	}
+
+	typename networkvar_type_traits<Type>::base_type& GetWithoutModify()
+	{
+		return networkvar_type_traits<Type>::GetRef(this->GetValue_location());
+	}
+
+	Type& GetWithoutModifyRaw()
+	{
+		return this->GetValue_location();
 	}
 
 protected:
-	Type m_Value;
-
-	inline void NetworkStateChanged()
+	Type &GetValue_location()
 	{
-		Changer::NetworkStateChanged( this );
+		return Changer::GetValue_location_impl( this );
 	}
 
-	inline void NetworkStateChanged( unsigned long long offset )
+	const Type &GetValue_location() const
 	{
-		Changer::NetworkStateChanged( ((unsigned char *)this) + offset );
+		return Changer::GetValue_location_impl( this );
 	}
+
+#ifndef CLIENT_DLL
+	void CallOuterNetworkStateChanged()
+	{
+		Changer::CallOuterNetworkStateChanged_impl( this );
+	}
+#endif
+};
+
+template< class Type, class Changer >
+class CNetworkVarEmbeddedPtrBase : public CNetworkVarBaseImpl< Type *, Changer >
+{
+	typedef CNetworkVarBaseImpl< Type *, Changer > base;
+
+public:
+	using CNetworkVarBaseImpl<Type *, Changer>::CNetworkVarBaseImpl;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
+};
+
+template< class Type, class Changer >
+class CNetworkVarEmbeddedBase : public Type
+{
+public:
+	CNetworkVarEmbeddedBase() = default;
+
+	CNetworkVarEmbeddedBase& operator=( const CNetworkVarEmbeddedBase &val ) = delete;
+	CNetworkVarEmbeddedBase& operator=( CNetworkVarEmbeddedBase &&val ) = delete;
+	CNetworkVarEmbeddedBase& operator=( const Type &val ) = delete;
+	CNetworkVarEmbeddedBase& operator=( Type &&val ) = delete;
+	template< class T >
+	CNetworkVarEmbeddedBase& operator=( const T &val ) = delete;
+	template< class T >
+	CNetworkVarEmbeddedBase& operator=( T &&val ) = delete;
+
+	CNetworkVarEmbeddedBase( const Type &val ) = delete;
+	CNetworkVarEmbeddedBase( Type &&val ) = delete;
+	CNetworkVarEmbeddedBase( const CNetworkVarEmbeddedBase &val ) = delete;
+	CNetworkVarEmbeddedBase( CNetworkVarEmbeddedBase &&val ) = delete;
+
+	using Type::Type;
+
+protected:
+#ifndef CLIENT_DLL
+	void NetworkStateChanged() override
+	{
+		Changer::CallOuterNetworkStateChanged_impl( this );
+	}
+
+	void NetworkStateChanged( unsigned short offset ) override
+	{
+		Changer::CallOuterNetworkStateChanged_impl( this, offset );
+	}
+#endif
+};
+
+template< class Type, class Changer >
+class CNetworkVarEmbeddedCopyableBase : public Type
+{
+public:
+	CNetworkVarEmbeddedCopyableBase() = default;
+	CNetworkVarEmbeddedCopyableBase(const CNetworkVarEmbeddedCopyableBase &) = default;
+	CNetworkVarEmbeddedCopyableBase(CNetworkVarEmbeddedCopyableBase &&) = default;
+	CNetworkVarEmbeddedCopyableBase &operator=(const CNetworkVarEmbeddedCopyableBase &) = default;
+	CNetworkVarEmbeddedCopyableBase &operator=(CNetworkVarEmbeddedCopyableBase &&) = default;
+
+	using Type::Type;
+	using Type::operator=;
+
+protected:
+#ifndef CLIENT_DLL
+	void NetworkStateChanged() override
+	{
+		Changer::CallOuterNetworkStateChanged_impl( this );
+	}
+
+	void NetworkStateChanged( unsigned short offset ) override
+	{
+		Changer::CallOuterNetworkStateChanged_impl( this, offset );
+	}
+#endif
 };
 
 template< class Type, class Changer >
 class CNetworkVarArithmeticBaseImpl : public CNetworkVarBaseImpl< Type, Changer >
 {
+	typedef CNetworkVarBaseImpl< Type, Changer > base;
+
 public:
 	using CNetworkVarBaseImpl<Type, Changer>::CNetworkVarBaseImpl;
-	using CNetworkVarBaseImpl<Type, Changer>::operator=;
-	using CNetworkVarBaseImpl<Type, Changer>::operator!=;
-	using CNetworkVarBaseImpl<Type, Changer>::operator==;
-	using CNetworkVarBaseImpl<Type, Changer>::Set;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
 
 	template< class C >
 	CNetworkVarArithmeticBaseImpl& operator+=( const C &val ) 
 	{
-		this->m_Value += val;
-		this->NetworkStateChanged();
+		this->GetValue_location() += val;
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 		return *this;
 	}
 
 	const Type& operator++()
 	{
-		++this->m_Value;
-		this->NetworkStateChanged();
-		return this->m_Value;
+		++this->GetValue_location();
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
+		return this->GetValue_location();
 	}
 	
 	Type operator++( int ) // postfix version..
 	{
-		Type val = this->m_Value;
-		this->m_Value++;
-		this->NetworkStateChanged();
+		Type val = this->GetValue_location();
+		this->GetValue_location()++;
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 		return val;
 	}
 
 	template< class C >
 	Type operator+( const C &val ) const 
 	{
-		return this->m_Value + val; 
+		return this->GetValue_location() + val; 
 	}
 
 	template< class C >
 	CNetworkVarArithmeticBaseImpl& operator-=( const C &val ) 
 	{
-		this->m_Value -= val;
-		this->NetworkStateChanged();
+		this->GetValue_location() -= val;
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 		return *this;
 	}
 
 	const Type& operator--()
 	{
-		--this->m_Value;
-		this->NetworkStateChanged();
-		return this->m_Value;
+		--this->GetValue_location();
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
+		return this->GetValue_location();
 	}
 
 	Type operator--( int ) // postfix version..
 	{
-		Type val = this->m_Value;
-		this->m_Value--;
-		this->NetworkStateChanged();
+		Type val = this->GetValue_location();
+		this->GetValue_location()--;
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 		return val;
 	}
 
 	template< class C >
 	Type operator-( const C &val ) const
 	{ 
-		return this->m_Value - val; 
+		return this->GetValue_location() - val; 
 	}
 	
 	template< class C >
 	CNetworkVarArithmeticBaseImpl& operator/=( const C &val ) 
 	{
-		this->m_Value /= val;
-		this->NetworkStateChanged();
+		this->GetValue_location() /= val;
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 		return *this;
 	}
 
 	template< class C >
 	Type operator/( const C &val ) const
 	{
-		return this->m_Value / val; 
+		return this->GetValue_location() / val; 
 	}
 
 	template< class C >
 	CNetworkVarArithmeticBaseImpl& operator*=( const C &val ) 
 	{
-		this->m_Value *= val;
-		this->NetworkStateChanged();
+		this->GetValue_location() *= val;
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 		return *this;
 	}
 
 	template< class C >
 	Type operator*( const C &val ) const
 	{
-		return this->m_Value * val; 
+		return this->GetValue_location() * val; 
 	}
 	
 	template< class C >
 	CNetworkVarArithmeticBaseImpl& operator^=( const C &val ) 
 	{
-		this->m_Value ^= val;
-		this->NetworkStateChanged();
+		this->GetValue_location() ^= val;
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 		return *this;
 	}
 
@@ -681,54 +752,60 @@ public:
 	template< class C >
 	CNetworkVarArithmeticBaseImpl& operator&=( const C &val ) 
 	{	
-		this->m_Value &= val;
-		this->NetworkStateChanged();
+		this->GetValue_location() &= val;
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 		return *this;
 	}
 
 	template< class C >
 	Type operator&( const C &val ) const
 	{
-		return this->m_Value & val; 
+		return this->GetValue_location() & val; 
 	}
 
 	template< class C >
 	CNetworkVarArithmeticBaseImpl& operator|=( const C &val ) 
 	{
-		this->m_Value |= val;
-		this->NetworkStateChanged();
+		this->GetValue_location() |= val;
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
 		return *this;
 	}
 
 	template< class C >
 	Type operator|( const C &val ) const
 	{
-		return this->m_Value | val; 
+		return this->GetValue_location() | val; 
 	}
 
 	template< class C >
 	bool operator>( const C &val ) const
-	{ return (this->m_Value > val); }
+	{ return (this->GetValue_location() > val); }
 	template< class C >
 	bool operator<( const C &val ) const
-	{ return (this->m_Value < val); }
+	{ return (this->GetValue_location() < val); }
 	template< class C >
 	bool operator>=( const C &val ) const
-	{ return (this->m_Value >= val); }
+	{ return (this->GetValue_location() >= val); }
 	template< class C >
 	bool operator<=( const C &val ) const
-	{ return (this->m_Value <= val); }
+	{ return (this->GetValue_location() <= val); }
 };
 
 template< class Type, class Changer >
 class CNetworkVarBase : public CNetworkVarArithmeticBaseImpl<Type, Changer>
 {
+	typedef CNetworkVarArithmeticBaseImpl<Type, Changer> base;
+
 public:
 	using CNetworkVarArithmeticBaseImpl<Type, Changer>::CNetworkVarArithmeticBaseImpl;
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::operator=;
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::operator!=;
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::operator==;
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::Set;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
 };
 
 template< class Type, class Changer >
@@ -737,68 +814,78 @@ class CNetworkColorBaseImpl : public CNetworkVarBaseImpl< Type, Changer >
 	typedef CNetworkVarBaseImpl< Type, Changer > base;
 
 public:
-	using CNetworkVarBaseImpl<Type, Changer>::CNetworkVarBaseImpl;
-	using CNetworkVarBaseImpl<Type, Changer>::operator=;
-	using CNetworkVarBaseImpl<Type, Changer>::operator!=;
-	using CNetworkVarBaseImpl<Type, Changer>::operator==;
-	using CNetworkVarBaseImpl<Type, Changer>::Set;
+	using CNetworkVarBaseImpl< Type, Changer >::CNetworkVarBaseImpl;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
 
 	inline void Init( byte rVal, byte gVal, byte bVal )
 	{
 		this->SetColor( rVal, gVal, bVal );
 	}
 
-	inline byte GetR() const { return this->m_Value.r(); }
-	inline byte GetG() const { return this->m_Value.g(); }
-	inline byte GetB() const { return this->m_Value.b(); }
+	inline byte GetR() const { return this->Get().r(); }
+	inline byte GetG() const { return this->Get().g(); }
+	inline byte GetB() const { return this->Get().b(); }
 	inline void SetR( byte val ) { this->SetVal( &Type::r, &Type::SetR, val ); }
 	inline void SetG( byte val ) { this->SetVal( &Type::g, &Type::SetG, val ); }
 	inline void SetB( byte val ) { this->SetVal( &Type::b, &Type::SetB, val ); }
 
 	inline void SetColor( byte rVal, byte gVal, byte bVal )
 	{
-		if ( this->m_Value.r() != rVal || this->m_Value.g() != gVal || this->m_Value.b() != bVal )
+	#ifndef CLIENT_DLL
+		Type &clr = this->GetWithoutModify();
+		if ( clr.r() != rVal || clr.g() != gVal || clr.b() != bVal )
 		{
-			this->NetworkStateChanged();
-			this->m_Value.SetColor( rVal, gVal, bVal );
+			this->CallOuterNetworkStateChanged();
+			clr.SetColor( rVal, gVal, bVal );
 		}
+	#else
+		this->GetForModify().SetColor( rVal, gVal, bVal );
+	#endif
 	}
 
 protected:
 	inline void SetVal( unsigned char (Type::*get_func)() const, void(Type::*set_func)(unsigned char), const byte &in )
 	{
-		if ( (this->m_Value.*get_func)() != in )
+	#ifndef CLIENT_DLL
+		Type &clr = this->GetWithoutModify();
+		if ( (clr.*get_func)() != in )
 		{
-			this->NetworkStateChanged();
-			(this->m_Value.*set_func)( in );
+			this->CallOuterNetworkStateChanged();
+			(clr.*set_func)( in );
 		}
+	#else
+		(this->GetForModify().*set_func)( in );
+	#endif
 	}
 };
 
-template< class Type, class Changer >
-class CNetworkColor24Base : public CNetworkColorBaseImpl< Type, Changer >
+template< class Changer >
+class CNetworkColor24Base : public CNetworkColorBaseImpl< color24, Changer >
 {
-	typedef CNetworkColorBaseImpl< Type, Changer > base;
+	typedef CNetworkColorBaseImpl< color24, Changer > base;
 
 public:
-	using CNetworkColorBaseImpl<Type, Changer>::CNetworkColorBaseImpl;
-	using CNetworkColorBaseImpl<Type, Changer>::operator=;
-	using CNetworkColorBaseImpl<Type, Changer>::operator!=;
-	using CNetworkColorBaseImpl<Type, Changer>::operator==;
-	using CNetworkColorBaseImpl<Type, Changer>::Set;
+	using CNetworkColorBaseImpl< color24, Changer >::CNetworkColorBaseImpl;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
 };
 
-template< class Type, class Changer >
-class CNetworkColor32Base : public CNetworkColorBaseImpl< Type, Changer >
+template< class Changer >
+class CNetworkColor32Base : public CNetworkColorBaseImpl< color32, Changer >
 {
-	typedef CNetworkColorBaseImpl< Type, Changer > base;
+	typedef CNetworkColorBaseImpl< color32, Changer > base;
 
 public:
-	using CNetworkColorBaseImpl<Type, Changer>::CNetworkColorBaseImpl;
-	using CNetworkColorBaseImpl<Type, Changer>::operator=;
-	using CNetworkColorBaseImpl<Type, Changer>::operator!=;
-	using CNetworkColorBaseImpl<Type, Changer>::operator==;
-	using CNetworkColorBaseImpl<Type, Changer>::Set;
+	using CNetworkColorBaseImpl< color32, Changer >::CNetworkColorBaseImpl;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
 
 	using base::SetColor;
 	using base::Init;
@@ -808,31 +895,36 @@ public:
 		this->SetColor( rVal, gVal, bVal, aVal );
 	}
 
-	inline byte GetA() const { return this->m_Value.a(); }
-	inline byte a() const { return this->m_Value.a(); }
-	inline void SetA( byte val ) { this->SetVal( &Type::a, &Type::SetA, val ); }
+	inline byte GetA() const { return this->Get().a(); }
+	inline byte a() const { return this->Get().a(); }
+	inline void SetA( byte val ) { this->SetVal( &color32::a, &color32::SetA, val ); }
 
 	inline void SetColor( byte rVal, byte gVal, byte bVal, byte aVal )
 	{
-		if ( this->m_Value.r() != rVal || this->m_Value.g() != gVal || this->m_Value.b() != bVal || this->m_Value.a() != aVal )
+	#ifndef CLIENT_DLL
+		color32 &clr = this->GetWithoutModify();
+		if ( clr.r() != rVal || clr.g() != gVal || clr.b() != bVal || clr.a() != aVal )
 		{
-			this->NetworkStateChanged();
-			this->m_Value.SetColor( rVal, gVal, bVal, aVal );
+			this->CallOuterNetworkStateChanged();
+			clr.SetColor( rVal, gVal, bVal, aVal );
 		}
+	#else
+		this->GetForModify().SetColor( rVal, gVal, bVal, aVal );
+	#endif
 	}
 };
 
-template< class Type, class Changer >
-class CNetworkColor32EBase : public CNetworkColorBaseImpl< Type, Changer >
+template< class Changer >
+class CNetworkColor32EBase : public CNetworkColorBaseImpl< ColorRGBExp32, Changer >
 {
-	typedef CNetworkColorBaseImpl< Type, Changer > base;
+	typedef CNetworkColorBaseImpl< ColorRGBExp32, Changer > base;
 
 public:
-	using CNetworkColorBaseImpl<Type, Changer>::CNetworkColorBaseImpl;
-	using CNetworkColorBaseImpl<Type, Changer>::operator=;
-	using CNetworkColorBaseImpl<Type, Changer>::operator!=;
-	using CNetworkColorBaseImpl<Type, Changer>::operator==;
-	using CNetworkColorBaseImpl<Type, Changer>::Set;
+	using CNetworkColorBaseImpl< ColorRGBExp32, Changer >::CNetworkColorBaseImpl;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
 
 	using base::SetColor;
 	using base::Init;
@@ -842,107 +934,168 @@ public:
 		this->SetColor( rVal, gVal, bVal, eVal );
 	}
 
-	inline byte GetE() const { return this->m_Value.e(); }
-	inline byte e() const { return this->m_Value.e(); }
-	inline void SetE( byte val ) { this->SetVal( &Type::e, &Type::SetE, val ); }
+	inline byte GetE() const { return this->Get().e(); }
+	inline byte e() const { return this->Get().e(); }
+	inline void SetE( byte val ) { this->SetVal( &ColorRGBExp32::e, &ColorRGBExp32::SetE, val ); }
 
 	inline void SetColor( byte rVal, byte gVal, byte bVal, byte eVal )
 	{
-		if ( this->m_Value.r() != rVal || this->m_Value.g() != gVal || this->m_Value.b() != bVal || this->m_Value.e() != eVal )
+	#ifndef CLIENT_DLL
+		ColorRGBExp32 &clr = this->GetWithoutModify();
+		if ( clr.r() != rVal || clr.g() != gVal || clr.b() != bVal || clr.e() != eVal )
 		{
-			this->NetworkStateChanged();
-			this->m_Value.SetColor( rVal, gVal, bVal, eVal );
+			this->CallOuterNetworkStateChanged();
+			clr.SetColor( rVal, gVal, bVal, eVal );
 		}
+	#else
+		this->GetForModify().SetColor( rVal, gVal, bVal, eVal );
+	#endif
 	}
 };
 
 // Network vector wrapper.
 template< class Type, class Changer >
-class CNetworkVectorBase : public CNetworkVarArithmeticBaseImpl< Type, Changer >
+class CNetworkVectorBaseImpl : public CNetworkVarArithmeticBaseImpl< Type, Changer >
 {
 	typedef CNetworkVarArithmeticBaseImpl< Type, Changer > base;
 
 public:
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::CNetworkVarArithmeticBaseImpl;
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::operator=;
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::operator!=;
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::operator==;
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::Set;
+	using CNetworkVarArithmeticBaseImpl< Type, Changer >::CNetworkVarArithmeticBaseImpl;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
 
 	inline void Init( float ix=0, float iy=0, float iz=0 ) 
 	{
-		if(this->m_Value.x != ix || this->m_Value.y != iy || this->m_Value.z != iz) {
-			this->m_Value.Init(ix,iy,iz);
-			this->NetworkStateChanged();
+	#ifndef CLIENT_DLL
+		Type &vec = this->GetWithoutModify();
+		if(vec.x != ix || vec.y != iy || vec.z != iz) {
+			vec.Init(ix,iy,iz);
+			this->CallOuterNetworkStateChanged();
 		}
+	#else
+		this->GetForModify().Init(ix,iy,iz);
+	#endif
 	}
 
-	inline float GetX() const { return this->m_Value.x; }
-	inline float GetY() const { return this->m_Value.y; }
-	inline float GetZ() const { return this->m_Value.z; }
-	inline float operator[]( int i ) const { return this->m_Value[i]; }
+	inline float GetX() const { return this->Get().x; }
+	inline float GetY() const { return this->Get().y; }
+	inline float GetZ() const { return this->Get().z; }
+	inline float operator[]( int i ) const { return this->Get()[i]; }
 
-	inline void SetX( float val ) { this->DetectChange( this->m_Value.x, val ); }
-	inline void SetY( float val ) { this->DetectChange( this->m_Value.y, val ); }
-	inline void SetZ( float val ) { this->DetectChange( this->m_Value.z, val ); }
-	inline void Set( int i, float val ) { this->DetectChange( this->m_Value[i], val ); }
+	inline void SetX( float val ) { this->DetectChange( this->GetWithoutModify().x, val ); }
+	inline void SetY( float val ) { this->DetectChange( this->GetWithoutModify().y, val ); }
+	inline void SetZ( float val ) { this->DetectChange( this->GetWithoutModify().z, val ); }
+	inline void Set( int i, float val ) { this->DetectChange( this->GetWithoutModify()[i], val ); }
 
 	float LengthSqr() const
-	{ return this->m_Value.LengthSqr(); }
+	{ return this->Get().LengthSqr(); }
 
 private:
 	inline void DetectChange( float &out, float in ) 
 	{
+	#ifndef CLIENT_DLL
 		if ( out != in ) 
 		{
-			this->NetworkStateChanged();
+			this->CallOuterNetworkStateChanged();
 			out = in;
 		}
+	#else
+		out = in;
+	#endif
 	}
 };
 
-
-// Network vector wrapper.
-template< class Type, class Changer >
-class CNetworkQuaternionBase : public CNetworkVarArithmeticBaseImpl< Type, Changer >
+template< class Changer >
+class CNetworkVectorWorldspaceBase : public CNetworkVectorBaseImpl< Vector, Changer >
 {
-	typedef CNetworkVarArithmeticBaseImpl< Type, Changer > base;
+	typedef CNetworkVectorBaseImpl< Vector, Changer > base;
 
 public:
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::CNetworkVarArithmeticBaseImpl;
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::operator=;
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::operator!=;
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::operator==;
-	using CNetworkVarArithmeticBaseImpl<Type, Changer>::Set;
+	using CNetworkVectorBaseImpl< Vector, Changer >::CNetworkVectorBaseImpl;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
+};
+
+template< class Changer >
+class CNetworkVectorBase : public CNetworkVectorBaseImpl< Vector, Changer >
+{
+	typedef CNetworkVectorBaseImpl< Vector, Changer > base;
+
+public:
+	using CNetworkVectorBaseImpl< Vector, Changer >::CNetworkVectorBaseImpl;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
+};
+
+template< class Changer >
+class CNetworkQAngleBase : public CNetworkVectorBaseImpl< QAngle, Changer >
+{
+	typedef CNetworkVectorBaseImpl< QAngle, Changer > base;
+
+public:
+	using CNetworkVectorBaseImpl< QAngle, Changer >::CNetworkVectorBaseImpl;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
+};
+
+// Network vector wrapper.
+template< class Changer >
+class CNetworkQuaternionBase : public CNetworkVarArithmeticBaseImpl< Quaternion, Changer >
+{
+	typedef CNetworkVarArithmeticBaseImpl< Quaternion, Changer > base;
+
+public:
+	using CNetworkVarArithmeticBaseImpl< Quaternion, Changer >::CNetworkVarArithmeticBaseImpl;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
 
 	inline void Init( float ix=0, float iy=0, float iz=0, float iw = 0 ) 
 	{
-		if(this->m_Value.x != ix || this->m_Value.y != iy || this->m_Value.z != iz || this->m_Value.w != iw) {
-			this->m_Value.Init(ix,iy,iz,iw);
-			this->NetworkStateChanged();
+	#ifndef CLIENT_DLL
+		Quaternion &vec = this->GetWithoutModify();
+		if(vec.x != ix || vec.y != iy || vec.z != iz || vec.w != iw) {
+			vec.Init(ix,iy,iz,iw);
+			this->CallOuterNetworkStateChanged();
 		}
+	#else
+		this->GetForModify().Init(ix,iy,iz,iw);
+	#endif
 	}
 
-	inline float GetX() const { return this->m_Value.x; }
-	inline float GetY() const { return this->m_Value.y; }
-	inline float GetZ() const { return this->m_Value.z; }
-	inline float GetW() const { return this->m_Value.w; }
-	inline float operator[]( int i ) const { return this->m_Value[i]; }
+	inline float GetX() const { return this->Get().x; }
+	inline float GetY() const { return this->Get().y; }
+	inline float GetZ() const { return this->Get().z; }
+	inline float GetW() const { return this->Get().w; }
+	inline float operator[]( int i ) const { return this->Get()[i]; }
 
-	inline void SetX( float val ) { this->DetectChange( this->m_Value.x, val ); }
-	inline void SetY( float val ) { this->DetectChange( this->m_Value.y, val ); }
-	inline void SetZ( float val ) { this->DetectChange( this->m_Value.z, val ); }
-	inline void SetW( float val ) { this->DetectChange( this->m_Value.w, val ); }
-	inline void Set( int i, float val ) { this->DetectChange( this->m_Value[i], val ); }
+	inline void SetX( float val ) { this->DetectChange( this->GetWithoutModify().x, val ); }
+	inline void SetY( float val ) { this->DetectChange( this->GetWithoutModify().y, val ); }
+	inline void SetZ( float val ) { this->DetectChange( this->GetWithoutModify().z, val ); }
+	inline void SetW( float val ) { this->DetectChange( this->GetWithoutModify().w, val ); }
+	inline void Set( int i, float val ) { this->DetectChange( this->GetWithoutModify()[i], val ); }
 
 private:
 	inline void DetectChange( float &out, float in ) 
 	{
+	#ifndef CLIENT_DLL
 		if ( out != in ) 
 		{
-			this->NetworkStateChanged();
+			this->CallOuterNetworkStateChanged();
 			out = in;
 		}
+	#else
+		out = in;
+	#endif
 	}
 };
 
@@ -960,11 +1113,11 @@ class CNetworkHandleBaseImpl : public CNetworkVarBaseImpl< CHandle<Type>, Change
 	typedef CNetworkVarBaseImpl< CHandle<Type>, Changer > base;
 
 public:
-	using CNetworkVarBaseImpl<CHandle<Type>, Changer>::CNetworkVarBaseImpl;
-	using CNetworkVarBaseImpl<CHandle<Type>, Changer>::operator=;
-	using CNetworkVarBaseImpl<CHandle<Type>, Changer>::operator!=;
-	using CNetworkVarBaseImpl<CHandle<Type>, Changer>::operator==;
-	using CNetworkVarBaseImpl<CHandle<Type>, Changer>::Set;
+	using CNetworkVarBaseImpl< CHandle<Type>, Changer >::CNetworkVarBaseImpl;
+	using base::operator=;
+	using base::operator!=;
+	using base::operator==;
+	using base::Set;
 
 	CNetworkHandleBaseImpl &operator=( const Type *val ) 
 	{ 
@@ -992,180 +1145,182 @@ public:
 
 	bool operator !() const 
 	{ 
-		return ( this->m_Value.Get() == NULL ); 
+		return ( this->base::Get().Get() == NULL ); 
 	}
 
 	explicit operator bool() const 
 	{ 
-		return ( this->m_Value.Get() != NULL );
+		return ( this->base::Get().Get() != NULL );
 	}
 	
 	operator Type*() const 
 	{ 
-		return static_cast< Type* >( this->m_Value.Get() );
+		return static_cast< Type* >( this->base::Get().Get() );
 	}
 
 	explicit operator const Type*() const 
 	{ 
-		return static_cast< const Type* >( this->m_Value.Get() );
+		return static_cast< const Type* >( this->base::Get().Get() );
 	}
 
 	explicit operator IHandleEntity*() const 
 	{ 
-		return static_cast< IHandleEntity* >( this->m_Value.Get() );
+		return static_cast< IHandleEntity* >( this->base::Get().Get() );
 	}
 
 	explicit operator const IHandleEntity*() const 
 	{ 
-		return static_cast< const IHandleEntity* >( this->m_Value.Get() );
+		return static_cast< const IHandleEntity* >( this->base::Get().Get() );
 	}
 
 	void Set( const Type *val )
 	{
-		if ( this->m_Value.Get() != val )
+	#ifndef CLIENT_DLL
+		CHandle<Type> &hndl = this->GetWithoutModify();
+		if ( hndl.Get() != val )
 		{
-			this->NetworkStateChanged();
-			this->m_Value.Set( val );
+			this->CallOuterNetworkStateChanged();
+			hndl.Set( val );
 		}
+	#else
+		this->GetForModify().Set( val );
+	#endif
 	}
 
 	void Set( Type *val )
 	{
-		if ( this->m_Value.Get() != val )
-		{
-			this->NetworkStateChanged();
-			this->m_Value.Set( val );
-		}
+		this->Set( static_cast<const Type *>(val) );
 	}
 
 	void Set( const CHandle<Type> &val )
 	{
-		if ( this->m_Value.operator!=(val) )
-		{
-			this->NetworkStateChanged();
-			this->m_Value.Set( val );
-		}
+		this->Set( val.Get() );
 	}
 
 	void Set( std::nullptr_t )
 	{
-		if ( this->m_Value.Get() != NULL )
-		{
-			this->NetworkStateChanged();
-			this->m_Value.Term();
-		}
+		this->Term();
 	}
 
 	void Term()
 	{
-		if ( this->m_Value.Get() != NULL )
+	#ifndef CLIENT_DLL
+		CHandle<Type> &hndl = this->GetWithoutModify();
+		if ( hndl.Get() != NULL )
 		{
-			this->NetworkStateChanged();
-			this->m_Value.Term();
+			this->CallOuterNetworkStateChanged();
+			hndl.Term();
 		}
+	#else
+		this->GetForModify().Term();
+	#endif
 	}
 	
 	Type* Get() const 
 	{ 
-		return static_cast< Type* >( this->m_Value.Get() );
+		return static_cast< Type* >( this->base::Get().Get() );
 	}
 
 	Type* operator->() const 
 	{ 
-		return static_cast< Type* >( this->m_Value.Get() );
+		return static_cast< Type* >( this->base::Get().Get() );
 	}
 
 	bool operator==( const Type *val ) const 
 	{
-		return this->m_Value.Get() == val; 
+		return this->base::Get().Get() == val; 
 	}
 
 	bool operator!=( const Type *val ) const 
 	{
-		return this->m_Value.Get() != val;
+		return this->base::Get().Get() != val;
 	}
 
 	bool operator==( Type *val ) const 
 	{
-		return this->m_Value.Get() == val; 
+		return this->base::Get().Get() == val; 
 	}
 
 	bool operator!=( Type *val ) const 
 	{
-		return this->m_Value.Get() != val;
+		return this->base::Get().Get() != val;
 	}
 
 	bool operator==( const IHandleEntity *val ) const 
 	{
-		return this->m_Value.Get() == val; 
+		return this->base::Get().Get() == val; 
 	}
 
 	bool operator!=( const IHandleEntity *val ) const 
 	{
-		return this->m_Value.Get() != val;
+		return this->base::Get().Get() != val;
 	}
 
 	bool operator==( IHandleEntity *val ) const 
 	{
-		return this->m_Value.Get() == val; 
+		return this->base::Get().Get() == val; 
 	}
 
 	bool operator!=( IHandleEntity *val ) const 
 	{
-		return this->m_Value.Get() != val;
+		return this->base::Get().Get() != val;
 	}
 
 	bool operator==( std::nullptr_t ) const 
 	{
-		return this->m_Value.Get() == NULL; 
+		return this->base::Get().Get() == NULL; 
 	}
 
 	bool operator!=( std::nullptr_t ) const 
 	{
-		return this->m_Value.Get() != NULL;
+		return this->base::Get().Get() != NULL;
 	}
 };
 
 template< class Type, class Changer >
 class CNetworkHandleBase : public CNetworkHandleBaseImpl<Type, Changer>
 {
+	typedef CNetworkHandleBaseImpl<Type, Changer> base;
+
 public:
 	using CNetworkHandleBaseImpl<Type, Changer>::CNetworkHandleBaseImpl;
-	using CNetworkHandleBaseImpl<Type, Changer>::operator=;
-	using CNetworkHandleBaseImpl<Type, Changer>::operator==;
-	using CNetworkHandleBaseImpl<Type, Changer>::operator!=;
-	using CNetworkHandleBaseImpl<Type, Changer>::Set;
+	using base::operator=;
+	using base::operator==;
+	using base::operator!=;
+	using base::Set;
 
 	bool operator==( const CGameBaseEntity *val ) const 
 	{
-		return this->m_Value.Get() == val; 
+		return this->base::Get().Get() == val; 
 	}
 
 	bool operator!=( const CGameBaseEntity *val ) const 
 	{
-		return this->m_Value.Get() != val;
+		return this->base::Get().Get() != val;
 	}
 
 	bool operator==( CGameBaseEntity *val ) const 
 	{
-		return this->m_Value.Get() == val; 
+		return this->base::Get().Get() == val; 
 	}
 
 	bool operator!=( CGameBaseEntity *val ) const 
 	{
-		return this->m_Value.Get() != val;
+		return this->base::Get().Get() != val;
 	}
 };
 
 template< class Changer >
 class CNetworkHandleBase<CGameBaseEntity, Changer> : public CNetworkHandleBaseImpl<CGameBaseEntity, Changer>
 {
+	typedef CNetworkHandleBaseImpl<CGameBaseEntity, Changer> base;
+
 public:
 	using CNetworkHandleBaseImpl<CGameBaseEntity, Changer>::CNetworkHandleBaseImpl;
-	using CNetworkHandleBaseImpl<CGameBaseEntity, Changer>::operator=;
-	using CNetworkHandleBaseImpl<CGameBaseEntity, Changer>::operator==;
-	using CNetworkHandleBaseImpl<CGameBaseEntity, Changer>::operator!=;
-	using CNetworkHandleBaseImpl<CGameBaseEntity, Changer>::Set;
+	using base::operator=;
+	using base::operator==;
+	using base::operator!=;
+	using base::Set;
 };
 
 template< class Type, class Changer >
@@ -1183,31 +1338,24 @@ private:
 	CNetworkVarBase() = delete;
 	~CNetworkVarBase() = delete;
 };
-
-#define CNetworkHandle( type, name ) CNetworkHandleInternal( type, name, NetworkStateChanged )
-
-#define CNetworkHandleInternal( type, name, stateChangedFn ) \
-	NETWORK_VAR_START( type, name ) \
-	NETWORK_VAR_END( type, name, CNetworkHandleBase, stateChangedFn )
-
 #endif
 
-template< class Type, class Changer >
-class CNetworkStringTBaseImpl : public CNetworkVarBaseImpl< Type, Changer >
+template< class Changer >
+class CNetworkStringTBaseImpl : public CNetworkVarBaseImpl< string_t, Changer >
 {
-	typedef CNetworkVarBaseImpl< Type, Changer > base;
+	typedef CNetworkVarBaseImpl< string_t, Changer > base;
 
 public:
-	using CNetworkVarBaseImpl<Type, Changer>::CNetworkVarBaseImpl;
-	using CNetworkVarBaseImpl<Type, Changer>::operator=;
-	using CNetworkVarBaseImpl<Type, Changer>::operator==;
-	using CNetworkVarBaseImpl<Type, Changer>::operator!=;
-	using CNetworkVarBaseImpl<Type, Changer>::Set;
+	using CNetworkVarBaseImpl< string_t, Changer >::CNetworkVarBaseImpl;
+	using base::operator=;
+	using base::operator==;
+	using base::operator!=;
+	using base::Set;
 
 	bool operator==( const char *val ) const
-	{ return this->m_Value.operator==(val); }
+	{ return this->Get().operator==(val); }
 	bool operator!=( const char *val ) const
-	{ return this->m_Value.operator!=(val); }
+	{ return this->Get().operator!=(val); }
 };
 
 template< class Changer >
@@ -1218,10 +1366,6 @@ private:
 	~CNetworkVarBase() = delete;
 };
 
-#define CNetworkStringT( name ) \
-	NETWORK_VAR_START( string_t, name ) \
-	NETWORK_VAR_END( string_t, name, CNetworkStringTBaseImpl, NetworkStateChanged )
-
 template< class Changer >
 class CNetworkVarBase<modelindex_t, Changer> final
 {
@@ -1230,27 +1374,83 @@ private:
 	~CNetworkVarBase() = delete;
 };
 
-template< class Type, class Changer >
-class CNetworkModelIndexBaseImpl : public CNetworkVarBaseImpl< Type, Changer >
+template< class Changer >
+class CNetworkModelIndexBaseImpl : public CNetworkVarBaseImpl< modelindex_t, Changer >
 {
-	typedef CNetworkVarBaseImpl< Type, Changer > base;
+	typedef CNetworkVarBaseImpl< modelindex_t, Changer > base;
 
 public:
-	using CNetworkVarBaseImpl<Type, Changer>::CNetworkVarBaseImpl;
-	using CNetworkVarBaseImpl<Type, Changer>::operator=;
-	using CNetworkVarBaseImpl<Type, Changer>::operator==;
-	using CNetworkVarBaseImpl<Type, Changer>::operator!=;
-	using CNetworkVarBaseImpl<Type, Changer>::Set;
+	using CNetworkVarBaseImpl< modelindex_t, Changer >::CNetworkVarBaseImpl;
+	using base::operator=;
+	using base::operator==;
+	using base::operator!=;
+	using base::Set;
 };
 
-#define CNetworkModelIndex( name ) \
-	NETWORK_VAR_START( modelindex_t, name ) \
-	NETWORK_VAR_END( modelindex_t, name, CNetworkModelIndexBaseImpl, NetworkStateChanged )
+template< class Changer >
+class CNetworkTimeBase : public CNetworkVarArithmeticBaseImpl< float, Changer >
+{
+	typedef CNetworkVarArithmeticBaseImpl< float, Changer > base;
 
-// Use this macro to define a network variable.
-#define CNetworkVar( type, name ) \
-	NETWORK_VAR_START( type, name ) \
-	NETWORK_VAR_END( type, name, CNetworkVarBase, NetworkStateChanged )
+public:
+	using CNetworkVarArithmeticBaseImpl< float, Changer >::CNetworkVarArithmeticBaseImpl;
+	using base::operator=;
+	using base::operator==;
+	using base::operator!=;
+	using base::Set;
+};
+
+template< class Changer >
+class CNetworkDistanceBase : public CNetworkVarArithmeticBaseImpl< float, Changer >
+{
+	typedef CNetworkVarArithmeticBaseImpl< float, Changer > base;
+
+public:
+	using CNetworkVarArithmeticBaseImpl< float, Changer >::CNetworkVarArithmeticBaseImpl;
+	using base::operator=;
+	using base::operator==;
+	using base::operator!=;
+	using base::Set;
+};
+
+template< class Changer >
+class CNetworkScaleBase : public CNetworkVarArithmeticBaseImpl< float, Changer >
+{
+	typedef CNetworkVarArithmeticBaseImpl< float, Changer > base;
+
+public:
+	using CNetworkVarArithmeticBaseImpl< float, Changer >::CNetworkVarArithmeticBaseImpl;
+	using base::operator=;
+	using base::operator==;
+	using base::operator!=;
+	using base::Set;
+};
+
+template< class Changer >
+class CNetworkSequenceBase : public CNetworkVarBaseImpl< sequence_t, Changer >
+{
+	typedef CNetworkVarBaseImpl< sequence_t, Changer > base;
+
+public:
+	using CNetworkVarBaseImpl< sequence_t, Changer >::CNetworkVarBaseImpl;
+	using base::operator=;
+	using base::operator==;
+	using base::operator!=;
+	using base::Set;
+};
+
+template< class Changer >
+class CNetworkAnimCycleBase : public CNetworkVarArithmeticBaseImpl< float, Changer >
+{
+	typedef CNetworkVarArithmeticBaseImpl< float, Changer > base;
+
+public:
+	using CNetworkVarArithmeticBaseImpl< float, Changer >::CNetworkVarArithmeticBaseImpl;
+	using base::operator=;
+	using base::operator==;
+	using base::operator!=;
+	using base::Set;
+};
 
 template< class Type, class Changer >
 class CNetworkVarBase<CUtlVector<Type>, Changer> final
@@ -1266,158 +1466,122 @@ class CNetworkUtlVectorBaseImpl : public CNetworkVarBaseImpl< Type, Changer >
 	typedef CNetworkVarBaseImpl< Type, Changer > base;
 
 public:
-	using CNetworkVarBaseImpl<Type, Changer>::CNetworkVarBaseImpl;
-	using CNetworkVarBaseImpl<Type, Changer>::operator=;
-	using CNetworkVarBaseImpl<Type, Changer>::operator==;
-	using CNetworkVarBaseImpl<Type, Changer>::operator!=;
-	using CNetworkVarBaseImpl<Type, Changer>::Set;
+	using CNetworkVarBaseImpl< Type, Changer >::CNetworkVarBaseImpl;
+	using base::operator=;
+	using base::operator==;
+	using base::operator!=;
+	using base::Set;
 
 	int Count() const
 	{
-		return this->m_Value.Count();
+		return this->Get().Count();
 	}
 
 	int Size() const
 	{
-		return this->m_Value.Size();
+		return this->Get().Size();
 	}
 
 	bool IsValidIndex( int index ) const
 	{
-		return this->m_Value.IsValidIndex( index );
+		return this->Get().IsValidIndex( index );
 	}
 
 	void Purge()
 	{
-		if(this->m_Value.Count() > 0) {
-			this->m_Value.Purge();
-			this->NetworkStateChanged();
+	#ifndef CLIENT_DLL
+		Type &vec = this->GetWithoutModify();
+		if(vec.Count() > 0) {
+			vec.Purge();
+			this->CallOuterNetworkStateChanged();
 		}
+	#else
+		this->GetForModify().Purge();
+	#endif
 	}
 
 	void SetCount( int count )
 	{
-		if(this->m_Value.Count() != count) {
-			this->m_Value.SetCount( count );
-			this->NetworkStateChanged();
+	#ifndef CLIENT_DLL
+		Type &vec = this->GetWithoutModify();
+		if(vec.Count() != count) {
+			vec.SetCount( count );
+			this->CallOuterNetworkStateChanged();
 		}
+	#else
+		this->GetForModify().SetCount( count );
+	#endif
 	}
 
 	void Set( int index, const typename Type::ElemType_t &value )
 	{
-		if(this->m_Value.operator[](index) != value) {
-			this->m_Value.operator[](index) = value;
-			this->NetworkStateChanged();
+	#ifndef CLIENT_DLL
+		Type &vec = this->GetWithoutModify();
+		if(vec.operator[](index) != value) {
+			vec.operator[](index) = value;
+			this->CallOuterNetworkStateChanged();
 		}
+	#else
+		this->GetForModify().operator[](index) = value;
+	#endif
 	}
 
 	int AddMultipleToTail( int num )
 	{
-		this->NetworkStateChanged();
-		return this->m_Value.AddMultipleToTail( num );
+		return this->GetForModify().AddMultipleToTail( num );
 	}
 
 	void RemoveMultiple( int elem, int num )
 	{
-		this->NetworkStateChanged();
-		this->m_Value.RemoveMultiple( elem, num );
+		this->GetForModify().RemoveMultiple( elem, num );
 	}
 
-	Type& GetForModify()
+	bool FindAndRemove( const typename Type::ElemType_t& src )
 	{
-		this->NetworkStateChanged();
-		return this->m_Value;
+	#ifndef CLIENT_DLL
+		Type &vec = this->GetWithoutModify();
+		if(vec.FindAndRemove( src )) {
+			this->CallOuterNetworkStateChanged();
+			return true;
+		}
+		return false;
+	#else
+		return this->GetForModify().FindAndRemove( src );
+	#endif
 	}
 
 	int AddToTail( const typename Type::ElemType_t& src )
 	{
-		this->NetworkStateChanged();
-		return this->m_Value.AddToTail( src );
+		return this->GetForModify().AddToTail( src );
 	}
 
 	int AddToTail( typename Type::ElemType_t&& src )
 	{
-		this->NetworkStateChanged();
-		return this->m_Value.AddToTail( Move(src) );
+		return this->GetForModify().AddToTail( Move(src) );
 	}
+
+	using base::GetForModify;
 
 	typename Type::ElemType_t& GetForModify( int index )
 	{
-		this->NetworkStateChanged();
-		return this->m_Value.operator[](index);
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
+		return this->GetWithoutModify().operator[](index);
 	}
+
+	using base::Get;
 
 	const typename Type::ElemType_t &Get( int index ) const
 	{
-		return this->m_Value.operator[](index);
+		return this->base::Get().operator[](index);
 	}
 
 	const typename Type::ElemType_t &operator[]( int index ) const
 	{
-		return this->m_Value.operator[](index);
+		return this->base::Get().operator[](index);
 	}
 };
-
-#define CNetworkUtlVector( type, name ) \
-	NETWORK_VAR_START( CUtlVector<type>, name ) \
-	NETWORK_VAR_END( CUtlVector<type>, name, CNetworkUtlVectorBaseImpl, NetworkStateChanged )
-
-// Use this macro when you have a base class with a variable, and it doesn't have that variable in a SendTable,
-// but a derived class does. Then, the entity is only flagged as changed when the variable is changed in
-// an entity that wants to transmit the variable.
-#define CNetworkVarForDerived( type, name ) \
-	virtual void NetworkStateChanged_##name() {} \
-	virtual void NetworkStateChanged_##name( void *pVar ) {} \
-	NETWORK_VAR_START( type, name ) \
-	NETWORK_VAR_END( type, name, CNetworkVarBase, NetworkStateChanged_##name )
-
-#define CNetworkVectorForDerived( name ) \
-	virtual void NetworkStateChanged_##name() {} \
-	virtual void NetworkStateChanged_##name( void *pVar ) {} \
-	CNetworkVectorInternal( Vector, name, NetworkStateChanged_##name )
-	
-#define CNetworkHandleForDerived( type, name ) \
-	virtual void NetworkStateChanged_##name() {} \
-	virtual void NetworkStateChanged_##name( void *pVar ) {} \
-	CNetworkHandleInternal( type, name, NetworkStateChanged_##name )
-	
-#define CNetworkArrayForDerived( type, name, count ) \
-	virtual void NetworkStateChanged_##name() {} \
-	virtual void NetworkStateChanged_##name( void *pVar ) {} \
-	CNetworkArrayInternal( type, name, count, NetworkStateChanged_##name )
-
-#define IMPLEMENT_NETWORK_VAR_FOR_DERIVED( name ) \
-	virtual void NetworkStateChanged_##name() { CHECK_USENETWORKVARS NetworkStateChanged(); } \
-	virtual void NetworkStateChanged_##name( void *pVar ) { CHECK_USENETWORKVARS NetworkStateChanged( pVar ); }
-
-
-// This virtualizes the change detection on the variable, but it is ON by default.
-// Use this when you have a base class in which MOST of its derived classes use this variable
-// in their SendTables, but there are a couple that don't (and they
-// can use DISABLE_NETWORK_VAR_FOR_DERIVED).
-#define CNetworkVarForDerived_OnByDefault( type, name ) \
-	virtual void NetworkStateChanged_##name() { CHECK_USENETWORKVARS NetworkStateChanged(); } \
-	virtual void NetworkStateChanged_##name( void *pVar ) { CHECK_USENETWORKVARS NetworkStateChanged( pVar ); } \
-	NETWORK_VAR_START( type, name ) \
-	NETWORK_VAR_END( type, name, CNetworkVarBase, NetworkStateChanged_##name )
-
-#define DISABLE_NETWORK_VAR_FOR_DERIVED( name ) \
-	virtual void NetworkStateChanged_##name() {} \
-	virtual void NetworkStateChanged_##name( void *pVar ) {}
-
-
-
-// Vectors + some convenient helper functions.
-#define CNetworkVector( name ) CNetworkVectorInternal( Vector, name, NetworkStateChanged )
-#define CNetworkQAngle( name ) CNetworkVectorInternal( QAngle, name, NetworkStateChanged )
-
-#define CNetworkVectorInternal( type, name, stateChangedFn ) \
-	NETWORK_VAR_START( type, name ) \
-	NETWORK_VAR_END( type, name, CNetworkVectorBase, stateChangedFn )
-
-#define CNetworkQuaternion( name ) \
-	NETWORK_VAR_START( Quaternion, name ) \
-	NETWORK_VAR_END( Quaternion, name, CNetworkQuaternionBase, NetworkStateChanged )
 
 template< class Changer >
 class CNetworkVarBase<Color32, Changer> final
@@ -1451,126 +1615,694 @@ private:
 	~CNetworkVarBase() = delete;
 };
 
-// Helper for color32's. Contains GetR(), SetR(), etc.. functions.
-#define CNetworkColor32( name ) \
-	NETWORK_VAR_START( color32, name ) \
-	NETWORK_VAR_END( color32, name, CNetworkColor32Base, NetworkStateChanged )
+template <int length, class Changer>
+class CNetworkStringBase
+{
+public:
+	CNetworkStringBase() { m_Value[0] = '\0'; }
+	operator const char*() const { return m_Value; }
+	const char* Get() const { return m_Value; }
+	char* GetForModify()
+	{
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged();
+	#endif
+		return m_Value;
+	}
+protected:
+#ifndef CLIENT_DLL
+	void CallOuterNetworkStateChanged()
+	{
+		Changer::CallOuterNetworkStateChanged_impl( this );
+	}
 
-#define CNetworkColor32E( name ) \
-	NETWORK_VAR_START( ColorRGBExp32, name ) \
-	NETWORK_VAR_END( ColorRGBExp32, name, CNetworkColor32EBase, NetworkStateChanged )
+	void CallOuterNetworkStateChanged( int i )
+	{
+		Changer::CallOuterNetworkStateChanged_impl( this, i );
+	}
+#endif
+private:
+	char m_Value[length];
 
-#define CNetworkColor24( name ) \
-	NETWORK_VAR_START( color24, name ) \
-	NETWORK_VAR_END( color24, name, CNetworkColor24Base, NetworkStateChanged )
+public:
+	static unsigned short GetOffset_memory()
+	{
+		static unsigned short offset = MyOffsetOf(CNetworkStringBase, m_Value);
+		return offset;
+	}
 
-#define CNetworkString( name, length ) \
+	static unsigned short GetOffset_memory( int i )
+	{
+		return GetOffset_memory() + (sizeof(char) * i);
+	}
+};
+
+template <typename type, int count, class Changer>
+class CNetworkArrayBase
+{
+public:
+	template <typename T> friend int ServerClassInit(T *);
+
+	inline CNetworkArrayBase()
+	{
+		for ( int i = 0 ; i < count ; ++i ) {
+			NetworkVarConstruct( m_Value[i] );
+		}
+	}
+
+	const type& operator[]( int i ) const
+	{
+		return Get( i );
+	}
+
+	const type& Get( int i ) const
+	{
+		Assert( i >= 0 && i < count );
+		return m_Value[i];
+	}
+
+	type& GetForModify( int i )
+	{
+		Assert( i >= 0 && i < count );
+	#ifndef CLIENT_DLL
+		this->CallOuterNetworkStateChanged( i );
+	#endif
+		return m_Value[i];
+	}
+
+	void Set( int i, const type &val )
+	{
+		Assert( i >= 0 && i < count );
+	#ifndef CLIENT_DLL
+		if( memcmp( &m_Value[i], &val, sizeof(type) ) )
+		{
+			this->CallOuterNetworkStateChanged( i );
+			m_Value[i] = val;
+		}
+	#else
+		m_Value[i] = val;
+	#endif
+	}
+
+	const type* Base() const { return m_Value; }
+	type* Base() { return m_Value; }
+	static int Count() { return count; }
+
+protected:
+#ifndef CLIENT_DLL
+	void CallOuterNetworkStateChanged()
+	{
+		Changer::CallOuterNetworkStateChanged_impl( this );
+	}
+
+	void CallOuterNetworkStateChanged( int i )
+	{
+		Changer::CallOuterNetworkStateChanged_impl( this, i );
+	}
+#endif
+
+private:
+	type m_Value[count];
+
+public:
+	static unsigned short GetOffset_memory()
+	{
+		static unsigned short offset = MyOffsetOf(CNetworkArrayBase, m_Value);
+		return offset;
+	}
+
+	static unsigned short GetOffset_memory( int i )
+	{
+		return GetOffset_memory() + (sizeof(type) * i);
+	}
+};
+
+template<typename T>
+struct NetworkVarType
+{
+	using type = T;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkColor32Base<C>>
+{
+	using type = color32;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkColor32EBase<C>>
+{
+	using type = ColorRGBExp32;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkColor24Base<C>>
+{
+	using type = color24;
+};
+
+template<typename T, typename C>
+struct NetworkVarType<CNetworkVectorBaseImpl<T, C>>
+{
+	using type = T;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkVectorBase<C>>
+{
+	using type = Vector;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkVectorWorldspaceBase<C>>
+{
+	using type = Vector;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkQAngleBase<C>>
+{
+	using type = QAngle;
+};
+
+template<typename T, typename C>
+struct NetworkVarType<CNetworkVarArithmeticBaseImpl<T, C>>
+{
+	using type = T;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkQuaternionBase<C>>
+{
+	using type = Quaternion;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkStringTBaseImpl<C>>
+{
+	using type = string_t;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkModelIndexBaseImpl<C>>
+{
+	using type = modelindex_t;
+};
+
+template<typename T, typename C>
+struct NetworkVarType<CNetworkUtlVectorBaseImpl<T, C>>
+{
+	using type = T;
+};
+
+template<typename T, typename C>
+struct NetworkVarType<CNetworkVarBase<T, C>>
+{
+	using type = T;
+};
+
+template<typename T, typename C>
+struct NetworkVarType<CNetworkVarBaseImpl<T, C>>
+{
+	using type = T;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkTimeBase<C>>
+{
+	using type = float;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkScaleBase<C>>
+{
+	using type = float;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkDistanceBase<C>>
+{
+	using type = float;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkSequenceBase<C>>
+{
+	using type = sequence_t;
+};
+
+template<typename C>
+struct NetworkVarType<CNetworkAnimCycleBase<C>>
+{
+	using type = float;
+};
+
+#if defined( CLIENT_DLL ) || defined( GAME_DLL )
+template<typename T, typename C>
+struct NetworkVarType<CNetworkHandleBaseImpl<T, C>>
+{
+	using type = CHandle<T>;
+};
+
+template<typename T, typename C>
+struct NetworkVarType<CNetworkHandleBase<T, C>>
+{
+	using type = CHandle<T>;
+};
+#endif
+
+template<int length, typename C>
+struct NetworkVarType<CNetworkStringBase<length, C>>
+{
+	using type = char[length];
+};
+
+template<typename T, int length, typename C>
+struct NetworkVarType<CNetworkArrayBase<T, length, C>>
+{
+	using type = T[length];
+};
+
+template<typename T, typename C>
+struct NetworkVarType<CNetworkVarEmbeddedBase<T, C>>
+{
+	using type = T;
+};
+
+template<typename T, typename C>
+struct NetworkVarType<CNetworkVarEmbeddedCopyableBase<T, C>>
+{
+	using type = T;
+};
+
+template<typename T, typename C>
+struct NetworkVarType<CNetworkVarEmbeddedPtrBase<T, C>>
+{
+	using type = T *;
+};
+
+// Use this macro when you have a base class with a variable, and it doesn't have that variable in a SendTable,
+// but a derived class does. Then, the entity is only flagged as changed when the variable is changed in
+// an entity that wants to transmit the variable.
+#ifndef CLIENT_DLL
+#define NETWORK_VAR_DERIVED_OFF( name, accessor ) \
+	accessor \
+	virtual void NetworkStateChanged_##name() {} \
+	virtual void NetworkStateChanged_##name( unsigned short offset ) {}
+
+#define NETWORK_VAR_DERIVED_ON( name, accessor ) \
+	accessor \
+	virtual void NetworkStateChanged_##name() { CHECK_USENETWORKVARS NetworkStateChanged( NetworkVar_##name##_OuterClass::GetOffset_##name##_memory() ); } \
+	virtual void NetworkStateChanged_##name( unsigned short offset ) { CHECK_USENETWORKVARS NetworkStateChanged( offset ); }
+
+#define IMPLEMENT_NETWORK_VAR_FOR_DERIVED( name ) \
+	void NetworkStateChanged_##name() override { CHECK_USENETWORKVARS NetworkStateChanged( NetworkVar_##name##_OuterClass::GetOffset_##name##_memory() ); } \
+	void NetworkStateChanged_##name( unsigned short offset ) override { CHECK_USENETWORKVARS NetworkStateChanged( offset ); }
+
+#define DISABLE_NETWORK_VAR_FOR_DERIVED( name ) \
+	void NetworkStateChanged_##name() override { } \
+	void NetworkStateChanged_##name( unsigned short offset ) override {  }
+#else
+#define IMPLEMENT_NETWORK_VAR_FOR_DERIVED( name )
+
+#define DISABLE_NETWORK_VAR_FOR_DERIVED( name )
+
+#define NETWORK_VAR_DERIVED_OFF( name ) 
+
+#define NETWORK_VAR_DERIVED_ON( name ) 
+#endif
+
+// Internal macros used in definitions of network vars.
+#ifndef CLIENT_DLL
+#define NETWORK_VAR_STATECHANGED( name, stateChangedFn ) \
+	static void CallOuterNetworkStateChanged_impl( void *ptr ) \
+	{ \
+		CHECK_USENETWORKVARS ( ( NetworkVar_##name##_OuterClass * ) ( ((uint8 *)ptr) - NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() ) )->stateChangedFn( NetworkVar_##name##_OuterClass::GetOffset_##name##_memory() ); \
+	}
+
+#define NETWORK_VAR_STATECHANGED_ARRAY( name, stateChangedFn ) \
+	static void CallOuterNetworkStateChanged_impl( void *ptr, int i ) \
+	{ \
+		CHECK_USENETWORKVARS ( ( NetworkVar_##name##_OuterClass * ) ( ((uint8 *)ptr) - NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() ) )->stateChangedFn( NetworkVar_##name##_OuterClass::GetOffset_##name##_memory( i ) ); \
+	}
+
+#define NETWORK_VAR_STATECHANGED_EMBEDDED( name, stateChangedFn ) \
+	static void CallOuterNetworkStateChanged_impl( void *ptr ) \
+	{ \
+		CHECK_USENETWORKVARS ( ( NetworkVar_##name##_OuterClass * ) ( ((uint8 *)ptr) - NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() ) )->stateChangedFn( NetworkVar_##name##_OuterClass::GetOffset_##name##_memory() ); \
+	} \
+	static void CallOuterNetworkStateChanged_impl( void *ptr, unsigned short offset ) \
+	{ \
+		CHECK_USENETWORKVARS ( ( NetworkVar_##name##_OuterClass * ) ( ((uint8 *)ptr) - NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() ) )->stateChangedFn( NetworkVar_##name##_OuterClass::GetOffset_##name##_memory( offset ) ); \
+	}
+#else
+#define NETWORK_VAR_STATECHANGED( name, stateChangedFn )
+#define NETWORK_VAR_STATECHANGED_ARRAY( name, stateChangedFn )
+#define NETWORK_VAR_STATECHANGED_EMBEDDED( name, stateChangedFn )
+#endif
+
+#define NETWORK_VAR_BEGIN_PRE_OFFSETS( name, accessor, base, ... ) \
+	accessor \
 	class NetworkVar_##name; \
 	friend class NetworkVar_##name; \
-	typedef ThisClass MakeANetworkVar_##name; \
-	class NetworkVar_##name \
+	typedef ThisClass NetworkVar_##name##_OuterClass; \
+	typedef base< __VA_OPT__(__VA_ARGS__,) NetworkVar_##name##_OuterClass::NetworkVar_##name > NetworkVar_##name##_BaseClass; \
+	static unsigned short GetOffset_##name##_NetworkVar() \
+	{ \
+		static unsigned short offset = MyOffsetOf(NetworkVar_##name##_OuterClass, name); \
+		return offset; \
+	}
+
+#define NETWORK_VAR_BEGIN_POST_OFFSETS( name, accessor, base, ... ) \
+	accessor \
+	class NetworkVar_##name : public NetworkVar_##name##_OuterClass::NetworkVar_##name##_BaseClass \
 	{ \
 	public: \
-		NetworkVar_##name() { m_Value[0] = '\0'; } \
-		operator const char*() const { return m_Value; } \
-		const char* Get() const { return m_Value; } \
-		char* GetForModify() \
-		{ \
-			NetworkStateChanged(); \
-			return m_Value; \
-		} \
-	protected: \
-		inline void NetworkStateChanged() \
-		{ \
-		CHECK_USENETWORKVARS ((ThisClass*)(((char*)this) - MyOffsetOf(ThisClass,name)))->NetworkStateChanged(); \
-		} \
-	private: \
-		char m_Value[length]; \
+		template <typename T> friend int ServerClassInit(T *); \
+		using base< __VA_OPT__(__VA_ARGS__,) NetworkVar_##name##_OuterClass::NetworkVar_##name >::base; \
+		using NetworkVar_##name##_BaseClass::operator=; \
+		NetworkVar_##name() = default;
+
+#define NETWORK_VAR_END_EMBEDDED( name, accessor ) \
 	}; \
+	accessor \
+	NetworkVar_##name name;
+#define NETWORK_VAR_END( name, accessor ) \
+	private: \
+		typename NetworkVarType< NetworkVar_##name##_OuterClass::NetworkVar_##name##_BaseClass >::type m_Value; \
+	public: \
+		static unsigned short GetOffset_memory() \
+		{ \
+			static unsigned short offset = MyOffsetOf(NetworkVar_##name##_OuterClass::NetworkVar_##name, m_Value); \
+			return offset; \
+		} \
+		static typename NetworkVarType< NetworkVar_##name##_OuterClass::NetworkVar_##name##_BaseClass >::type &GetValue_location_impl( void *ptr ) \
+		{ \
+			return static_cast<NetworkVar_##name##_OuterClass::NetworkVar_##name *>(ptr)->m_Value; \
+		} \
+		static const typename NetworkVarType< NetworkVar_##name##_OuterClass::NetworkVar_##name##_BaseClass >::type &GetValue_location_impl( const void *ptr ) \
+		{ \
+			return static_cast<const NetworkVar_##name##_OuterClass::NetworkVar_##name *>(ptr)->m_Value; \
+		} \
+	}; \
+	accessor \
+	NetworkVar_##name name;
+#define NETWORK_VAR_END_LOCATED( name, accessor, otherClass, otherName ) \
+		static typename NetworkVarType< NetworkVar_##name##_BaseClass >::type &GetValue_location_impl( void *ptr ) \
+		{ \
+			return (( ( NetworkVar_##name##_OuterClass * ) ( ((uint8 *)ptr) - NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() ) )->*( &otherClass::otherName )); \
+		} \
+		static const typename NetworkVarType< NetworkVar_##name##_BaseClass >::type &GetValue_location_impl( const void *ptr ) \
+		{ \
+			return (( ( const NetworkVar_##name##_OuterClass * ) ( ((uint8 *)ptr) - NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() ) )->*( &otherClass::otherName )); \
+		} \
+	}; \
+	accessor \
 	NetworkVar_##name name;
 
+#define NETWORK_VAR_EMBEDDED( name, accessor1, accessor2, base, stateChangedFn, ... ) \
+	NETWORK_VAR_BEGIN_PRE_OFFSETS( name, accessor2, base __VA_OPT__(, __VA_ARGS__) ) \
+	static unsigned short GetOffset_##name##_memory() \
+	{ \
+		return NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar(); \
+	} \
+	static unsigned short GetOffset_##name##_memory( unsigned short offset ) \
+	{ \
+		return NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() + offset; \
+	} \
+	NETWORK_VAR_BEGIN_POST_OFFSETS( name, accessor2, base __VA_OPT__(, __VA_ARGS__) ) \
+	NETWORK_VAR_STATECHANGED_EMBEDDED( name, stateChangedFn ) \
+	NETWORK_VAR_END_EMBEDDED( name, accessor1 )
 
+#define NETWORK_VAR( name, accessor1, accessor2, base, stateChangedFn, ... ) \
+	NETWORK_VAR_BEGIN_PRE_OFFSETS( name, accessor2, base __VA_OPT__(, __VA_ARGS__) ) \
+	static unsigned short GetOffset_##name##_memory() \
+	{ \
+		static unsigned short offset = NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() + NetworkVar_##name##_OuterClass::NetworkVar_##name::GetOffset_memory(); \
+		return offset; \
+	} \
+	NETWORK_VAR_BEGIN_POST_OFFSETS( name, accessor2, base __VA_OPT__(, __VA_ARGS__) ) \
+	NETWORK_VAR_STATECHANGED( name, stateChangedFn ) \
+	NETWORK_VAR_END( name, accessor1 )
 
+#define NETWORK_VAR_LOCATED( name, accessor1, accessor2, base, stateChangedFn, type, otherClass, otherName ) \
+	NETWORK_VAR_BEGIN_PRE_OFFSETS( name, accessor2, base, type ) \
+	static unsigned short GetOffset_##name##_memory() \
+	{ \
+		static unsigned short offset = MyOffsetOf(otherClass, otherName); \
+		return offset; \
+	} \
+	NETWORK_VAR_BEGIN_POST_OFFSETS( name, accessor2, base, type ) \
+	NETWORK_VAR_STATECHANGED( name, stateChangedFn ) \
+	NETWORK_VAR_END_LOCATED( name, accessor1, otherClass, otherName )
+
+#define NETWORK_VAR_ARRAY( name, accessor1, accessor2, base, stateChangedFn, ... ) \
+	NETWORK_VAR_BEGIN_PRE_OFFSETS( name, accessor2, base __VA_OPT__(, __VA_ARGS__) ) \
+	static unsigned short GetOffset_##name##_memory() \
+	{ \
+		static unsigned short offset = NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() + NetworkVar_##name##_OuterClass::NetworkVar_##name##_BaseClass::GetOffset_memory(); \
+		return offset; \
+	} \
+	static unsigned short GetOffset_##name##_memory( int i ) \
+	{ \
+		return NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() + NetworkVar_##name##_OuterClass::NetworkVar_##name##_BaseClass::GetOffset_memory( i ); \
+	} \
+	NETWORK_VAR_BEGIN_POST_OFFSETS( name, accessor2, base __VA_OPT__(, __VA_ARGS__) ) \
+	NETWORK_VAR_STATECHANGED( name, stateChangedFn ) \
+	NETWORK_VAR_STATECHANGED_ARRAY( name, stateChangedFn ) \
+	NETWORK_VAR_END( name, accessor1 )
+
+#define NO_ACCESSOR
+
+#define NETWORK_VAR_GET_ACCESSOR_VAR__VA(...) __VA_ARGS__:
+#define NETWORK_VAR_GET_ACCESSOR_VAR_(...) 
+#define NETWORK_VAR_GET_ACCESSOR_VAR(...) NETWORK_VAR_GET_ACCESSOR_VAR_##__VA_OPT__(_VA)(__VA_ARGS__)
+
+#define NETWORK_VAR_GET_ACCESSOR_INFO__VA(...) protected:
+#define NETWORK_VAR_GET_ACCESSOR_INFO_(...) 
+#define NETWORK_VAR_GET_ACCESSOR_INFO(...) NETWORK_VAR_GET_ACCESSOR_INFO_##__VA_OPT__(_VA)(__VA_ARGS__)
+
+#define NETWORK_VAR_GET_ACCESSOR_FUNC__VA(...) private:
+#define NETWORK_VAR_GET_ACCESSOR_FUNC_(...) 
+#define NETWORK_VAR_GET_ACCESSOR_FUNC(...) NETWORK_VAR_GET_ACCESSOR_FUNC_##__VA_OPT__(_VA)(__VA_ARGS__)
+
+// NOTE: Assignment operator is disabled because it doesn't call copy constructors of scalar types within the aggregate, so they are not marked changed
+#define CNetworkVarEmbedded( type, name ) \
+	NETWORK_VAR_EMBEDDED( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkVarEmbeddedBase, NetworkStateChanged, type )
+#define CNetworkVarEmbeddedForDerived( type, name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR_EMBEDDED( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkVarEmbeddedBase, NetworkStateChanged_##name, type )
+#define CNetworkVarEmbeddedForDerived_OnByDefault( type, name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR_EMBEDDED( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkVarEmbeddedBase, NetworkStateChanged_##name, type )
+
+#define CNetworkVarEmbeddedCopyable( type, name ) \
+	NETWORK_VAR_EMBEDDED( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkVarEmbeddedCopyableBase, NetworkStateChanged, type )
+#define CNetworkVarEmbeddedCopyableForDerived( type, name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR_EMBEDDED( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkVarEmbeddedCopyableBase, NetworkStateChanged_##name, type )
+#define CNetworkVarEmbeddedCopyableForDerived_OnByDefault( type, name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR_EMBEDDED( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkVarEmbeddedCopyableBase, NetworkStateChanged_##name, type )
+
+#define CNetworkVarEmbeddedPtr( type, name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkVarEmbeddedPtrBase, NetworkStateChanged, type )
+#define CNetworkVarEmbeddedPtrForDerived( type, name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkVarEmbeddedPtrBase, NetworkStateChanged_##name, type )
+#define CNetworkVarEmbeddedPtrForDerived_OnByDefault( type, name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkVarEmbeddedPtrBase, NetworkStateChanged_##name, type )
+
+#define CNetworkHandle( type, name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkHandleBase, NetworkStateChanged, type )
+#define CNetworkHandleForDerived( type, name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkHandleBase, NetworkStateChanged_##name, type )
+#define CNetworkHandleForDerived_OnByDefault( type, name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkHandleBase, NetworkStateChanged_##name, type )
+
+#define CNetworkStringT( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkStringTBaseImpl, NetworkStateChanged )
+#define CNetworkStringTForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, CNetworkStringTBaseImpl, NetworkStateChanged_##name )
+#define CNetworkStringTForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkStringTBaseImpl, NetworkStateChanged_##name )
+
+#define CNetworkModelIndex( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkModelIndexBaseImpl, NetworkStateChanged )
+#define CNetworkModelIndexForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkModelIndexBaseImpl, NetworkStateChanged_##name )
+#define CNetworkModelIndexForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkModelIndexBaseImpl, NetworkStateChanged_##name )
+
+// Use this macro to define a network variable.
+#define CNetworkVar( type, name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkVarBase, NetworkStateChanged, type )
+#define CNetworkVarLocated( type, name, otherClass, otherName ) \
+	NETWORK_VAR_LOCATED( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkVarBase, NetworkStateChanged, type, otherClass, otherName )
+#define CNetworkVarForDerived( type, name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkVarBase, NetworkStateChanged_##name, type )
+// This virtualizes the change detection on the variable, but it is ON by default.
+// Use this when you have a base class in which MOST of its derived classes use this variable
+// in their SendTables, but there are a couple that don't (and they
+// can use DISABLE_NETWORK_VAR_FOR_DERIVED).
+#define CNetworkVarForDerived_OnByDefault( type, name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkVarBase, NetworkStateChanged_##name, type )
+
+#define CNetworkTime( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkTimeBase, NetworkStateChanged )
+#define CNetworkTimeForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkTimeBase, NetworkStateChanged_##name )
+#define CNetworkTimeForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkTimeBase, NetworkStateChanged_##name )
+
+#define CNetworkDistance( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkDistanceBase, NetworkStateChanged )
+#define CNetworkDistanceForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkDistanceBase, NetworkStateChanged_##name )
+#define CNetworkDistanceForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkDistanceBase, NetworkStateChanged_##name )
+
+#define CNetworkScale( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkScaleBase, NetworkStateChanged )
+#define CNetworkScaleForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkScaleBase, NetworkStateChanged_##name )
+#define CNetworkScaleForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkScaleBase, NetworkStateChanged_##name )
+
+#define CNetworkSequence( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkSequenceBase, NetworkStateChanged )
+#define CNetworkSequenceForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkSequenceBase, NetworkStateChanged_##name )
+#define CNetworkSequenceForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkSequenceBase, NetworkStateChanged_##name )
+
+#define CNetworkUtlVector( type, name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkUtlVectorBaseImpl, NetworkStateChanged, CUtlVector<type> )
+#define CNetworkUtlVectorForDerived( type, name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkUtlVectorBaseImpl, NetworkStateChanged_##name, CUtlVector<type> )
+#define CNetworkUtlVectorForDerived_OnByDefault( type, name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkUtlVectorBaseImpl, NetworkStateChanged_##name, CUtlVector<type> )
+
+// Vectors + some convenient helper functions.
+#define CNetworkVector( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkVectorBase, NetworkStateChanged )
+#define CNetworkVectorForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkVectorBase, NetworkStateChanged_##name )
+#define CNetworkVectorForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkVectorBase, NetworkStateChanged_##name )
+
+#define CNetworkVectorWorldspace( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkVectorWorldspaceBase, NetworkStateChanged )
+#define CNetworkVectorWorldspaceForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkVectorWorldspaceBase, NetworkStateChanged_##name )
+#define CNetworkVectorWorldspaceForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkVectorWorldspaceBase, NetworkStateChanged_##name )
+
+#define CNetworkQAngle( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkQAngleBase, NetworkStateChanged )
+#define CNetworkQAngleForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkQAngleBase, NetworkStateChanged_##name )
+#define CNetworkQAngleForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkQAngleBase, NetworkStateChanged_##name )
+
+#define CNetworkQuaternion( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkQuaternionBase, NetworkStateChanged )
+#define CNetworkQuaternionForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkQuaternionBase, NetworkStateChanged_##name )
+#define CNetworkQuaternionForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkQuaternionBase, NetworkStateChanged_##name )
+
+// Helper for color32's. Contains GetR(), SetR(), etc.. functions.
+#define CNetworkColor32( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkColor32Base, NetworkStateChanged )
+#define CNetworkColor32ForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkColor32Base, NetworkStateChanged_##name )
+#define CNetworkColor32ForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( nam, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__)e ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkColor32Base, NetworkStateChanged_##name )
+
+#define CNetworkColor32E( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkColor32EBase, NetworkStateChanged )
+#define CNetworkColor32EForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkColor32EBase, NetworkStateChanged_##name )
+#define CNetworkColor32EForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkColor32EBase, NetworkStateChanged_##name )
+
+#define CNetworkColor24( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkColor24Base, NetworkStateChanged )
+#define CNetworkColor24ForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkColor24Base, NetworkStateChanged_##name )
+#define CNetworkColor24ForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkColor24Base, NetworkStateChanged_##name )
+
+#define CNetworkString( name, length ) \
+	NETWORK_VAR_ARRAY( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkStringBase, NetworkStateChanged, length )
+#define CNetworkStringForDerived( name, length, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR_ARRAY( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkStringBase, NetworkStateChanged_##name, length )
+#define CNetworkStringForDerived_OnByDefault( name, length, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR_ARRAY( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkStringBase, NetworkStateChanged_##name, length )
 
 // Use this to define networked arrays.
 // You can access elements for reading with operator[], and you can set elements with the Set() function.
-#define CNetworkArrayInternal( type, name, count, stateChangedFn ) \
-	class NetworkVar_##name; \
-	friend class NetworkVar_##name; \
-	typedef ThisClass MakeANetworkVar_##name; \
-	class NetworkVar_##name \
-	{ \
-	public: \
-		inline NetworkVar_##name() \
-		{ \
-			for ( int i = 0 ; i < count ; ++i ) \
-				NetworkVarConstruct( m_Value[i] ); \
-		} \
-		template <typename T> friend int ServerClassInit(T *);	\
-		const type& operator[]( int i ) const \
-		{ \
-			return Get( i ); \
-		} \
-		\
-		const type& Get( int i ) const \
-		{ \
-			Assert( i >= 0 && i < count ); \
-			return m_Value[i]; \
-		} \
-		\
-		type& GetForModify( int i ) \
-		{ \
-			Assert( i >= 0 && i < count ); \
-			NetworkStateChanged( i ); \
-			return m_Value[i]; \
-		} \
-		\
-		void Set( int i, const type &val ) \
-		{ \
-			Assert( i >= 0 && i < count ); \
-			if( memcmp( &m_Value[i], &val, sizeof(type) ) ) \
-			{ \
-				NetworkStateChanged( i ); \
-			       	m_Value[i] = val; \
-			} \
-		} \
-		const type* Base() const { return m_Value; } \
-		type* Base() { return m_Value; } \
-		static int Count() { return count; } \
-	protected: \
-		inline void NetworkStateChanged( int index ) \
-		{ \
-			CHECK_USENETWORKVARS ((ThisClass*)(((char*)this) - MyOffsetOf(ThisClass,name)))->stateChangedFn( &m_Value[index] ); \
-		} \
-	public: \
-		type m_Value[count]; \
-	}; \
-	NetworkVar_##name name;
+#define CNetworkArray( type, name, count ) \
+	NETWORK_VAR_ARRAY( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkArrayBase, NetworkStateChanged, type, count )
+#define CNetworkArrayForDerived( type, name, count, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR_ARRAY( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkArrayBase, NetworkStateChanged_##name, type, count )
+#define CNetworkArrayForDerived_OnByDefault( type, name, count, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR_ARRAY( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkArrayBase, NetworkStateChanged_##name, type, count )
 
+#define CNetworkPredictableId( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkPredictableIdBase, NetworkStateChanged )
+#define CNetworkPredictableIdForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkPredictableIdBase, NetworkStateChanged_##name )
+#define CNetworkPredictableIdForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkPredictableIdBase, NetworkStateChanged_##name )
 
-#define CNetworkArray( type, name, count )  CNetworkArrayInternal( type, name, count, NetworkStateChanged )
-
-
-// Internal macros used in definitions of network vars.
-#define NETWORK_VAR_START( type, name ) \
-	class NetworkVar_##name; \
-	friend class NetworkVar_##name; \
-	typedef ThisClass MakeANetworkVar_##name; \
-	class NetworkVar_##name \
-	{ \
-	public: \
-		template <typename T> friend int ServerClassInit(T *);
-
-
-#define NETWORK_VAR_END( type, name, base, stateChangedFn ) \
-	public: \
-		static inline void NetworkStateChanged( void *ptr ) \
-		{ \
-			CHECK_USENETWORKVARS ((ThisClass*)(((char*)ptr) - MyOffsetOf(ThisClass,name)))->stateChangedFn( ptr ); \
-		} \
-	}; \
-	base< type, NetworkVar_##name > name;
-
-
+#define CNetworkAnimCycle( name ) \
+	NETWORK_VAR( name, NO_ACCESSOR, NO_ACCESSOR, CNetworkAnimCycleBase, NetworkStateChanged )
+#define CNetworkAnimCycleForDerived( name, ... ) \
+	NETWORK_VAR_DERIVED_OFF( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkAnimCycleBase, NetworkStateChanged_##name )
+#define CNetworkAnimCycleForDerived_OnByDefault( name, ... ) \
+	NETWORK_VAR_DERIVED_ON( name, NETWORK_VAR_GET_ACCESSOR_FUNC(__VA_ARGS__) ) \
+	NETWORK_VAR( name, NETWORK_VAR_GET_ACCESSOR_VAR(__VA_ARGS__), NETWORK_VAR_GET_ACCESSOR_INFO(__VA_ARGS__), CNetworkAnimCycleBase, NetworkStateChanged_##name )
 
 #endif // NETWORKVAR_H

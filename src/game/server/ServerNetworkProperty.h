@@ -179,7 +179,9 @@ inline void CServerNetworkProperty::NetworkStateForceUpdate()
 }
 
 inline void CServerNetworkProperty::NetworkStateChanged()
-{ 
+{
+	Assert(0);
+
 	// If we're using the timer, then ignore this call.
 	if ( m_TimerEvent.IsRegistered() )
 	{

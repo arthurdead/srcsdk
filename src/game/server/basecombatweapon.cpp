@@ -87,7 +87,7 @@ void W_Precache(void)
 //-----------------------------------------------------------------------------
 // Purpose: Transmit weapon data
 //-----------------------------------------------------------------------------
-int CBaseCombatWeapon::UpdateTransmitState( void)
+EdictStateFlags_t CBaseCombatWeapon::UpdateTransmitState( void)
 {
 	// If the weapon is being carried by a CBaseCombatCharacter, let the combat character do the logic
 	// about whether or not to transmit it.
@@ -679,7 +679,7 @@ int	CBaseCombatWeapon::ObjectCaps( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatWeapon::InputSetAmmo1( inputdata_t &inputdata )
+void CBaseCombatWeapon::InputSetAmmo1( inputdata_t &&inputdata )
 {
 	SetAmmoFromMapper(inputdata.value.Float());
 }
@@ -687,7 +687,7 @@ void CBaseCombatWeapon::InputSetAmmo1( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatWeapon::InputSetAmmo2( inputdata_t &inputdata )
+void CBaseCombatWeapon::InputSetAmmo2( inputdata_t &&inputdata )
 {
 	SetAmmoFromMapper(inputdata.value.Float(), true);
 }
@@ -695,7 +695,7 @@ void CBaseCombatWeapon::InputSetAmmo2( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatWeapon::InputGiveDefaultAmmo( inputdata_t &inputdata )
+void CBaseCombatWeapon::InputGiveDefaultAmmo( inputdata_t &&inputdata )
 {
 	GiveDefaultAmmo();
 }
@@ -703,7 +703,7 @@ void CBaseCombatWeapon::InputGiveDefaultAmmo( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatWeapon::InputEnablePlayerPickup( inputdata_t &inputdata )
+void CBaseCombatWeapon::InputEnablePlayerPickup( inputdata_t &&inputdata )
 {
 	RemoveSpawnFlags(SF_WEAPON_NO_PLAYER_PICKUP);
 }
@@ -711,7 +711,7 @@ void CBaseCombatWeapon::InputEnablePlayerPickup( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatWeapon::InputDisablePlayerPickup( inputdata_t &inputdata )
+void CBaseCombatWeapon::InputDisablePlayerPickup( inputdata_t &&inputdata )
 {
 	AddSpawnFlags(SF_WEAPON_NO_PLAYER_PICKUP);
 }
@@ -719,7 +719,7 @@ void CBaseCombatWeapon::InputDisablePlayerPickup( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatWeapon::InputEnableNPCPickup( inputdata_t &inputdata )
+void CBaseCombatWeapon::InputEnableNPCPickup( inputdata_t &&inputdata )
 {
 	RemoveSpawnFlags(SF_WEAPON_NO_NPC_PICKUP);
 }
@@ -727,7 +727,7 @@ void CBaseCombatWeapon::InputEnableNPCPickup( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatWeapon::InputDisableNPCPickup( inputdata_t &inputdata )
+void CBaseCombatWeapon::InputDisableNPCPickup( inputdata_t &&inputdata )
 {
 	AddSpawnFlags(SF_WEAPON_NO_NPC_PICKUP);
 }
@@ -735,7 +735,7 @@ void CBaseCombatWeapon::InputDisableNPCPickup( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatWeapon::InputBreakConstraint( inputdata_t &inputdata )
+void CBaseCombatWeapon::InputBreakConstraint( inputdata_t &&inputdata )
 {
 	if ( m_pConstraint != NULL )
 	{
@@ -791,7 +791,7 @@ void CBaseCombatWeapon::InputForceFire( inputdata_t &inputdata, bool bSecondary 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatWeapon::InputForcePrimaryFire( inputdata_t &inputdata )
+void CBaseCombatWeapon::InputForcePrimaryFire( inputdata_t &&inputdata )
 {
 	InputForceFire(inputdata, false);
 }
@@ -799,7 +799,7 @@ void CBaseCombatWeapon::InputForcePrimaryFire( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatWeapon::InputForceSecondaryFire( inputdata_t &inputdata )
+void CBaseCombatWeapon::InputForceSecondaryFire( inputdata_t &&inputdata )
 {
 	InputForceFire(inputdata, true);
 }

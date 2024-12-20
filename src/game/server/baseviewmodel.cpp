@@ -21,7 +21,7 @@
 void SendProxy_AnimTime( const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_SequenceChanged( const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
 
-int CBaseViewModel::UpdateTransmitState()
+EdictStateFlags_t CBaseViewModel::UpdateTransmitState()
 {
 	if ( IsEffectActive( EF_NODRAW ) )
 	{
@@ -31,7 +31,7 @@ int CBaseViewModel::UpdateTransmitState()
 	return SetTransmitState( FL_EDICT_FULLCHECK );
 }
 
-int CBaseViewModel::ShouldTransmit( const CCheckTransmitInfo *pInfo )
+EdictStateFlags_t CBaseViewModel::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 {
 	// check if receipient owns this weapon viewmodel
 	CBasePlayer *pOwner = ToBasePlayer( m_hOwner );

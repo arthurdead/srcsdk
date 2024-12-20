@@ -187,7 +187,7 @@ void CBaseTeamObjectiveResource::ObjectiveThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: The objective resource is always transmitted to clients
 //-----------------------------------------------------------------------------
-int CBaseTeamObjectiveResource::UpdateTransmitState()
+EdictStateFlags_t CBaseTeamObjectiveResource::UpdateTransmitState()
 {
 	// ALWAYS transmit to all clients.
 	return SetTransmitState( FL_EDICT_ALWAYS );

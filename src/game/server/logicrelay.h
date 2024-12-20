@@ -13,6 +13,7 @@
 #include "entityinput.h"
 #include "entityoutput.h"
 #include "eventqueue.h"
+#include "baseentity.h"
 
 // I was originally going to add something similar to that queue thing to logic_relay directly, but I later decided to relegate it to a derivative entity.
 #define RELAY_QUEUE_SYSTEM 0
@@ -29,13 +30,13 @@ public:
 	void Think();
 
 	// Input handlers
-	void InputEnable( inputdata_t &inputdata );
-	void InputEnableRefire( inputdata_t &inputdata );  // Private input handler, not in FGD
-	void InputDisable( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
-	void InputTrigger( inputdata_t &inputdata );
-	void InputTriggerWithParameter( inputdata_t &inputdata );
-	void InputCancelPending( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputEnableRefire( inputdata_t &&inputdata );  // Private input handler, not in FGD
+	void InputDisable( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputTrigger( inputdata_t &&inputdata );
+	void InputTriggerWithParameter( inputdata_t &&inputdata );
+	void InputCancelPending( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -75,14 +76,14 @@ public:
 	CLogicRelayQueue();
 
 	// Input handlers
-	void InputEnable( inputdata_t &inputdata );
-	void InputEnableRefire( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
-	void InputTrigger( inputdata_t &inputdata );
-	void InputTriggerWithParameter( inputdata_t &inputdata );
-	void InputCancelPending( inputdata_t &inputdata );
-	void InputClearQueue( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputEnableRefire( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputTrigger( inputdata_t &&inputdata );
+	void InputTriggerWithParameter( inputdata_t &&inputdata );
+	void InputCancelPending( inputdata_t &&inputdata );
+	void InputClearQueue( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -93,7 +94,7 @@ public:
 	bool IsDisabled( void ){ return m_bDisabled; }
 
 	void HandleNextQueueItem();
-	void AddQueueItem(CBaseEntity *pActivator, int outputID, variant_t &value);
+	void AddQueueItem(CBaseEntity *pActivator, int outputID, variant_t &&value);
 	void AddQueueItem(CBaseEntity *pActivator, int outputID);
 
 	int		DrawDebugTextOverlays( void );

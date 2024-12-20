@@ -92,11 +92,11 @@ public:
 	// Used to access item_healthkit values, etc. from outside of the class
 	virtual float GetItemAmount() { return 1.0f; }
 
-	void	InputEnablePlayerPickup( inputdata_t &inputdata );
-	void	InputDisablePlayerPickup( inputdata_t &inputdata );
-	void	InputEnableNPCPickup( inputdata_t &inputdata );
-	void	InputDisableNPCPickup( inputdata_t &inputdata );
-	void	InputBreakConstraint( inputdata_t &inputdata );
+	void	InputEnablePlayerPickup( inputdata_t &&inputdata );
+	void	InputDisablePlayerPickup( inputdata_t &&inputdata );
+	void	InputEnableNPCPickup( inputdata_t &&inputdata );
+	void	InputDisableNPCPickup( inputdata_t &&inputdata );
+	void	InputBreakConstraint( inputdata_t &&inputdata );
 
 	void	FallThink( void );
 	float  m_flNextResetCheckTime;

@@ -39,8 +39,8 @@ public:
 	}
 
 	void Think();
-	void InputSetMaxPieces( inputdata_t &inputdata );
-	void InputSetAmmoModifier( inputdata_t &inputdata );
+	void InputSetMaxPieces( inputdata_t &&inputdata );
+	void InputSetAmmoModifier( inputdata_t &&inputdata );
 
 	string_t	m_iszWeaponName;
 	int			m_iMaxPieces;
@@ -54,9 +54,9 @@ public:
 BEGIN_MAPENTITY( CGameWeaponManager )
 
 //fields	
-	DEFINE_KEYFIELD( m_iszWeaponName, FIELD_STRING, "weaponname" ),
-	DEFINE_KEYFIELD( m_iMaxPieces, FIELD_INTEGER, "maxpieces" ),
-	DEFINE_KEYFIELD( m_flAmmoMod, FIELD_FLOAT, "ammomod" ),
+	DEFINE_KEYFIELD_AUTO( m_iszWeaponName, "weaponname" ),
+	DEFINE_KEYFIELD_AUTO( m_iMaxPieces, "maxpieces" ),
+	DEFINE_KEYFIELD_AUTO( m_flAmmoMod, "ammomod" ),
 
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMaxPieces", InputSetMaxPieces ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetAmmoModifier", InputSetAmmoModifier ),
@@ -268,14 +268,14 @@ void CGameWeaponManager::Think()
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-void CGameWeaponManager::InputSetMaxPieces( inputdata_t &inputdata )
+void CGameWeaponManager::InputSetMaxPieces( inputdata_t &&inputdata )
 {
 	m_iMaxPieces = inputdata.value.Int();
 }
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-void CGameWeaponManager::InputSetAmmoModifier( inputdata_t &inputdata )
+void CGameWeaponManager::InputSetAmmoModifier( inputdata_t &&inputdata )
 {
 	m_flAmmoMod = inputdata.value.Float();
 }

@@ -5972,52 +5972,6 @@ int C_BaseEntity::GetIntermediateDataSize( void )
 	return MAX( size, 4 );
 }	
 
-static int g_FieldSizes[FIELD_TYPECOUNT] = 
-{
-	0,					// FIELD_VOID
-	sizeof(float),		// FIELD_FLOAT
-	sizeof(int),		// FIELD_STRING
-	sizeof(Vector),		// FIELD_VECTOR
-	sizeof(Quaternion),	// FIELD_QUATERNION
-	sizeof(int),		// FIELD_INTEGER
-	sizeof(char),		// FIELD_BOOLEAN
-	sizeof(short),		// FIELD_SHORT
-	sizeof(char),		// FIELD_CHARACTER
-	sizeof(color32),	// FIELD_COLOR32
-	sizeof(color24),	// FIELD_COLOR24
-	sizeof(int),		// FIELD_EMBEDDED	(handled specially)
-	sizeof(int),		// FIELD_CUSTOM		(handled specially)
-	
-	//---------------------------------
-
-	sizeof(int),		// FIELD_CLASSPTR
-	sizeof(EHANDLE),	// FIELD_EHANDLE
-	sizeof(int),		// FIELD_EDICT
-
-	sizeof(Vector),		// FIELD_POSITION_VECTOR
-	sizeof(float),		// FIELD_TIME
-	sizeof(int),		// FIELD_TICK
-	sizeof(int),		// FIELD_MODELNAME
-	sizeof(int),		// FIELD_SOUNDNAME
-
-	sizeof(int),		// FIELD_INPUT		(uses custom type)
-#ifdef GNUC
-	// pointer to members under gnuc are 8bytes if you have a virtual func
-	sizeof(uint64),		// FIELD_FUNCTION
-#else
-	sizeof(int *),		// FIELD_FUNCTION
-#endif
-	sizeof(VMatrix),	// FIELD_VMATRIX
-	sizeof(VMatrix),	// FIELD_VMATRIX_WORLDSPACE
-	sizeof(matrix3x4_t),// FIELD_MATRIX3X4_WORLDSPACE	// NOTE: Use array(FIELD_FLOAT, 12) for matrix3x4_t NOT in worldspace
-	sizeof(interval_t), // FIELD_INTERVAL
-	sizeof(modelindex_t),		// FIELD_MODELINDEX
-	sizeof(int),		// FIELD_MATERIALINDEX
-	sizeof(Vector2D),		// FIELD_VECTOR2D
-	sizeof(int64),		// FIELD_INTEGER64
-	sizeof(Vector4D),		// FIELD_VECTOR4D
-};
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *map - 
@@ -6054,85 +6008,80 @@ int C_BaseEntity::ComputePackedSize_R( datamap_t *map )
 		field = &map->dataDesc[ i ];
 
 		// Always descend into embedded types...
-		if ( field->fieldType != FIELD_EMBEDDED )
+		if ( field->fieldType == FIELD_EMBEDDED )
 		{
-			// Skip all private fields
-			if ( field->flags & FTYPEDESC_PRIVATE )
-				continue;
+			Assert( field->td != NULL );
+
+			int embeddedsize = ComputePackedSize_R( field->td );
+
+			field->fieldOffset[ TD_OFFSET_PACKED ] = current_position;
+
+			current_position += embeddedsize;
+
+			continue;
 		}
+
+		// Skip all private fields
+		if ( field->flags & FTYPEDESC_PRIVATE )
+			continue;
 
 		switch ( field->fieldType )
 		{
 		default:
-		case FIELD_MODELNAME:
-		case FIELD_SOUNDNAME:
-		case FIELD_TIME:
-		case FIELD_TICK:
 		case FIELD_CUSTOM:
-		case FIELD_CLASSPTR:
-		case FIELD_EDICT:
-		case FIELD_POSITION_VECTOR:
-		case FIELD_FUNCTION:
 			Assert( 0 );
 			break;
 
-		case FIELD_EMBEDDED:
-			{
-				Assert( field->td != NULL );
-
-				int embeddedsize = ComputePackedSize_R( field->td );
-
-				field->fieldOffset[ TD_OFFSET_PACKED ] = current_position;
-
-				current_position += embeddedsize;
-			}
-			break;
-
-		case FIELD_FLOAT:
-		case FIELD_VECTOR:
-		case FIELD_VECTOR2D:
 		case FIELD_QUATERNION:
 		case FIELD_VECTOR4D:
+		case FIELD_VECTOR:
+		case FIELD_POSITION_VECTOR:
+			current_position = ALIGN_VALUE(current_position, 16);
+			break;
+
+		case FIELD_INTEGER64:
+		case FIELD_VECTOR2D:
+			current_position = ALIGN_VALUE(current_position, 8);
+			break;
+
+		case FIELD_POOLED_MODELNAME:
+		case FIELD_POOLED_SOUNDNAME:
+		case FIELD_POOLED_STRING:
+		case FIELD_CSTRING:
+		case FIELD_CLASSPTR:
+		case FIELD_EDICT:
+		case FIELD_FUNCTION:
+			// These should be dword aligned
+			current_position = ALIGN_VALUE(current_position, 4);
+			break;
+
+		case FIELD_COLOR24:
+		case FIELD_COLOR32:
+		case FIELD_TIME:
+		case FIELD_TICK:
+		case FIELD_FLOAT:
 		case FIELD_MODELINDEX:
 		case FIELD_INTEGER:
-		case FIELD_INTEGER64:
 		case FIELD_EHANDLE:
-			{
-				// These should be dword aligned
-				current_position = (current_position + 3) & ~3;
-				field->fieldOffset[ TD_OFFSET_PACKED ] = current_position;
-				Assert( field->fieldSize >= 1 );
-				current_position += g_FieldSizes[ field->fieldType ] * field->fieldSize;
-			}
+			// These should be dword aligned
+			current_position = ALIGN_VALUE(current_position, 4);
 			break;
 
 		case FIELD_SHORT:
-			{
-				// This should be word aligned
-				current_position = (current_position + 1) & ~1;
-				field->fieldOffset[ TD_OFFSET_PACKED ] = current_position;
-				Assert( field->fieldSize >= 1 );
-				current_position += g_FieldSizes[ field->fieldType ] * field->fieldSize;
-			}
+			// This should be word aligned
+			current_position = ALIGN_VALUE(current_position, 2);
 			break;
 
-		case FIELD_STRING:
-		case FIELD_COLOR32:
-		case FIELD_COLOR24:
 		case FIELD_BOOLEAN:
 		case FIELD_CHARACTER:
-			{
-				field->fieldOffset[ TD_OFFSET_PACKED ] = current_position;
-				Assert( field->fieldSize >= 1 );
-				current_position += g_FieldSizes[ field->fieldType ] * field->fieldSize;
-			}
 			break;
 		case FIELD_VOID:
-			{
-				// Special case, just skip it
-			}
 			break;
 		}
+
+		field->fieldOffset[ TD_OFFSET_PACKED ] = current_position;
+		Assert( field->fieldSize >= 1 );
+		current_position += (field->fieldSizeInBytes * field->fieldSize);
 	}
 
 	map->packed_size = current_position;
@@ -6761,7 +6710,7 @@ void C_BaseEntity::RecordToolMessage()
 
 	// Post a message back to all IToolSystems
 	GetToolRecordingState( msg );
-	Assert( (int)GetToolHandle() != 0 );
+	Assert( GetToolHandle() != HTOOLHANDLE_INVALID );
 	ToolFramework_PostToolMessage( GetToolHandle(), msg );
 	CleanupToolRecordingState( msg );
 

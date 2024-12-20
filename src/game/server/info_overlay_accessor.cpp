@@ -20,7 +20,7 @@ public:
 
 	DECLARE_CLASS( CInfoOverlayAccessor, CPointEntity );
 
-	int  	UpdateTransmitState();
+	EdictStateFlags_t UpdateTransmitState();
 
 	DECLARE_SERVERCLASS();
 	DECLARE_MAPENTITY();
@@ -40,11 +40,11 @@ END_SEND_TABLE()
 LINK_ENTITY_TO_CLASS( info_overlay_accessor, CInfoOverlayAccessor );
 
 BEGIN_MAPENTITY( CInfoOverlayAccessor )
-	DEFINE_KEYFIELD( m_iOverlayID,	FIELD_INTEGER, "OverlayID" ),
+	DEFINE_KEYFIELD_AUTO( m_iOverlayID, "OverlayID" ),
 END_MAPENTITY()
 
 
-int CInfoOverlayAccessor::UpdateTransmitState()
+EdictStateFlags_t CInfoOverlayAccessor::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }

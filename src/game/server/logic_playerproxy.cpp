@@ -61,7 +61,7 @@ bool CLogicPlayerProxy::PassesDamageFilter( CBaseEntity *pCaller, const CTakeDam
 	return true;
 }
 
-void CLogicPlayerProxy::InputSetPlayerHealth( inputdata_t &inputdata )
+void CLogicPlayerProxy::InputSetPlayerHealth( inputdata_t &&inputdata )
 {
 	if ( m_hPlayer == NULL )
 		return;
@@ -70,7 +70,7 @@ void CLogicPlayerProxy::InputSetPlayerHealth( inputdata_t &inputdata )
 
 }
 
-void CLogicPlayerProxy::InputRequestPlayerHealth( inputdata_t &inputdata )
+void CLogicPlayerProxy::InputRequestPlayerHealth( inputdata_t &&inputdata )
 {
 	if ( m_hPlayer == NULL )
 		return;
@@ -82,7 +82,7 @@ void CLogicPlayerProxy::InputRequestPlayerHealth( inputdata_t &inputdata )
 extern ConVar hl2_darkness_flashlight_factor;
 #endif
 
-void CLogicPlayerProxy::InputSetFlashlightSlowDrain( inputdata_t &inputdata )
+void CLogicPlayerProxy::InputSetFlashlightSlowDrain( inputdata_t &&inputdata )
 {
 	if( m_hPlayer == NULL )
 		return;
@@ -95,7 +95,7 @@ void CLogicPlayerProxy::InputSetFlashlightSlowDrain( inputdata_t &inputdata )
 #endif
 }
 
-void CLogicPlayerProxy::InputSetFlashlightNormalDrain( inputdata_t &inputdata )
+void CLogicPlayerProxy::InputSetFlashlightNormalDrain( inputdata_t &&inputdata )
 {
 	if( m_hPlayer == NULL )
 		return;
@@ -108,7 +108,7 @@ void CLogicPlayerProxy::InputSetFlashlightNormalDrain( inputdata_t &inputdata )
 #endif
 }
 
-void CLogicPlayerProxy::InputLowerWeapon( inputdata_t &inputdata )
+void CLogicPlayerProxy::InputLowerWeapon( inputdata_t &&inputdata )
 {
 	if( m_hPlayer == NULL )
 		return;
@@ -120,7 +120,7 @@ void CLogicPlayerProxy::InputLowerWeapon( inputdata_t &inputdata )
 #endif
 }
 
-void CLogicPlayerProxy::InputSetLocatorTargetEntity( inputdata_t &inputdata )
+void CLogicPlayerProxy::InputSetLocatorTargetEntity( inputdata_t &&inputdata )
 {
 	if( m_hPlayer == NULL )
 		return;
@@ -139,7 +139,7 @@ void CLogicPlayerProxy::InputSetLocatorTargetEntity( inputdata_t &inputdata )
 #endif
 }
 
-void CLogicPlayerProxy::InputRequestAmmoState( inputdata_t &inputdata )
+void CLogicPlayerProxy::InputRequestAmmoState( inputdata_t &&inputdata )
 {
 	if( m_hPlayer == NULL )
 		return;
@@ -163,7 +163,7 @@ void CLogicPlayerProxy::InputRequestAmmoState( inputdata_t &inputdata )
 	m_PlayerHasNoAmmo.FireOutput( this, this, 0 );
 }
 
-void CLogicPlayerProxy::InputEnableCappedPhysicsDamage( inputdata_t &inputdata )
+void CLogicPlayerProxy::InputEnableCappedPhysicsDamage( inputdata_t &&inputdata )
 {
 	if ( m_hPlayer == NULL )
 		return;
@@ -174,7 +174,7 @@ void CLogicPlayerProxy::InputEnableCappedPhysicsDamage( inputdata_t &inputdata )
 #endif
 }
 
-void CLogicPlayerProxy::InputDisableCappedPhysicsDamage( inputdata_t &inputdata )
+void CLogicPlayerProxy::InputDisableCappedPhysicsDamage( inputdata_t &&inputdata )
 {
 	if ( m_hPlayer == NULL )
 		return;

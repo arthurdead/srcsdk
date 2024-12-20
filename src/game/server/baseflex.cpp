@@ -2342,7 +2342,7 @@ public:
 
 BEGIN_MAPENTITY( CFlexCycler )
 
-	DEFINE_KEYFIELD( m_iszSentence, FIELD_STRING, "Sentence" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSentence, "Sentence" ),
 
 END_MAPENTITY()
 

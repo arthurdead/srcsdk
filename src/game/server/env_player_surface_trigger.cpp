@@ -14,7 +14,7 @@
 LINK_ENTITY_TO_CLASS( env_player_surface_trigger, CEnvPlayerSurfaceTrigger );
 
 BEGIN_MAPENTITY( CEnvPlayerSurfaceTrigger )
-	DEFINE_KEYFIELD( m_iTargetGameMaterial, FIELD_INTEGER, "gamematerial" ),
+	DEFINE_KEYFIELD_AUTO( m_iTargetGameMaterial, "gamematerial" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -107,7 +107,7 @@ void CEnvPlayerSurfaceTrigger::UpdateMaterialThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvPlayerSurfaceTrigger::InputDisable( inputdata_t &inputdata )
+void CEnvPlayerSurfaceTrigger::InputDisable( inputdata_t &&inputdata )
 {
 	m_bDisabled = true;
 }
@@ -115,7 +115,7 @@ void CEnvPlayerSurfaceTrigger::InputDisable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvPlayerSurfaceTrigger::InputEnable( inputdata_t &inputdata )
+void CEnvPlayerSurfaceTrigger::InputEnable( inputdata_t &&inputdata )
 {
 	m_bDisabled = false;
 }

@@ -1081,7 +1081,7 @@ void Frame::OnThink()
 	    VPANEL focus = input()->GetFocus();
 	    if (focus != INVALID_VPANEL && ipanel()->HasParent(focus, GetVPanel()))
 	    {
-		    if ( input()->GetAppModalSurface() == 0 || 
+		    if ( input()->GetAppModalSurface() == INVALID_VPANEL || 
 			    input()->GetAppModalSurface() == GetVPanel() )
 		    {
 			    hasFocus = true;

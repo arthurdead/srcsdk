@@ -167,7 +167,7 @@ RecvProp::RecvProp()
 	m_pVarName = NULL;
 	m_Offset = 0;
 	m_RecvType = DPT_Int;
-	m_Flags = 0;
+	m_Flags = SPROP_NONE;
 	m_ProxyFn = NULL;
 	m_DataTableProxyFn = NULL;
 	m_pDataTable = NULL;
@@ -176,6 +176,69 @@ RecvProp::RecvProp()
 	m_pArrayProp = NULL;
 	m_ArrayLengthProxy = NULL;
 	m_bInsideArray = false;
+}
+
+RecvProp::RecvProp(RecvProp &&other)
+{
+	m_pVarName = other.m_pVarName;
+	m_RecvType = other.m_RecvType;
+	m_Flags = other.m_Flags;
+	m_StringBufferSize = other.m_StringBufferSize;
+	m_bInsideArray = other.m_bInsideArray;
+	m_pExtraData = other.m_pExtraData;
+	m_pArrayProp = other.m_pArrayProp;
+	m_ArrayLengthProxy = other.m_ArrayLengthProxy;
+	m_ProxyFn = other.m_ProxyFn;
+	m_DataTableProxyFn = other.m_DataTableProxyFn;
+	m_pDataTable = other.m_pDataTable;
+	m_Offset = other.m_Offset;
+	m_ElementStride = other.m_ElementStride;
+	m_nElements = other.m_nElements;
+	m_pParentArrayPropName = other.m_pParentArrayPropName;
+
+	other.m_pExtraData = NULL;
+	other.m_pArrayProp = NULL;
+	other.m_pDataTable = NULL;
+}
+
+RecvProp &RecvProp::operator=(RecvProp &&other)
+{
+	if((m_Flags & SPROP_UTLVECTOR_EXTRADATA) != 0) {
+		if(m_pExtraData) {
+			delete reinterpret_cast<CRecvPropExtra_UtlVector *>(const_cast<void *>(m_pExtraData));
+		}
+	}
+
+	m_pVarName = other.m_pVarName;
+	m_RecvType = other.m_RecvType;
+	m_Flags = other.m_Flags;
+	m_StringBufferSize = other.m_StringBufferSize;
+	m_bInsideArray = other.m_bInsideArray;
+	m_pExtraData = other.m_pExtraData;
+	m_pArrayProp = other.m_pArrayProp;
+	m_ArrayLengthProxy = other.m_ArrayLengthProxy;
+	m_ProxyFn = other.m_ProxyFn;
+	m_DataTableProxyFn = other.m_DataTableProxyFn;
+	m_pDataTable = other.m_pDataTable;
+	m_Offset = other.m_Offset;
+	m_ElementStride = other.m_ElementStride;
+	m_nElements = other.m_nElements;
+	m_pParentArrayPropName = other.m_pParentArrayPropName;
+
+	other.m_pExtraData = NULL;
+	other.m_pArrayProp = NULL;
+	other.m_pDataTable = NULL;
+
+	return *this;
+}
+
+RecvProp::~RecvProp()
+{
+	if((m_Flags & SPROP_UTLVECTOR_EXTRADATA) != 0) {
+		if(m_pExtraData) {
+			delete reinterpret_cast<CRecvPropExtra_UtlVector *>(const_cast<void *>(m_pExtraData));
+		}
+	}
 }
 
 // ---------------------------------------------------------------------- //
@@ -214,7 +277,7 @@ RecvProp RecvPropFloat(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar,
-	int flags, 
+	DTFlags_t flags, 
 	RecvVarProxyFn varProxy
 	)
 {
@@ -240,7 +303,7 @@ RecvProp RecvPropVector(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar,
-	int flags, 
+	DTFlags_t flags, 
 	RecvVarProxyFn varProxy
 	)
 {
@@ -266,7 +329,7 @@ RecvProp RecvPropQAngles(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar,
-	int flags, 
+	DTFlags_t flags, 
 	RecvVarProxyFn varProxy
 	)
 {
@@ -292,7 +355,7 @@ RecvProp RecvPropVectorXY(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar,
-	int flags, 
+	DTFlags_t flags, 
 	RecvVarProxyFn varProxy
 	)
 {
@@ -318,7 +381,7 @@ RecvProp RecvPropQuaternion(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
-	int flags, 
+	DTFlags_t flags, 
 	RecvVarProxyFn varProxy
 	)
 {
@@ -335,8 +398,10 @@ RecvProp RecvPropQuaternion(
 	ret.SetOffset( offset );
 #ifdef DT_QUATERNION_SUPPORTED
 	ret.m_RecvType = DPT_Quaternion;
+#elif defined DT_INT64_SUPPORTED
+	ret.m_RecvType = DPT_Int64;
 #else
-	ret.m_RecvType = DPT_Vector;
+	Error( "Quaternion recvprops are not supported" );
 #endif
 	ret.m_Flags = flags;
 	ret.SetProxyFn( varProxy );
@@ -348,7 +413,7 @@ RecvProp RecvPropInt(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar,
-	int flags, 
+	DTFlags_t flags, 
 	RecvVarProxyFn varProxy
 	)
 {
@@ -423,19 +488,19 @@ RecvProp RecvPropBool(
 	int sizeofVar, RecvVarProxyFn proxyFn )
 {
 	Assert( sizeofVar == sizeof( bool ) );
-	return RecvPropInt( pVarName, offset, sizeofVar, 0, proxyFn );
+	return RecvPropInt( pVarName, offset, sizeofVar, SPROP_NONE, proxyFn );
 }
 
 RecvProp RecvPropIntWithMinusOneFlag( const char *pVarName, int offset, int sizeofVar, RecvVarProxyFn proxyFn )
 {
-	return RecvPropInt( pVarName, offset, sizeofVar, 0, proxyFn );
+	return RecvPropInt( pVarName, offset, sizeofVar, SPROP_NONE, proxyFn );
 }
 
 RecvProp RecvPropString(
 	const char *pVarName,
 	int offset,
 	int bufferSize,
-	int flags,
+	DTFlags_t flags,
 	RecvVarProxyFn varProxy
 	)
 {
@@ -454,7 +519,7 @@ RecvProp RecvPropString(
 RecvProp RecvPropDataTable(
 	const char *pVarName,
 	int offset,
-	int flags,
+	DTFlags_t flags,
 	RecvTable *pTable,
 	DataTableRecvVarProxyFn varProxy
 	)

@@ -57,13 +57,13 @@ public:
 	void	FizzThink( void );
 
 	// Input handlers.
-	void	InputActivate( inputdata_t &inputdata );
-	void	InputDeactivate( inputdata_t &inputdata );
-	void	InputToggle( inputdata_t &inputdata );
+	void	InputActivate( inputdata_t &&inputdata );
+	void	InputDeactivate( inputdata_t &&inputdata );
+	void	InputToggle( inputdata_t &&inputdata );
 
-	void	InputSetCurrent( inputdata_t &inputdata );
-	void	InputSetDensity( inputdata_t &inputdata );
-	void	InputSetFrequency( inputdata_t &inputdata );
+	void	InputSetCurrent( inputdata_t &&inputdata );
+	void	InputSetDensity( inputdata_t &&inputdata );
+	void	InputSetFrequency( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -83,9 +83,9 @@ LINK_ENTITY_TO_CLASS( env_bubbles, CBubbling );
 
 BEGIN_MAPENTITY( CBubbling )
 
-	DEFINE_KEYFIELD( m_flSpeed, FIELD_FLOAT, "current" ),
-	DEFINE_KEYFIELD( m_density, FIELD_INTEGER, "density" ),
-	DEFINE_KEYFIELD( m_frequency, FIELD_INTEGER, "frequency" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpeed, "current" ),
+	DEFINE_KEYFIELD_AUTO( m_density, "density" ),
+	DEFINE_KEYFIELD_AUTO( m_frequency, "frequency" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Deactivate", InputDeactivate ),
@@ -158,7 +158,7 @@ void CBubbling::TurnOff()
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CBubbling::InputActivate( inputdata_t &inputdata )
+void CBubbling::InputActivate( inputdata_t &&inputdata )
 {
 	TurnOn();
 }
@@ -166,7 +166,7 @@ void CBubbling::InputActivate( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CBubbling::InputDeactivate( inputdata_t &inputdata )
+void CBubbling::InputDeactivate( inputdata_t &&inputdata )
 {
 	TurnOff();
 }
@@ -174,7 +174,7 @@ void CBubbling::InputDeactivate( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CBubbling::InputToggle( inputdata_t &inputdata )
+void CBubbling::InputToggle( inputdata_t &&inputdata )
 {
 	Toggle();
 }
@@ -183,7 +183,7 @@ void CBubbling::InputToggle( inputdata_t &inputdata )
 // Purpose:
 // Input  : &inputdata -
 //-----------------------------------------------------------------------------
-void CBubbling::InputSetCurrent( inputdata_t &inputdata )
+void CBubbling::InputSetCurrent( inputdata_t &&inputdata )
 {
 	m_flSpeed = (float)inputdata.value.Int();
 }
@@ -192,7 +192,7 @@ void CBubbling::InputSetCurrent( inputdata_t &inputdata )
 // Purpose:
 // Input  : &inputdata -
 //-----------------------------------------------------------------------------
-void CBubbling::InputSetDensity( inputdata_t &inputdata )
+void CBubbling::InputSetDensity( inputdata_t &&inputdata )
 {
 	m_density = inputdata.value.Int();
 }
@@ -201,7 +201,7 @@ void CBubbling::InputSetDensity( inputdata_t &inputdata )
 // Purpose:
 // Input  : &inputdata -
 //-----------------------------------------------------------------------------
-void CBubbling::InputSetFrequency( inputdata_t &inputdata )
+void CBubbling::InputSetFrequency( inputdata_t &&inputdata )
 {
 	m_frequency = inputdata.value.Int();
 
@@ -257,7 +257,7 @@ LINK_ENTITY_TO_CLASS( env_tracer, CEnvTracer );
 
 BEGIN_MAPENTITY( CEnvTracer )
 
-	DEFINE_KEYFIELD( m_flDelay, FIELD_FLOAT, "delay" ),
+	DEFINE_KEYFIELD_AUTO( m_flDelay, "delay" ),
 
 END_MAPENTITY()
 
@@ -357,22 +357,22 @@ protected:
 	// ----------------
 	//	Inputs
 	// ----------------
-	void InputShoot( inputdata_t &inputdata );
+	void InputShoot( inputdata_t &&inputdata );
 };
 
 BEGIN_MAPENTITY( CGibShooter )
 
-	DEFINE_KEYFIELD( m_iGibs, FIELD_INTEGER, "m_iGibs" ),
-	DEFINE_KEYFIELD( m_flGibVelocity, FIELD_FLOAT, "m_flVelocity" ),
-	DEFINE_KEYFIELD( m_flVariance, FIELD_FLOAT, "m_flVariance" ),
-	DEFINE_KEYFIELD( m_flGibLife, FIELD_FLOAT, "m_flGibLife" ),
-	DEFINE_KEYFIELD( m_nSimulationType, FIELD_INTEGER, "Simulation" ),
-	DEFINE_KEYFIELD( m_flDelay, FIELD_FLOAT, "delay" ),
-	DEFINE_KEYFIELD( m_angGibRotation, FIELD_VECTOR, "gibangles" ),
-	DEFINE_KEYFIELD( m_flGibAngVelocity, FIELD_FLOAT, "gibanglevelocity"),
+	DEFINE_KEYFIELD_AUTO( m_iGibs, "m_iGibs" ),
+	DEFINE_KEYFIELD_AUTO( m_flGibVelocity, "m_flVelocity" ),
+	DEFINE_KEYFIELD_AUTO( m_flVariance, "m_flVariance" ),
+	DEFINE_KEYFIELD_AUTO( m_flGibLife, "m_flGibLife" ),
+	DEFINE_KEYFIELD_AUTO( m_nSimulationType, "Simulation" ),
+	DEFINE_KEYFIELD_AUTO( m_flDelay, "delay" ),
+	DEFINE_KEYFIELD_AUTO( m_angGibRotation, "gibangles" ),
+	DEFINE_KEYFIELD_AUTO( m_flGibAngVelocity, "gibanglevelocity" ),
 
-	DEFINE_KEYFIELD( m_iszLightingOrigin, FIELD_STRING, "LightingOrigin" ),
-	DEFINE_KEYFIELD( m_bNoGibShadows, FIELD_BOOLEAN, "nogibshadows" ),
+	DEFINE_KEYFIELD_AUTO( m_iszLightingOrigin, "LightingOrigin" ),
+	DEFINE_KEYFIELD_AUTO( m_bNoGibShadows, "nogibshadows" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID,	"Shoot", InputShoot ),
@@ -398,7 +398,7 @@ void CGibShooter::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE u
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for shooting gibs.
 //-----------------------------------------------------------------------------
-void CGibShooter::InputShoot( inputdata_t &inputdata )
+void CGibShooter::InputShoot( inputdata_t &&inputdata )
 {
 	SetThink( &CGibShooter::ShootThink );
 	SetNextThink( gpGlobals->curtime );
@@ -635,11 +635,11 @@ public:
 
 BEGIN_MAPENTITY( CEnvShooter )
 
-	DEFINE_KEYFIELD( m_nSkin, FIELD_INTEGER, "skin" ),
-	DEFINE_KEYFIELD( m_flGibScale, FIELD_FLOAT ,"scale" ),
-	DEFINE_KEYFIELD( m_flGibGravityScale, FIELD_FLOAT, "gibgravityscale" ),
+	DEFINE_KEYFIELD_AUTO( m_nSkin, "skin" ),
+	DEFINE_KEYFIELD_AUTO( m_flGibScale, "scale" ),
+	DEFINE_KEYFIELD_AUTO( m_flGibGravityScale, "gibgravityscale" ),
 
-	DEFINE_KEYFIELD( m_flMassOverride, FIELD_FLOAT, "massoverride" ),
+	DEFINE_KEYFIELD_AUTO( m_flMassOverride, "massoverride" ),
 
 END_MAPENTITY()
 
@@ -803,8 +803,8 @@ LINK_ENTITY_TO_CLASS( env_rotorshooter, CRotorWashShooter );
 //-----------------------------------------------------------------------------
 BEGIN_MAPENTITY( CRotorWashShooter )
 
-	DEFINE_KEYFIELD( m_flTimeUnderRotor,	FIELD_FLOAT ,"rotortime" ),
-	DEFINE_KEYFIELD( m_flTimeUnderRotorVariance,	FIELD_FLOAT ,"rotortimevariance" ),
+	DEFINE_KEYFIELD_AUTO( m_flTimeUnderRotor, "rotortime" ),
+	DEFINE_KEYFIELD_AUTO( m_flTimeUnderRotorVariance, "rotortimevariance" ),
 
 END_MAPENTITY()
 
@@ -895,7 +895,7 @@ public:
 	inline	void SetColor( int color ) { m_Color = color; }
 
 	// Input handlers
-	void InputEmitBlood( inputdata_t &inputdata );
+	void InputEmitBlood( inputdata_t &&inputdata );
 
 	Vector	Direction( void );
 	Vector	BloodPosition( CBaseEntity *pActivator );
@@ -913,8 +913,8 @@ LINK_ENTITY_TO_CLASS( env_blood, CBlood );
 
 BEGIN_MAPENTITY( CBlood )
 
-	DEFINE_KEYFIELD( m_vecSprayDir, FIELD_VECTOR, "spraydir" ),
-	DEFINE_KEYFIELD( m_flAmount, FIELD_FLOAT, "amount" ),
+	DEFINE_KEYFIELD_AUTO( m_vecSprayDir, "spraydir" ),
+	DEFINE_KEYFIELD_AUTO( m_flAmount, "amount" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "EmitBlood", InputEmitBlood ),
 
@@ -1047,7 +1047,7 @@ void UTIL_BloodSpray( const Vector &pos, const Vector &dir, int color, int amoun
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for triggering the blood effect.
 //-----------------------------------------------------------------------------
-void CBlood::InputEmitBlood( inputdata_t &inputdata )
+void CBlood::InputEmitBlood( inputdata_t &&inputdata )
 {
 	if ( HasSpawnFlags( SF_BLOOD_STREAM ) )
 	{
@@ -1140,7 +1140,7 @@ LINK_ENTITY_TO_CLASS( env_funnel, CEnvFunnel );
 //---------------------------------------------------------
 BEGIN_MAPENTITY( CEnvFunnel )
 
-	//DEFINE_KEYFIELD( m_iszSprite, FIELD_STRING, "Sprite" ),
+	//DEFINE_KEYFIELD_AUTO( m_iszSprite, "Sprite" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputUse ),
 
 END_MAPENTITY()
@@ -1189,7 +1189,7 @@ public:
 	bool	KeyValue( const char *szKeyName, const char *szValue );
 
 	// Input handlers.
-	void	InputActivate( inputdata_t &inputdata );
+	void	InputActivate( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -1251,7 +1251,7 @@ void CEnvBeverage::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE 
 	//SetNextThink( gpGlobals->curtime );
 }
 
-void CEnvBeverage::InputActivate( inputdata_t &inputdata )
+void CEnvBeverage::InputActivate( inputdata_t &&inputdata )
 {
 	Use( inputdata.pActivator, inputdata.pCaller, USE_ON, 0 );
 }
@@ -1358,7 +1358,7 @@ public:
 	DECLARE_SERVERCLASS();
 
 	CPrecipitation();
-	int UpdateTransmitState();
+	EdictStateFlags_t UpdateTransmitState();
 	void	Spawn( void );
 
 	CNetworkVar( PrecipitationType_t, m_nPrecipType );
@@ -1368,8 +1368,8 @@ public:
 LINK_ENTITY_TO_CLASS( func_precipitation, CPrecipitation );
 
 BEGIN_MAPENTITY( CPrecipitation )
-	DEFINE_KEYFIELD( m_nPrecipType, FIELD_INTEGER, "preciptype" ),
-	DEFINE_KEYFIELD( m_nSnowDustAmount, FIELD_INTEGER, "snowDustAmt" ),
+	DEFINE_KEYFIELD_AUTO( m_nPrecipType, "preciptype" ),
+	DEFINE_KEYFIELD_AUTO( m_nSnowDustAmount, "snowDustAmt" ),
 END_MAPENTITY()
 
 // Just send the normal entity crap
@@ -1385,7 +1385,7 @@ CPrecipitation::CPrecipitation()
 	m_nSnowDustAmount = 0;
 }
 
-int CPrecipitation::UpdateTransmitState()
+EdictStateFlags_t CPrecipitation::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
@@ -1436,7 +1436,7 @@ public:
 
 	CPrecipitationBlocker();
 	void	Spawn( void );
-	int		UpdateTransmitState( void );
+	EdictStateFlags_t		UpdateTransmitState( void );
 };
 
 LINK_ENTITY_TO_CLASS( func_precipitation_blocker, CPrecipitationBlocker );
@@ -1450,7 +1450,7 @@ CPrecipitationBlocker::CPrecipitationBlocker()
 {
 }
 
-int CPrecipitationBlocker::UpdateTransmitState()
+EdictStateFlags_t CPrecipitationBlocker::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
@@ -1490,7 +1490,7 @@ public:
 	void	Spawn( void );
 	void	Precache( void );
 	void	WindThink( void );
-	int		UpdateTransmitState( void );
+	EdictStateFlags_t UpdateTransmitState( void );
 
 	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
@@ -1587,7 +1587,7 @@ void CEnvWind::Spawn( void )
 	SetNextThink( gpGlobals->curtime );
 }
 
-int CEnvWind::UpdateTransmitState()
+EdictStateFlags_t CEnvWind::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
@@ -1632,9 +1632,9 @@ LINK_ENTITY_TO_CLASS( env_embers, CEmbers );
 //Data description
 BEGIN_MAPENTITY( CEmbers )
 
-	DEFINE_KEYFIELD( m_nDensity,	FIELD_INTEGER, "density" ),
-	DEFINE_KEYFIELD( m_nLifetime,	FIELD_INTEGER, "lifetime" ),
-	DEFINE_KEYFIELD( m_nSpeed,		FIELD_INTEGER, "speed" ),
+	DEFINE_KEYFIELD_AUTO( m_nDensity, "density" ),
+	DEFINE_KEYFIELD_AUTO( m_nLifetime, "lifetime" ),
+	DEFINE_KEYFIELD_AUTO( m_nSpeed, "speed" ),
 
 END_MAPENTITY()
 
@@ -1734,8 +1734,8 @@ LINK_ENTITY_TO_CLASS( env_physwire, CPhysicsWire );
 
 BEGIN_MAPENTITY( CPhysicsWire )
 
-	DEFINE_KEYFIELD( m_nDensity,	FIELD_INTEGER, "Density" ),
-//	DEFINE_KEYFIELD( m_frequency, FIELD_INTEGER, "frequency" ),
+	DEFINE_KEYFIELD_AUTO( m_nDensity, "Density" ),
+//	DEFINE_KEYFIELD_AUTO( m_frequency, "frequency" ),
 
 END_MAPENTITY()
 
@@ -1823,7 +1823,7 @@ public:
 	virtual void Spawn();
 
 	// Input handlers
-	void	InputFire( inputdata_t &inputdata );
+	void	InputFire( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -1833,8 +1833,8 @@ public:
 
 BEGIN_MAPENTITY( CEnvMuzzleFlash )
 
-	DEFINE_KEYFIELD( m_flScale, FIELD_FLOAT, "scale" ),
-	DEFINE_KEYFIELD( m_iszParentAttachment, FIELD_STRING, "parentattachment" ),
+	DEFINE_KEYFIELD_AUTO( m_flScale, "scale" ),
+	DEFINE_KEYFIELD_AUTO( m_iszParentAttachment, "parentattachment" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Fire", InputFire ),
 
@@ -1867,7 +1867,7 @@ void CEnvMuzzleFlash::Spawn()
 // Purpose:
 // Input  : &inputdata -
 //-----------------------------------------------------------------------------
-void CEnvMuzzleFlash::InputFire( inputdata_t &inputdata )
+void CEnvMuzzleFlash::InputFire( inputdata_t &&inputdata )
 {
 	g_pEffects->MuzzleFlash( GetAbsOrigin(), GetAbsAngles(), m_flScale, MUZZLEFLASH_TYPE_DEFAULT );
 }
@@ -1886,7 +1886,7 @@ public:
 	virtual void Precache();
 	virtual void Spawn();
 	// Input handlers
-	void	InputSplash( inputdata_t &inputdata );
+	void	InputSplash( inputdata_t &&inputdata );
 
 protected:
 
@@ -1896,7 +1896,7 @@ protected:
 };
 
 BEGIN_MAPENTITY( CEnvSplash )
-	DEFINE_KEYFIELD( m_flScale, FIELD_FLOAT, "scale" ),
+	DEFINE_KEYFIELD_AUTO( m_flScale, "scale" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Splash", InputSplash ),
 END_MAPENTITY()
@@ -1920,7 +1920,7 @@ void CEnvSplash::Spawn()
 // Input  : &inputdata -
 //-----------------------------------------------------------------------------
 #define SPLASH_MAX_DEPTH	120.0f
-void CEnvSplash::InputSplash( inputdata_t &inputdata )
+void CEnvSplash::InputSplash( inputdata_t &&inputdata )
 {
 	CEffectData	data;
 
@@ -2004,10 +2004,10 @@ public:
 	void ShootThink();
 	void UpdateTarget();
 
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
-	void InputFireBurst( inputdata_t &inputdata );
+	void InputFireBurst( inputdata_t &&inputdata );
 
 	int	m_iMinBurstSize;
 	int m_iMaxBurstSize;
@@ -2041,17 +2041,17 @@ public:
 };
 
 BEGIN_MAPENTITY( CEnvGunfire )
-	DEFINE_KEYFIELD( m_iMinBurstSize, FIELD_INTEGER, "minburstsize" ),
-	DEFINE_KEYFIELD( m_iMaxBurstSize, FIELD_INTEGER, "maxburstsize" ),
-	DEFINE_KEYFIELD( m_flMinBurstDelay, FIELD_TIME, "minburstdelay" ),
-	DEFINE_KEYFIELD( m_flMaxBurstDelay, FIELD_TIME, "maxburstdelay" ),
-	DEFINE_KEYFIELD( m_flRateOfFire, FIELD_FLOAT, "rateoffire" ),
-	DEFINE_KEYFIELD( m_iszShootSound, FIELD_STRING, "shootsound" ),
-	DEFINE_KEYFIELD( m_iszTracerType, FIELD_STRING, "tracertype" ),
-	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "startdisabled" ),
-	DEFINE_KEYFIELD( m_iSpread, FIELD_INTEGER, "spread" ),
-	DEFINE_KEYFIELD( m_flBias, FIELD_FLOAT, "bias" ),
-	DEFINE_KEYFIELD( m_bCollide, FIELD_BOOLEAN, "collisions" ),
+	DEFINE_KEYFIELD_AUTO( m_iMinBurstSize, "minburstsize" ),
+	DEFINE_KEYFIELD_AUTO( m_iMaxBurstSize, "maxburstsize" ),
+	DEFINE_KEYFIELD_AUTO( m_flMinBurstDelay, "minburstdelay" ),
+	DEFINE_KEYFIELD_AUTO( m_flMaxBurstDelay, "maxburstdelay" ),
+	DEFINE_KEYFIELD_AUTO( m_flRateOfFire, "rateoffire" ),
+	DEFINE_KEYFIELD_AUTO( m_iszShootSound, "shootsound" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTracerType, "tracertype" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "startdisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_iSpread, "spread" ),
+	DEFINE_KEYFIELD_AUTO( m_flBias, "bias" ),
+	DEFINE_KEYFIELD_AUTO( m_bCollide, "collisions" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -2220,7 +2220,7 @@ void CEnvGunfire::ShootThink()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CEnvGunfire::InputEnable( inputdata_t &inputdata )
+void CEnvGunfire::InputEnable( inputdata_t &&inputdata )
 {
 	m_bDisabled = false;
 	StartShooting();
@@ -2228,7 +2228,7 @@ void CEnvGunfire::InputEnable( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CEnvGunfire::InputDisable( inputdata_t &inputdata )
+void CEnvGunfire::InputDisable( inputdata_t &&inputdata )
 {
 	m_bDisabled = true;
 	SetThink( NULL );
@@ -2236,7 +2236,7 @@ void CEnvGunfire::InputDisable( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CEnvGunfire::InputFireBurst( inputdata_t &inputdata )
+void CEnvGunfire::InputFireBurst( inputdata_t &&inputdata )
 {
 	m_iShotsRemaining = inputdata.value.Int();
 
@@ -2295,7 +2295,7 @@ public:
 	virtual void Spawn();
 
 	// Input handlers
-	void InputViewPunch( inputdata_t &inputdata );
+	void InputViewPunch( inputdata_t &&inputdata );
 
 private:
 
@@ -2311,8 +2311,8 @@ LINK_ENTITY_TO_CLASS( env_viewpunch, CEnvViewPunch );
 
 BEGIN_MAPENTITY( CEnvViewPunch )
 
-	DEFINE_KEYFIELD( m_angViewPunch, FIELD_VECTOR, "punchangle" ),
-	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_angViewPunch, "punchangle" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "radius" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "ViewPunch", InputViewPunch ),
 
@@ -2347,7 +2347,7 @@ void CEnvViewPunch::DoViewPunch()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CEnvViewPunch::InputViewPunch( inputdata_t &inputdata )
+void CEnvViewPunch::InputViewPunch( inputdata_t &&inputdata )
 {
 	DoViewPunch();
 }
@@ -2367,7 +2367,7 @@ public:
 	// ----------------
 	//	Inputs
 	// ----------------
-	void InputShoot( inputdata_t &inputdata );
+	void InputShoot( inputdata_t &&inputdata );
 
 public:
 
@@ -2390,7 +2390,7 @@ public:
 
 BEGIN_MAPENTITY( CBreakableGibShooter )
 
-	DEFINE_KEYFIELD( m_iModelType, FIELD_INTEGER, "modeltype" ),
+	DEFINE_KEYFIELD_AUTO( m_iModelType, "modeltype" ),
 	DEFINE_INPUT( m_iCount, FIELD_INTEGER, "SetCount" ),
 	DEFINE_INPUT( m_flDelay, FIELD_FLOAT, "SetDelay" ),
 	DEFINE_INPUT( m_vecGibSize, FIELD_VECTOR, "SetGibSize" ),
@@ -2465,7 +2465,7 @@ void CBreakableGibShooter::Shoot( void )
 	}
 }
 
-void CBreakableGibShooter::InputShoot( inputdata_t &inputdata )
+void CBreakableGibShooter::InputShoot( inputdata_t &&inputdata )
 {
 	Shoot();
 }

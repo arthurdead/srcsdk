@@ -29,7 +29,7 @@ public:
 
 	virtual void		Spawn( void );
 
-	virtual int			UpdateTransmitState( void );
+	virtual EdictStateFlags_t UpdateTransmitState( void );
 	void				SetCreator(CBasePlayer *creator);
 	CBasePlayer*		GetCreator();
 
@@ -52,7 +52,7 @@ public:
 	// Stage 1          : fill a volume with smoke.
 	CNetworkVar( unsigned char, m_CurrentStage );
 
-	CNetworkVar( float, m_flSpawnTime );
+	CNetworkTime( m_flSpawnTime );
 
 	// When to fade in and out.
 	CNetworkVar( float, m_FadeStartTime );

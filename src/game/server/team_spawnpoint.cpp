@@ -21,7 +21,7 @@ LINK_ENTITY_TO_CLASS( info_player_teamspawn, CTeamSpawnPoint );
 BEGIN_MAPENTITY( CTeamSpawnPoint )
 
 	// keys
-	DEFINE_KEYFIELD( m_iDisabled, FIELD_INTEGER, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_iDisabled, "StartDisabled" ),
 
 	// input functions
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -71,7 +71,7 @@ bool CTeamSpawnPoint::IsValid( CBasePlayer *pPlayer )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamSpawnPoint::InputEnable( inputdata_t &inputdata )
+void CTeamSpawnPoint::InputEnable( inputdata_t &&inputdata )
 {
 	m_iDisabled = FALSE;
 }
@@ -79,7 +79,7 @@ void CTeamSpawnPoint::InputEnable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamSpawnPoint::InputDisable( inputdata_t &inputdata )
+void CTeamSpawnPoint::InputDisable( inputdata_t &&inputdata )
 {
 	m_iDisabled = TRUE;
 }

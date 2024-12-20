@@ -907,7 +907,7 @@ void CNPCSimpleTalker::FollowerUse( CBaseEntity *pActivator, CBaseEntity *pCalle
 }
 
 //-----------------------------------------------------------------------------
-void CNPCSimpleTalker::InputIdleRespond( inputdata_t &inputdata )
+void CNPCSimpleTalker::InputIdleRespond( inputdata_t &&inputdata )
 {
 	// We've been told to respond. Check combat speak, not isoktospeak, because
 	// we don't want to check the idle speech time.

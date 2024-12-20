@@ -2620,7 +2620,7 @@ void CAI_Navigator::AdvancePath()
 		if ( pEntity )
 		{
 			variant_t emptyVariant;
-			pEntity->AcceptInput( "InPass", GetOuter(), pEntity, emptyVariant, 0 );
+			pEntity->AcceptInput( "InPass", GetOuter(), pEntity, ::Move(emptyVariant), 0 );
 		}
 	}
 

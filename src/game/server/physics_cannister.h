@@ -61,10 +61,10 @@ public:
 	//
 	// Input handlers.
 	//
-	void InputActivate(inputdata_t &data);
-	void InputDeactivate(inputdata_t &data);
-	void InputExplode(inputdata_t &data);
-	void InputWake( inputdata_t &data );
+	void InputActivate( inputdata_t &&inputdata );
+	void InputDeactivate( inputdata_t &&inputdata );
+	void InputExplode( inputdata_t &&inputdata );
+	void InputWake( inputdata_t &&inputdata );
 
 	bool TestCollision( const Ray_t &ray, unsigned int mask, trace_t& trace );
 

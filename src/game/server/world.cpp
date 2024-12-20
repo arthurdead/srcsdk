@@ -56,8 +56,8 @@ public:
 	DECLARE_CLASS( CInfoGameEventProxy, CPointEntity );
 
 	void Spawn();
-	int UpdateTransmitState();
-	void InputGenerateGameEvent( inputdata_t &inputdata );
+	EdictStateFlags_t UpdateTransmitState();
+	void InputGenerateGameEvent( inputdata_t &&inputdata );
 
 	static bool GameEventProxyCallback( CBaseEntity *pProxy, CBasePlayer *pViewingPlayer );
 
@@ -81,14 +81,14 @@ void CInfoGameEventProxy::Spawn()
 //-----------------------------------------------------------------------------
 // Purpose: Always transmitted to clients
 //-----------------------------------------------------------------------------
-int CInfoGameEventProxy::UpdateTransmitState()
+EdictStateFlags_t CInfoGameEventProxy::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-void CInfoGameEventProxy::InputGenerateGameEvent( inputdata_t &inputdata )
+void CInfoGameEventProxy::InputGenerateGameEvent( inputdata_t &&inputdata )
 {
 	CBasePlayer *pActivator = ToBasePlayer( inputdata.pActivator );
 
@@ -129,8 +129,8 @@ bool CInfoGameEventProxy::GameEventProxyCallback( CBaseEntity *pProxy, CBasePlay
 LINK_ENTITY_TO_CLASS( info_game_event_proxy, CInfoGameEventProxy );
 
 BEGIN_MAPENTITY( CInfoGameEventProxy )
-	DEFINE_KEYFIELD( m_iszEventName, FIELD_STRING, "event_name" ),
-	DEFINE_KEYFIELD( m_flRange, FIELD_FLOAT, "range" ),
+	DEFINE_KEYFIELD_AUTO( m_iszEventName, "event_name" ),
+	DEFINE_KEYFIELD_AUTO( m_flRange, "range" ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "GenerateGameEvent", InputGenerateGameEvent ),
 END_MAPENTITY()
 #endif
@@ -151,7 +151,7 @@ public:
 	void	TriggerDecal( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
 	// Input handlers.
-	void	InputActivate( inputdata_t &inputdata );
+	void	InputActivate( inputdata_t &&inputdata );
 
 	CBaseEntity *GetDecalEntityAndPosition( Vector *pPosition, bool bStatic );
 
@@ -170,8 +170,8 @@ private:
 
 BEGIN_MAPENTITY( CDecal )
 
-	DEFINE_KEYFIELD( m_bLowPriority, FIELD_BOOLEAN, "LowPriority" ), // Don't mark as FDECAL_PERMANENT so not save/restored and will be reused on the client preferentially
-	DEFINE_KEYFIELD( m_entityName, FIELD_STRING, "ApplyEntity" ), // Force apply to this entity instead of tracing
+	DEFINE_KEYFIELD_AUTO( m_bLowPriority, "LowPriority" ) // Don't mark as FDECAL_PERMANENT so not save/restored and will be reused on the client preferentially
+	DEFINE_KEYFIELD_AUTO( m_entityName, "ApplyEntity" ) // Force apply to this entity instead of tracing
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
 
@@ -266,7 +266,7 @@ void CDecal::TriggerDecal ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_T
 }
 
 
-void CDecal::InputActivate( inputdata_t &inputdata )
+void CDecal::InputActivate( inputdata_t &&inputdata )
 {
 	TriggerDecal( inputdata.pActivator, inputdata.pCaller, USE_ON, 0 );
 }
@@ -375,7 +375,7 @@ public:
 	void	TriggerDecal( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
 	// Input handlers.
-	void	InputActivate( inputdata_t &inputdata );
+	void	InputActivate( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -391,7 +391,7 @@ private:
 
 BEGIN_MAPENTITY( CProjectedDecal )
 
-	DEFINE_KEYFIELD( m_flDistance, FIELD_FLOAT, "Distance" ),
+	DEFINE_KEYFIELD_AUTO( m_flDistance, "Distance" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
 
@@ -426,7 +426,7 @@ void CProjectedDecal::Activate()
 	}
 }
 
-void CProjectedDecal::InputActivate( inputdata_t &inputdata )
+void CProjectedDecal::InputActivate( inputdata_t &&inputdata )
 {
 	TriggerDecal( inputdata.pActivator, inputdata.pCaller, USE_ON, 0 );
 }
@@ -490,19 +490,19 @@ modelindex_t g_sModelIndexWorld = INVALID_MODEL_INDEX;
 BEGIN_MAPENTITY( CWorld, MAPENT_POINTCLASS )
 
 	// keyvalues are parsed from map, but not saved/loaded
-	DEFINE_KEYFIELD( m_iszChapterTitle, FIELD_STRING, "chaptertitle" ),
-	DEFINE_KEYFIELD( m_bStartDark,		FIELD_BOOLEAN, "startdark" ),
-	DEFINE_KEYFIELD( m_bDisplayTitle,	FIELD_BOOLEAN, "gametitle" ),
+	DEFINE_KEYFIELD_AUTO( m_iszChapterTitle, "chaptertitle" ),
+	DEFINE_KEYFIELD_AUTO( m_bStartDark, "startdark" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisplayTitle, "gametitle" ),
 
-	DEFINE_KEYFIELD( m_flMaxOccludeeArea, FIELD_FLOAT, "maxoccludeearea" ),
-	DEFINE_KEYFIELD( m_flMinOccluderArea, FIELD_FLOAT, "minoccluderarea" ),
+	DEFINE_KEYFIELD_AUTO( m_flMaxOccludeeArea, "maxoccludeearea" ),
+	DEFINE_KEYFIELD_AUTO( m_flMinOccluderArea, "minoccluderarea" ),
 
-	DEFINE_KEYFIELD( m_flMaxPropScreenSpaceWidth, FIELD_FLOAT, "maxpropscreenwidth" ),
-	DEFINE_KEYFIELD( m_flMinPropScreenSpaceWidth, FIELD_FLOAT, "minpropscreenwidth" ),
-	DEFINE_KEYFIELD( m_iszDetailSpriteMaterial, FIELD_STRING, "detailmaterial" ),
-	DEFINE_KEYFIELD( m_bColdWorld,		FIELD_BOOLEAN, "coldworld" ),
+	DEFINE_KEYFIELD_AUTO( m_flMaxPropScreenSpaceWidth, "maxpropscreenwidth" ),
+	DEFINE_KEYFIELD_AUTO( m_flMinPropScreenSpaceWidth, "minpropscreenwidth" ),
+	DEFINE_KEYFIELD_AUTO( m_iszDetailSpriteMaterial, "detailmaterial" ),
+	DEFINE_KEYFIELD_AUTO( m_bColdWorld, "coldworld" ),
 
-	DEFINE_KEYFIELD( m_bChapterTitleNoMessage, FIELD_BOOLEAN, "chaptertitlenomessage" ),
+	DEFINE_KEYFIELD_AUTO( m_bChapterTitleNoMessage, "chaptertitlenomessage" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetChapterTitle", InputSetChapterTitle ),
 
@@ -717,7 +717,7 @@ void CWorld::SetTimeOfDay( int iTimeOfDay )
 	m_iTimeOfDay = iTimeOfDay;
 }
 
-void CWorld::InputSetChapterTitle( inputdata_t &inputdata )
+void CWorld::InputSetChapterTitle( inputdata_t &&inputdata )
 {
 	m_iszChapterTitle.Set( inputdata.value.StringID() );
 }

@@ -31,7 +31,7 @@ public:
 	DECLARE_MAPENTITY();
 
 protected:
-	void	InputFreeze( inputdata_t &inputdata );
+	void	InputFreeze( inputdata_t &&inputdata );
 
 	CNetworkVector( m_vFreezingOrigin );
 	CNetworkVar( float, m_flFrozen );

@@ -31,7 +31,7 @@
 
 BEGIN_SIMPLE_MAPEMBEDDED( CThrustController )
 
-	DEFINE_KEYFIELD( m_thrust,		FIELD_FLOAT, "thrust" ),
+	DEFINE_KEYFIELD_AUTO( m_thrust, "thrust" ),
 
 END_MAPEMBEDDED()
 
@@ -43,10 +43,10 @@ BEGIN_MAPENTITY( CPhysicsCannister )
 	DEFINE_OUTPUT( m_onActivate, "OnActivate" ),
 	DEFINE_OUTPUT( m_OnAwakened, "OnAwakened" ),
 
-	DEFINE_KEYFIELD( m_thrustTime, FIELD_FLOAT, "fuel" ),
-	DEFINE_KEYFIELD( m_damage, FIELD_FLOAT, "expdamage" ),
-	DEFINE_KEYFIELD( m_damageRadius, FIELD_FLOAT, "expradius" ),
-	DEFINE_KEYFIELD( m_gasSound, FIELD_SOUNDNAME, "gassound" ),
+	DEFINE_KEYFIELD_AUTO( m_thrustTime, "fuel" ),
+	DEFINE_KEYFIELD_AUTO( m_damage, "expdamage" ),
+	DEFINE_KEYFIELD_AUTO( m_damageRadius, "expradius" ),
+	DEFINE_KEYFIELD_AUTO( m_gasSound, "gassound" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Deactivate", InputDeactivate ),
@@ -134,7 +134,7 @@ void CPhysicsCannister::Precache( void )
 int CPhysicsCannister::OnTakeDamage( const CTakeDamageInfo &info )
 {
 	// HACKHACK: Shouldn't g_vecAttackDir be a parameter to this function?
-	if ( !m_takedamage )
+	if ( m_takedamage == DAMAGE_NO )
 		return 0;
 
 	if ( !m_active )
@@ -263,7 +263,7 @@ void CPhysicsCannister::CannisterFire( CBaseEntity *pActivator )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for activating the cannister.
 //-----------------------------------------------------------------------------
-void CPhysicsCannister::InputActivate( inputdata_t &data )
+void CPhysicsCannister::InputActivate( inputdata_t &&inputdata )
 {
 	CannisterActivate( data.pActivator, Vector(0,0.1,-0.25) );
 }
@@ -271,7 +271,7 @@ void CPhysicsCannister::InputActivate( inputdata_t &data )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for deactivating the cannister.
 //-----------------------------------------------------------------------------
-void CPhysicsCannister::InputDeactivate(inputdata_t &data)
+void CPhysicsCannister::InputDeactivate( inputdata_t &&inputdata )
 {
 	Deactivate();
 }
@@ -280,7 +280,7 @@ void CPhysicsCannister::InputDeactivate(inputdata_t &data)
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for making the cannister go boom.
 //-----------------------------------------------------------------------------
-void CPhysicsCannister::InputExplode(inputdata_t &data)
+void CPhysicsCannister::InputExplode( inputdata_t &&inputdata )
 {
 	Explode( data.pActivator );
 }
@@ -289,7 +289,7 @@ void CPhysicsCannister::InputExplode(inputdata_t &data)
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for waking up the cannister if it is sleeping.
 //-----------------------------------------------------------------------------
-void CPhysicsCannister::InputWake( inputdata_t &data )
+void CPhysicsCannister::InputWake( inputdata_t &&inputdata )
 {
 	IPhysicsObject *pPhys = VPhysicsGetObject();
 	if ( pPhys != NULL )
@@ -330,7 +330,7 @@ void CPhysicsCannister::Deactivate(void)
 void CPhysicsCannister::Explode( CBaseEntity *pAttacker )
 {
 	// don't recurse
-	m_takedamage = 0;
+	m_takedamage = DAMAGE_NO;
 	Deactivate();
 
 	Vector velocity;
@@ -348,7 +348,7 @@ void CPhysicsCannister::Explode( CBaseEntity *pAttacker )
 //-----------------------------------------------------------------------------
 void CPhysicsCannister::ExplodeTouch( CBaseEntity *pOther )
 {
-	if ( !pOther->m_takedamage )
+	if ( pOther->m_takedamage == DAMAGE_NO )
 		return;
 
 	Explode( m_hLauncher );

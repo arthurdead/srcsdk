@@ -37,13 +37,13 @@ public:
 
 	void Spawn( void );
 	bool KeyValue( const char *szKeyName, const char *szValue );
-	int UpdateTransmitState();
+	EdictStateFlags_t UpdateTransmitState();
 	int ShouldTransmit( const CCheckTransmitInfo *pInfo );
 
-	void SetMaterialVar( inputdata_t &inputdata );
-	void SetMaterialVarToCurrentTime( inputdata_t &inputdata );
-	void InputStartAnimSequence( inputdata_t &inputdata );
-	void InputStartFloatLerp( inputdata_t &inputdata );
+	void SetMaterialVar( inputdata_t &&inputdata );
+	void SetMaterialVarToCurrentTime( inputdata_t &&inputdata );
+	void InputStartAnimSequence( inputdata_t &&inputdata );
+	void InputStartFloatLerp( inputdata_t &&inputdata );
 
 	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
@@ -133,7 +133,7 @@ bool CMaterialModifyControl::KeyValue( const char *szKeyName, const char *szValu
 //------------------------------------------------------------------------------
 // Purpose : Send even though we don't have a model.
 //------------------------------------------------------------------------------
-int CMaterialModifyControl::UpdateTransmitState()
+EdictStateFlags_t CMaterialModifyControl::UpdateTransmitState()
 {
 	// ALWAYS transmit to all clients.
 	return SetTransmitState( FL_EDICT_FULLCHECK );
@@ -157,7 +157,7 @@ int CMaterialModifyControl::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CMaterialModifyControl::SetMaterialVar( inputdata_t &inputdata )
+void CMaterialModifyControl::SetMaterialVar( inputdata_t &&inputdata )
 {
 	//if( debug_materialmodifycontrol.GetBool() && Q_stristr( GetDebugName(), "alyx" ) )
 	//{
@@ -171,7 +171,7 @@ void CMaterialModifyControl::SetMaterialVar( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CMaterialModifyControl::SetMaterialVarToCurrentTime( inputdata_t &inputdata )
+void CMaterialModifyControl::SetMaterialVarToCurrentTime( inputdata_t &&inputdata )
 {
 	char temp[32];
 	Q_snprintf( temp, 32, "%f", gpGlobals->curtime );
@@ -182,7 +182,7 @@ void CMaterialModifyControl::SetMaterialVarToCurrentTime( inputdata_t &inputdata
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CMaterialModifyControl::InputStartAnimSequence( inputdata_t &inputdata )
+void CMaterialModifyControl::InputStartAnimSequence( inputdata_t &&inputdata )
 {
 	char parseString[255];
 	Q_strncpy(parseString, inputdata.value.String(), sizeof(parseString));
@@ -227,7 +227,7 @@ void CMaterialModifyControl::InputStartAnimSequence( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CMaterialModifyControl::InputStartFloatLerp( inputdata_t &inputdata )
+void CMaterialModifyControl::InputStartFloatLerp( inputdata_t &&inputdata )
 {
 	char parseString[255];
 	Q_strncpy(parseString, inputdata.value.String(), sizeof(parseString));

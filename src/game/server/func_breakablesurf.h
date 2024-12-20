@@ -89,7 +89,7 @@ public:
 	void			Event_Killed( CBaseEntity *pInflictor, CBaseEntity *pAttacker, float flDamage, int bitsDamageType );
 	void			TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	int				OnTakeDamage( const CTakeDamageInfo &info );
-	void			InputShatter( inputdata_t &inputdata );
+	void			InputShatter( inputdata_t &&inputdata );
 	void			VPhysicsCollision( int index, gamevcollisionevent_t *pEvent );
 private:
 	// One bit per pane

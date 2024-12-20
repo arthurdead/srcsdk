@@ -82,7 +82,7 @@ END_MAPENTITY()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CItem::InputEnablePlayerPickup( inputdata_t &inputdata )
+void CItem::InputEnablePlayerPickup( inputdata_t &&inputdata )
 {
 	RemoveSpawnFlags(SF_ITEM_NO_PLAYER_PICKUP);
 }
@@ -90,7 +90,7 @@ void CItem::InputEnablePlayerPickup( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CItem::InputDisablePlayerPickup( inputdata_t &inputdata )
+void CItem::InputDisablePlayerPickup( inputdata_t &&inputdata )
 {
 	AddSpawnFlags(SF_ITEM_NO_PLAYER_PICKUP);
 }
@@ -98,7 +98,7 @@ void CItem::InputDisablePlayerPickup( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CItem::InputEnableNPCPickup( inputdata_t &inputdata )
+void CItem::InputEnableNPCPickup( inputdata_t &&inputdata )
 {
 	RemoveSpawnFlags(SF_ITEM_NO_NPC_PICKUP);
 }
@@ -106,7 +106,7 @@ void CItem::InputEnableNPCPickup( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CItem::InputDisableNPCPickup( inputdata_t &inputdata )
+void CItem::InputDisableNPCPickup( inputdata_t &&inputdata )
 {
 	AddSpawnFlags(SF_ITEM_NO_NPC_PICKUP);
 }
@@ -114,7 +114,7 @@ void CItem::InputDisableNPCPickup( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CItem::InputBreakConstraint( inputdata_t &inputdata )
+void CItem::InputBreakConstraint( inputdata_t &&inputdata )
 {
 	if ( m_pConstraint != NULL )
 	{

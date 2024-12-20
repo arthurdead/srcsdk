@@ -17,7 +17,7 @@
 //-----------------------------------------------------------------------------
 // Purpose: Player specific data ( sent only to local player, too )
 //-----------------------------------------------------------------------------
-class CPlayerLocalData
+class CPlayerLocalData : public INetworkableObject
 {
 public:
 	// Prediction data copying
@@ -75,7 +75,7 @@ public:
 	CNetworkVar( bool,	m_bAutoAimTarget );
 
 	// 3d skybox
-	CNetworkVarEmbedded( sky3dparams_t, m_skybox3d );
+	CNetworkVarEmbedded( networked_sky3dparams_t, m_skybox3d );
 	// world fog
 	CNetworkVarEmbedded( fogplayerparams_t, m_PlayerFog );
 	fogparams_t			m_fog;

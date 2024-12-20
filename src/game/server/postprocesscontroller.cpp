@@ -89,62 +89,62 @@ void CPostProcessController::Activate( )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CPostProcessController::UpdateTransmitState()
+EdictStateFlags_t CPostProcessController::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
 
-void CPostProcessController::InputSetFadeTime( inputdata_t &inputdata )
+void CPostProcessController::InputSetFadeTime( inputdata_t &&inputdata )
 {
 	m_flPostProcessParameters.Set( PPPN_FADE_TIME, inputdata.value.Float() );
 }
 
-void CPostProcessController::InputSetLocalContrastStrength( inputdata_t &inputdata )
+void CPostProcessController::InputSetLocalContrastStrength( inputdata_t &&inputdata )
 {
 	m_flPostProcessParameters.Set( PPPN_LOCAL_CONTRAST_STRENGTH, inputdata.value.Float() );
 }
 
-void CPostProcessController::InputSetLocalContrastEdgeStrength( inputdata_t &inputdata )
+void CPostProcessController::InputSetLocalContrastEdgeStrength( inputdata_t &&inputdata )
 {
 	m_flPostProcessParameters.Set( PPPN_LOCAL_CONTRAST_EDGE_STRENGTH, inputdata.value.Float() );
 }
 
-void CPostProcessController::InputSetVignetteStart( inputdata_t &inputdata )
+void CPostProcessController::InputSetVignetteStart( inputdata_t &&inputdata )
 {
 	m_flPostProcessParameters.Set( PPPN_VIGNETTE_START, inputdata.value.Float() );
 }
 
-void CPostProcessController::InputSetVignetteEnd( inputdata_t &inputdata )
+void CPostProcessController::InputSetVignetteEnd( inputdata_t &&inputdata )
 {
 	m_flPostProcessParameters.Set( PPPN_VIGNETTE_END, inputdata.value.Float() );
 }
 
-void CPostProcessController::InputSetVignetteBlurStrength( inputdata_t &inputdata )
+void CPostProcessController::InputSetVignetteBlurStrength( inputdata_t &&inputdata )
 {
 	m_flPostProcessParameters.Set( PPPN_VIGNETTE_BLUR_STRENGTH, inputdata.value.Float() );
 }
 
-void CPostProcessController::InputSetFadeToBlackStrength( inputdata_t &inputdata )
+void CPostProcessController::InputSetFadeToBlackStrength( inputdata_t &&inputdata )
 {
 	m_flPostProcessParameters.Set( PPPN_FADE_TO_BLACK_STRENGTH, inputdata.value.Float() );
 }
 
-void CPostProcessController::InputSetDepthBlurFocalDistance( inputdata_t &inputdata )
+void CPostProcessController::InputSetDepthBlurFocalDistance( inputdata_t &&inputdata )
 {
 	m_flPostProcessParameters.Set( PPPN_DEPTH_BLUR_FOCAL_DISTANCE, inputdata.value.Float() );
 }
 
-void CPostProcessController::InputSetDepthBlurStrength( inputdata_t &inputdata )
+void CPostProcessController::InputSetDepthBlurStrength( inputdata_t &&inputdata )
 {
 	m_flPostProcessParameters.Set( PPPN_DEPTH_BLUR_STRENGTH, inputdata.value.Float() );
 }
 
-void CPostProcessController::InputSetScreenBlurStrength( inputdata_t &inputdata )
+void CPostProcessController::InputSetScreenBlurStrength( inputdata_t &&inputdata )
 {
 	m_flPostProcessParameters.Set( PPPN_SCREEN_BLUR_STRENGTH, inputdata.value.Float() );
 }
 
-void CPostProcessController::InputSetFilmGrainStrength( inputdata_t &inputdata )
+void CPostProcessController::InputSetFilmGrainStrength( inputdata_t &&inputdata )
 {
 	m_flPostProcessParameters.Set( PPPN_FILM_GRAIN_STRENGTH, inputdata.value.Float() );
 }

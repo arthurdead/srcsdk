@@ -30,12 +30,12 @@ public:
 	void Activate();
 
 	// Inputs
-	void InputWriteKeyValue( inputdata_t &inputdata );
-	void InputRemoveKeyValue( inputdata_t &inputdata );
-	void InputReadKey( inputdata_t &inputdata );
-	void InputSetBlock( inputdata_t &inputdata );
-	void InputSave( inputdata_t &inputdata );
-	void InputReload( inputdata_t &inputdata );
+	void InputWriteKeyValue( inputdata_t &&inputdata );
+	void InputRemoveKeyValue( inputdata_t &&inputdata );
+	void InputReadKey( inputdata_t &&inputdata );
+	void InputSetBlock( inputdata_t &&inputdata );
+	void InputSave( inputdata_t &&inputdata );
+	void InputReload( inputdata_t &&inputdata );
 
 #ifdef MAPBASE_VSCRIPT
 	HSCRIPT			ScriptGetKeyValues( void );
@@ -68,10 +68,10 @@ LINK_ENTITY_TO_CLASS(logic_externaldata, CLogicExternalData);
 BEGIN_DATADESC( CLogicExternalData )
 
 	// Keys
-	//DEFINE_KEYFIELD( m_iszBlock, FIELD_STRING, "Block" ),
-	DEFINE_KEYFIELD( m_bSaveEachChange, FIELD_BOOLEAN, "SaveEachChange" ),
-	DEFINE_KEYFIELD( m_bReloadBeforeEachAction, FIELD_BOOLEAN, "ReloadBeforeEachAction" ),
-	DEFINE_KEYFIELD( m_iszMapname, FIELD_STRING, "Mapname" ),
+	//DEFINE_KEYFIELD_AUTO( m_iszBlock, "Block" ),
+	DEFINE_KEYFIELD_AUTO( m_bSaveEachChange, "SaveEachChange" ),
+	DEFINE_KEYFIELD_AUTO( m_bReloadBeforeEachAction, "ReloadBeforeEachAction" ),
+	DEFINE_KEYFIELD_AUTO( m_iszMapname, "Mapname" ),
 
 	// This should be cached each load
 	//DEFINE_ARRAY( m_iszFile, FIELD_CHARACTER, MAX_PATH ),
@@ -191,7 +191,7 @@ void CLogicExternalData::Activate()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CLogicExternalData::InputWriteKeyValue( inputdata_t &inputdata )
+void CLogicExternalData::InputWriteKeyValue( inputdata_t &&inputdata )
 {
 	const char *szValue = inputdata.value.String();
 	char key[256];
@@ -222,7 +222,7 @@ void CLogicExternalData::InputWriteKeyValue( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CLogicExternalData::InputRemoveKeyValue( inputdata_t &inputdata )
+void CLogicExternalData::InputRemoveKeyValue( inputdata_t &&inputdata )
 {
 	if (m_bReloadBeforeEachAction)
 		LoadFile();
@@ -240,7 +240,7 @@ void CLogicExternalData::InputRemoveKeyValue( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CLogicExternalData::InputReadKey( inputdata_t &inputdata )
+void CLogicExternalData::InputReadKey( inputdata_t &&inputdata )
 {
 	if (m_bReloadBeforeEachAction)
 		LoadFile();
@@ -251,7 +251,7 @@ void CLogicExternalData::InputReadKey( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CLogicExternalData::InputSetBlock( inputdata_t &inputdata )
+void CLogicExternalData::InputSetBlock( inputdata_t &&inputdata )
 {
 	SetBlock(inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
 }
@@ -259,7 +259,7 @@ void CLogicExternalData::InputSetBlock( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CLogicExternalData::InputSave( inputdata_t &inputdata )
+void CLogicExternalData::InputSave( inputdata_t &&inputdata )
 {
 	SaveFile();
 }
@@ -267,7 +267,7 @@ void CLogicExternalData::InputSave( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CLogicExternalData::InputReload( inputdata_t &inputdata )
+void CLogicExternalData::InputReload( inputdata_t &&inputdata )
 {
 	LoadFile();
 }

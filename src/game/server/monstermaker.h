@@ -62,14 +62,14 @@ public:
 	CBaseNPCMaker(void) {}
 
 	// Input handlers
-	void InputSpawnNPC( inputdata_t &inputdata );
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
-	void InputSetMaxChildren( inputdata_t &inputdata );
-	void InputAddMaxChildren( inputdata_t &inputdata );
-	void InputSetMaxLiveChildren( inputdata_t &inputdata );
-	void InputSetSpawnFrequency( inputdata_t &inputdata );
+	void InputSpawnNPC( inputdata_t &&inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputSetMaxChildren( inputdata_t &&inputdata );
+	void InputAddMaxChildren( inputdata_t &&inputdata );
+	void InputSetMaxLiveChildren( inputdata_t &&inputdata );
+	void InputSetSpawnFrequency( inputdata_t &&inputdata );
 
 	// State changers
 	void Toggle( void );
@@ -151,11 +151,11 @@ protected:
 	bool PlaceNPCInLine( CAI_BaseNPC *pNPC );
 
 	// Inputs
-	void InputSpawnInRadius( inputdata_t &inputdata ) { MakeNPCInRadius(); }
-	void InputSpawnInLine( inputdata_t &inputdata ) { MakeNPCInLine(); }
-	void InputSpawnMultiple( inputdata_t &inputdata );
-	void InputChangeDestinationGroup( inputdata_t &inputdata );
-	void InputSetMinimumSpawnDistance( inputdata_t &inputdata );
+	void InputSpawnInRadius( inputdata_t &&inputdata ) { MakeNPCInRadius(); }
+	void InputSpawnInLine( inputdata_t &&inputdata ) { MakeNPCInLine(); }
+	void InputSpawnMultiple( inputdata_t &&inputdata );
+	void InputChangeDestinationGroup( inputdata_t &&inputdata );
+	void InputSetMinimumSpawnDistance( inputdata_t &&inputdata );
 	
 	float	m_flRadius;
 

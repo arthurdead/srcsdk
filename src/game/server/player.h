@@ -11,7 +11,7 @@
 #include "basecombatcharacter.h"
 #include "usercmd.h"
 #include "playerlocaldata.h"
-#include "PlayerState.h"
+#include "PlayerStateGame.h"
 #include "game/server/iplayerinfo.h"
 #include "hintsystem.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
@@ -22,6 +22,7 @@
 #include "ai_speech.h"
 //#include "playeranimstate.h"
 #include "tier0/vprof.h"
+#include "in_buttons.h"
 
 class CLogicPlayerProxy;
 class CPostProcessController;
@@ -294,7 +295,7 @@ public:
 
 	virtual void			CreateHandModel( int viewmodelindex = VIEWMODEL_HANDS, int parentViewmodelindex = VIEWMODEL_WEAPON );
 
-	CPlayerState			*PlayerData( void ) { return &pl; }
+	CPlayerStateGame			*PlayerData( void ) { return &pl; }
 
 	void					LockPlayerInPlace( void );
 	void					UnlockPlayer( void );
@@ -303,8 +304,8 @@ public:
 	
 	// Networking is about to update this entity, let it override and specify it's own pvs
 	virtual void			SetupVisibility( CBaseEntity *pViewEntity, unsigned char *pvs, int pvssize );
-	virtual int				UpdateTransmitState();
-	virtual int				ShouldTransmit( const CCheckTransmitInfo *pInfo );
+	virtual EdictStateFlags_t				UpdateTransmitState();
+	virtual EdictStateFlags_t				ShouldTransmit( const CCheckTransmitInfo *pInfo );
 
 	// Returns true if this player wants pPlayer to be moved back in time when this player runs usercmds.
 	// Saves a lot of overhead on the server if we can cull out entities that don't need to lag compensate
@@ -343,14 +344,14 @@ public:
 	// Forces processing of usercmds (e.g., even if game is paused, etc.)
 	void					ForceSimulation();
 
-	virtual unsigned int	PhysicsSolidMaskForEntity( void ) const;
+	virtual ContentsFlags_t	PhysicsSolidMaskForEntity( void ) const;
 
 	virtual void			PreThink( void );
 	virtual void			PostThink( void );
-	virtual int				TakeHealth( float flHealth, uint64 bitsDamageType );
+	virtual int				TakeHealth( float flHealth, DamageTypes_t bitsDamageType );
 	virtual void			TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	virtual int				OnTakeDamage( const CTakeDamageInfo &info );
-	virtual void			DamageEffect(float flDamage, uint64 fDamageType);
+	virtual void			DamageEffect(float flDamage, DamageTypes_t fDamageType);
 
 	virtual void			OnDamagedByExplosion( const CTakeDamageInfo &info );
 
@@ -417,12 +418,12 @@ public:
 	void					ShowViewModel( bool bShow );
 	void					ShowCrosshair( bool bShow );
 
-	uint64						GetButtons() { return m_nButtons; }
-	uint64						GetButtonPressed() { return m_afButtonPressed; }
-	uint64						GetButtonReleased() { return m_afButtonReleased; }
-	uint64						GetButtonLast() { return m_afButtonLast; }
-	uint64						GetButtonDisabled() { return m_afButtonDisabled; }
-	uint64						GetButtonForced() { return m_afButtonForced; }
+	InButtons_t						GetButtons() { return m_nButtons; }
+	InButtons_t						GetButtonPressed() { return m_afButtonPressed; }
+	InButtons_t						GetButtonReleased() { return m_afButtonReleased; }
+	InButtons_t						GetButtonLast() { return m_afButtonLast; }
+	InButtons_t						GetButtonDisabled() { return m_afButtonDisabled; }
+	InButtons_t						GetButtonForced() { return m_afButtonForced; }
 
 	// View model prediction setup
 	void					CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, float &zFar, float &fov );
@@ -827,18 +828,18 @@ public:
 	void	NotePlayerTalked() { m_fLastPlayerTalkTime = gpGlobals->curtime; }
 	float	LastTimePlayerTalked() { return m_fLastPlayerTalkTime; }
 
-	void	DisableButtons( uint64 nButtons );
-	void	EnableButtons( uint64 nButtons );
-	void	ForceButtons( uint64 nButtons );
-	void	UnforceButtons( uint64 nButtons );
+	void	DisableButtons( InButtons_t nButtons );
+	void	EnableButtons( InButtons_t nButtons );
+	void	ForceButtons( InButtons_t nButtons );
+	void	UnforceButtons( InButtons_t nButtons );
 
 	//---------------------------------
 	// Inputs
 	//---------------------------------
-	void	InputSetHealth( inputdata_t &inputdata );
-	void	InputSetHUDVisibility( inputdata_t &inputdata );
-	void	InputHandleMapEvent( inputdata_t &inputdata );
-	void	InputSetSuppressAttacks( inputdata_t &inputdata );
+	void	InputSetHealth( inputdata_t &&inputdata );
+	void	InputSetHUDVisibility( inputdata_t &&inputdata );
+	void	InputHandleMapEvent( inputdata_t &&inputdata );
+	void	InputSetSuppressAttacks( inputdata_t &&inputdata );
 
 	surfacedata_t *GetSurfaceData( void ) { return m_pSurfaceData; }
 	void SetLadderNormal( Vector vecLadderNormal ) { m_vecLadderNormal = vecLadderNormal; }
@@ -908,7 +909,7 @@ public:
 	CNetworkVarEmbedded( CPlayerLocalData, m_Local );
 
 	void InitFogController( void );
-	void InputSetFogController( inputdata_t &inputdata );
+	void InputSetFogController( inputdata_t &&inputdata );
 
 	void OnTonemapTriggerStartTouch( CTonemapTrigger *pTonemapTrigger );
 	void OnTonemapTriggerEndTouch( CTonemapTrigger *pTonemapTrigger );
@@ -917,9 +918,9 @@ public:
 	CNetworkHandle( CPostProcessController, m_hPostProcessCtrl );	// active postprocessing controller
 	CNetworkHandle( CColorCorrection, m_hColorCorrectionCtrl );		// active FXVolume color correction
 	void InitPostProcessController( void );
-	void InputSetPostProcessController( inputdata_t &inputdata );
+	void InputSetPostProcessController( inputdata_t &&inputdata );
 	void InitColorCorrectionController( void );
-	void InputSetColorCorrectionController( inputdata_t &inputdata );
+	void InputSetColorCorrectionController( inputdata_t &&inputdata );
 
 	// Used by env_soundscape_triggerable to manage when the player is touching multiple
 	// soundscape triggers simultaneously.
@@ -927,7 +928,7 @@ public:
 	CUtlVector<EHANDLE> m_hTriggerSoundscapeList;
 
 	// Player data that's sometimes needed by the engine
-	CNetworkVarEmbedded( CPlayerState, pl );
+	CNetworkVarEmbedded( CPlayerStateGame, pl );
 
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_fFlags );
 
@@ -944,12 +945,12 @@ public:
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_vecVelocity );
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_nWaterLevel );
 	
-	uint64						m_nButtons;
-	uint64						m_afButtonPressed;
-	uint64						m_afButtonReleased;
-	uint64						m_afButtonLast;
-	uint64						m_afButtonDisabled;	// A mask of input flags that are cleared automatically
-	uint64						m_afButtonForced;	// These are forced onto the player's inputs
+	InButtons_t						m_nButtons;
+	InButtons_t						m_afButtonPressed;
+	InButtons_t						m_afButtonReleased;
+	InButtons_t						m_afButtonLast;
+	InButtons_t						m_afButtonDisabled;	// A mask of input flags that are cleared automatically
+	InButtons_t						m_afButtonForced;	// These are forced onto the player's inputs
 
 	CNetworkVar( bool, m_fOnTarget );		//Is the crosshair on a target?
 
@@ -985,7 +986,7 @@ protected:
 	void					CalcObserverView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
 	void					CalcViewModelView( const Vector& eyeOrigin, const QAngle& eyeAngles);
 
-	virtual	void			Internal_HandleMapEvent( inputdata_t &inputdata ){}
+	virtual	void			Internal_HandleMapEvent( inputdata_t &&inputdata ){}
 
 	// FIXME: Make these private! (tf_player uses them)
 
@@ -1007,7 +1008,7 @@ protected:
 
 	int						m_iVehicleAnalogBias;
 
-	void					UpdateButtonState( uint64 nUserCmdButtonMask );
+	void					UpdateButtonState( InButtons_t nUserCmdButtonMask );
 
 	bool	m_bPauseBonusProgress;
 	CNetworkVar( int, m_iBonusProgress );
@@ -1020,7 +1021,7 @@ protected:
 	float					m_DmgTake;
 	float					m_DmgSave;
 	uint64						m_bitsDamageType;	// what types of damage has player taken
-	int						m_bitsHUDDamage;	// Damage bits for the current fame. These get sent to the hud via gmsgDamage
+	uint64						m_bitsHUDDamage;	// Damage bits for the current fame. These get sent to the hud via gmsgDamage
 
 	CNetworkVar( float, m_flDeathTime );		// the time at which the player died  (used in PlayerDeathThink())
 	float					m_flDeathAnimTime;	// the time at which the player finished their death anim (used in PlayerDeathThink() and ShouldTransmit())
@@ -1398,16 +1399,16 @@ private:
 	//
 	void	ClearTonemapParams();		//Tony; we need to clear our tonemap params every time we spawn to -1, if we trigger an input, the values will be set again.
 public:
-	void	InputSetTonemapScale( inputdata_t &inputdata );			//Set m_Local.
-																	//	void	InputBlendTonemapScale( inputdata_t &inputdata );		//TODO; this should be calculated on the client, if we use it; perhaps an entity message would suffice? .. hmm..
-	void	InputSetTonemapRate( inputdata_t &inputdata );
-	void	InputSetAutoExposureMin( inputdata_t &inputdata );
-	void	InputSetAutoExposureMax( inputdata_t &inputdata );
-	void	InputSetBloomScale( inputdata_t &inputdata );
+	void	InputSetTonemapScale( inputdata_t &&inputdata );			//Set m_Local.
+																	//	void	InputBlendTonemapScale( inputdata_t &&inputdata );		//TODO; this should be calculated on the client, if we use it; perhaps an entity message would suffice? .. hmm..
+	void	InputSetTonemapRate( inputdata_t &&inputdata );
+	void	InputSetAutoExposureMin( inputdata_t &&inputdata );
+	void	InputSetAutoExposureMax( inputdata_t &&inputdata );
+	void	InputSetBloomScale( inputdata_t &&inputdata );
 
 	//Tony; restore defaults (set min/max to -1.0 so nothing gets overridden)
-	void	InputUseDefaultAutoExposure( inputdata_t &inputdata );
-	void	InputUseDefaultBloomScale( inputdata_t &inputdata );
+	void	InputUseDefaultAutoExposure( inputdata_t &&inputdata );
+	void	InputUseDefaultBloomScale( inputdata_t &&inputdata );
 };
 
 typedef CHandle<CBasePlayer> CBasePlayerHandle;

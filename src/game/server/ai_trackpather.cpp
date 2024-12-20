@@ -433,7 +433,7 @@ void CAI_TrackPather::UpdateCurrentTarget()
 		m_flPathMaxSpeed = m_pCurrentPathTarget->m_flSpeed;
 
 		variant_t emptyVariant;
-		m_pCurrentPathTarget->AcceptInput( "InPass", this, this, emptyVariant, 0 );
+		m_pCurrentPathTarget->AcceptInput( "InPass", this, this, Move(emptyVariant), 0 );
 		m_pLastPathTarget = m_pCurrentPathTarget;
 	}
 
@@ -772,12 +772,12 @@ CPathTrack *CAI_TrackPather::FindClosestPointOnPath( CPathTrack *pPath,
 //-----------------------------------------------------------------------------
 // Breakable paths?
 //-----------------------------------------------------------------------------
-void CAI_TrackPather::InputStartBreakableMovement( inputdata_t &inputdata )
+void CAI_TrackPather::InputStartBreakableMovement( inputdata_t &&inputdata )
 {
 	m_bPatrolBreakable = true;
 }
 
-void CAI_TrackPather::InputStopBreakableMovement( inputdata_t &inputdata )
+void CAI_TrackPather::InputStopBreakableMovement( inputdata_t &&inputdata )
 {
 	m_bPatrolBreakable = false;
 }
@@ -787,7 +787,7 @@ void CAI_TrackPather::InputStopBreakableMovement( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CAI_TrackPather::InputStartPatrol( inputdata_t &inputdata )
+void CAI_TrackPather::InputStartPatrol( inputdata_t &&inputdata )
 {
 	m_bPatrolling = true;	
 }
@@ -796,7 +796,7 @@ void CAI_TrackPather::InputStartPatrol( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-void CAI_TrackPather::InputStopPatrol( inputdata_t &inputdata )
+void CAI_TrackPather::InputStopPatrol( inputdata_t &&inputdata )
 {
 	m_bPatrolling = false;	
 }
@@ -806,7 +806,7 @@ void CAI_TrackPather::InputStopPatrol( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CAI_TrackPather::InputStartPatrolBreakable( inputdata_t &inputdata )
+void CAI_TrackPather::InputStartPatrolBreakable( inputdata_t &&inputdata )
 {
 	m_bPatrolBreakable = true;
 	m_bPatrolling = true;	
@@ -816,13 +816,13 @@ void CAI_TrackPather::InputStartPatrolBreakable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Leading behaviors
 //------------------------------------------------------------------------------
-void CAI_TrackPather::InputStartLeading( inputdata_t &inputdata )
+void CAI_TrackPather::InputStartLeading( inputdata_t &&inputdata )
 {
 	EnableLeading( true );
 	SetLeadingDistance( inputdata.value.Int() );
 }
 
-void CAI_TrackPather::InputStopLeading( inputdata_t &inputdata )
+void CAI_TrackPather::InputStopLeading( inputdata_t &&inputdata )
 {
 	EnableLeading( false );
 }
@@ -939,7 +939,7 @@ void CAI_TrackPather::UpdateCurrentTargetLeading()
 		m_flPathMaxSpeed = m_pCurrentPathTarget->m_flSpeed;
 
 		variant_t emptyVariant;
-		m_pCurrentPathTarget->AcceptInput( "InPass", this, this, emptyVariant, 0 );
+		m_pCurrentPathTarget->AcceptInput( "InPass", this, this, Move(emptyVariant), 0 );
 		m_pLastPathTarget = m_pCurrentPathTarget;
 	}
 
@@ -1533,7 +1533,7 @@ void CAI_TrackPather::SetTrack( string_t strTrackName )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CAI_TrackPather::InputSetTrack( inputdata_t &inputdata )
+void CAI_TrackPather::InputSetTrack( inputdata_t &&inputdata )
 {
 	string_t strTrackName = MAKE_STRING( inputdata.value.String() );
 	SetTrack( MAKE_STRING( inputdata.value.String() ) );
@@ -1570,7 +1570,7 @@ void CAI_TrackPather::FlyToPathTrack( string_t strTrackName )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CAI_TrackPather::InputFlyToPathTrack( inputdata_t &inputdata )
+void CAI_TrackPather::InputFlyToPathTrack( inputdata_t &&inputdata )
 { 
 	// Find our specified target
 	string_t strTrackName = MAKE_STRING( inputdata.value.String() );
@@ -1582,12 +1582,12 @@ void CAI_TrackPather::InputFlyToPathTrack( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Changes the mode used to determine which path point to move to
 //-----------------------------------------------------------------------------
-void CAI_TrackPather::InputChooseFarthestPathPoint( inputdata_t &inputdata )
+void CAI_TrackPather::InputChooseFarthestPathPoint( inputdata_t &&inputdata )
 {
 	UseFarthestPathPoint( true );
 }
 
-void CAI_TrackPather::InputChooseNearestPathPoint( inputdata_t &inputdata )
+void CAI_TrackPather::InputChooseNearestPathPoint( inputdata_t &&inputdata )
 {
 	UseFarthestPathPoint( false );
 }

@@ -57,7 +57,7 @@ private:
 
 BEGIN_MAPENTITY( CBaseDMStart )
 
-	DEFINE_KEYFIELD( m_Master, FIELD_STRING, "master" ),
+	DEFINE_KEYFIELD_AUTO( m_Master, "master" ),
 
 END_MAPENTITY()
 

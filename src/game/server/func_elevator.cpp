@@ -38,17 +38,17 @@ LINK_ENTITY_TO_CLASS( func_elevator, CFuncElevator );
 //--------------------------------------------------------------------------------------------------------
 BEGIN_MAPENTITY( CFuncElevator )
 
-	DEFINE_KEYFIELD( m_topFloorPosition,	FIELD_POSITION_VECTOR, "top" ),
-	DEFINE_KEYFIELD( m_bottomFloorPosition,	FIELD_POSITION_VECTOR, "bottom" ),
+	DEFINE_KEYFIELD_AUTO( m_topFloorPosition, "top" ),
+	DEFINE_KEYFIELD_AUTO( m_bottomFloorPosition, "bottom" ),
 
-	DEFINE_KEYFIELD( m_maxSpeed,  FIELD_FLOAT,	"speed"),
-	DEFINE_KEYFIELD( m_acceleration,  FIELD_FLOAT,	"acceleration"),
+	DEFINE_KEYFIELD_AUTO( m_maxSpeed, "speed" ),
+	DEFINE_KEYFIELD_AUTO( m_acceleration, "acceleration" ),
 
-	DEFINE_KEYFIELD( m_soundStart,		 FIELD_SOUNDNAME, "StartSound" ),
-	DEFINE_KEYFIELD( m_soundStop,		 FIELD_SOUNDNAME, "StopSound" ),
-	DEFINE_KEYFIELD( m_soundDisable,	 FIELD_SOUNDNAME, "DisableSound" ),
+	DEFINE_KEYFIELD_AUTO( m_soundStart, "StartSound" ),
+	DEFINE_KEYFIELD_AUTO( m_soundStop, "StopSound" ),
+	DEFINE_KEYFIELD_AUTO( m_soundDisable, "DisableSound" ),
 
-	DEFINE_KEYFIELD( m_flBlockDamage,	 FIELD_FLOAT,	"BlockDamage"),
+	DEFINE_KEYFIELD_AUTO( m_flBlockDamage, "BlockDamage" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING,  "MoveToFloor", InputMoveToFloor ),
@@ -65,7 +65,7 @@ void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *p
 //--------------------------------------------------------------------------------------------------------
 IMPLEMENT_SERVERCLASS_ST(CFuncElevator, DT_FuncElevator)
 	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_vecOrigin ) ),
-	SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_NOSCALE|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin ),
+	SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_NOSCALE|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 	SendPropFloat( SENDINFO( m_acceleration ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO( m_currentSpeed ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO( m_movementStartTime ), 0, SPROP_NOSCALE ),
@@ -372,7 +372,7 @@ void CFuncElevator::MoveTo( float destinationZ )
 
 
 //--------------------------------------------------------------------------------------------------------
-void CFuncElevator::InputDisable( inputdata_t &inputdata )
+void CFuncElevator::InputDisable( inputdata_t &&inputdata )
 {
 	if ( !m_enabled )
 		return;
@@ -392,7 +392,7 @@ void CFuncElevator::InputDisable( inputdata_t &inputdata )
 
 
 //--------------------------------------------------------------------------------------------------------
-void CFuncElevator::InputMoveToFloor( inputdata_t &inputdata )
+void CFuncElevator::InputMoveToFloor( inputdata_t &&inputdata )
 {
 	if ( !m_enabled )
 		return;

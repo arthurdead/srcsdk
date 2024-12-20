@@ -30,21 +30,21 @@ class CPointAdvancedFinder : public CLogicalEntity
 
 private:
 	// Inputs
-	void InputSearch(inputdata_t &inputdata);
-	void InputSetSearchFilter(inputdata_t &inputdata);
-	void InputSetSearchPoint(inputdata_t &inputdata);
-	void InputSetRadius(inputdata_t &inputdata) { m_flRadius = inputdata.value.Float(); }
-	void InputSetMaxResults(inputdata_t &inputdata) { m_iNumSearches = inputdata.value.Int(); }
-	void InputSetOutputDelay(inputdata_t &inputdata) { m_flOutputDelay = inputdata.value.Float(); }
-	void InputSetFiringMethod(inputdata_t &inputdata) { m_iFiringMethod = inputdata.value.Int(); }
+	void InputSearch( inputdata_t &&inputdata );
+	void InputSetSearchFilter( inputdata_t &&inputdata );
+	void InputSetSearchPoint( inputdata_t &&inputdata );
+	void InputSetRadius( inputdata_t &&inputdata ) { m_flRadius = inputdata.value.Float(); }
+	void InputSetMaxResults( inputdata_t &&inputdata ) { m_iNumSearches = inputdata.value.Int(); }
+	void InputSetOutputDelay( inputdata_t &&inputdata ) { m_flOutputDelay = inputdata.value.Float(); }
+	void InputSetFiringMethod( inputdata_t &&inputdata ) { m_iFiringMethod = inputdata.value.Int(); }
 #ifndef ENTITYFINDER_OUTPUT_DELAY
-	void InputFoundEntity(inputdata_t &inputdata);
+	void InputFoundEntity( inputdata_t &&inputdata );
 #endif
 
 	void Spawn();
 
 	Vector GetSearchOrigin();
-	bool SearchForEntities(inputdata_t &inputdata);
+	bool SearchForEntities( inputdata_t &&inputdata );
 	void FoundEntity(CBaseEntity *pEntity, inputdata_t &inputdata);
 
 
@@ -87,14 +87,14 @@ LINK_ENTITY_TO_CLASS(point_advanced_finder, CPointAdvancedFinder);
 BEGIN_DATADESC(CPointAdvancedFinder)
 
 	// Keys
-	DEFINE_KEYFIELD(m_iszSearchFilter, FIELD_STRING, "SearchFilter"),
+	DEFINE_KEYFIELD_AUTO( m_iszSearchFilter, "SearchFilter" ),
 	DEFINE_FIELD(m_hSearchFilter, FIELD_EHANDLE),
-	DEFINE_KEYFIELD(m_iszSearchPoint, FIELD_STRING, "SearchPoint"),
+	DEFINE_KEYFIELD_AUTO( m_iszSearchPoint, "SearchPoint" ),
 	DEFINE_FIELD(m_hSearchPoint, FIELD_EHANDLE),
-	DEFINE_KEYFIELD(m_flRadius, FIELD_FLOAT, "radius"),
-	DEFINE_KEYFIELD(m_iNumSearches, FIELD_INTEGER, "NumberOfEntities"),
-	DEFINE_KEYFIELD(m_flOutputDelay, FIELD_FLOAT, "OutputDelay"),
-	DEFINE_KEYFIELD(m_iFiringMethod, FIELD_INTEGER, "Method"),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_iNumSearches, "NumberOfEntities" ),
+	DEFINE_KEYFIELD_AUTO( m_flOutputDelay, "OutputDelay" ),
+	DEFINE_KEYFIELD_AUTO( m_iFiringMethod, "Method" ),
 #if ENTITYFINDER_UTLVECTOR
 	DEFINE_UTLVECTOR( m_StoredEntities, FIELD_CLASSPTR ),
 #else
@@ -142,7 +142,7 @@ void CPointAdvancedFinder::Spawn()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointAdvancedFinder::InputSearch(inputdata_t &inputdata)
+void CPointAdvancedFinder::InputSearch( inputdata_t &&inputdata )
 {
 	SearchForEntities(inputdata);
 }
@@ -150,7 +150,7 @@ void CPointAdvancedFinder::InputSearch(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointAdvancedFinder::InputSetSearchFilter(inputdata_t &inputdata)
+void CPointAdvancedFinder::InputSetSearchFilter( inputdata_t &&inputdata )
 {
 	m_iszSearchFilter = inputdata.value.StringID();
 	m_hSearchFilter = dynamic_cast<CBaseFilter *>(gEntList.FindEntityByName( NULL, m_iszSearchFilter, this, inputdata.pActivator, inputdata.pCaller ));
@@ -159,7 +159,7 @@ void CPointAdvancedFinder::InputSetSearchFilter(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointAdvancedFinder::InputSetSearchPoint(inputdata_t &inputdata)
+void CPointAdvancedFinder::InputSetSearchPoint( inputdata_t &&inputdata )
 {
 	m_iszSearchPoint = inputdata.value.StringID();
 	m_hSearchPoint = gEntList.FindEntityByName( NULL, m_iszSearchPoint, this, inputdata.pActivator, inputdata.pCaller );
@@ -169,7 +169,7 @@ void CPointAdvancedFinder::InputSetSearchPoint(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointAdvancedFinder::InputFoundEntity(inputdata_t &inputdata)
+void CPointAdvancedFinder::InputFoundEntity( inputdata_t &&inputdata )
 {
 	CBaseEntity *pEntity = inputdata.value.Entity();
 	if (!pEntity)
@@ -193,7 +193,7 @@ inline Vector CPointAdvancedFinder::GetSearchOrigin()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CPointAdvancedFinder::SearchForEntities(inputdata_t &inputdata)
+bool CPointAdvancedFinder::SearchForEntities( inputdata_t &&inputdata )
 {
 	if ( !m_hSearchFilter )
 		return false;

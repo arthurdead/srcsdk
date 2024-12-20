@@ -32,7 +32,7 @@ public:
 
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 
-	virtual int  UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 	virtual void SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
 
 	virtual void Spawn( void );
@@ -43,18 +43,18 @@ public:
 	void	Disable( void );
 	void	Enable( void );
 
-	void	InputDisable( inputdata_t &inputdata );
-	void	InputEnable( inputdata_t &inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
 
-	void	InputSetDisplayText( inputdata_t &inputdata );
-	void	InputRemoveAllSlides( inputdata_t &inputdata );
-	void	InputAddSlides( inputdata_t &inputdata );
+	void	InputSetDisplayText( inputdata_t &&inputdata );
+	void	InputRemoveAllSlides( inputdata_t &&inputdata );
+	void	InputAddSlides( inputdata_t &&inputdata );
 
-	void	InputSetMinSlideTime( inputdata_t &inputdata );
-	void	InputSetMaxSlideTime( inputdata_t &inputdata );
+	void	InputSetMinSlideTime( inputdata_t &&inputdata );
+	void	InputSetMaxSlideTime( inputdata_t &&inputdata );
 
-	void	InputSetCycleType( inputdata_t &inputdata );
-	void	InputSetNoListRepeats( inputdata_t &inputdata );
+	void	InputSetCycleType( inputdata_t &&inputdata );
+	void	InputSetNoListRepeats( inputdata_t &&inputdata );
 
 private:
 
@@ -101,16 +101,16 @@ LINK_ENTITY_TO_CLASS( vgui_slideshow_display, CSlideshowDisplay );
 BEGIN_MAPENTITY( CSlideshowDisplay )
 	DEFINE_AUTO_ARRAY_KEYFIELD( m_szDisplayText, FIELD_CHARACTER, "displaytext" ),
 
-	DEFINE_KEYFIELD( m_String_tSlideshowDirectory, FIELD_STRING, "directory" ),
+	DEFINE_KEYFIELD_AUTO( m_String_tSlideshowDirectory, "directory" ),
 
-	DEFINE_KEYFIELD( m_fMinSlideTime, FIELD_FLOAT, "minslidetime" ),
-	DEFINE_KEYFIELD( m_fMaxSlideTime, FIELD_FLOAT, "maxslidetime" ),
+	DEFINE_KEYFIELD_AUTO( m_fMinSlideTime, "minslidetime" ),
+	DEFINE_KEYFIELD_AUTO( m_fMaxSlideTime, "maxslidetime" ),
 
-	DEFINE_KEYFIELD( m_iCycleType, FIELD_INTEGER, "cycletype" ),
-	DEFINE_KEYFIELD( m_bNoListRepeats, FIELD_BOOLEAN, "nolistrepeats" ),
+	DEFINE_KEYFIELD_AUTO( m_iCycleType, "cycletype" ),
+	DEFINE_KEYFIELD_AUTO( m_bNoListRepeats, "nolistrepeats" ),
 
-	DEFINE_KEYFIELD( m_iScreenWidth, FIELD_INTEGER, "width" ),
-	DEFINE_KEYFIELD( m_iScreenHeight, FIELD_INTEGER, "height" ),
+	DEFINE_KEYFIELD_AUTO( m_iScreenWidth, "width" ),
+	DEFINE_KEYFIELD_AUTO( m_iScreenHeight, "height" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -188,7 +188,7 @@ bool CSlideshowDisplay::KeyValue( const char *szKeyName, const char *szValue )
 	return BaseClass::KeyValue( szKeyName, szValue );
 }
 
-int CSlideshowDisplay::UpdateTransmitState()
+EdictStateFlags_t CSlideshowDisplay::UpdateTransmitState()
 {
 	if ( m_bDoFullTransmit )
 	{
@@ -278,30 +278,30 @@ void CSlideshowDisplay::Enable( void )
 }
 
 
-void CSlideshowDisplay::InputDisable( inputdata_t &inputdata )
+void CSlideshowDisplay::InputDisable( inputdata_t &&inputdata )
 {
 	Disable();
 }
 
-void CSlideshowDisplay::InputEnable( inputdata_t &inputdata )
+void CSlideshowDisplay::InputEnable( inputdata_t &&inputdata )
 {
 	Enable();
 }
 
 
-void CSlideshowDisplay::InputSetDisplayText( inputdata_t &inputdata )
+void CSlideshowDisplay::InputSetDisplayText( inputdata_t &&inputdata )
 {
 	Q_strcpy( m_szDisplayText.GetForModify(), inputdata.value.String() );
 }
 
-void CSlideshowDisplay::InputRemoveAllSlides( inputdata_t &inputdata )
+void CSlideshowDisplay::InputRemoveAllSlides( inputdata_t &&inputdata )
 {
 	// Clear out selected list
 	for ( int i = 0; i < 16; ++i )
 		m_chCurrentSlideLists.GetForModify( i ) = (unsigned char)-1;
 }
 
-void CSlideshowDisplay::InputAddSlides( inputdata_t &inputdata )
+void CSlideshowDisplay::InputAddSlides( inputdata_t &&inputdata )
 {
 	// Find the list with the current keyword
 	int iList;
@@ -329,23 +329,23 @@ void CSlideshowDisplay::InputAddSlides( inputdata_t &inputdata )
 }
 
 
-void CSlideshowDisplay::InputSetMinSlideTime( inputdata_t &inputdata )
+void CSlideshowDisplay::InputSetMinSlideTime( inputdata_t &&inputdata )
 {
 	m_fMinSlideTime = inputdata.value.Float();
 }
 
-void CSlideshowDisplay::InputSetMaxSlideTime( inputdata_t &inputdata )
+void CSlideshowDisplay::InputSetMaxSlideTime( inputdata_t &&inputdata )
 {
 	m_fMaxSlideTime = inputdata.value.Float();
 }
 
 
-void CSlideshowDisplay::InputSetCycleType( inputdata_t &inputdata )
+void CSlideshowDisplay::InputSetCycleType( inputdata_t &&inputdata )
 {
 	m_iCycleType = inputdata.value.Int();
 }
 
-void CSlideshowDisplay::InputSetNoListRepeats( inputdata_t &inputdata )
+void CSlideshowDisplay::InputSetNoListRepeats( inputdata_t &&inputdata )
 {
 	m_bNoListRepeats = inputdata.value.Bool();
 }

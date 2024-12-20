@@ -97,8 +97,8 @@ private:
 	IClientUnknown *m_pOuter;
 
 	ClientShadowHandle_t m_hShadowHandle;
-	uint16 m_nRenderFX;
-	uint16 m_nRenderMode;
+	RenderFx_t m_nRenderFX;
+	RenderMode_t m_nRenderMode;
 	uint16 m_bAlphaOverride : 1;
 	uint16 m_bShadowAlphaOverride : 1;
 	uint16 m_nDistanceFadeMode : CLIENT_ALPHA_DISTANCE_FADE_MODE_BIT_COUNT;

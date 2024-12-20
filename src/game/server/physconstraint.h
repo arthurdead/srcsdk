@@ -50,13 +50,13 @@ public:
 
 	void OnBreak( void );
 
-	void InputBreak( inputdata_t &inputdata );
+	void InputBreak( inputdata_t &&inputdata );
 
-	void InputOnBreak( inputdata_t &inputdata );
+	void InputOnBreak( inputdata_t &&inputdata );
 
-	void InputTurnOn( inputdata_t &inputdata );
+	void InputTurnOn( inputdata_t &&inputdata );
 
-	void InputTurnOff( inputdata_t &inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
 
 	int DrawDebugTextOverlays();
 

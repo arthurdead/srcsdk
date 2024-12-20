@@ -18,31 +18,34 @@ class DVariant;
 void SendProxy_EHandle( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_ModelIndex( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
 
-inline SendProp SendPropModelIndex( const char *pVarName, int offset, int sizeofVar=SIZEOF_IGNORE, byte priority = SENDPROP_DEFAULT_PRIORITY )
+inline SendPropEx SendPropModelIndex( const char *pVarName, int offset, int sizeofVar=SIZEOF_IGNORE, DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY )
 {
-	return SendPropInt( pVarName, offset, sizeofVar, 32, 0, SendProxy_ModelIndex, priority );
+	return SendPropInt( pVarName, offset, sizeofVar, 32, SPROP_NONE, SendProxy_ModelIndex, priority );
 }
 
-SendProp SendPropEHandle(
+SendPropEx SendPropEHandle(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,
-	int flags = 0,
-	SendVarProxyFn proxyFn=SendProxy_EHandle );
+	DTFlags_t flags = SPROP_NONE,
+	SendVarProxyFn proxyFn=SendProxy_EHandle,
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY );
 
-SendProp SendPropTime(
+SendPropEx SendPropTime(
 	const char *pVarName,
 	int offset,
-	int sizeofVar=SIZEOF_IGNORE );
+	int sizeofVar=SIZEOF_IGNORE,
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY );
 
-SendProp SendPropPredictableId(
+SendPropEx SendPropPredictableId(
 	const char *pVarName,
 	int offset,
-	int sizeofVar=SIZEOF_IGNORE	);
+	int sizeofVar=SIZEOF_IGNORE,
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY	);
 
 
 // Send a string_t as a string property.
-SendProp SendPropStringT( const char *pVarName, int offset, int sizeofVar );
+SendPropEx SendPropStringT( const char *pVarName, int offset, int sizeofVar=SIZEOF_IGNORE, DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY );
 
 //-----------------------------------------------------------------------------
 // Purpose: Proxy that only sends data to team members

@@ -24,11 +24,11 @@ BEGIN_MAPENTITY( CFuncBrush )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
-	DEFINE_KEYFIELD( m_iDisabled, FIELD_INTEGER, "StartDisabled" ),
-	DEFINE_KEYFIELD( m_iSolidity, FIELD_INTEGER, "Solidity" ),
-	DEFINE_KEYFIELD( m_bSolidBsp, FIELD_BOOLEAN, "solidbsp" ),
-	DEFINE_KEYFIELD( m_iszExcludedClass, FIELD_STRING, "excludednpc" ),
-	DEFINE_KEYFIELD( m_bInvertExclusion, FIELD_BOOLEAN, "invert_exclusion" ),
+	DEFINE_KEYFIELD_AUTO( m_iDisabled, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_iSolidity, "Solidity" ),
+	DEFINE_KEYFIELD_AUTO( m_bSolidBsp, "solidbsp" ),
+	DEFINE_KEYFIELD_AUTO( m_iszExcludedClass, "excludednpc" ),
+	DEFINE_KEYFIELD_AUTO( m_bInvertExclusion, "invert_exclusion" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetExcluded", InputSetExcluded ),
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "SetInvert", InputSetInvert ),
@@ -111,7 +111,7 @@ int CFuncBrush::DrawDebugTextOverlays( void )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for toggling the hidden/shown state of the brush.
 //-----------------------------------------------------------------------------
-void CFuncBrush::InputToggle( inputdata_t &inputdata )
+void CFuncBrush::InputToggle( inputdata_t &&inputdata )
 {
 	if ( IsOn() )
 	{
@@ -126,7 +126,7 @@ void CFuncBrush::InputToggle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for hiding the brush.
 //-----------------------------------------------------------------------------
-void CFuncBrush::InputTurnOff( inputdata_t &inputdata )
+void CFuncBrush::InputTurnOff( inputdata_t &&inputdata )
 {
 	TurnOff();
 }
@@ -135,7 +135,7 @@ void CFuncBrush::InputTurnOff( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for showing the brush.
 //-----------------------------------------------------------------------------
-void CFuncBrush::InputTurnOn( inputdata_t &inputdata )
+void CFuncBrush::InputTurnOn( inputdata_t &&inputdata )
 {
 	TurnOn();
 }
@@ -144,7 +144,7 @@ void CFuncBrush::InputTurnOn( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CFuncBrush::InputSetExcluded( inputdata_t &inputdata )
+void CFuncBrush::InputSetExcluded( inputdata_t &&inputdata )
 {
 	m_iszExcludedClass = inputdata.value.StringID();
 }
@@ -152,7 +152,7 @@ void CFuncBrush::InputSetExcluded( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CFuncBrush::InputSetInvert( inputdata_t &inputdata )
+void CFuncBrush::InputSetInvert( inputdata_t &&inputdata )
 {
 	m_bInvertExclusion = inputdata.value.Bool();
 }
@@ -232,12 +232,12 @@ public:
 	bool PassesInputFilter( CBaseEntity *pOther, int filter );
 
 	// input functions
-	void InputEnable( inputdata_t &inputdata )
+	void InputEnable( inputdata_t &&inputdata )
 	{
 		RemoveFlag( FL_DONTTOUCH );
 	}
 
-	void InputDisable( inputdata_t &inputdata )
+	void InputDisable( inputdata_t &&inputdata )
 	{
 		// this ensures that all the remaining EndTouch() calls still get passed through
 		AddFlag( FL_DONTTOUCH );
@@ -259,8 +259,8 @@ LINK_ENTITY_TO_CLASS( trigger_brush, CTriggerBrush );
 
 BEGIN_MAPENTITY( CTriggerBrush )
 
-	DEFINE_KEYFIELD( m_iInputFilter, FIELD_INTEGER, "InputFilter" ),
-	DEFINE_KEYFIELD( m_iDontMessageParent, FIELD_INTEGER, "DontMessageParent" ),
+	DEFINE_KEYFIELD_AUTO( m_iInputFilter, "InputFilter" ),
+	DEFINE_KEYFIELD_AUTO( m_iDontMessageParent, "DontMessageParent" ),
 
 	DEFINE_OUTPUT( m_OnStartTouch, "OnStartTouch" ),
 	DEFINE_OUTPUT( m_OnEndTouch, "OnEndTouch" ),

@@ -23,14 +23,14 @@ LINK_ENTITY_TO_CLASS( scripted_target, CScriptedTarget );
 
 BEGIN_MAPENTITY( CScriptedTarget )
 
-	DEFINE_KEYFIELD( m_iDisabled,		FIELD_INTEGER,	"StartDisabled" ),
-	DEFINE_KEYFIELD( m_iszEntity,		FIELD_STRING,	"m_iszEntity" ),
-	DEFINE_KEYFIELD( m_flRadius,			FIELD_FLOAT,	"m_flRadius" ),
+	DEFINE_KEYFIELD_AUTO( m_iDisabled, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_iszEntity, "m_iszEntity" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "m_flRadius" ),
 
-	DEFINE_KEYFIELD( m_nMoveSpeed,		FIELD_INTEGER,	"MoveSpeed" ),
-	DEFINE_KEYFIELD( m_flPauseDuration,	FIELD_FLOAT,	"PauseDuration" ),
+	DEFINE_KEYFIELD_AUTO( m_nMoveSpeed, "MoveSpeed" ),
+	DEFINE_KEYFIELD_AUTO( m_flPauseDuration, "PauseDuration" ),
 
-	DEFINE_KEYFIELD( m_flEffectDuration,	FIELD_FLOAT,	"EffectDuration" ),
+	DEFINE_KEYFIELD_AUTO( m_flEffectDuration, "EffectDuration" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -46,7 +46,7 @@ END_MAPENTITY()
 //------------------------------------------------------------------------------
 // Purpose: 
 //------------------------------------------------------------------------------
-void CScriptedTarget::InputEnable( inputdata_t &inputdata )
+void CScriptedTarget::InputEnable( inputdata_t &&inputdata )
 {
 	TurnOn();
 }
@@ -54,7 +54,7 @@ void CScriptedTarget::InputEnable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CScriptedTarget::InputDisable( inputdata_t &inputdata )
+void CScriptedTarget::InputDisable( inputdata_t &&inputdata )
 {
 	TurnOff();
 }

@@ -70,16 +70,12 @@ enum IterationRetval_t
 };
 
 
-enum class SpatialPartitionHandle_t : unsigned short
-{
-};
+enum SpatialPartitionHandle_t : unsigned short;
 
 // A combination of the PARTITION_ flags above.
 typedef int SpatialPartitionListMask_t;	
 
-enum class SpatialTempHandle_t : int
-{
-};
+enum SpatialTempHandle_t : int;
 
 
 //-----------------------------------------------------------------------------

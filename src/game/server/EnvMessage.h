@@ -30,7 +30,7 @@ public:
 
 private:
 
-	void InputShowMessage( inputdata_t &inputdata );
+	void InputShowMessage( inputdata_t &&inputdata );
 
 	string_t m_iszMessage;		// Message to display.
 	float m_MessageVolume;

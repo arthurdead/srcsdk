@@ -80,7 +80,7 @@ void DensityWeightsMap::Destroy()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void DensityWeightsMap::SetType( int iType )
+void DensityWeightsMap::SetType( density_type_t iType )
 {
 	if( m_iType == iType )
 		return;

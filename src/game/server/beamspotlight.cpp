@@ -37,17 +37,17 @@ public:
 	void	Spawn( void );
 	void	Precache( void );
 
-	void InputTurnOn( inputdata_t &inputdata );
-	void InputTurnOff( inputdata_t &inputdata );
-	void InputStart( inputdata_t &inputdata );
-	void InputStop( inputdata_t &inputdata );
-	void InputReverse( inputdata_t &inputdata );
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
+	void InputStart( inputdata_t &&inputdata );
+	void InputStop( inputdata_t &&inputdata );
+	void InputReverse( inputdata_t &&inputdata );
 
 protected:
 	bool KeyValue( const char *szKeyName, const char *szValue );
 
 private:
-	int  UpdateTransmitState();
+	EdictStateFlags_t  UpdateTransmitState();
 	void RecalcRotation( void );
 
 	CNetworkVar( modelindex_t, m_nHaloIndex );
@@ -74,10 +74,10 @@ public:
 LINK_ENTITY_TO_CLASS( beam_spotlight, CBeamSpotlight );
 
 BEGIN_MAPENTITY( CBeamSpotlight )
-	DEFINE_KEYFIELD( m_flmaxSpeed, FIELD_FLOAT, "maxspeed" ),
-	DEFINE_KEYFIELD( m_flSpotlightMaxLength,FIELD_FLOAT, "SpotlightLength"),
-	DEFINE_KEYFIELD( m_flSpotlightGoalWidth,FIELD_FLOAT, "SpotlightWidth"),
-	DEFINE_KEYFIELD( m_flHDRColorScale, FIELD_FLOAT, "HDRColorScale" ),
+	DEFINE_KEYFIELD_AUTO( m_flmaxSpeed, "maxspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpotlightMaxLength, "SpotlightLength" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpotlightGoalWidth, "SpotlightWidth" ),
+	DEFINE_KEYFIELD_AUTO( m_flHDRColorScale, "HDRColorScale" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "LightOn", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "LightOff", InputTurnOff ),
@@ -197,7 +197,7 @@ void CBeamSpotlight::Spawn( void )
 }
 
 //-----------------------------------------------------------------------------
-void CBeamSpotlight::InputTurnOn( inputdata_t &inputdata )
+void CBeamSpotlight::InputTurnOn( inputdata_t &&inputdata )
 {
 	if ( !m_bSpotlightOn )
 	{
@@ -207,7 +207,7 @@ void CBeamSpotlight::InputTurnOn( inputdata_t &inputdata )
 
 
 //-----------------------------------------------------------------------------
-void CBeamSpotlight::InputTurnOff( inputdata_t &inputdata )
+void CBeamSpotlight::InputTurnOff( inputdata_t &&inputdata )
 {
 	if ( m_bSpotlightOn )
 	{
@@ -216,7 +216,7 @@ void CBeamSpotlight::InputTurnOff( inputdata_t &inputdata )
 }
 
 //-----------------------------------------------------------------------------
-void CBeamSpotlight::InputStart( inputdata_t &inputdata )
+void CBeamSpotlight::InputStart( inputdata_t &&inputdata )
 {
 	if ( !m_isRotating )
 	{
@@ -226,7 +226,7 @@ void CBeamSpotlight::InputStart( inputdata_t &inputdata )
 }
 
 //-----------------------------------------------------------------------------
-void CBeamSpotlight::InputStop( inputdata_t &inputdata )
+void CBeamSpotlight::InputStop( inputdata_t &&inputdata )
 {
 	if ( m_isRotating )
 	{
@@ -236,7 +236,7 @@ void CBeamSpotlight::InputStop( inputdata_t &inputdata )
 }
 
 //-----------------------------------------------------------------------------
-void CBeamSpotlight::InputReverse( inputdata_t &inputdata )
+void CBeamSpotlight::InputReverse( inputdata_t &&inputdata )
 {
 	m_isReversed = !m_isReversed;
 	RecalcRotation();
@@ -245,7 +245,7 @@ void CBeamSpotlight::InputReverse( inputdata_t &inputdata )
 //-------------------------------------------------------------------------------------
 // Purpose : Send even though we don't have a model so spotlight gets proper position
 //-------------------------------------------------------------------------------------
-int CBeamSpotlight::UpdateTransmitState()
+EdictStateFlags_t CBeamSpotlight::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_PVSCHECK );
 }

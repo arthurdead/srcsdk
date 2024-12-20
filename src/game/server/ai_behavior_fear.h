@@ -34,8 +34,8 @@ public:
 	void DisableGoal( CAI_BaseNPC *pAI );
 
 	// Inputs
-	virtual void InputActivate( inputdata_t &inputdata );
-	virtual void InputDeactivate( inputdata_t &inputdata );
+	virtual void InputActivate( inputdata_t &&inputdata );
+	virtual void InputDeactivate( inputdata_t &&inputdata );
 
 	// Note that the outer is the caller in these outputs
 	//COutputEvent	m_OnSeeFearEntity;

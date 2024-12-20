@@ -1608,7 +1608,7 @@ bool UTIL_IsMasterTriggered(string_t sMaster, CBaseEntity *pActivator)
 	return true;
 }
 
-void UTIL_BloodStream( const Vector &origin, const Vector &direction, int color, int amount )
+void UTIL_BloodStream( const Vector &origin, const Vector &direction, BloodColor_t color, int amount )
 {
 	if ( !UTIL_ShouldShowBlood( color ) )
 		return;
@@ -1636,7 +1636,7 @@ Vector UTIL_RandomBloodVector( void )
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
-void UTIL_ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName )
+void UTIL_ImpactTrace( trace_t *pTrace, DamageTypes_t iDamageType, const char *pCustomImpactName )
 {
 	CBaseEntity *pEntity = pTrace->m_pEnt;
 

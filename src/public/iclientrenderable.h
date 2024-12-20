@@ -28,10 +28,7 @@ class IClientAlphaProperty;
 // Handles to a client shadow
 //-----------------------------------------------------------------------------
 //typedef unsigned short ClientShadowHandle_t;
-enum class ClientShadowHandle_t : unsigned short
-{
-};
-
+enum ClientShadowHandle_t : unsigned short;
 inline const ClientShadowHandle_t CLIENTSHADOW_INVALID_HANDLE = (ClientShadowHandle_t)~0;
 
 //-----------------------------------------------------------------------------

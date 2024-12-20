@@ -14,7 +14,7 @@ public:
 
 	bool AllPlayers() { return true; }
 
-	void InputSend( inputdata_t &inputdata );
+	void InputSend( inputdata_t &&inputdata );
 
 	//bool m_bCustom;
 	int m_iFlags;
@@ -27,8 +27,8 @@ LINK_ENTITY_TO_CLASS( env_closecaption, CEnvCloseCaption );
 
 BEGIN_DATADESC( CEnvCloseCaption )
 
-	//DEFINE_KEYFIELD( m_bCustom, FIELD_BOOLEAN, "custom" ),
-	DEFINE_KEYFIELD( m_iFlags, FIELD_INTEGER, "flags" ),
+	//DEFINE_KEYFIELD_AUTO( m_bCustom, "custom" ),
+	DEFINE_KEYFIELD_AUTO( m_iFlags, "flags" ),
 	DEFINE_INPUT( m_flDuration, FIELD_FLOAT, "SetDuration" ),
 
 	// Inputs
@@ -39,7 +39,7 @@ END_DATADESC()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvCloseCaption::InputSend( inputdata_t &inputdata )
+void CEnvCloseCaption::InputSend( inputdata_t &&inputdata )
 {
 	char szCC[512];
 	Q_strncpy(szCC, inputdata.value.String(), sizeof(szCC));

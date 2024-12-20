@@ -112,8 +112,8 @@ public:
 	int DrawDebugTextOverlays(void);
 
 	// Input handlers
-	void InputExplode( inputdata_t &inputdata );
-	void InputSetIgnoredEntity( inputdata_t &inputdata );
+	void InputExplode( inputdata_t &&inputdata );
+	void InputSetIgnoredEntity( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -136,13 +136,13 @@ LINK_ENTITY_TO_CLASS( env_explosion, CEnvExplosion );
 
 BEGIN_MAPENTITY( CEnvExplosion )
 
-	DEFINE_KEYFIELD( m_iMagnitude, FIELD_INTEGER, "iMagnitude" ),
-	DEFINE_KEYFIELD( m_iRadiusOverride, FIELD_INTEGER, "iRadiusOverride" ),
+	DEFINE_KEYFIELD_AUTO( m_iMagnitude, "iMagnitude" ),
+	DEFINE_KEYFIELD_AUTO( m_iRadiusOverride, "iRadiusOverride" ),
 
-	DEFINE_KEYFIELD( m_flDamageForce, FIELD_FLOAT, "DamageForce" ),
+	DEFINE_KEYFIELD_AUTO( m_flDamageForce, "DamageForce" ),
 
-	DEFINE_KEYFIELD( m_iClassIgnore, FIELD_INTEGER, "ignoredClass" ),
-	DEFINE_KEYFIELD( m_hEntityIgnore, FIELD_EHANDLE, "ignoredEntity" ),
+	DEFINE_KEYFIELD_AUTO( m_iClassIgnore, "ignoredClass" ),
+	DEFINE_KEYFIELD_AUTO( m_hEntityIgnore, "ignoredEntity" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "Explode", InputExplode),
@@ -235,7 +235,7 @@ void CEnvExplosion::Spawn( void )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for making the explosion explode.
 //-----------------------------------------------------------------------------
-void CEnvExplosion::InputExplode( inputdata_t &inputdata )
+void CEnvExplosion::InputExplode( inputdata_t &&inputdata )
 { 
 	trace_t tr;
 
@@ -384,7 +384,7 @@ void CEnvExplosion::InputExplode( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for setting the ignored entity.
 //-----------------------------------------------------------------------------
-void CEnvExplosion::InputSetIgnoredEntity( inputdata_t &inputdata )
+void CEnvExplosion::InputSetIgnoredEntity( inputdata_t &&inputdata )
 {
 	m_hEntityIgnore = inputdata.value.Entity();
 }
@@ -425,7 +425,6 @@ void ExplosionCreate( const Vector &center, const QAngle &angles,
 		pExplosion->KeyValue( "DamageForce", buf );
 	}
 
-	variant_t emptyVariant;
 	pExplosion->SetRenderMode( kRenderTransAdd );
 	pExplosion->SetOwnerEntity( pOwner );
 	pExplosion->Spawn();
@@ -437,7 +436,8 @@ void ExplosionCreate( const Vector &center, const QAngle &angles,
 	}
 	pExplosion->m_iClassIgnore = ignoredClass;
 
-	pExplosion->AcceptInput( "Explode", NULL, NULL, emptyVariant, 0 );
+	variant_t emptyVariant;
+	pExplosion->AcceptInput( "Explode", NULL, NULL, Move(emptyVariant), 0 );
 }
 
 

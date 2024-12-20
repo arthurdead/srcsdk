@@ -15,6 +15,9 @@
 #include "bittools.h"
 #include "engine/ivmodelinfo.h"
 #include "networkvar.h"
+#include "datamap.h"
+
+enum AmmoIndex_t : unsigned short;
 
 #define TICK_INTERVAL			(gpGlobals->interval_per_tick)
 
@@ -47,38 +50,7 @@ public:
 		Vector vDuckView,
 		Vector vObsHullMin,
 		Vector vObsHullMax,
-		Vector vDeadViewHeight )
-	{
-		m_vHullMin = vHullMin;
-		m_vHullMax = vHullMax;
-		m_vView = vView;
-
-		Vector vecSize;
-		VectorSubtract( m_vHullMax, m_vHullMin, vecSize );
-		m_flRadius = vecSize.Length() * 0.5f;
-		m_flRadius2D = vecSize.Length2D() * 0.5f;
-
-		m_flWidth = vecSize.y;
-		m_flHeight = vecSize.z;
-		m_flLength = vecSize.x;
-
-		m_vDuckHullMin = vDuckHullMin;
-		m_vDuckHullMax = vDuckHullMax;
-		m_vDuckView = vDuckView;
-
-		VectorSubtract( m_vDuckHullMax, m_vDuckHullMin, vecSize );
-		m_flDuckRadius = vecSize.Length() * 0.5f;
-		m_flDuckRadius2D = vecSize.Length2D() * 0.5f;
-
-		m_flDuckWidth = vecSize.y;
-		m_flDuckHeight = vecSize.z;
-		m_flDuckLength = vecSize.x;
-
-		m_vObsHullMin = vObsHullMin;
-		m_vObsHullMax = vObsHullMax;
-
-		m_vDeadViewHeight = vDeadViewHeight;
-	}
+		Vector vDeadViewHeight );
 
 	// Height above entity position where the viewer's eye is.
 	Vector m_vHullMin;
@@ -172,17 +144,13 @@ inline float FractionUnDucked( int msecs )
 
 #define WEAPON_NOCLIP			-1	// clip sizes set to this tell the weapon it doesn't use a clip
 
-// is this required?
-#define	MAX_AMMO_TYPES	128		// ???
-#define MAX_AMMO_SLOTS  128		// not really slots
-
 #define HUD_PRINTNOTIFY		1
 #define HUD_PRINTCONSOLE	2
 #define HUD_PRINTTALK		3
 #define HUD_PRINTCENTER		4
 
 // Vote creation or processing failure codes
-typedef enum
+enum vote_create_failed_t : unsigned char
 {
 	VOTE_FAILED_GENERIC = 0,
 	VOTE_FAILED_TRANSITIONING_PLAYERS,
@@ -208,7 +176,7 @@ typedef enum
 
 	// TF-specific?
 	VOTE_FAILED_MODIFICATION_ALREADY_ACTIVE,
-} vote_create_failed_t;
+};
 
 enum
 {
@@ -224,7 +192,7 @@ enum
 #define MAX_VOTE_OPTIONS		5
 #define DEDICATED_SERVER		99
 
-enum CastVote
+enum CastVote : unsigned char
 {
 	VOTE_OPTION1,  // Use this for Yes
 	VOTE_OPTION2,  // Use this for No
@@ -243,20 +211,25 @@ enum CastVote
 
 //===================================================================================================================
 // Hud Element hiding flags
-#define	HIDEHUD_WEAPONSELECTION		( 1<<0 )	// Hide ammo count & weapon selection
-#define	HIDEHUD_FLASHLIGHT			( 1<<1 )
-#define	HIDEHUD_ALL					( 1<<2 )
-#define HIDEHUD_HEALTH				( 1<<3 )	// Hide health & armor / suit battery
-#define HIDEHUD_PLAYERDEAD			( 1<<4 )	// Hide when local player's dead
-#define HIDEHUD_NEEDSUIT			( 1<<5 )	// Hide when the local player doesn't have the HEV suit
-#define HIDEHUD_MISCSTATUS			( 1<<6 )	// Hide miscellaneous status elements (trains, pickup history, death notices, etc)
-#define HIDEHUD_CHAT				( 1<<7 )	// Hide all communication elements (saytext, voice icon, etc)
-#define	HIDEHUD_CROSSHAIR			( 1<<8 )	// Hide crosshairs
-#define	HIDEHUD_VEHICLE_CROSSHAIR	( 1<<9 )	// Hide vehicle crosshair
-#define HIDEHUD_INVEHICLE			( 1<<10 )
-#define HIDEHUD_BONUS_PROGRESS		( 1<<11 )	// Hide bonus progress display (for bonus map challenges)
+enum Hidehud_t : unsigned short
+{
+	HIDEHUD_WEAPONSELECTION =		( 1<<0 ),	// Hide ammo count & weapon selection
+	HIDEHUD_FLASHLIGHT =			( 1<<1 ),
+	HIDEHUD_ALL =					( 1<<2 ),
+	HIDEHUD_HEALTH =				( 1<<3 ),	// Hide health & armor / suit battery
+	HIDEHUD_PLAYERDEAD =			( 1<<4 ),	// Hide when local player's dead
+	HIDEHUD_NEEDSUIT =			( 1<<5 ),	// Hide when the local player doesn't have the HEV suit
+	HIDEHUD_MISCSTATUS =			( 1<<6 ),	// Hide miscellaneous status elements (trains, pickup history, death notices, etc)
+	HIDEHUD_CHAT =				( 1<<7 ),	// Hide all communication elements (saytext, voice icon, etc)
+	HIDEHUD_CROSSHAIR =			( 1<<8 ),	// Hide crosshairs
+	HIDEHUD_VEHICLE_CROSSHAIR =	( 1<<9 ),	// Hide vehicle crosshair
+	HIDEHUD_INVEHICLE =			( 1<<10 ),
+	HIDEHUD_BONUS_PROGRESS =		( 1<<11 ),	// Hide bonus progress display (for bonus map challenges)
 
-#define HIDEHUD_BITCOUNT			12
+	HIDEHUD_BITCOUNT =			12,
+};
+
+FLAGENUM_OPERATORS( Hidehud_t, unsigned short )
 
 //===================================================================================================================
 // suit usage bits
@@ -303,10 +276,10 @@ enum CastVote
 //===================================================================================================================
 // Team Defines
 
-enum
+enum Team_t : unsigned char
 {
-	TEAM_ANY = -2,
-	TEAM_INVALID = -1,
+	TEAM_ANY = (unsigned char)-2,
+	TEAM_INVALID = (unsigned char)-1,
 
 	TEAM_UNASSIGNED = 0,
 	TEAM_NEUTRAL = 0,
@@ -316,10 +289,19 @@ enum
 	LAST_SHARED_TEAM = TEAM_SPECTATOR,
 
 	FIRST_GAME_TEAM = (LAST_SHARED_TEAM+1),
-	SECOND_GAME_TEAM = (LAST_SHARED_TEAM+2)
-};
+	SECOND_GAME_TEAM = (LAST_SHARED_TEAM+2),
 
-typedef int Team_t;
+#ifdef HEIST_DLL
+	TEAM_CIVILIANS = TEAM_NEUTRAL,
+	TEAM_HEISTERS = FIRST_GAME_TEAM,
+	TEAM_POLICE = SECOND_GAME_TEAM,
+	TEAM_RIVALS,
+
+	NUM_HEIST_TEAMS,
+#endif
+
+	TEAMNUM_NUM_BITS = 6,
+};
 
 #define MAX_TEAMS				32	// Max number of teams in a game
 #define MAX_TEAM_NAME_LENGTH	32	// Max length of a team's name
@@ -334,10 +316,12 @@ typedef int Team_t;
 // -----------------------------------------
 // Skill Level
 // -----------------------------------------
-#define SKILL_EASY		1
-#define SKILL_MEDIUM	2
-#define SKILL_HARD		3
-
+enum Skill_t : unsigned char
+{
+	SKILL_EASY = 1,
+	SKILL_MEDIUM = 2,
+	SKILL_HARD = 3,
+};
 
 // Weapon flags
 // -----------------------------------------
@@ -369,7 +353,7 @@ typedef int Team_t;
 #define MUZZLEFLASH_TYPE_DEFAULT	0x00000001
 
 // Muzzle flash definitions (for the flags field of the "MuzzleFlash" DispatchEffect)
-enum
+enum Muzzleflash_t : unsigned short
 {
 	MUZZLEFLASH_SHOTGUN,
 	MUZZLEFLASH_PISTOL,
@@ -387,7 +371,7 @@ enum
 #define TRACER_DONT_USE_ATTACHMENT	-1
 
 // Entity Dissolve types
-enum
+enum EntityDissolve_t : unsigned char
 {
 	ENTITY_DISSOLVE_NORMAL = 0,
 	ENTITY_DISSOLVE_ELECTRICAL,
@@ -401,15 +385,18 @@ enum
 // ---------------------------
 //  Hit Group standards
 // ---------------------------
-#define	HITGROUP_GENERIC	0
-#define	HITGROUP_HEAD		1
-#define	HITGROUP_CHEST		2
-#define	HITGROUP_STOMACH	3
-#define HITGROUP_LEFTARM	4	
-#define HITGROUP_RIGHTARM	5
-#define HITGROUP_LEFTLEG	6
-#define HITGROUP_RIGHTLEG	7
-#define HITGROUP_GEAR		10			// alerts NPC, but doesn't do damage or bleed (1/100th damage)
+enum Hitgroup_t : unsigned int
+{
+	HITGROUP_GENERIC =	0,
+	HITGROUP_HEAD =		1,
+	HITGROUP_CHEST =		2,
+	HITGROUP_STOMACH =	3,
+	HITGROUP_LEFTARM =	4,	
+	HITGROUP_RIGHTARM =	5,
+	HITGROUP_LEFTLEG =	6,
+	HITGROUP_RIGHTLEG =	7,
+	HITGROUP_GEAR =		10,			// alerts NPC, but doesn't do damage or bleed (1/100th damage)
+};
 
 #define PLAYER_FATAL_FALL_SPEED		1024 // approx 60 feet
 #define PLAYER_MAX_SAFE_FALL_SPEED	580 // approx 20 feet
@@ -428,68 +415,18 @@ enum
 #define AUTOAIM_SCALE_DEFAULT		1.0f
 #define AUTOAIM_SCALE_DIRECT_ONLY	0.0f
 
-// instant damage
-
-// For a means of resolving these consts into debug string text, see function
-// CTakeDamageInfo::DebugGetDamageTypeString(unsigned int DamageType, char *outbuf, unsigned int outbuflength )
-enum : uint64
+// settings for m_takedamage
+enum Takedamage_t : unsigned char
 {
-	DMG_GENERIC = 0,			// generic damage -- do not use if you want players to flinch and bleed!
-	DMG_CRUSH = (1 << 0),	// crushed by falling or moving object. 
-											// NOTE: It's assumed crush damage is occurring as a result of physics collision, so no extra physics force is generated by crush damage.
-											// DON'T use DMG_CRUSH when damaging entities unless it's the result of a physics collision. You probably want DMG_CLUB instead.
-	DMG_BULLET = (1 << 1),	// shot
-	DMG_SLASH = (1 << 2),	// cut, clawed, stabbed
-	DMG_BURN = (1 << 3),	// heat burned
-	DMG_VEHICLE = (1 << 4),	// hit by a vehicle
-	DMG_FALL = (1 << 5),	// fell too far
-	DMG_BLAST = (1 << 6),	// explosive blast damage
-	DMG_CLUB = (1 << 7),	// crowbar, punch, headbutt
-	DMG_SHOCK = (1 << 8),	// electric shock
-	DMG_SONIC = (1 << 9),	// sound pulse shockwave
-	DMG_ENERGYBEAM = (1 << 10),	// laser or other high energy beam 
-	DMG_PREVENT_PHYSICS_FORCE = (1 << 11),	// Prevent a physics force 
-	DMG_NEVERGIB = (1 << 12),	// with this bit OR'd in, no damage type will be able to gib victims upon death
-	DMG_ALWAYSGIB = (1 << 13),	// with this bit OR'd in, any damage type can be made to gib victims upon death.
-	DMG_DROWN = (1 << 14),	// Drowning
-
-	DMG_PARALYZE = (1 << 15),	// slows affected creature down
-	DMG_NERVEGAS = (1 << 16),	// nerve toxins, very bad
-	DMG_POISON = (1 << 17),	// blood poisoning - heals over time like drowning damage
-	DMG_RADIATION = (1 << 18),	// radiation exposure
-	DMG_DROWNRECOVER = (1 << 19),	// drowning recovery
-	DMG_ACID = (1 << 20),	// toxic chemicals or acid burns
-	DMG_SLOWBURN = (1 << 21),	// in an oven
-
-	DMG_REMOVENORAGDOLL = (1<<22),		// with this bit OR'd in, no ragdoll will be created, and the target will be quietly removed.
-											// use this to kill an entity that you've already got a server-side ragdoll for
-
-	DMG_PHYSGUN = (1<<23),		// Hit by manipulator. Usually doesn't do any damage.
-	DMG_PLASMA = (1<<24),		// Shot by Cremator
-	DMG_AIRBOAT = (1<<25),		// Hit by the airboat's gun
-
-	DMG_DISSOLVE = (1<<26),		// Dissolving!
-	DMG_BLAST_SURFACE = (1<<27),		// A blast on the surface of water that cannot harm things underwater
-	DMG_DIRECT = (1<<28),
-	DMG_BUCKSHOT = (1<<29),		// not quite a bullet. Little, rounder, different.
-
-	// NOTE: DO NOT ADD ANY MORE CUSTOM DMG_ TYPES. MODS USE THE DMG_LASTGENERICFLAG BELOW, AND
-	//		 IF YOU ADD NEW DMG_ TYPES, THEIR TYPES WILL BE HOSED. WE NEED A BETTER SOLUTION.
-
-	// TODO: keep this up to date so all the mod-specific flags don't overlap anything.
-	DMG_LASTGENERICFLAG	= DMG_BUCKSHOT,
+	DAMAGE_NO =				0,
+	DAMAGE_EVENTS_ONLY =		1,		// Call damage functions, but don't modify health
+	DAMAGE_YES =				2,
+	DAMAGE_AIM =				3,
 };
 
-#define DAMAGE_CRIT_MULTIPLIER 3.0f
-
-// settings for m_takedamage
-#define	DAMAGE_NO				0
-#define DAMAGE_EVENTS_ONLY		1		// Call damage functions, but don't modify health
-#define	DAMAGE_YES				2
-#define	DAMAGE_AIM				3
-
 // Spectator Movement modes
-enum {
+enum ObserverMode_t : unsigned char
+{
 	OBS_MODE_NONE = 0,	// not in spectator mode
 	OBS_MODE_DEATHCAM,	// special mode for death cam animation
 	OBS_MODE_FREEZECAM,	// zooms to a target, and freeze-frames on them
@@ -500,12 +437,13 @@ enum {
 	OBS_MODE_ROAMING,	// free roaming
 
 	NUM_OBSERVER_MODES,
+
+	LAST_PLAYER_OBSERVERMODE = OBS_MODE_ROAMING,
 };
 
-#define LAST_PLAYER_OBSERVERMODE	OBS_MODE_ROAMING
-
 // Force Camera Restrictions with mp_forcecamera
-enum {
+enum ObserverRestriction_t : unsigned char
+{
 	OBS_ALLOW_ALL = 0,	// allow all modes, all targets
 	OBS_ALLOW_TEAM,		// allow only own team & first person, no PIP
 	OBS_ALLOW_NONE,		// don't allow any spectating after death (fixed & fade to black)
@@ -542,8 +480,10 @@ enum
 //=============================================================================
 
 // VGui Screen Flags
-enum
+enum VGUIScreenFlags_t : unsigned char
 {
+	VGUI_SCREEN_NO_FLAGS = 0,
+
 	VGUI_SCREEN_ACTIVE = 0x1,
 	VGUI_SCREEN_VISIBLE_TO_TEAMMATES = 0x2,
 	VGUI_SCREEN_ATTACHED_TO_VIEWMODEL = 0x4,
@@ -553,13 +493,15 @@ enum
 	VGUI_SCREEN_MAX_BITS = 5
 };
 
-typedef enum
+FLAGENUM_OPERATORS( VGUIScreenFlags_t, unsigned char )
+
+enum USE_TYPE : unsigned char
 {
 	USE_OFF = 0, 
 	USE_ON = 1, 
 	USE_SET = 2, 
 	USE_TOGGLE = 3
-} USE_TYPE;
+};
 
 // basic team colors
 #define COLOR_RED		Color(255, 64, 64, 255)
@@ -571,7 +513,7 @@ typedef enum
 #define COLOR_BLACK		Color(0, 0, 0, 255)
 
 // All NPCs need this data
-enum : unsigned char
+enum BloodColor_t : unsigned char
 {
 	DONT_BLEED = (unsigned char)-1,
 
@@ -592,12 +534,12 @@ enum : unsigned char
 // Vehicles may have more than one passenger.
 // This enum may be expanded by derived classes
 //-----------------------------------------------------------------------------
-enum PassengerRole_t
+enum PassengerRole_t : unsigned char
 {
-	VEHICLE_ROLE_NONE = -1,
+	VEHICLE_ROLE_NONE = (unsigned char)-1,
 
 	VEHICLE_ROLE_DRIVER = 0,	// Only one driver
-	
+
 	LAST_SHARED_VEHICLE_ROLE,
 };
 
@@ -615,8 +557,10 @@ enum
 #define NO_THINK_CONTEXT	-1
 
 // entity flags, CBaseEntity::m_iEFlags
-enum : uint64
+enum EntityFlags_t : uint64
 {
+	EFL_NONE = 0,
+
 	EFL_KILLME	=				(1<<0),	// This entity is marked for death -- This allows the game to actually delete ents at a safe time
 	EFL_DORMANT	=				(1<<1),	// Entity is dormant, no updates to client
 	EFL_SETTING_UP_BONES =		(1<<2),	// Set while a model is setting up its bones.
@@ -664,6 +608,8 @@ enum : uint64
 	EFL_NO_DAMAGE_FORCES =		(1<<29),	// Doesn't accept forces from physics damage
 };
 
+FLAGENUM_OPERATORS( EntityFlags_t, uint64 )
+
 //
 // Constants shared by the engine and dlls
 // This header file included by engine files and DLL files.
@@ -673,7 +619,7 @@ enum : uint64
 // PLAYER SPECIFIC FLAGS FIRST BECAUSE WE USE ONLY A FEW BITS OF NETWORK PRECISION
 // This top block is for singleplayer games only....no HL2:DM (which defines HL2_DLL)
 
-enum : uint64
+enum EntityBehaviorFlags_t : uint64
 {
 	FL_ONGROUND = (1<<0),	// At rest / on the ground
 	FL_DUCKING = (1<<1),	// Player flag -- Player is fully crouched
@@ -717,19 +663,24 @@ enum : uint64
 	FL_UNBLOCKABLE_BY_PLAYER = (1<<30), // pusher that can't be blocked by the player
 };
 
+FLAGENUM_OPERATORS( EntityBehaviorFlags_t, uint64 )
+
 //-----------------------------------------------------------------------------
 // EFFECTS
 //-----------------------------------------------------------------------------
-const int FX_BLOODSPRAY_DROPS	= 0x01;
-const int FX_BLOODSPRAY_GORE	= 0x02;
-const int FX_BLOODSPRAY_CLOUD	= 0x04;
-const int FX_BLOODSPRAY_ALL		= 0xFF;
+enum : unsigned char
+{
+	FX_BLOODSPRAY_DROPS	= 0x01,
+	FX_BLOODSPRAY_GORE	= 0x02,
+	FX_BLOODSPRAY_CLOUD	= 0x04,
+	FX_BLOODSPRAY_ALL		= 0xFF,
+};
 
 //-----------------------------------------------------------------------------
 #define MAX_SCREEN_OVERLAYS		10
 
 // These are the types of data that hang off of CBaseEntities and the flag bits used to mark their presence
-enum
+enum DataObject_t : unsigned char
 {
 	GROUNDLINK = 0,
 	TOUCHLINK,
@@ -756,8 +707,9 @@ typedef C_BaseEntity CSharedBaseEntity;
 // Bullet firing information
 //-----------------------------------------------------------------------------
 
-enum FireBulletsFlags_t
+enum FireBulletsFlags_t : unsigned char
 {
+	FIRE_BULLETS_NO_FLAGS = 0,
 	FIRE_BULLETS_FIRST_SHOT_ACCURATE = 0x1,		// Pop the first shot with perfect accuracy
 	FIRE_BULLETS_DONT_HIT_UNDERWATER = 0x2,		// If the shot hits its target underwater, don't damage it
 	FIRE_BULLETS_ALLOW_WATER_SURFACE_IMPACTS = 0x4,	// If the shot hits water surface, still call DoImpactEffect
@@ -768,74 +720,15 @@ enum FireBulletsFlags_t
 	FIRE_BULLETS_NO_AUTO_GIB_TYPE = 0x10,		// Don't automatically add DMG_ALWAYSGIB or DMG_NEVERGIB if m_flDamage is set
 };
 
+FLAGENUM_OPERATORS( FireBulletsFlags_t, unsigned char )
 
 struct FireBulletsInfo_t
 {
-	FireBulletsInfo_t()
-	{
-		m_iShots = 1;
-		m_vecSpread.Init( 0, 0, 0 );
-		m_flDistance = 8192;
-		m_iTracerFreq = 4;
-		m_flDamage = 0.0f;
-		m_flPlayerDamage = 0.0f;
-		m_pAttacker = NULL;
-		m_nFlags = 0;
-		m_pAdditionalIgnoreEnt = NULL;
-		m_flDamageForceScale = 1.0f;
+	FireBulletsInfo_t();
 
-#ifdef _DEBUG
-		m_iAmmoType = -1;
-		m_vecSrc.Init( VEC_T_NAN, VEC_T_NAN, VEC_T_NAN );
-		m_vecDirShooting.Init( VEC_T_NAN, VEC_T_NAN, VEC_T_NAN );
-#endif
-		m_bPrimaryAttack = true;
-		m_bUseServerRandomSeed = false;
+	FireBulletsInfo_t( int nShots, const Vector &vecSrc, const Vector &vecDir, const Vector &vecSpread, float flDistance, AmmoIndex_t nAmmoType, bool bPrimaryAttack = true );
 
-		m_pIgnoreEntList = NULL;
-	}
-
-	FireBulletsInfo_t( int nShots, const Vector &vecSrc, const Vector &vecDir, const Vector &vecSpread, float flDistance, int nAmmoType, bool bPrimaryAttack = true )
-	{
-		m_iShots = nShots;
-		m_vecSrc = vecSrc;
-		m_vecDirShooting = vecDir;
-		m_vecSpread = vecSpread;
-		m_flDistance = flDistance;
-		m_iAmmoType = nAmmoType;
-		m_iTracerFreq = 4;
-		m_flDamage = 0;
-		m_flPlayerDamage = 0;
-		m_pAttacker = NULL;
-		m_nFlags = 0;
-		m_pAdditionalIgnoreEnt = NULL;
-		m_flDamageForceScale = 1.0f;
-		m_bPrimaryAttack = bPrimaryAttack;
-		m_bUseServerRandomSeed = false;
-
-		m_pIgnoreEntList = NULL;
-	}
-
-	FireBulletsInfo_t( int cShots, const Vector &vecSrc, const Vector &vecDirShooting, const Vector &vecSpread, float flDistance, int iAmmoType, int iTracerFreq, float flDamage, CSharedBaseEntity *pAttacker, bool bFirstShotAccurate, bool bPrimaryAttack )
-	{
-		m_iShots = cShots;
-		m_vecSrc = vecSrc;
-		m_vecDirShooting = vecDirShooting;
-		m_vecSpread = vecSpread;
-		m_flDistance = flDistance;
-		m_iAmmoType = iAmmoType;
-		m_iTracerFreq = iTracerFreq;
-		m_flDamage = flDamage;
-		m_flPlayerDamage = 0;
-		m_pAttacker = pAttacker;
-		m_nFlags = bFirstShotAccurate ? FIRE_BULLETS_FIRST_SHOT_ACCURATE : 0;
-		m_pAdditionalIgnoreEnt = NULL;
-		m_flDamageForceScale = 1.0f;
-		m_bPrimaryAttack = bPrimaryAttack;
-		m_bUseServerRandomSeed = false;
-
-		m_pIgnoreEntList = NULL;
-	}
+	FireBulletsInfo_t( int cShots, const Vector &vecSrc, const Vector &vecDirShooting, const Vector &vecSpread, float flDistance, AmmoIndex_t iAmmoType, int iTracerFreq, float flDamage, CSharedBaseEntity *pAttacker, bool bFirstShotAccurate, bool bPrimaryAttack );
 
 	~FireBulletsInfo_t() {}
 
@@ -844,11 +737,11 @@ struct FireBulletsInfo_t
 	Vector m_vecDirShooting;
 	Vector m_vecSpread;
 	float m_flDistance;
-	int m_iAmmoType;
+	AmmoIndex_t m_iAmmoType;
 	int m_iTracerFreq;
 	float m_flDamage;
 	float m_flPlayerDamage;	// Damage to be used instead of m_flDamage if we hit a player
-	int m_nFlags;			// See FireBulletsFlags_t
+	FireBulletsFlags_t m_nFlags;			// See FireBulletsFlags_t
 	float m_flDamageForceScale;
 	CSharedBaseEntity *m_pAttacker;
 	CSharedBaseEntity *m_pAdditionalIgnoreEnt;
@@ -875,8 +768,8 @@ struct FireBulletsInfo_t
 	float GetDistance() { return m_flDistance; }
 	void SetDistance( float value ) { m_flDistance = value; }
 
-	int GetAmmoType() { return m_iAmmoType; }
-	void SetAmmoType( int value ) { m_iAmmoType = value; }
+	AmmoIndex_t GetAmmoType() { return m_iAmmoType; }
+	void SetAmmoType( AmmoIndex_t value ) { m_iAmmoType = value; }
 
 	int GetTracerFreq() { return m_iTracerFreq; }
 	void SetTracerFreq( int value ) { m_iTracerFreq = value; }
@@ -886,8 +779,8 @@ struct FireBulletsInfo_t
 	int GetPlayerDamage() { return m_flPlayerDamage; }
 	void SetPlayerDamage( float value ) { m_flPlayerDamage = value; }
 
-	int GetFlags() { return m_nFlags; }
-	void SetFlags( float value ) { m_nFlags = value; }
+	FireBulletsFlags_t GetFlags() { return m_nFlags; }
+	void SetFlags( FireBulletsFlags_t value ) { m_nFlags = value; }
 
 	float GetDamageForceScale() { return m_flDamageForceScale; }
 	void SetDamageForceScale( float value ) { m_flDamageForceScale = value; }
@@ -959,11 +852,11 @@ typedef short HSOUNDSCRIPTHANDLE;
 struct EmitSound_t
 {
 	EmitSound_t() :
-		m_nChannel( 0 ),
+		m_nChannel( CHAN_AUTO ),
 		m_pSoundName( 0 ),
 		m_flVolume( VOL_NORM ),
 		m_SoundLevel( SNDLVL_NONE ),
-		m_nFlags( 0 ),
+		m_nFlags( SND_NOFLAGS ),
 		m_nPitch( PITCH_NORM ),
 		m_nSpecialDSP( 0 ),
 		m_pOrigin( 0 ),
@@ -980,11 +873,11 @@ struct EmitSound_t
 
 	EmitSound_t( const CSoundParameters &src );
 
-	int							m_nChannel;
+	SoundChannel_t							m_nChannel;
 	char const					*m_pSoundName;
 	float						m_flVolume;
 	soundlevel_t				m_SoundLevel;
-	int							m_nFlags;
+	SoundFlags_t							m_nFlags;
 	int							m_nPitch;
 	int							m_nSpecialDSP;
 	const Vector				*m_pOrigin;
@@ -1031,16 +924,6 @@ enum
 	CP_WARN_NO_ANNOUNCEMENTS
 };
 
-// YWB:  3/12/2007
-// Changing the following #define for Prediction Error checking (See gamemovement.cpp for overview) will to 1 or 2 enables the system, 0 turns it off
-// Level 1 enables it, but doesn't force "full precision" networking, so you can still get lots of errors in position/velocity/etc.
-// Level 2 enables it but also forces origins/angles to be sent full precision, so other fields can be error / tolerance checked
-// NOTE:  This stuff only works on a listen server since it punches a hole from the client .dll to server .dll!!!
-#define PREDICTION_ERROR_CHECK_LEVEL 0
-
-// Set to 1 to spew a call stack in DiffPrint() for the existing side when the other side is missing
-#define PREDICTION_ERROR_CHECK_STACKS_FOR_MISSING 0
-
 //-----------------------------------------------------------------------------
 // Round timer states
 //-----------------------------------------------------------------------------
@@ -1067,10 +950,10 @@ enum
 #define TEAM_TRAIN_FLOATS_PER_HILL		2
 #define TEAM_TRAIN_HILLS_ARRAY_SIZE		TEAM_TRAIN_MAX_TEAMS * TEAM_TRAIN_MAX_HILLS * TEAM_TRAIN_FLOATS_PER_HILL
 
-enum
+enum Class_T : unsigned char
 {
-	CLASS_ANY = -2,
-	CLASS_INVALID = -1,
+	CLASS_ANY = (unsigned char)-2,
+	CLASS_INVALID = (unsigned char)-1,
 
 	CLASS_NONE = 0,
 	CLASS_PLAYER,
@@ -1079,15 +962,22 @@ enum
 	LAST_SHARED_ENTITY_CLASS = CLASS_PLAYER,
 
 	FIRST_GAME_CLASS = (LAST_SHARED_ENTITY_CLASS+1),
+
+#ifdef HEIST_DLL
+	CLASS_HEISTER = FIRST_GAME_CLASS,
+	CLASS_CIVILIAN,
+	CLASS_POLICE,
+	CLASS_RIVALS,
+
+	NUM_HEIST_ENTITY_CLASSES,
+#endif
 };
 
-typedef int Class_T;
-
 // Factions
-enum
+enum Faction_T : unsigned char
 {
-	FACTION_ANY = -2,
-	FACTION_INVALID = -1,
+	FACTION_ANY = (unsigned char)-2,
+	FACTION_INVALID = (unsigned char)-1,
 
 	FACTION_NONE = 0, // Not assigned a faction.  Entities not assigned a faction will not do faction tests.
 
@@ -1095,9 +985,19 @@ enum
 	LAST_SHARED_FACTION = FACTION_NONE,
 
 	FIRST_GAME_FACTION = (LAST_SHARED_FACTION+1),
-};
 
-typedef int Faction_T;
+#ifdef HEIST_DLL
+	FACTION_CIVILIANS = FIRST_GAME_FACTION,
+	FACTION_HEISTERS,
+	FACTION_APEX_SECURITY,
+	FACTION_ABBADON_CIRCLE,
+	FACTION_GOLDEN_HOTEL,
+	FACTION_STEEL_N_SPEAR_PMC,
+	FACTION_NY_SWAT,
+
+	NUM_HEIST_FACTIONS,
+#endif
+};
 
 enum
 {
@@ -1107,12 +1007,12 @@ enum
 };
 
 #define NOINTERP_PARITY_MAX			4
-#define NOINTERP_PARITY_MAX_BITS	2
+#define NOINTERP_PARITY_MAX_BITS	MINIMUM_BITS_NEEDED(NOINTERP_PARITY_MAX)
 
 //-----------------------------------------------------------------------------
 // For invalidate physics recursive
 //-----------------------------------------------------------------------------
-enum InvalidatePhysicsBits_t
+enum InvalidatePhysicsBits_t : unsigned char
 {
 	POSITION_CHANGED	= 0x1,
 	ANGLES_CHANGED		= 0x2,
@@ -1121,6 +1021,8 @@ enum InvalidatePhysicsBits_t
 	BOUNDS_CHANGED		= 0x10,		// Means render bounds have changed, so shadow decal projection is required, etc.
 	SEQUENCE_CHANGED	= 0x20,		// Means sequence has changed, only interesting when surrounding bounds depends on sequence																				
 };
+
+FLAGENUM_OPERATORS( InvalidatePhysicsBits_t, unsigned char )
 
 //-----------------------------------------------------------------------------
 // Generic activity lookup support
@@ -1136,67 +1038,153 @@ enum
 //-----------------------------------------------------------------------------
 #define MAX_HOLIDAY_STRING 64
 
-enum : unsigned int
+enum EHolidayIndex : unsigned int
 {
-	HOLIDAY_NONE =                   0,
-	HOLIDAY_GAME_RELEASE =     (1 << 0),
-	HOLIDAY_HALLOWEEN =        (1 << 1),
-	HOLIDAY_CHRISTMAS =        (1 << 2),
-	HOLIDAY_VALENTINES =       (1 << 3),
-	HOLIDAY_FULL_MOON =        (1 << 4),
-	HOLIDAY_APRIL_FOOLS =      (1 << 5),
+	HOLIDAY_ID_INVALID = (unsigned int)-1,
 
-	HOLIDAY_HALLOWEEN_OR_FULL_MOON = (HOLIDAY_HALLOWEEN|HOLIDAY_FULL_MOON),
-	HOLIDAY_HALLOWEEN_OR_FULL_MOON_OR_VALENTINES = (HOLIDAY_HALLOWEEN_OR_FULL_MOON|HOLIDAY_VALENTINES),
+	HOLIDAY_ID_NONE = 0,
 
-	LAST_SHARED_HOLIDAY_FLAG = 5,
-	NUM_SHARED_HOLIDAYS = 6,
+	HOLIDAY_ID_GAME_RELEASE,
+	HOLIDAY_ID_HALLOWEEN,
+	HOLIDAY_ID_CHRISTMAS,
+	HOLIDAY_ID_VALENTINES,
+	HOLIDAY_ID_FULL_MOON,
+	HOLIDAY_ID_APRIL_FOOLS,
 
-	MAX_SUPPORTED_HOLIDAYS = 32
+	NUM_SHARED_HOLIDAYS,
+
+	LAST_SHARED_HOLIDAY_ID = HOLIDAY_ID_APRIL_FOOLS,
+
+	FIRST_GAME_HOLIDAY_ID = (LAST_SHARED_HOLIDAY_ID+1),
+
+	MAX_SUPPORTED_HOLIDAYS = 32,
 };
 
-typedef unsigned int EHolidayFlags;
-typedef unsigned int EHolidayFlag;
-typedef unsigned int EHolidayIndex;
+enum EHolidayFlags : unsigned int
+{
+	HOLIDAY_FLAG_NONE =                   0,
+
+	HOLIDAY_FLAG_GAME_RELEASE =     (1 << (HOLIDAY_ID_GAME_RELEASE >> 1)),
+	HOLIDAY_FLAG_HALLOWEEN =        (1 << (HOLIDAY_ID_HALLOWEEN >> 1)),
+	HOLIDAY_FLAG_CHRISTMAS =        (1 << (HOLIDAY_ID_CHRISTMAS >> 1)),
+	HOLIDAY_FLAG_VALENTINES =       (1 << (HOLIDAY_ID_VALENTINES >> 1)),
+	HOLIDAY_FLAG_FULL_MOON =        (1 << (HOLIDAY_ID_FULL_MOON >> 1)),
+	HOLIDAY_FLAG_APRIL_FOOLS =      (1 << (HOLIDAY_ID_APRIL_FOOLS >> 1)),
+
+	HOLIDAY_FLAG_HALLOWEEN_OR_FULL_MOON = (HOLIDAY_FLAG_HALLOWEEN|HOLIDAY_FLAG_FULL_MOON),
+	HOLIDAY_FLAG_HALLOWEEN_OR_FULL_MOON_OR_VALENTINES = (HOLIDAY_FLAG_HALLOWEEN_OR_FULL_MOON|HOLIDAY_FLAG_VALENTINES),
+
+	LAST_SHARED_HOLIDAY_FLAG = HOLIDAY_FLAG_APRIL_FOOLS,
+
+	FIRST_GAME_HOLIDAY_FLAG = (LAST_SHARED_HOLIDAY_FLAG << 1),
+};
+
+FLAGENUM_OPERATORS( EHolidayFlags, unsigned int )
+
+//undefined behavior if more then one
+typedef EHolidayFlags EHolidayFlag;
 
 #ifdef CLIENT_DLL
 //the engine checks this cvar for 0x01
 extern ConVar localplayer_visionflags;
 #endif
 
-enum : unsigned int
+enum vision_filter_t : unsigned int
 {
 	VISION_FILTER_NONE = 0,
 
 	VISION_FILTER_ENGINE_MAT_REPLACEMENT = 0x01,
 
-	VISION_FILTER_GAME_RELEASE =   (HOLIDAY_GAME_RELEASE << 1),
-	VISION_FILTER_HALLOWEEN =      (HOLIDAY_HALLOWEEN << 1),
-	VISION_FILTER_CHRISTMAS =      (HOLIDAY_CHRISTMAS << 1),
-	VISION_FILTER_VALENTINES =     (HOLIDAY_VALENTINES << 1),
-	VISION_FILTER_FULL_MOON =      (HOLIDAY_FULL_MOON << 1),
-	VISION_FILTER_APRIL_FOOLS =    (HOLIDAY_APRIL_FOOLS << 1),
+	VISION_FILTER_GAME_RELEASE =   (HOLIDAY_FLAG_GAME_RELEASE << 1),
+	VISION_FILTER_HALLOWEEN =      (HOLIDAY_FLAG_HALLOWEEN << 1),
+	VISION_FILTER_CHRISTMAS =      (HOLIDAY_FLAG_CHRISTMAS << 1),
+	VISION_FILTER_VALENTINES =     (HOLIDAY_FLAG_VALENTINES << 1),
+	VISION_FILTER_FULL_MOON =      (HOLIDAY_FLAG_FULL_MOON << 1),
+	VISION_FILTER_APRIL_FOOLS =    (HOLIDAY_FLAG_APRIL_FOOLS << 1),
 
 	VISION_FILTER_HALLOWEEN_OR_FULL_MOON = (VISION_FILTER_HALLOWEEN|VISION_FILTER_FULL_MOON),
 	VISION_FILTER_HALLOWEEN_OR_FULL_MOON_OR_VALENTINES = (VISION_FILTER_HALLOWEEN_OR_FULL_MOON|VISION_FILTER_VALENTINES),
 
-	VISION_FILTER_LAST_HOLIDAY_FLAG = (LAST_SHARED_HOLIDAY_FLAG+1),
+	VISION_FILTER_LAST_HOLIDAY_FLAG = VISION_FILTER_APRIL_FOOLS,
 
-	VISION_FILTER_LOW_VIOLENCE = (1 << (VISION_FILTER_LAST_HOLIDAY_FLAG+1)),
+	VISION_FILTER_LOW_VIOLENCE = (VISION_FILTER_LAST_HOLIDAY_FLAG << 1),
 
-	LAST_SHARED_VISION_FILTER_FLAG = (VISION_FILTER_LAST_HOLIDAY_FLAG+1),
+	LAST_SHARED_VISION_FILTER_FLAG = VISION_FILTER_LOW_VIOLENCE,
+
 	NUM_SHARED_VISION_FILTERS = (NUM_SHARED_HOLIDAYS+2),
 
-	MAX_SUPPORTED_VISION_FILTERS = 32
+	MAX_SUPPORTED_VISION_FILTERS = 32,
+
+	FRIST_GAME_VISION_FILTER = (LAST_SHARED_VISION_FILTER_FLAG << 1),
 };
 
-typedef unsigned int vision_filter_t;
+DECLARE_FIELD_ENUM( vision_filter_t )
 
 struct VisionModelIndex_t
 {
+public:
+	DECLARE_CLASS_NOBASE( VisionModelIndex_t );
+	DECLARE_EMBEDDED_NETWORKVAR_NOCHECK()
+
+	VisionModelIndex_t(const VisionModelIndex_t &) = delete;
+	VisionModelIndex_t &operator=(const VisionModelIndex_t &) = delete;
+	VisionModelIndex_t(VisionModelIndex_t &&) = delete;
+	VisionModelIndex_t &operator=(VisionModelIndex_t &&) = delete;
+
+private:
+#ifdef GAME_DLL
+	friend class CBaseEntity;
+#else
+	friend class C_BaseEntity;
+#endif
+
+	VisionModelIndex_t( vision_filter_t flags_, modelindex_t mdlindex )
+		: flags( flags_ ), modelindex( mdlindex )
+	{
+	}
+
 	vision_filter_t flags;
-	modelindex_t modelindex = INVALID_MODEL_INDEX;
+	modelindex_t modelindex;
 };
+
+enum view_id_t : unsigned char
+{
+	VIEW_ID_ILLEGAL = (unsigned char)-2,
+	VIEW_ID_NONE = (unsigned char)-1,
+	VIEW_ID_MAIN = 0,
+	VIEW_ID_3DSKY = 1,
+	VIEW_ID_MONITOR = 2,
+	VIEW_ID_REFLECTION = 3,
+	VIEW_ID_REFRACTION = 4,
+	VIEW_ID_INTRO_PLAYER = 5,
+	VIEW_ID_INTRO_CAMERA = 6,
+	VIEW_ID_SHADOW_DEPTH_TEXTURE = 7,
+	VIEW_ID_SSAO = 8,
+	VIEW_ID_COUNT,
+	VIEW_ID_BITS = MINIMUM_BITS_NEEDED(VIEW_ID_COUNT),
+};
+
+enum view_flags_t : unsigned short
+{
+	VIEW_FLAG_NONE = 0,
+
+	VIEW_FLAG_MAIN = (1 << VIEW_ID_MAIN),
+	VIEW_FLAG_3DSKY = (1 << VIEW_ID_3DSKY),
+	VIEW_FLAG_MONITOR = (1 << VIEW_ID_MONITOR),
+	VIEW_FLAG_REFLECTION = (1 << VIEW_ID_REFLECTION),
+	VIEW_FLAG_REFRACTION = (1 << VIEW_ID_REFRACTION),
+	VIEW_FLAG_INTRO_PLAYER = (1 << VIEW_ID_INTRO_PLAYER),
+	VIEW_FLAG_INTRO_CAMERA = (1 << VIEW_ID_INTRO_CAMERA),
+	VIEW_FLAG_SHADOW_DEPTH_TEXTURE = (1 << VIEW_ID_SHADOW_DEPTH_TEXTURE),
+	VIEW_FLAG_ID_SSAO = (1 << VIEW_ID_SSAO),
+
+	VIEW_LAST_FLAG = VIEW_FLAG_ID_SSAO,
+
+	VIEW_FLAG_BITS = MINIMUM_BITS_NEEDED(VIEW_LAST_FLAG),
+};
+
+FLAGENUM_OPERATORS( view_flags_t, unsigned short )
+DECLARE_FIELD_ENUM( view_flags_t )
 
 enum tprbGameInfo_e
 {

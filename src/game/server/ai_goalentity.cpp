@@ -19,11 +19,11 @@
 
 BEGIN_MAPENTITY( CAI_GoalEntity, MAPENT_POINTCLASS )
 
-	DEFINE_KEYFIELD(	m_iszActor,				FIELD_STRING, 	"Actor"					),
-	DEFINE_KEYFIELD(	m_iszGoal,				FIELD_STRING, 	"Goal"					),
-	DEFINE_KEYFIELD(	m_fStartActive,			FIELD_BOOLEAN,  "StartActive"			),
-	DEFINE_KEYFIELD(	m_iszConceptModifiers,	FIELD_STRING, 	"BaseConceptModifiers"	),
-	DEFINE_KEYFIELD(	m_SearchType,			FIELD_INTEGER, 	"SearchType"			),
+	DEFINE_KEYFIELD_AUTO( m_iszActor, "Actor" ),
+	DEFINE_KEYFIELD_AUTO( m_iszGoal, "Goal" ),
+	DEFINE_KEYFIELD_AUTO( m_fStartActive, "StartActive" ),
+	DEFINE_KEYFIELD_AUTO( m_iszConceptModifiers, "BaseConceptModifiers" ),
+	DEFINE_KEYFIELD_AUTO( m_SearchType, "SearchType" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", 		InputActivate ),
@@ -111,7 +111,7 @@ void CAI_GoalEntity::ResolveNames()
 
 //-------------------------------------
 
-void CAI_GoalEntity::InputActivate( inputdata_t &inputdata )
+void CAI_GoalEntity::InputActivate( inputdata_t &&inputdata )
 {
 	if ( !( m_flags & ACTIVE ) )
 	{
@@ -131,7 +131,7 @@ void CAI_GoalEntity::InputActivate( inputdata_t &inputdata )
 
 //-------------------------------------
 
-void CAI_GoalEntity::InputUpdateActors( inputdata_t &inputdata )
+void CAI_GoalEntity::InputUpdateActors( inputdata_t &&inputdata )
 {
 	int i;
 	CUtlRBTree<CAI_BaseNPC *> prevActors;
@@ -169,7 +169,7 @@ void CAI_GoalEntity::InputUpdateActors( inputdata_t &inputdata )
 
 //-------------------------------------
 
-void CAI_GoalEntity::InputDeactivate( inputdata_t &inputdata ) 	
+void CAI_GoalEntity::InputDeactivate( inputdata_t &&inputdata ) 	
 {
 	if ( m_flags & ACTIVE )
 	{

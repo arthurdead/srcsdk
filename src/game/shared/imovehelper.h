@@ -13,6 +13,7 @@
 #include "shareddefs.h"
 #include "soundflags.h"
 #include "ehandle.h"
+#include "bspflags.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -24,7 +25,7 @@ struct model_t;
 struct cmodel_t;
 struct vcollide_t;
 class CGameTrace;
-enum soundlevel_t;
+enum soundlevel_t : unsigned int;
 
 #ifdef GAME_DLL
 class CBasePlayer;
@@ -38,7 +39,7 @@ typedef C_BasePlayer CSharedBasePlayer;
 // Purpose: Identifies how submerged in water a player is.
 //-----------------------------------------------------------------------------
 
-enum
+enum WaterLevel_t : unsigned char
 {
 	WL_NotInWater=0,
 	WL_Feet,
@@ -46,6 +47,54 @@ enum
 	WL_Eyes
 };
 
+enum WaterType_t : unsigned char
+{
+	WT_None =               0,
+	WT_Water =        (1 << 0),
+	WT_Slime =        (1 << 1),
+	WT_current_0 =    (1 << 2),
+	WT_current_90 =   (1 << 3),
+	WT_current_180 =  (1 << 4),
+	WT_current_270 =  (1 << 5),
+	WT_current_up =   (1 << 6),
+	WT_current_down = (1 << 7),
+
+	WT_mask_water = (WT_Water|WT_Slime),
+	WT_mask_current = (WT_current_0|WT_current_90|WT_current_180|WT_current_270|WT_current_up|WT_current_down),
+};
+
+FLAGENUM_OPERATORS( WaterType_t, unsigned char )
+
+inline WaterType_t WaterTypeFromContents(ContentsFlags_t cont)
+{
+	WaterType_t ret = WT_None;
+
+	if(cont & CONTENTS_WATER)
+		ret |= WT_Water;
+
+	if(cont & CONTENTS_SLIME)
+		ret |= WT_Slime;
+
+	if(cont & CONTENTS_CURRENT_0)
+		ret |= WT_current_0;
+
+	if(cont & CONTENTS_CURRENT_90)
+		ret |= WT_current_90;
+
+	if(cont & CONTENTS_CURRENT_180)
+		ret |= WT_current_180;
+
+	if(cont & CONTENTS_CURRENT_270)
+		ret |= WT_current_270;
+
+	if(cont & CONTENTS_CURRENT_UP)
+		ret |= WT_current_up;
+
+	if(cont & CONTENTS_CURRENT_DOWN)
+		ret |= WT_current_down;
+
+	return ret;
+}
 
 //-----------------------------------------------------------------------------
 // An entity identifier that works in both game + client dlls

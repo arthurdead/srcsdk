@@ -43,17 +43,17 @@ private:
 BEGIN_MAPENTITY( CFuncSmokeVolume )
 
 	// Save/restore Keyvalue fields
-	DEFINE_KEYFIELD( m_Color1, FIELD_COLOR32, "Color1" ),
-	DEFINE_KEYFIELD( m_Color2, FIELD_COLOR32, "Color2" ),
+	DEFINE_KEYFIELD_AUTO( m_Color1, "Color1" ),
+	DEFINE_KEYFIELD_AUTO( m_Color2, "Color2" ),
 
-	DEFINE_KEYFIELD( m_String_tMaterialName, FIELD_STRING, "Material" ),
-	DEFINE_KEYFIELD( m_ParticleDrawWidth, FIELD_FLOAT, "ParticleDrawWidth" ),
-	DEFINE_KEYFIELD( m_ParticleSpacingDistance, FIELD_FLOAT, "ParticleSpacingDistance" ),
-	DEFINE_KEYFIELD( m_DensityRampSpeed, FIELD_FLOAT, "DensityRampSpeed" ),
-	DEFINE_KEYFIELD( m_RotationSpeed, FIELD_FLOAT, "RotationSpeed" ),
-	DEFINE_KEYFIELD( m_MovementSpeed, FIELD_FLOAT, "MovementSpeed" ),
-	DEFINE_KEYFIELD( m_Density, FIELD_FLOAT, "Density" ),
-	DEFINE_KEYFIELD( m_maxDrawDistance, FIELD_FLOAT, "MaxDrawDistance" ),
+	DEFINE_KEYFIELD_AUTO( m_String_tMaterialName, "Material" ),
+	DEFINE_KEYFIELD_AUTO( m_ParticleDrawWidth, "ParticleDrawWidth" ),
+	DEFINE_KEYFIELD_AUTO( m_ParticleSpacingDistance, "ParticleSpacingDistance" ),
+	DEFINE_KEYFIELD_AUTO( m_DensityRampSpeed, "DensityRampSpeed" ),
+	DEFINE_KEYFIELD_AUTO( m_RotationSpeed, "RotationSpeed" ),
+	DEFINE_KEYFIELD_AUTO( m_MovementSpeed, "MovementSpeed" ),
+	DEFINE_KEYFIELD_AUTO( m_Density, "Density" ),
+	DEFINE_KEYFIELD_AUTO( m_maxDrawDistance, "MaxDrawDistance" ),
 	// inputs
 	DEFINE_INPUT( m_RotationSpeed, FIELD_FLOAT, "SetRotationSpeed"),
 	DEFINE_INPUT( m_MovementSpeed, FIELD_FLOAT, "SetMovementSpeed"),

@@ -24,29 +24,29 @@ public:
 	virtual bool GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen );
 
 	// Always transmit to clients
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 	void Spawn( void );
 	virtual void Activate( void );
 
-	void InputTurnOn( inputdata_t &inputdata );
-	void InputTurnOff( inputdata_t &inputdata );
-	void InputAlwaysUpdateOn( inputdata_t &inputdata );
-	void InputAlwaysUpdateOff( inputdata_t &inputdata );
-	void InputSetFOV( inputdata_t &inputdata );
-	void InputSetTarget( inputdata_t &inputdata );
-	void InputSetCameraSpace( inputdata_t &inputdata );
-	void InputSetLightOnlyTarget( inputdata_t &inputdata );
-	void InputSetLightWorld( inputdata_t &inputdata );
-	void InputSetEnableShadows( inputdata_t &inputdata );
-	void InputSetLightColor( inputdata_t &inputdata );
-	void InputSetSpotlightTexture( inputdata_t &inputdata );
-	void InputSetAmbient( inputdata_t &inputdata );
-	void InputSetEnableVolumetrics( inputdata_t &inputdata );
-	void InputEnableUberLight( inputdata_t &inputdata );
-	void InputDisableUberLight( inputdata_t &inputdata );
-	void InputSetNearZ( inputdata_t &inputdata );
-	void InputSetFarZ( inputdata_t &inputdata );
-	void InputSetBrightnessScale( inputdata_t &inputdata );
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
+	void InputAlwaysUpdateOn( inputdata_t &&inputdata );
+	void InputAlwaysUpdateOff( inputdata_t &&inputdata );
+	void InputSetFOV( inputdata_t &&inputdata );
+	void InputSetTarget( inputdata_t &&inputdata );
+	void InputSetCameraSpace( inputdata_t &&inputdata );
+	void InputSetLightOnlyTarget( inputdata_t &&inputdata );
+	void InputSetLightWorld( inputdata_t &&inputdata );
+	void InputSetEnableShadows( inputdata_t &&inputdata );
+	void InputSetLightColor( inputdata_t &&inputdata );
+	void InputSetSpotlightTexture( inputdata_t &&inputdata );
+	void InputSetAmbient( inputdata_t &&inputdata );
+	void InputSetEnableVolumetrics( inputdata_t &&inputdata );
+	void InputEnableUberLight( inputdata_t &&inputdata );
+	void InputDisableUberLight( inputdata_t &&inputdata );
+	void InputSetNearZ( inputdata_t &&inputdata );
+	void InputSetFarZ( inputdata_t &&inputdata );
+	void InputSetBrightnessScale( inputdata_t &&inputdata );
 
 	void InitialThink( void );
 	void FlickerThink( void );

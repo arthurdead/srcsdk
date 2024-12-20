@@ -81,12 +81,12 @@ public:
 
 	virtual void PlayPuntSound();
 
-	void InputBreak( inputdata_t &inputdata );
-	void InputAddHealth( inputdata_t &inputdata );
-	void InputRemoveHealth( inputdata_t &inputdata );
-	void InputSetHealth( inputdata_t &inputdata );
-	void InputSetInteraction( inputdata_t &inputdata );
-	void InputRemoveInteraction( inputdata_t &inputdata );
+	void InputBreak( inputdata_t &&inputdata );
+	void InputAddHealth( inputdata_t &&inputdata );
+	void InputRemoveHealth( inputdata_t &&inputdata );
+	void InputSetHealth( inputdata_t &&inputdata );
+	void InputSetInteraction( inputdata_t &&inputdata );
+	void InputRemoveInteraction( inputdata_t &&inputdata );
 
 	int	 GetNumBreakableChunks( void ) { return m_iNumBreakableChunks; }
 
@@ -229,11 +229,11 @@ protected:
 	void CheckRemoveRagdolls();
 	
 private:
-	void InputEnablePhyscannonPickup( inputdata_t &inputdata );
-	void InputDisablePhyscannonPickup( inputdata_t &inputdata );
+	void InputEnablePhyscannonPickup( inputdata_t &&inputdata );
+	void InputDisablePhyscannonPickup( inputdata_t &&inputdata );
 
-	void InputEnablePuntSound( inputdata_t &inputdata ) { m_bUsePuntSound = true; }
-	void InputDisablePuntSound( inputdata_t &inputdata ) { m_bUsePuntSound = false; }
+	void InputEnablePuntSound( inputdata_t &&inputdata ) { m_bUsePuntSound = true; }
+	void InputDisablePuntSound( inputdata_t &&inputdata ) { m_bUsePuntSound = false; }
 
 	// Prevents fade scale from happening
 	void ForceFadeScaleToAlwaysVisible();
@@ -316,14 +316,14 @@ public:
 	virtual void NotifyPositionChanged( CBaseEntity *pEntity );
 
 	// Input handlers
-	void InputSetAnimation( inputdata_t &inputdata );
-	void InputSetAnimationNoReset( inputdata_t &inputdata );
-	void InputSetDefaultAnimation( inputdata_t &inputdata );
-	void InputTurnOn( inputdata_t &inputdata );
-	void InputTurnOff( inputdata_t &inputdata );
-	void InputDisableCollision( inputdata_t &inputdata );
-	void InputEnableCollision( inputdata_t &inputdata );
-	void InputSetPlaybackRate( inputdata_t &inputdata );
+	void InputSetAnimation( inputdata_t &&inputdata );
+	void InputSetAnimationNoReset( inputdata_t &&inputdata );
+	void InputSetDefaultAnimation( inputdata_t &&inputdata );
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
+	void InputDisableCollision( inputdata_t &&inputdata );
+	void InputEnableCollision( inputdata_t &&inputdata );
+	void InputSetPlaybackRate( inputdata_t &&inputdata );
 
 	void UpdateBoneFollowers( void );
 
@@ -352,7 +352,7 @@ public:
 protected:
 	void FinishSetSequence( int nSequence );
 	void PropSetAnim( const char *szAnim );
-	bool ShouldSetCreateTime( inputdata_t &inputdata );
+	bool ShouldSetCreateTime( inputdata_t &&inputdata );
 	void BoneFollowerHierarchyChanged();
 
 	// Contained Bone Follower manager
@@ -388,12 +388,12 @@ public:
 
 	virtual void ComputeWorldSpaceSurroundingBox( Vector *mins, Vector *maxs );
 
-	void InputWake( inputdata_t &inputdata );
-	void InputSleep( inputdata_t &inputdata );
-	void InputEnableMotion( inputdata_t &inputdata );
-	void InputDisableMotion( inputdata_t &inputdata );
-	void InputDisableFloating( inputdata_t &inputdata );
-	void InputSetDebris( inputdata_t &inputdata );
+	void InputWake( inputdata_t &&inputdata );
+	void InputSleep( inputdata_t &&inputdata );
+	void InputEnableMotion( inputdata_t &&inputdata );
+	void InputDisableMotion( inputdata_t &&inputdata );
+	void InputDisableFloating( inputdata_t &&inputdata );
+	void InputSetDebris( inputdata_t &&inputdata );
 
 	void EnableMotion( void );
 	bool CanBePickedUpByPhyscannon( void );

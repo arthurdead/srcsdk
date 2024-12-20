@@ -18,12 +18,35 @@
 class CBaseAnimatingOverlay;
 typedef CBaseAnimatingOverlay CSharedBaseAnimatingOverlay;
 
-class CAnimationLayer : public CMemZeroOnNew
+//enum animlayerindex_t : unsigned char;
+typedef int animlayerindex_t;
+
+enum AnimLayerFlags_t : unsigned char
+{
+	ANIM_LAYER_NO_FLAGS = 0,
+	ANIM_LAYER_ACTIVE = 0x0001,
+	ANIM_LAYER_AUTOKILL = 0x0002,
+	ANIM_LAYER_KILLME = 0x0004,
+	ANIM_LAYER_CHECKACCESS = 0x0010,
+	ANIM_LAYER_DYING = 0x0020,
+	ANIM_LAYER_NOEVENTS = 0x0040,
+};
+
+FLAGENUM_OPERATORS( AnimLayerFlags_t, unsigned char )
+
+class CAnimationLayer : public CMemZeroOnNew, public INetworkableObject
 {
 public:	
 	DECLARE_CLASS_NOBASE( CAnimationLayer );
-	
-	CAnimationLayer( void );
+	// For CNetworkVars.
+	DECLARE_EMBEDDED_NETWORKVAR();
+
+	CAnimationLayer() = delete;
+	CAnimationLayer(const CAnimationLayer &) = delete;
+	CAnimationLayer(CAnimationLayer &&) = delete;
+	CAnimationLayer &operator=(const CAnimationLayer &) = delete;
+	CAnimationLayer &operator=(CAnimationLayer &&) = delete;
+
 	void	Init( CBaseAnimatingOverlay *pOverlay );
 
 	// float	SetBlending( int iBlender, float flValue, CBaseAnimating *pOwner );
@@ -33,28 +56,17 @@ public:
 
 	float GetFadeout( float flCurTime );
 
-	// For CNetworkVars.
-	void NetworkStateChanged();
-	void NetworkStateChanged( void *pVar );
-
 public:	
 
-#define ANIM_LAYER_ACTIVE		0x0001
-#define ANIM_LAYER_AUTOKILL		0x0002
-#define ANIM_LAYER_KILLME		0x0004
-#define ANIM_LAYER_CHECKACCESS	0x0010
-#define ANIM_LAYER_DYING		0x0020
-#define ANIM_LAYER_NOEVENTS		0x0040
-
-	int		m_fFlags;
+	AnimLayerFlags_t		m_fFlags;
 
 	bool	m_bSequenceFinished;
 	bool	m_bLooping;
 	
-	CNetworkVar( int, m_nSequence );
-	CNetworkVar( float, m_flCycle );
-	CNetworkVar( float, m_flPrevCycle );
-	CNetworkVar( float, m_flWeight );
+	CNetworkSequence( m_nSequence );
+	CNetworkAnimCycle( m_flCycle );
+	CNetworkAnimCycle( m_flPrevCycle );
+	CNetworkScale( m_flWeight );
 	
 	float	m_flPlaybackRate;
 
@@ -84,13 +96,13 @@ public:
 	void	Dead( void ) { m_fFlags &= ~ANIM_LAYER_DYING; }
 	bool	NoEvents( void ) const { return ((m_fFlags & ANIM_LAYER_NOEVENTS) != 0); }
 
-	void	SetSequence( int nSequence );
+	void	SetSequence( sequence_t nSequence );
 	void	SetCycle( float flCycle );
 	void	SetPrevCycle( float flCycle );
 	void	SetPlaybackRate( float flPlaybackRate );
 	void	SetWeight( float flWeight );
 
-	int		GetSequence( ) const;
+	sequence_t		GetSequence( ) const;
 	float	GetCycle( ) const;
 	float	GetPrevCycle( ) const;
 	float	GetPlaybackRate( ) const;
@@ -102,12 +114,9 @@ public:
 	float	m_flLastEventCheck;
 
 	float	m_flLastAccess;
-
-	// Network state changes get forwarded here.
-	CBaseAnimatingOverlay *m_pOwnerEntity;
 };
 
-FORCEINLINE void CAnimationLayer::SetSequence( int nSequence )
+FORCEINLINE void CAnimationLayer::SetSequence( sequence_t nSequence )
 {
 	m_nSequence = nSequence;
 }
@@ -132,7 +141,7 @@ FORCEINLINE void CAnimationLayer::SetPlaybackRate( float flPlaybackRate )
 	m_flPlaybackRate = flPlaybackRate;
 }
 
-FORCEINLINE int	CAnimationLayer::GetSequence( ) const
+FORCEINLINE sequence_t	CAnimationLayer::GetSequence( ) const
 {
 	return m_nSequence;
 }
@@ -183,8 +192,6 @@ inline float CAnimationLayer::GetFadeout( float flCurTime )
 	return s;
 }
 
-
-
 class CBaseAnimatingOverlay : public CBaseAnimating
 {
 public:
@@ -210,50 +217,50 @@ public:
 	virtual	void	DispatchAnimEvents ( CBaseAnimating *eventHandler );
 	virtual void	GetSkeleton( CStudioHdr *pStudioHdr, Vector pos[], Quaternion q[], int boneMask );
 
-	int		AddGestureSequence( int sequence, bool autokill = true );
-	int		AddGestureSequence( int sequence, float flDuration, bool autokill = true );
-	int		AddGesture( Activity activity, bool autokill = true );
-	int		AddGesture( Activity activity, float flDuration, bool autokill = true );
+	animlayerindex_t		AddGestureSequence( sequence_t sequence, bool autokill = true );
+	animlayerindex_t		AddGestureSequence( sequence_t sequence, float flDuration, bool autokill = true );
+	animlayerindex_t		AddGesture( Activity activity, bool autokill = true );
+	animlayerindex_t		AddGesture( Activity activity, float flDuration, bool autokill = true );
 	bool	IsPlayingGesture( Activity activity );
 	void	RestartGesture( Activity activity, bool addifmissing = true, bool autokill = true );
 	void	RemoveGesture( Activity activity );
 	void	RemoveAllGestures( void );
 
-	int		AddLayeredSequence( int sequence, int iPriority );
+	animlayerindex_t		AddLayeredSequence( sequence_t sequence, int iPriority );
 
-	void	SetLayerPriority( int iLayer, int iPriority );
+	void	SetLayerPriority( animlayerindex_t iLayer, int iPriority );
 
-	bool	IsValidLayer( int iLayer );
+	bool	IsValidLayer( animlayerindex_t iLayer );
 
-	void	SetLayerDuration( int iLayer, float flDuration );
-	float	GetLayerDuration( int iLayer );
+	void	SetLayerDuration( animlayerindex_t iLayer, float flDuration );
+	float	GetLayerDuration( animlayerindex_t iLayer );
 
-	void	SetLayerCycle( int iLayer, float flCycle );
-	void	SetLayerCycle( int iLayer, float flCycle, float flPrevCycle );
-	void	SetLayerCycle( int iLayer, float flCycle, float flPrevCycle, float flLastEventCheck );
-	float	GetLayerCycle( int iLayer );
+	void	SetLayerCycle( animlayerindex_t iLayer, float flCycle );
+	void	SetLayerCycle( animlayerindex_t iLayer, float flCycle, float flPrevCycle );
+	void	SetLayerCycle( animlayerindex_t iLayer, float flCycle, float flPrevCycle, float flLastEventCheck );
+	float	GetLayerCycle( animlayerindex_t iLayer );
 
-	void	SetLayerPlaybackRate( int iLayer, float flPlaybackRate );
-	void	SetLayerWeight( int iLayer, float flWeight );
-	float	GetLayerWeight( int iLayer );
-	void	SetLayerBlendIn( int iLayer, float flBlendIn );
-	void	SetLayerBlendOut( int iLayer, float flBlendOut );
-	void	SetLayerAutokill( int iLayer, bool bAutokill );
-	void	SetLayerLooping( int iLayer, bool bLooping );
-	void	SetLayerNoEvents( int iLayer, bool bNoEvents );
+	void	SetLayerPlaybackRate( animlayerindex_t iLayer, float flPlaybackRate );
+	void	SetLayerWeight( animlayerindex_t iLayer, float flWeight );
+	float	GetLayerWeight( animlayerindex_t iLayer );
+	void	SetLayerBlendIn( animlayerindex_t iLayer, float flBlendIn );
+	void	SetLayerBlendOut( animlayerindex_t iLayer, float flBlendOut );
+	void	SetLayerAutokill( animlayerindex_t iLayer, bool bAutokill );
+	void	SetLayerLooping( animlayerindex_t iLayer, bool bLooping );
+	void	SetLayerNoEvents( animlayerindex_t iLayer, bool bNoEvents );
 
-	bool	IsLayerFinished( int iLayer );
+	bool	IsLayerFinished( animlayerindex_t iLayer );
 
-	Activity	GetLayerActivity( int iLayer );
-	int			GetLayerSequence( int iLayer );
+	Activity	GetLayerActivity( animlayerindex_t iLayer );
+	sequence_t			GetLayerSequence( animlayerindex_t iLayer );
 
-	int		FindGestureLayer( Activity activity );
+	animlayerindex_t		FindGestureLayer( Activity activity );
 
-	void	RemoveLayer( int iLayer, float flKillRate = 0.2, float flKillDelay = 0.0 );
-	void	FastRemoveLayer( int iLayer );
+	void	RemoveLayer( animlayerindex_t iLayer, float flKillRate = 0.2, float flKillDelay = 0.0 );
+	void	FastRemoveLayer( animlayerindex_t iLayer );
 
-	const CAnimationLayer *GetAnimOverlay( int iIndex ) const;
-	CAnimationLayer *GetAnimOverlayForModify( int iIndex );
+	const CAnimationLayer *GetAnimOverlay( animlayerindex_t iIndex ) const;
+	CAnimationLayer *GetAnimOverlayForModify( animlayerindex_t iIndex );
 	int GetNumAnimOverlays() const;
 	void SetNumAnimOverlays( int num );
 
@@ -262,7 +269,7 @@ public:
 	bool	HasActiveLayer( void );
 
 private:
-	int		AllocateLayer( int iPriority = 0 ); // lower priorities are processed first
+	animlayerindex_t		AllocateLayer( int iPriority = 0 ); // lower priorities are processed first
 
 	DECLARE_SERVERCLASS();
 	DECLARE_PREDICTABLE();
@@ -282,18 +289,6 @@ inline int CBaseAnimatingOverlay::GetNumAnimOverlays() const
 inline void CAnimationLayer::SetOrder( int nOrder )
 {
 	m_nOrder = nOrder;
-}
-
-inline void CAnimationLayer::NetworkStateChanged()
-{
-	if ( m_pOwnerEntity )
-		m_pOwnerEntity->NetworkStateChanged();
-}
-
-inline void CAnimationLayer::NetworkStateChanged( void *pVar )
-{
-	if ( m_pOwnerEntity )
-		m_pOwnerEntity->NetworkStateChanged();
 }
 
 #endif // BASE_ANIMATING_OVERLAY_H

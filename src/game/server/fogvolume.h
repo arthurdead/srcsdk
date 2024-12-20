@@ -48,8 +48,8 @@ public:
 		return m_hColorCorrectionController.Get();
 	}
 
-	void InputEnable( inputdata_t &data );
-	void InputDisable( inputdata_t &data );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
 private:
 	string_t m_fogName;

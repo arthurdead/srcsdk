@@ -28,15 +28,15 @@ public:
 	void Spawn( void );
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	virtual bool GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen );
-	int  UpdateTransmitState();
+	EdictStateFlags_t  UpdateTransmitState();
 
 	// Inputs
-	void	InputSetAngles( inputdata_t &inputdata );
-	void	InputEnable( inputdata_t &inputdata );
-	void	InputDisable( inputdata_t &inputdata );
-	void	InputSetTexture( inputdata_t &inputdata );
-	void	InputSetEnableShadows( inputdata_t &inputdata );
-	void	InputSetLightColor( inputdata_t &inputdata );
+	void	InputSetAngles( inputdata_t &&inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
+	void	InputSetTexture( inputdata_t &&inputdata );
+	void	InputSetEnableShadows( inputdata_t &&inputdata );
+	void	InputSetLightColor( inputdata_t &&inputdata );
 
 	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
@@ -63,16 +63,16 @@ LINK_ENTITY_TO_CLASS(env_global_light, CGlobalLight);
 
 BEGIN_MAPENTITY( CGlobalLight )
 
-	DEFINE_KEYFIELD( m_bEnabled,		FIELD_BOOLEAN, "enabled" ),
-	DEFINE_KEYFIELD( m_bStartDisabled,	FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bEnabled, "enabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bStartDisabled, "StartDisabled" ),
 	DEFINE_AUTO_ARRAY_KEYFIELD( m_TextureName, FIELD_CHARACTER, "texturename" ),
-	DEFINE_KEYFIELD( m_flSunDistance,	FIELD_FLOAT, "distance" ),
-	DEFINE_KEYFIELD( m_flFOV,	FIELD_FLOAT, "fov" ),
-	DEFINE_KEYFIELD( m_flNearZ,	FIELD_FLOAT, "nearz" ),
-	DEFINE_KEYFIELD( m_flNorthOffset,	FIELD_FLOAT, "northoffset" ),
-	DEFINE_KEYFIELD( m_bEnableShadows, FIELD_BOOLEAN, "enableshadows" ),
+	DEFINE_KEYFIELD_AUTO( m_flSunDistance, "distance" ),
+	DEFINE_KEYFIELD_AUTO( m_flFOV, "fov" ),
+	DEFINE_KEYFIELD_AUTO( m_flNearZ, "nearz" ),
+	DEFINE_KEYFIELD_AUTO( m_flNorthOffset, "northoffset" ),
+	DEFINE_KEYFIELD_AUTO( m_bEnableShadows, "enableshadows" ),
 
-	DEFINE_KEYFIELD( m_flColorTransitionTime, FIELD_FLOAT, "colortransitiontime" ),
+	DEFINE_KEYFIELD_AUTO( m_flColorTransitionTime, "colortransitiontime" ),
 
 	// Inputs
 	DEFINE_INPUT( m_flSunDistance,		FIELD_FLOAT, "SetDistance" ),
@@ -119,7 +119,7 @@ CGlobalLight::CGlobalLight()
 //------------------------------------------------------------------------------
 // Purpose : Send even though we don't have a model
 //------------------------------------------------------------------------------
-int CGlobalLight::UpdateTransmitState()
+EdictStateFlags_t CGlobalLight::UpdateTransmitState()
 {
 	// ALWAYS transmit to all clients.
 	return SetTransmitState( FL_EDICT_ALWAYS );
@@ -195,7 +195,7 @@ void CGlobalLight::Spawn( void )
 //------------------------------------------------------------------------------
 // Input values
 //------------------------------------------------------------------------------
-void CGlobalLight::InputSetAngles( inputdata_t &inputdata )
+void CGlobalLight::InputSetAngles( inputdata_t &&inputdata )
 {
 	const char *pAngles = inputdata.value.String();
 
@@ -210,27 +210,27 @@ void CGlobalLight::InputSetAngles( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose : Input handlers
 //------------------------------------------------------------------------------
-void CGlobalLight::InputEnable( inputdata_t &inputdata )
+void CGlobalLight::InputEnable( inputdata_t &&inputdata )
 {
 	m_bEnabled = true;
 }
 
-void CGlobalLight::InputDisable( inputdata_t &inputdata )
+void CGlobalLight::InputDisable( inputdata_t &&inputdata )
 {
 	m_bEnabled = false;
 }
 
-void CGlobalLight::InputSetTexture( inputdata_t &inputdata )
+void CGlobalLight::InputSetTexture( inputdata_t &&inputdata )
 {
 	Q_strcpy( m_TextureName.GetForModify(), inputdata.value.String() );
 }
 
-void CGlobalLight::InputSetEnableShadows( inputdata_t &inputdata )
+void CGlobalLight::InputSetEnableShadows( inputdata_t &&inputdata )
 {
 	m_bEnableShadows = inputdata.value.Bool();
 }
 
-void CGlobalLight::InputSetLightColor( inputdata_t &inputdata )
+void CGlobalLight::InputSetLightColor( inputdata_t &&inputdata )
 {
 	m_LightColor = inputdata.value.Color32();
 }

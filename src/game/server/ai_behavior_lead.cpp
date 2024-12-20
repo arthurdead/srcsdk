@@ -1123,15 +1123,15 @@ public:
 
 	virtual const char *GetConceptModifiers( const char *pszConcept );
 
-	virtual void InputActivate( inputdata_t &inputdata );
-	virtual void InputDeactivate( inputdata_t &inputdata );
+	virtual void InputActivate( inputdata_t &&inputdata );
+	virtual void InputDeactivate( inputdata_t &&inputdata );
 	
 	DECLARE_MAPENTITY();
 private:
 
 	virtual void OnEvent( int event );
-	void InputSetSuccess( inputdata_t &inputdata );
-	void InputSetFailure( inputdata_t &inputdata );
+	void InputSetSuccess( inputdata_t &&inputdata );
+	void InputSetFailure( inputdata_t &&inputdata );
 	
 	bool	 m_fArrived; // @TODO (toml 08-16-02): move arrived tracking onto behavior
 	float	 m_flWaitDistance;
@@ -1176,29 +1176,29 @@ LINK_ENTITY_TO_CLASS( ai_goal_lead, CAI_LeadGoal );
 
 BEGIN_MAPENTITY( CAI_LeadGoal, MAPENT_POINTCLASS )
 
-	DEFINE_KEYFIELD(m_flWaitDistance, 		FIELD_FLOAT, 	"WaitDistance"),
-	DEFINE_KEYFIELD(m_iszWaitPointName, 	FIELD_STRING, 	"WaitPointName"),
-	DEFINE_KEYFIELD(m_flLeadDistance, 		FIELD_FLOAT, 	"LeadDistance"),
-	DEFINE_KEYFIELD(m_flRetrieveDistance, 	FIELD_FLOAT, 	"RetrieveDistance"),
-	DEFINE_KEYFIELD(m_flSuccessDistance, 	FIELD_FLOAT, 	"SuccessDistance"),
-	DEFINE_KEYFIELD(m_bRun, 				FIELD_BOOLEAN, 	"Run"),
-	DEFINE_KEYFIELD(m_iRetrievePlayer,		FIELD_INTEGER,	"Retrieve"),
-	DEFINE_KEYFIELD(m_iRetrieveWaitForSpeak,		FIELD_INTEGER,	"RetrieveWaitForSpeak"),
-	DEFINE_KEYFIELD(m_iComingBackWaitForSpeak,		FIELD_INTEGER,	"ComingBackWaitForSpeak"),
-	DEFINE_KEYFIELD(m_bStopScenesWhenPlayerLost,	FIELD_BOOLEAN,	"StopScenes"),
-	DEFINE_KEYFIELD(m_bDontSpeakStart,	FIELD_BOOLEAN,	"DontSpeakStart"),
-	DEFINE_KEYFIELD(m_bLeadDuringCombat, FIELD_BOOLEAN, "LeadDuringCombat"),
-	DEFINE_KEYFIELD(m_bGagLeader, FIELD_BOOLEAN, "GagLeader"),
+	DEFINE_KEYFIELD_AUTO( m_flWaitDistance, "WaitDistance" ),
+	DEFINE_KEYFIELD_AUTO( m_iszWaitPointName, "WaitPointName" ),
+	DEFINE_KEYFIELD_AUTO( m_flLeadDistance, "LeadDistance" ),
+	DEFINE_KEYFIELD_AUTO( m_flRetrieveDistance, "RetrieveDistance" ),
+	DEFINE_KEYFIELD_AUTO( m_flSuccessDistance, "SuccessDistance" ),
+	DEFINE_KEYFIELD_AUTO( m_bRun, "Run" ),
+	DEFINE_KEYFIELD_AUTO( m_iRetrievePlayer, "Retrieve" ),
+	DEFINE_KEYFIELD_AUTO( m_iRetrieveWaitForSpeak, "RetrieveWaitForSpeak" ),
+	DEFINE_KEYFIELD_AUTO( m_iComingBackWaitForSpeak, "ComingBackWaitForSpeak" ),
+	DEFINE_KEYFIELD_AUTO( m_bStopScenesWhenPlayerLost, "StopScenes" ),
+	DEFINE_KEYFIELD_AUTO( m_bDontSpeakStart, "DontSpeakStart" ),
+	DEFINE_KEYFIELD_AUTO( m_bLeadDuringCombat, "LeadDuringCombat" ),
+	DEFINE_KEYFIELD_AUTO( m_bGagLeader, "GagLeader" ),
 
-	DEFINE_KEYFIELD(m_iszStartConceptModifier,			FIELD_STRING, 	"StartConceptModifier"),
-	DEFINE_KEYFIELD(m_iszAttractPlayerConceptModifier,	FIELD_STRING, 	"AttractPlayerConceptModifier"),
-	DEFINE_KEYFIELD(m_iszWaitOverConceptModifier, 		FIELD_STRING, 	"WaitOverConceptModifier"),
-	DEFINE_KEYFIELD(m_iszArrivalConceptModifier, 		FIELD_STRING, 	"ArrivalConceptModifier"),
-	DEFINE_KEYFIELD(m_iszPostArrivalConceptModifier,	FIELD_STRING,	"PostArrivalConceptModifier"),
-	DEFINE_KEYFIELD(m_iszSuccessConceptModifier,		FIELD_STRING,	"SuccessConceptModifier"),
-	DEFINE_KEYFIELD(m_iszFailureConceptModifier,		FIELD_STRING,	"FailureConceptModifier"),
-	DEFINE_KEYFIELD(m_iszRetrieveConceptModifier,		FIELD_STRING,	"RetrieveConceptModifier"),
-	DEFINE_KEYFIELD(m_iszComingBackConceptModifier,		FIELD_STRING,	"ComingBackConceptModifier"),
+	DEFINE_KEYFIELD_AUTO( m_iszStartConceptModifier, "StartConceptModifier" ),
+	DEFINE_KEYFIELD_AUTO( m_iszAttractPlayerConceptModifier, "AttractPlayerConceptModifier" ),
+	DEFINE_KEYFIELD_AUTO( m_iszWaitOverConceptModifier, "WaitOverConceptModifier" ),
+	DEFINE_KEYFIELD_AUTO( m_iszArrivalConceptModifier, "ArrivalConceptModifier" ),
+	DEFINE_KEYFIELD_AUTO( m_iszPostArrivalConceptModifier, "PostArrivalConceptModifier" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSuccessConceptModifier, "SuccessConceptModifier" ),
+	DEFINE_KEYFIELD_AUTO( m_iszFailureConceptModifier, "FailureConceptModifier" ),
+	DEFINE_KEYFIELD_AUTO( m_iszRetrieveConceptModifier, "RetrieveConceptModifier" ),
+	DEFINE_KEYFIELD_AUTO( m_iszComingBackConceptModifier, "ComingBackConceptModifier" ),
 
 	DEFINE_OUTPUT( m_OnSuccess, 		"OnSuccess" ),
 	DEFINE_OUTPUT( m_OnArrival, 		"OnArrival" ),
@@ -1232,7 +1232,7 @@ CAI_LeadBehavior *CAI_LeadGoal::GetLeadBehavior()
 
 //-----------------------------------------------------------------------------
 
-void CAI_LeadGoal::InputSetSuccess( inputdata_t &inputdata )
+void CAI_LeadGoal::InputSetSuccess( inputdata_t &&inputdata )
 {
 	CAI_LeadBehavior *pBehavior = GetLeadBehavior();
 	if ( !pBehavior )
@@ -1245,7 +1245,7 @@ void CAI_LeadGoal::InputSetSuccess( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 
-void CAI_LeadGoal::InputSetFailure( inputdata_t &inputdata )
+void CAI_LeadGoal::InputSetFailure( inputdata_t &&inputdata )
 {
 	DevMsg( "SetFailure unimplemented\n" );
 }
@@ -1253,7 +1253,7 @@ void CAI_LeadGoal::InputSetFailure( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 
-void CAI_LeadGoal::InputActivate( inputdata_t &inputdata )
+void CAI_LeadGoal::InputActivate( inputdata_t &&inputdata )
 {
 	BaseClass::InputActivate( inputdata );
 	
@@ -1301,7 +1301,7 @@ void CAI_LeadGoal::InputActivate( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 
-void CAI_LeadGoal::InputDeactivate( inputdata_t &inputdata )
+void CAI_LeadGoal::InputDeactivate( inputdata_t &&inputdata )
 {
 	BaseClass::InputDeactivate( inputdata );
 
@@ -1383,7 +1383,7 @@ public:
 	DECLARE_CLASS( CAI_LeadGoal_Weapon, CAI_LeadGoal );
 
 	virtual const char *GetConceptModifiers( const char *pszConcept );
-	virtual void InputActivate( inputdata_t &inputdata );
+	virtual void InputActivate( inputdata_t &&inputdata );
 
 private:
 	string_t	m_iszWeaponName;
@@ -1401,8 +1401,8 @@ LINK_ENTITY_TO_CLASS( ai_goal_lead_weapon, CAI_LeadGoal_Weapon );
 
 BEGIN_MAPENTITY( CAI_LeadGoal_Weapon, MAPENT_POINTCLASS )
 
-	DEFINE_KEYFIELD( m_iszWeaponName, 		FIELD_STRING, 	"WeaponName"),
-	DEFINE_KEYFIELD( m_iszMissingWeaponConceptModifier, FIELD_STRING, 	"MissingWeaponConceptModifier"),
+	DEFINE_KEYFIELD_AUTO( m_iszWeaponName, "WeaponName" ),
+	DEFINE_KEYFIELD_AUTO( m_iszMissingWeaponConceptModifier, "MissingWeaponConceptModifier" ),
 
 END_MAPENTITY()
 
@@ -1419,7 +1419,7 @@ const char *CAI_LeadGoal_Weapon::GetConceptModifiers( const char *pszConcept )
 
 //-----------------------------------------------------------------------------
 
-void CAI_LeadGoal_Weapon::InputActivate( inputdata_t &inputdata )
+void CAI_LeadGoal_Weapon::InputActivate( inputdata_t &&inputdata )
 {
 	BaseClass::InputActivate( inputdata );
 

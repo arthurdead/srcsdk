@@ -46,7 +46,7 @@ struct BaseEntityRecordingState_t
 		m_flTime( 0.0f ),
 		m_pModelName( 0 ),
 		m_nOwner( -1 ),
-		m_nEffects( 0 ),
+		m_nEffects( EF_NONE ),
 		m_bVisible( false ),
 		m_bRecordFinalVisibleSample( false )
 	{
@@ -57,7 +57,7 @@ struct BaseEntityRecordingState_t
 	float m_flTime;
 	const char *m_pModelName;
 	int m_nOwner;
-	int m_nEffects;
+	Effects_t m_nEffects;
 	bool m_bVisible : 1;
 	bool m_bRecordFinalVisibleSample : 1;
 	Vector m_vecRenderOrigin;
@@ -68,8 +68,8 @@ struct SpriteRecordingState_t
 {
 	float m_flRenderScale;
 	float m_flFrame;
-	int m_nRenderMode;
-	bool m_nRenderFX;
+	RenderMode_t m_nRenderMode;
+	RenderFx_t m_nRenderFX;
 	Color m_Color;
 	float m_flProxyRadius;
 };

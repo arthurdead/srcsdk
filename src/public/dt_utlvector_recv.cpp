@@ -13,56 +13,11 @@
 
 extern const char *s_ClientElementNames[MAX_ARRAY_ELEMENTS];
 
-
-class CRecvPropExtra_UtlVector
-{
-public:
-	DataTableRecvVarProxyFn m_DataTableProxyFn;	// If it's a datatable, then this is the proxy they specified.
-	RecvVarProxyFn m_ProxyFn;				// If it's a non-datatable, then this is the proxy they specified.
-	ResizeUtlVectorFn m_ResizeFn;			// The function used to resize the CUtlVector.
-	EnsureCapacityFn m_EnsureCapacityFn;
-	int m_ElementStride;					// Distance between each element in the array.
-	int m_Offset;							// Offset of the CUtlVector from its parent structure.
-	int m_nMaxElements;						// For debugging...
-};
-
 void RecvProxy_UtlVectorLength( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	CRecvPropExtra_UtlVector *pExtra = (CRecvPropExtra_UtlVector*)pData->m_pRecvProp->GetExtraData();
 	pExtra->m_ResizeFn( pStruct, pExtra->m_Offset, pData->m_Value.m_Int );
 }
-
-void RecvProxy_UtlVectorElement( const CRecvProxyData *pData, void *pStruct, void *pOut )
-{
-	CRecvPropExtra_UtlVector *pExtra = (CRecvPropExtra_UtlVector*)pData->m_pRecvProp->GetExtraData();
-
-	// Kind of lame overloading element stride to hold the element index,
-	// but we can easily move it into its SetExtraData stuff if we need to.
-	int iElement = pData->m_pRecvProp->GetElementStride();
-
-	// NOTE: this is cheesy, but it does the trick.
-	CUtlVector<int> *pUtlVec = (CUtlVector<int>*)((char*)pStruct + pExtra->m_Offset);
-
-	// Call through to the proxy they passed in, making pStruct=the CUtlVector.
-	// Note: there should be space here as long as the element is < the max # elements
-	// that we ensured capacity for in DataTableRecvProxy_LengthProxy.
-	pExtra->m_ProxyFn( pData, pOut, (char*)pUtlVec->Base() + iElement*pExtra->m_ElementStride );
-}
-
-void RecvProxy_UtlVectorElement_DataTable( const RecvProp *pProp, void **pOut, void *pData, int objectID )
-{
-	CRecvPropExtra_UtlVector *pExtra = (CRecvPropExtra_UtlVector*)pProp->GetExtraData();
-
-	int iElement = pProp->GetElementStride();
-	Assert( iElement < pExtra->m_nMaxElements );
-
-	// NOTE: this is cheesy, but it does the trick.
-	CUtlVector<int> *pUtlVec = (CUtlVector<int>*)((char*)pData + pExtra->m_Offset);
-
-	// Call through to the proxy they passed in, making pStruct=the CUtlVector and forcing iElement to 0.
-	pExtra->m_DataTableProxyFn( pProp, pOut, (char*)pUtlVec->Base() + iElement*pExtra->m_ElementStride, objectID );
-}
-
 
 void DataTableRecvProxy_LengthProxy( const RecvProp *pProp, void **pOut, void *pData, int objectID )
 {
@@ -77,14 +32,17 @@ void DataTableRecvProxy_LengthProxy( const RecvProp *pProp, void **pOut, void *p
 }
 
 
-RecvProp RecvPropUtlVector(
+RecvProp RecvPropUtlVector_impl(
 	const char *pVarName,		// Use RECVINFO_UTLVECTOR to generate these 4.
 	int offset,			// Used to generate pData in the function specified in varProxy.
 	int sizeofVar,		// The size of each element in the utlvector.
 	ResizeUtlVectorFn fn,
 	EnsureCapacityFn ensureFn,
 	int nMaxElements,											// Max # of elements in the array. Keep this as low as possible.
-	RecvProp pArrayProp
+	RecvProp pArrayProp,
+
+	void(*UtlVectorElement)( const CRecvProxyData *pData, void *pStruct, void *pOut ),
+	void(*UtlVectorElement_DataTable)( const RecvProp *pProp, void **pOut, void *pData, int objectID )
 	)
 {
 	RecvProp ret;
@@ -95,7 +53,7 @@ RecvProp RecvPropUtlVector(
 	ret.m_pVarName = pVarName;
 	ret.SetOffset( 0 );
 	ret.SetDataTableProxyFn( DataTableRecvProxy_StaticDataTable );
-	
+
 	RecvProp *pProps = new RecvProp[nMaxElements+1]; // TODO free that again
 
 	
@@ -119,30 +77,45 @@ RecvProp RecvPropUtlVector(
 	RecvProp *pLengthProp = new RecvProp;
 	*pLengthProp = RecvPropInt( AllocateStringHelper( "lengthprop%d", nMaxElements ), 0, 0, 0, RecvProxy_UtlVectorLength );
 	pLengthProp->SetExtraData( pExtraData );
+	pLengthProp->m_Flags |= SPROP_UTLVECTOR_EXTRADATA;
 
 	char *pLengthProxyTableName = AllocateUniqueDataTableName( false, "_LPT_%s_%d", pVarName, nMaxElements );
 	RecvTable *pLengthTable = new RecvTable( pLengthProp, 1, pLengthProxyTableName );
 	pProps[0] = RecvPropDataTable( "lengthproxy", 0, 0, pLengthTable, DataTableRecvProxy_LengthProxy );
 	pProps[0].SetExtraData( pExtraData );
+	pProps[0].m_Flags |= SPROP_UTLVECTOR_EXTRADATA;
 
 	// The first element is a sub-datatable.
 	for ( int i = 1; i < nMaxElements+1; i++ )
 	{
-		pProps[i] = pArrayProp;	// copy array element property setting
+		// copy array element property setting
+		pProps[i].m_RecvType = pArrayProp.m_RecvType;
+		pProps[i].m_Flags = pArrayProp.m_Flags;
+		pProps[i].m_StringBufferSize = pArrayProp.m_StringBufferSize;
+		pProps[i].m_bInsideArray = pArrayProp.m_bInsideArray;
+		pProps[i].m_pArrayProp = pArrayProp.m_pArrayProp;
+		pProps[i].m_ArrayLengthProxy = pArrayProp.m_ArrayLengthProxy;
+		pProps[i].m_ProxyFn = pArrayProp.m_ProxyFn;
+		pProps[i].m_DataTableProxyFn = pArrayProp.m_DataTableProxyFn;
+		pProps[i].m_pDataTable = pArrayProp.m_pDataTable;
+		pProps[i].m_nElements = pArrayProp.m_nElements;
+		pProps[i].m_pParentArrayPropName = pArrayProp.m_pParentArrayPropName;
+
 		pProps[i].SetOffset( 0 ); // leave offset at 0 so pStructBase is always a pointer to the CUtlVector
 		pProps[i].m_pVarName = s_ClientElementNames[i-1];	// give unique name
 		pProps[i].SetExtraData( pExtraData );
+		pProps[i].m_Flags |= SPROP_UTLVECTOR_EXTRADATA;
 		pProps[i].SetElementStride( i-1 );	// Kind of lame overloading element stride to hold the element index,
 											// but we can easily move it into its SetExtraData stuff if we need to.
 		
 		// We provide our own proxy here.
 		if ( pArrayProp.m_RecvType == DPT_DataTable )
 		{
-			pProps[i].SetDataTableProxyFn( RecvProxy_UtlVectorElement_DataTable );
+			pProps[i].SetDataTableProxyFn( UtlVectorElement_DataTable );
 		}
 		else
 		{
-			pProps[i].SetProxyFn( RecvProxy_UtlVectorElement );
+			pProps[i].SetProxyFn( UtlVectorElement );
 		}
 	}
 

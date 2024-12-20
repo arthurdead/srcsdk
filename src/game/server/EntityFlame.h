@@ -70,7 +70,7 @@ public:
 
 protected:
 
-	void InputIgnite( inputdata_t &inputdata );
+	void InputIgnite( inputdata_t &&inputdata );
 
 	void	FlameThink( void );
 

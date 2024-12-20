@@ -23,7 +23,7 @@ public:
 	virtual void UpdateOnRemove();
 
 private:
-	void InputSetCamera(inputdata_t &inputdata);
+	void InputSetCamera( inputdata_t &&inputdata );
 	void SetCameraByName(const char *szName);
 	void ReleaseCameraLink();
 
@@ -100,7 +100,7 @@ void CFuncMonitor::SetCameraByName(const char *szName)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CFuncMonitor::InputSetCamera(inputdata_t &inputdata)
+void CFuncMonitor::InputSetCamera( inputdata_t &&inputdata )
 {
 	SetCameraByName( inputdata.value.String() );
 }

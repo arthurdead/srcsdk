@@ -77,9 +77,9 @@ BEGIN_MAPENTITY( CTeamTrainWatcher )
 	DEFINE_OUTPUT( m_OnTrainStartRecede, "OnTrainStartRecede" ),
 
 	// key
-	DEFINE_KEYFIELD( m_iszTrain, FIELD_STRING, "train" ),
-	DEFINE_KEYFIELD( m_iszStartNode, FIELD_STRING, "start_node" ),
-	DEFINE_KEYFIELD( m_iszGoalNode, FIELD_STRING, "goal_node" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTrain, "train" ),
+	DEFINE_KEYFIELD_AUTO( m_iszStartNode, "start_node" ),
+	DEFINE_KEYFIELD_AUTO( m_iszGoalNode, "goal_node" ),
 
 	DEFINE_KEYFIELD( m_iszLinkedPathTracks[0], FIELD_STRING, "linked_pathtrack_1" ),
 	DEFINE_KEYFIELD( m_iszLinkedCPs[0], FIELD_STRING, "linked_cp_1" ),
@@ -105,9 +105,9 @@ BEGIN_MAPENTITY( CTeamTrainWatcher )
 	DEFINE_KEYFIELD( m_iszLinkedPathTracks[7], FIELD_STRING, "linked_pathtrack_8" ),
 	DEFINE_KEYFIELD( m_iszLinkedCPs[7], FIELD_STRING, "linked_cp_8" ),
 
-	DEFINE_KEYFIELD( m_bTrainCanRecede, FIELD_BOOLEAN, "train_can_recede" ),
+	DEFINE_KEYFIELD_AUTO( m_bTrainCanRecede, "train_can_recede" ),
 
-	DEFINE_KEYFIELD( m_bHandleTrainMovement, FIELD_BOOLEAN, "handle_train_movement" ),
+	DEFINE_KEYFIELD_AUTO( m_bHandleTrainMovement, "handle_train_movement" ),
 
 	// can be up to 8 links
 
@@ -116,13 +116,13 @@ BEGIN_MAPENTITY( CTeamTrainWatcher )
 	DEFINE_KEYFIELD( m_flSpeedLevels[1], FIELD_FLOAT, "hud_min_speed_level_2" ),
 	DEFINE_KEYFIELD( m_flSpeedLevels[2], FIELD_FLOAT, "hud_min_speed_level_3" ),
 
-	DEFINE_KEYFIELD( m_bDisabled,	FIELD_BOOLEAN,	"StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
-	DEFINE_KEYFIELD( m_iszSparkName, FIELD_STRING, "env_spark_name" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSparkName, "env_spark_name" ),
 
-	DEFINE_KEYFIELD( m_flSpeedForwardModifier, FIELD_FLOAT, "speed_forward_modifier" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpeedForwardModifier, "speed_forward_modifier" ),
 
-	DEFINE_KEYFIELD( m_nTrainRecedeTime, FIELD_INTEGER, "train_recede_time" ),
+	DEFINE_KEYFIELD_AUTO( m_nTrainRecedeTime, "train_recede_time" ),
 
 END_MAPENTITY()
 
@@ -332,7 +332,7 @@ void CTeamTrainWatcher::UpdateOnRemove( void )
 	BaseClass::UpdateOnRemove();
 }
 
-int CTeamTrainWatcher::UpdateTransmitState()
+EdictStateFlags_t CTeamTrainWatcher::UpdateTransmitState()
 {
 	if ( m_bDisabled )
 	{
@@ -342,7 +342,7 @@ int CTeamTrainWatcher::UpdateTransmitState()
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
 
-void CTeamTrainWatcher::InputRoundActivate( inputdata_t &inputdata )
+void CTeamTrainWatcher::InputRoundActivate( inputdata_t &&inputdata )
 {
 	StopCaptureAlarm();
 
@@ -352,7 +352,7 @@ void CTeamTrainWatcher::InputRoundActivate( inputdata_t &inputdata )
 	}
 }
 
-void CTeamTrainWatcher::InputEnable( inputdata_t &inputdata )
+void CTeamTrainWatcher::InputEnable( inputdata_t &&inputdata )
 {
 	StopCaptureAlarm();
 
@@ -363,7 +363,7 @@ void CTeamTrainWatcher::InputEnable( inputdata_t &inputdata )
 	UpdateTransmitState();
 }
 
-void CTeamTrainWatcher::InputDisable( inputdata_t &inputdata )
+void CTeamTrainWatcher::InputDisable( inputdata_t &&inputdata )
 {
 	StopCaptureAlarm();
 
@@ -598,7 +598,7 @@ void CTeamTrainWatcher::HandleTrainMovement( bool bStartReceding /* = false */ )
 	}
 }
 
-void CTeamTrainWatcher::InputSetSpeedForwardModifier( inputdata_t &inputdata )
+void CTeamTrainWatcher::InputSetSpeedForwardModifier( inputdata_t &&inputdata )
 {
 	InternalSetSpeedForwardModifier( inputdata.value.Float() );
 }
@@ -679,12 +679,12 @@ void CTeamTrainWatcher::SetNumTrainCappers( int iNumCappers, CBaseEntity *pTrigg
 	InternalSetNumTrainCappers( iNumCappers, pTrigger );
 }
 
-void CTeamTrainWatcher::InputSetNumTrainCappers( inputdata_t &inputdata )
+void CTeamTrainWatcher::InputSetNumTrainCappers( inputdata_t &&inputdata )
 {
 	InternalSetNumTrainCappers( inputdata.value.Int(), inputdata.pCaller );
 }
 
-void CTeamTrainWatcher::InputSetTrainRecedeTime( inputdata_t &inputdata )
+void CTeamTrainWatcher::InputSetTrainRecedeTime( inputdata_t &&inputdata )
 {
 	int nSeconds = inputdata.value.Int();
 	if ( nSeconds >= 0 )
@@ -697,7 +697,7 @@ void CTeamTrainWatcher::InputSetTrainRecedeTime( inputdata_t &inputdata )
 	}
 }
 
-void CTeamTrainWatcher::InputSetTrainRecedeTimeAndUpdate(inputdata_t &inputdata)
+void CTeamTrainWatcher::InputSetTrainRecedeTimeAndUpdate( inputdata_t &&inputdata )
 {
 	InputSetTrainRecedeTime( inputdata );
 
@@ -715,12 +715,12 @@ void CTeamTrainWatcher::InputSetTrainRecedeTimeAndUpdate(inputdata_t &inputdata)
 	}
 }
 
-void CTeamTrainWatcher::InputSetTrainCanRecede( inputdata_t &inputdata )
+void CTeamTrainWatcher::InputSetTrainCanRecede( inputdata_t &&inputdata )
 {
 	m_bTrainCanRecede = inputdata.value.Bool();
 }
 
-void CTeamTrainWatcher::InputOnStartOvertime( inputdata_t &inputdata )
+void CTeamTrainWatcher::InputOnStartOvertime( inputdata_t &&inputdata )
 {
 	// recalculate the recede time
 	if ( m_bWaitingToRecede )

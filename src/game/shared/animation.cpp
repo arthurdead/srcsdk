@@ -29,7 +29,7 @@ DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_MODEL, "Models" );
 #pragma warning( disable : 4244 )
 #define iabs(i) (( (i) >= 0 ) ? (i) : -(i) )
 
-bool ExtractBbox( CStudioHdr *pstudiohdr, int sequence, Vector& mins, Vector& maxs )
+bool ExtractBbox( CStudioHdr *pstudiohdr, sequence_t sequence, Vector& mins, Vector& maxs )
 {
 	if (! pstudiohdr)
 		return false;
@@ -119,7 +119,7 @@ void BuildAllAnimationEventIndexes( CStudioHdr *pstudiohdr )
 	{
 		for ( int i = 0 ; i < pstudiohdr->GetNumSeq() ; i++ )
 		{
-			SetEventIndexForSequence( pstudiohdr->pSeqdesc( i ) );
+			SetEventIndexForSequence( pstudiohdr->pSeqdesc( (sequence_t)i ) );
 		}
 
 		pstudiohdr->SetEventListVersion( g_nEventListVersion );
@@ -143,7 +143,7 @@ void ResetEventIndexes( CStudioHdr *pstudiohdr )
 // Purpose: 
 //-----------------------------------------------------------------------------
 
-void SetActivityForSequence( CStudioHdr *pstudiohdr, int i )
+void SetActivityForSequence( CStudioHdr *pstudiohdr, sequence_t i )
 {
 	Activity iActivityIndex;
 	const char *pszActivityName;
@@ -156,7 +156,7 @@ void SetActivityForSequence( CStudioHdr *pstudiohdr, int i )
 	{
 		iActivityIndex = ActivityList_IndexForName( pszActivityName );
 		
-		if ( iActivityIndex == -1 )
+		if ( iActivityIndex == INVALID_ACTIVITY )
 		{
 		#ifdef _DEBUG
 			Log_Warning( LOG_ACTIVITY,"***\nModel %s tried to reference unregistered activity: %s \n***\n", pstudiohdr->pszName(), pszActivityName );
@@ -188,8 +188,8 @@ void IndexModelSequences( CStudioHdr *pstudiohdr )
 
 	for ( i = 0 ; i < pstudiohdr->GetNumSeq() ; i++ )
 	{
-		SetActivityForSequence( pstudiohdr, i );
-		SetEventIndexForSequence( pstudiohdr->pSeqdesc( i ) );
+		SetActivityForSequence( pstudiohdr, (sequence_t)i );
+		SetEventIndexForSequence( pstudiohdr->pSeqdesc( (sequence_t)i ) );
 	}
 
 	pstudiohdr->SetActivityListVersion( g_nActivityListVersion );
@@ -228,7 +228,7 @@ bool IsInPrediction()
 	return CSharedBaseEntity::GetPredictionPlayer() != NULL;
 }
 
-int SelectWeightedSequence( CStudioHdr *pstudiohdr, Activity activity, int curSequence )
+sequence_t SelectWeightedSequence( CStudioHdr *pstudiohdr, Activity activity, sequence_t curSequence )
 {
 	VPROF( "SelectWeightedSequence" );
 #ifdef CLIENT_DLL
@@ -238,17 +238,17 @@ int SelectWeightedSequence( CStudioHdr *pstudiohdr, Activity activity, int curSe
 #endif
 
 	if (! pstudiohdr)
-		return ACTIVITY_NOT_AVAILABLE;
+		return INVALID_SEQUENCE;
 
 	if (!pstudiohdr->SequencesAvailable())
-		return ACTIVITY_NOT_AVAILABLE;
+		return INVALID_SEQUENCE;
 
 	VerifySequenceIndex( pstudiohdr );
 
 	int numSeq = pstudiohdr->GetNumSeq();
 	if ( numSeq == 1 )
 	{
-		return ( GetSequenceActivity( pstudiohdr, 0, NULL ) == activity ) ? 0 : ACTIVITY_NOT_AVAILABLE;
+		return ( GetSequenceActivity( pstudiohdr, ROOT_SEQUENCE, NULL ) == activity ) ? ROOT_SEQUENCE : INVALID_SEQUENCE;
 	}
 
 	return pstudiohdr->SelectWeightedSequence( activity, curSequence );
@@ -259,7 +259,7 @@ int SelectWeightedSequence( CStudioHdr *pstudiohdr, Activity activity, int curSe
 // current activity, and its stored weight is negative (whatever that means), always select
 // it. Otherwise perform a weighted selection -- imagine a large roulette wheel, with each
 // sequence having a number of spaces corresponding to its weight.
-int CStudioHdr::CActivityToSequenceMapping::SelectWeightedSequence( CStudioHdr *pstudiohdr, int activity, int curSequence )
+int CStudioHdr::CActivityToSequenceMapping::SelectWeightedSequence( CStudioHdr *pstudiohdr, Activity activity, sequence_t curSequence )
 {
 	// is the current sequence appropriate?
 	if (curSequence >= 0)
@@ -272,13 +272,13 @@ int CStudioHdr::CActivityToSequenceMapping::SelectWeightedSequence( CStudioHdr *
 
 	if ( !pstudiohdr->SequencesAvailable() )
 	{
-		return ACTIVITY_NOT_AVAILABLE;
+		return INVALID_SEQUENCE;
 	}
 
 	if ( pstudiohdr->GetNumSeq() == 1 )
 	{
 		AssertMsg( 0, "Expected single sequence case to be handled in ::SelectWeightedSequence()" );
-		return ACTIVITY_NOT_AVAILABLE;
+		return INVALID_SEQUENCE;
 	}
 
 	if (!ValidateAgainst(pstudiohdr))
@@ -724,9 +724,7 @@ int GetAnimationEvent( CStudioHdr *pstudiohdr, int sequence, animevent_t *pNPCEv
 	return 0;
 }
 
-
-
-int FindTransitionSequence( CStudioHdr *pstudiohdr, int iCurrentSequence, int iGoalSequence, int *piDir )
+sequence_t FindTransitionSequence( CStudioHdr *pstudiohdr, sequence_t iCurrentSequence, sequence_t iGoalSequence, int *piDir )
 {
 	if ( !pstudiohdr )
 		return iGoalSequence;
@@ -734,10 +732,10 @@ int FindTransitionSequence( CStudioHdr *pstudiohdr, int iCurrentSequence, int iG
 	if ( !pstudiohdr->SequencesAvailable() )
 		return iGoalSequence;
 
-	if ( ( iCurrentSequence < 0 ) || ( iCurrentSequence >= pstudiohdr->GetNumSeq() ) )
+	if ( ( iCurrentSequence == INVALID_SEQUENCE ) || ( iCurrentSequence >= pstudiohdr->GetNumSeq() ) )
 		return iGoalSequence;
 
-	if ( ( iGoalSequence < 0 ) || ( iGoalSequence >= pstudiohdr->GetNumSeq() ) )
+	if ( ( iGoalSequence == INVALID_SEQUENCE ) || ( iGoalSequence >= pstudiohdr->GetNumSeq() ) )
 	{
 		// asking for a bogus sequence.  Punt.
 		Assert( 0 );
@@ -807,12 +805,7 @@ int FindTransitionSequence( CStudioHdr *pstudiohdr, int iCurrentSequence, int iG
 	return iGoalSequence;
 }
 
-
-
-
-
-
-bool GotoSequence( CStudioHdr *pstudiohdr, int iCurrentSequence, float flCurrentCycle, float flCurrentRate, int iGoalSequence, int &nNextSequence, float &flNextCycle, int &iNextDir )
+bool GotoSequence( CStudioHdr *pstudiohdr, sequence_t iCurrentSequence, float flCurrentCycle, float flCurrentRate, sequence_t iGoalSequence, sequence_t &nNextSequence, float &flNextCycle, int &iNextDir )
 {
 	if ( !pstudiohdr )
 		return false;
@@ -820,10 +813,10 @@ bool GotoSequence( CStudioHdr *pstudiohdr, int iCurrentSequence, float flCurrent
 	if ( !pstudiohdr->SequencesAvailable() )
 		return false;
 
-	if ( ( iCurrentSequence < 0 ) || ( iCurrentSequence >= pstudiohdr->GetNumSeq() ) )
+	if ( ( iCurrentSequence == INVALID_SEQUENCE ) || ( iCurrentSequence >= pstudiohdr->GetNumSeq() ) )
 		return false;
 
-	if ( ( iGoalSequence < 0 ) || ( iGoalSequence >= pstudiohdr->GetNumSeq() ) )
+	if ( ( iGoalSequence == INVALID_SEQUENCE ) || ( iGoalSequence >= pstudiohdr->GetNumSeq() ) )
 	{
 		// asking for a bogus sequence.  Punt.
 		Assert( 0 );
@@ -888,7 +881,7 @@ bool GotoSequence( CStudioHdr *pstudiohdr, int iCurrentSequence, float flCurrent
 	for (i = 0; i < pstudiohdr->GetNumSeq(); i++)
 	{
 		mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc(i );
-		if (pstudiohdr->EntryNode( i ) == iEndNode && pstudiohdr->ExitNode( i ) == iInternNode)
+		if (pstudiohdr->EntryNode( (sequence_t)i ) == iEndNode && pstudiohdr->ExitNode( (sequence_t)i ) == iInternNode)
 		{
 			iNextDir = 1;
 			flNextCycle = 0.0;
@@ -897,7 +890,7 @@ bool GotoSequence( CStudioHdr *pstudiohdr, int iCurrentSequence, float flCurrent
 		}
 		if (seqdesc.nodeflags)
 		{
-			if (pstudiohdr->ExitNode( i ) == iEndNode && pstudiohdr->EntryNode( i ) == iInternNode)
+			if (pstudiohdr->ExitNode( (sequence_t)i ) == iEndNode && pstudiohdr->EntryNode( (sequence_t)i ) == iInternNode)
 			{
 				iNextDir = -1;
 				flNextCycle = 0.999;	
@@ -1014,7 +1007,7 @@ int GetNumBodyGroups( CStudioHdr *pstudiohdr )
 	return pstudiohdr->numbodyparts();
 }
 
-Activity GetSequenceActivity( CStudioHdr *pstudiohdr, int sequence, int *pweight )
+Activity GetSequenceActivity( CStudioHdr *pstudiohdr, sequence_t sequence, int *pweight )
 {
 	if (!pstudiohdr || !pstudiohdr->SequencesAvailable() )
 	{
@@ -1023,7 +1016,7 @@ Activity GetSequenceActivity( CStudioHdr *pstudiohdr, int sequence, int *pweight
 		return ACT_INVALID;
 	}
 
-	Assert(sequence >= 0 && sequence < pstudiohdr->GetNumSeq());
+	Assert(sequence >= ROOT_SEQUENCE && (unsigned short)sequence < pstudiohdr->GetNumSeq());
 	mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( sequence );
 
 	if (!(seqdesc.flags & STUDIO_ACTIVITY))

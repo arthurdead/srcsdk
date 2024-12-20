@@ -39,11 +39,11 @@ protected:
 	void Disable();
 
 	// Input handlers
-	void InputEnable(inputdata_t &inputdata);
-	void InputDisable(inputdata_t &inputdata);
-	void InputToggle(inputdata_t &inputdata);
-	void InputTest(inputdata_t &inputdata);
-	void InputSetTargetEntity(inputdata_t &inputdata);
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputTest( inputdata_t &&inputdata );
+	void InputSetTargetEntity( inputdata_t &&inputdata );
 
 	bool IsFacingWithinTolerance(CBaseEntity *pEntity, CBaseEntity *pTarget, float flTolerance, float *pflDot = NULL);
 
@@ -73,10 +73,10 @@ LINK_ENTITY_TO_CLASS(point_anglesensor, CPointAngleSensor);
 BEGIN_MAPENTITY(CPointAngleSensor)
 
 	// Keys
-	DEFINE_KEYFIELD(m_bDisabled, FIELD_BOOLEAN, "StartDisabled"),
-	DEFINE_KEYFIELD(m_nLookAtName, FIELD_STRING, "lookatname"),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_nLookAtName, "lookatname" ),
 
-	DEFINE_KEYFIELD(m_flDuration, FIELD_FLOAT, "duration"),
+	DEFINE_KEYFIELD_AUTO( m_flDuration, "duration" ),
 
 	// Outputs
 	DEFINE_OUTPUT(m_OnFacingLookat, "OnFacingLookat"),
@@ -263,7 +263,7 @@ void CPointAngleSensor::Think(void)
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for forcing an instantaneous test of the condition.
 //-----------------------------------------------------------------------------
-void CPointAngleSensor::InputTest(inputdata_t &inputdata)
+void CPointAngleSensor::InputTest( inputdata_t &&inputdata )
 {
 	if (IsFacingWithinTolerance(m_hTargetEntity, m_hLookAtEntity, m_flDotTolerance))
 	{
@@ -279,7 +279,7 @@ void CPointAngleSensor::InputTest(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointAngleSensor::InputSetTargetEntity(inputdata_t &inputdata)
+void CPointAngleSensor::InputSetTargetEntity( inputdata_t &&inputdata )
 {
 	if ((inputdata.value.String() == NULL) || (inputdata.value.StringID() == NULL_STRING) || (inputdata.value.String()[0] == '\0'))
 	{
@@ -302,7 +302,7 @@ void CPointAngleSensor::InputSetTargetEntity(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointAngleSensor::InputEnable(inputdata_t &inputdata)
+void CPointAngleSensor::InputEnable( inputdata_t &&inputdata )
 {
 	Enable();
 }
@@ -311,7 +311,7 @@ void CPointAngleSensor::InputEnable(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointAngleSensor::InputDisable(inputdata_t &inputdata)
+void CPointAngleSensor::InputDisable( inputdata_t &&inputdata )
 {
 	Disable();
 }
@@ -320,7 +320,7 @@ void CPointAngleSensor::InputDisable(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: I like separators between my functions.
 //-----------------------------------------------------------------------------
-void CPointAngleSensor::InputToggle(inputdata_t &inputdata)
+void CPointAngleSensor::InputToggle( inputdata_t &&inputdata )
 {
 	if (m_bDisabled)
 	{
@@ -406,10 +406,10 @@ protected:
 	void Disable( void );
 
 	// Input handlers
-	void InputEnable(inputdata_t &inputdata);
-	void InputDisable(inputdata_t &inputdata);
-	void InputToggle(inputdata_t &inputdata);
-	void InputSetTargetEntity(inputdata_t &inputdata);
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputSetTargetEntity( inputdata_t &&inputdata );
 
 private:
 
@@ -426,7 +426,7 @@ LINK_ENTITY_TO_CLASS( point_proximity_sensor, CPointProximitySensor );
 BEGIN_MAPENTITY( CPointProximitySensor )
 
 	// Keys
-	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
 	// Outputs
 	DEFINE_OUTPUT( m_Distance, "Distance"),
@@ -460,7 +460,7 @@ void CPointProximitySensor::Activate( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointProximitySensor::InputSetTargetEntity(inputdata_t &inputdata)
+void CPointProximitySensor::InputSetTargetEntity( inputdata_t &&inputdata )
 {
 	if ((inputdata.value.String() == NULL) || (inputdata.value.StringID() == NULL_STRING) || (inputdata.value.String()[0] == '\0'))
 	{
@@ -482,7 +482,7 @@ void CPointProximitySensor::InputSetTargetEntity(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointProximitySensor::InputEnable( inputdata_t &inputdata )
+void CPointProximitySensor::InputEnable( inputdata_t &&inputdata )
 {
 	Enable();
 }
@@ -490,7 +490,7 @@ void CPointProximitySensor::InputEnable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointProximitySensor::InputDisable( inputdata_t &inputdata )
+void CPointProximitySensor::InputDisable( inputdata_t &&inputdata )
 {
 	Disable();
 }
@@ -498,7 +498,7 @@ void CPointProximitySensor::InputDisable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CPointProximitySensor::InputToggle( inputdata_t &inputdata )
+void CPointProximitySensor::InputToggle( inputdata_t &&inputdata )
 {
 	if ( m_bDisabled )
 	{

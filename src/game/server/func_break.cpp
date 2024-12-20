@@ -83,14 +83,14 @@ const char *pFGDPropData[] =
 LINK_ENTITY_TO_CLASS( func_breakable, CBreakable );
 BEGIN_MAPENTITY( CBreakable )
 
-	DEFINE_KEYFIELD( m_Explosion, FIELD_INTEGER, "explosion" ),
-	DEFINE_KEYFIELD( m_GibDir, FIELD_VECTOR, "gibdir" ),
+	DEFINE_KEYFIELD_AUTO( m_Explosion, "explosion" ),
+	DEFINE_KEYFIELD_AUTO( m_GibDir, "gibdir" ),
 
-	DEFINE_KEYFIELD( m_ExplosionMagnitude, FIELD_INTEGER, "explodemagnitude" ),
-	DEFINE_KEYFIELD( m_flPressureDelay, FIELD_FLOAT, "PressureDelay" ),
-	DEFINE_KEYFIELD( m_iMinHealthDmg, FIELD_INTEGER, "minhealthdmg" ),
+	DEFINE_KEYFIELD_AUTO( m_ExplosionMagnitude, "explodemagnitude" ),
+	DEFINE_KEYFIELD_AUTO( m_flPressureDelay, "PressureDelay" ),
+	DEFINE_KEYFIELD_AUTO( m_iMinHealthDmg, "minhealthdmg" ),
 	DEFINE_INPUT( m_impactEnergyScale, FIELD_FLOAT, "physdamagescale" ),
-	DEFINE_KEYFIELD( m_PerformanceMode, FIELD_INTEGER, "PerformanceMode" ),
+	DEFINE_KEYFIELD_AUTO( m_PerformanceMode, "PerformanceMode" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Break", InputBreak ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetHealth", InputSetHealth ),
@@ -531,7 +531,7 @@ void CBreakable::BreakTouch( CBaseEntity *pOther )
 // Purpose: Input handler for adding to the breakable's health.
 // Input  : Integer health points to add.
 //-----------------------------------------------------------------------------
-void CBreakable::InputAddHealth( inputdata_t &inputdata )
+void CBreakable::InputAddHealth( inputdata_t &&inputdata )
 {
 	UpdateHealth( GetHealth() + inputdata.value.Int(), inputdata.pActivator );
 }
@@ -540,7 +540,7 @@ void CBreakable::InputAddHealth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for breaking the breakable immediately.
 //-----------------------------------------------------------------------------
-void CBreakable::InputBreak( inputdata_t &inputdata )
+void CBreakable::InputBreak( inputdata_t &&inputdata )
 {
 	Break( inputdata.pActivator );
 }
@@ -550,7 +550,7 @@ void CBreakable::InputBreak( inputdata_t &inputdata )
 // Purpose: Input handler for removing health from the breakable.
 // Input  : Integer health points to remove.
 //-----------------------------------------------------------------------------
-void CBreakable::InputRemoveHealth( inputdata_t &inputdata )
+void CBreakable::InputRemoveHealth( inputdata_t &&inputdata )
 {
 	UpdateHealth( GetHealth() - inputdata.value.Int(), inputdata.pActivator );
 }
@@ -559,7 +559,7 @@ void CBreakable::InputRemoveHealth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for setting the breakable's health.
 //-----------------------------------------------------------------------------
-void CBreakable::InputSetHealth( inputdata_t &inputdata )
+void CBreakable::InputSetHealth( inputdata_t &&inputdata )
 {
 	UpdateHealth( inputdata.value.Int(), inputdata.pActivator );
 }
@@ -568,7 +568,7 @@ void CBreakable::InputSetHealth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for setting the breakable's mass.
 //-----------------------------------------------------------------------------
-void CBreakable::InputSetMass( inputdata_t &inputdata )
+void CBreakable::InputSetMass( inputdata_t &&inputdata )
 {
 	IPhysicsObject * vPhys = VPhysicsGetObject();
 	if ( vPhys )

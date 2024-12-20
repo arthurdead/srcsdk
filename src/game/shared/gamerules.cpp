@@ -278,11 +278,19 @@ void CSharedGameRulesProxy::Spawn( void )
 	BaseClass::Spawn();
 }
 
+#ifndef CLIENT_DLL
 void CSharedGameRulesProxy::NotifyNetworkStateChanged()
 {
 	if ( g_pGameRulesProxy )
 		g_pGameRulesProxy->NetworkStateChanged();
 }
+
+void CSharedGameRulesProxy::NotifyNetworkStateChanged( unsigned short offset )
+{
+	if ( g_pGameRulesProxy )
+		g_pGameRulesProxy->NetworkStateChanged( offset );
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 

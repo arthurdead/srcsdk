@@ -32,7 +32,7 @@ static const char *s_pElectroThinkContext = "ElectroThinkContext";
 //-----------------------------------------------------------------------------
 BEGIN_MAPENTITY( CEntityFreezing )
 
-	DEFINE_KEYFIELD( m_flFrozen, FIELD_FLOAT, "frozen" ),
+	DEFINE_KEYFIELD_AUTO( m_flFrozen, "frozen" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "Freeze", InputFreeze ),
 
@@ -80,7 +80,7 @@ void CEntityFreezing::Spawn()
 // Purpose: 
 // Input  : inputdata - 
 //-----------------------------------------------------------------------------
-void CEntityFreezing::InputFreeze( inputdata_t &inputdata )
+void CEntityFreezing::InputFreeze( inputdata_t &&inputdata )
 {
 	string_t strTarget = inputdata.value.StringID();
 

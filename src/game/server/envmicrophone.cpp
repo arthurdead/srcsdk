@@ -41,21 +41,21 @@ LINK_ENTITY_TO_CLASS(env_microphone, CEnvMicrophone);
 
 BEGIN_MAPENTITY( CEnvMicrophone )
 
-	DEFINE_KEYFIELD(m_bDisabled, FIELD_BOOLEAN, "StartDisabled"),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
-	DEFINE_KEYFIELD(m_nSoundMask, FIELD_INTEGER, "SoundMask"),
-	DEFINE_KEYFIELD(m_flSensitivity, FIELD_FLOAT, "Sensitivity"),
-	DEFINE_KEYFIELD(m_flSmoothFactor, FIELD_FLOAT, "SmoothFactor"),
-	DEFINE_KEYFIELD(m_iszSpeakerName, FIELD_STRING, "SpeakerName"),
-	DEFINE_KEYFIELD(m_iszListenFilter, FIELD_STRING, "ListenFilter"),
+	DEFINE_KEYFIELD_AUTO( m_nSoundMask, "SoundMask" ),
+	DEFINE_KEYFIELD_AUTO( m_flSensitivity, "Sensitivity" ),
+	DEFINE_KEYFIELD_AUTO( m_flSmoothFactor, "SmoothFactor" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSpeakerName, "SpeakerName" ),
+	DEFINE_KEYFIELD_AUTO( m_iszListenFilter, "ListenFilter" ),
 
-	DEFINE_KEYFIELD(m_iszLandmarkName, FIELD_STRING, "landmark"),
-	DEFINE_KEYFIELD(m_flPitchScale, FIELD_FLOAT, "PitchScale"),
-	DEFINE_KEYFIELD(m_flVolumeScale, FIELD_FLOAT, "VolumeScale"),
-	DEFINE_KEYFIELD(m_nChannel, FIELD_INTEGER, "channel"),
+	DEFINE_KEYFIELD_AUTO( m_iszLandmarkName, "landmark" ),
+	DEFINE_KEYFIELD_AUTO( m_flPitchScale, "PitchScale" ),
+	DEFINE_KEYFIELD_AUTO( m_flVolumeScale, "VolumeScale" ),
+	DEFINE_KEYFIELD_AUTO( m_nChannel, "channel" ),
 
-	DEFINE_KEYFIELD(m_iSpeakerDSPPreset, FIELD_INTEGER, "speaker_dsp_preset" ),
-	DEFINE_KEYFIELD(m_flMaxRange, FIELD_FLOAT, "MaxRange"),
+	DEFINE_KEYFIELD_AUTO( m_iSpeakerDSPPreset, "speaker_dsp_preset" ),
+	DEFINE_KEYFIELD_AUTO( m_flMaxRange, "MaxRange" ),
 
 	DEFINE_INPUTFUNC(FIELD_VOID, "Enable", InputEnable),
 	DEFINE_INPUTFUNC(FIELD_VOID, "Disable", InputDisable),
@@ -212,7 +212,7 @@ void CEnvMicrophone::ActivateSpeaker( void )
 // Purpose: Stops the microphone from sampling the sound level and firing the
 //			SoundLevel output.
 //-----------------------------------------------------------------------------
-void CEnvMicrophone::InputEnable( inputdata_t &inputdata )
+void CEnvMicrophone::InputEnable( inputdata_t &&inputdata )
 {
 	if (m_bDisabled)
 	{
@@ -227,7 +227,7 @@ void CEnvMicrophone::InputEnable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Resumes sampling the sound level and firing the SoundLevel output.
 //-----------------------------------------------------------------------------
-void CEnvMicrophone::InputDisable( inputdata_t &inputdata )
+void CEnvMicrophone::InputDisable( inputdata_t &&inputdata )
 {
 	m_bDisabled = true;
 	if ( m_hSpeaker )
@@ -245,7 +245,7 @@ void CEnvMicrophone::InputDisable( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CEnvMicrophone::InputSetDSPPreset( inputdata_t &inputdata )
+void CEnvMicrophone::InputSetDSPPreset( inputdata_t &&inputdata )
 {
 	m_iSpeakerDSPPreset = inputdata.value.Int();
 	ActivateSpeaker();
@@ -255,7 +255,7 @@ void CEnvMicrophone::InputSetDSPPreset( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CEnvMicrophone::InputSetPitchScale( inputdata_t &inputdata )
+void CEnvMicrophone::InputSetPitchScale( inputdata_t &&inputdata )
 {
 	m_flPitchScale = inputdata.value.Float();
 }
@@ -264,7 +264,7 @@ void CEnvMicrophone::InputSetPitchScale( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CEnvMicrophone::InputSetVolumeScale( inputdata_t &inputdata )
+void CEnvMicrophone::InputSetVolumeScale( inputdata_t &&inputdata )
 {
 	m_flVolumeScale = inputdata.value.Float();
 }
@@ -273,7 +273,7 @@ void CEnvMicrophone::InputSetVolumeScale( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CEnvMicrophone::InputSetChannel( inputdata_t &inputdata )
+void CEnvMicrophone::InputSetChannel( inputdata_t &&inputdata )
 {
 	m_nChannel = inputdata.value.Int();
 }
@@ -282,7 +282,7 @@ void CEnvMicrophone::InputSetChannel( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CEnvMicrophone::InputSetSpeakerName( inputdata_t &inputdata )
+void CEnvMicrophone::InputSetSpeakerName( inputdata_t &&inputdata )
 {
 	SetSpeakerName( inputdata.value.StringID() );
 }

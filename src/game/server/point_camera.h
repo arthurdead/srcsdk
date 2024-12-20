@@ -28,19 +28,19 @@ public:
 	// Tell the client that this camera needs to be rendered
 	void SetActive( bool bActive );
 	bool IsActive( void ) { return m_bActive; }
-	int  UpdateTransmitState(void);
+	EdictStateFlags_t UpdateTransmitState(void);
 
 	void ChangeFOVThink( void );
 	float GetFOV() { return m_FOV; }
 
-	void InputChangeFOV( inputdata_t &inputdata );
-	void InputSetOnAndTurnOthersOff( inputdata_t &inputdata );
-	void InputSetOn( inputdata_t &inputdata );
-	void InputSetOff( inputdata_t &inputdata );
-	void InputForceActive( inputdata_t &inputdata );
-	void InputForceInactive( inputdata_t &inputdata );
-	void InputSetSkyMode( inputdata_t &inputdata ) { m_iSkyMode = inputdata.value.Int(); }
-	void InputSetRenderTarget( inputdata_t &inputdata ) { m_iszRenderTarget = inputdata.value.StringID(); }
+	void InputChangeFOV( inputdata_t &&inputdata );
+	void InputSetOnAndTurnOthersOff( inputdata_t &&inputdata );
+	void InputSetOn( inputdata_t &&inputdata );
+	void InputSetOff( inputdata_t &&inputdata );
+	void InputForceActive( inputdata_t &&inputdata );
+	void InputForceInactive( inputdata_t &&inputdata );
+	void InputSetSkyMode( inputdata_t &&inputdata ) { m_iSkyMode = inputdata.value.Int(); }
+	void InputSetRenderTarget( inputdata_t &&inputdata ) { m_iszRenderTarget = inputdata.value.StringID(); }
 
 	float GetFOV() const { return m_FOV; }
 	bool IsActive() const { return m_bIsOn; }
@@ -100,12 +100,12 @@ public:
 	void ChangeOrtho( int iType, const char *szChange );
 	void ChangeOrthoThink( void );
 
-	void InputSetOrthoEnabled( inputdata_t &inputdata ) { m_bOrtho = inputdata.value.Bool(); }
-	void InputScaleOrtho( inputdata_t &inputdata );
-	void InputSetOrthoTop( inputdata_t &inputdata ) { ChangeOrtho(ORTHO_TOP, inputdata.value.String()); }
-	void InputSetOrthoBottom( inputdata_t &inputdata ) { ChangeOrtho( ORTHO_BOTTOM, inputdata.value.String() ); }
-	void InputSetOrthoLeft( inputdata_t &inputdata ) { ChangeOrtho( ORTHO_LEFT, inputdata.value.String() ); }
-	void InputSetOrthoRight( inputdata_t &inputdata ) { ChangeOrtho( ORTHO_RIGHT, inputdata.value.String() ); }
+	void InputSetOrthoEnabled( inputdata_t &&inputdata ) { m_bOrtho = inputdata.value.Bool(); }
+	void InputScaleOrtho( inputdata_t &&inputdata );
+	void InputSetOrthoTop( inputdata_t &&inputdata ) { ChangeOrtho(ORTHO_TOP, inputdata.value.String()); }
+	void InputSetOrthoBottom( inputdata_t &&inputdata ) { ChangeOrtho( ORTHO_BOTTOM, inputdata.value.String() ); }
+	void InputSetOrthoLeft( inputdata_t &&inputdata ) { ChangeOrtho( ORTHO_LEFT, inputdata.value.String() ); }
+	void InputSetOrthoRight( inputdata_t &&inputdata ) { ChangeOrtho( ORTHO_RIGHT, inputdata.value.String() ); }
 
 private:
 	float m_TargetOrtho[NUM_ORTHO_DIMENSIONS];

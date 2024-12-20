@@ -164,32 +164,32 @@ const Vector &CSharedBaseEntity::WorldSpaceCenter( ) const
 }
 
 #if !defined( CLIENT_DLL )
-#define CHANGE_FLAGS(flags,newFlags) { uint64 old = flags; flags = (newFlags); gEntList.ReportEntityFlagsChanged( this, old, flags ); }
+#define CHANGE_FLAGS(flags,newFlags) { EntityBehaviorFlags_t old = flags; flags = (newFlags); gEntList.ReportEntityFlagsChanged( this, old, flags ); }
 #else
 #define CHANGE_FLAGS(flags,newFlags) (flags = (newFlags))
 #endif
 
-void CSharedBaseEntity::AddFlag( uint64 flags )
+void CSharedBaseEntity::AddFlag( EntityBehaviorFlags_t flags )
 {
 	CHANGE_FLAGS( m_fFlags, m_fFlags | flags );
 }
 
-void CSharedBaseEntity::RemoveFlag( uint64 flagsToRemove )
+void CSharedBaseEntity::RemoveFlag( EntityBehaviorFlags_t flagsToRemove )
 {
 	CHANGE_FLAGS( m_fFlags, m_fFlags & ~flagsToRemove );
 }
 
 void CSharedBaseEntity::ClearFlags( void )
 {
-	CHANGE_FLAGS( m_fFlags, 0 );
+	CHANGE_FLAGS( m_fFlags, FL_NONE );
 }
 
-void CSharedBaseEntity::ToggleFlag( uint64 flagToToggle )
+void CSharedBaseEntity::ToggleFlag( EntityBehaviorFlags_t flagToToggle )
 {
 	CHANGE_FLAGS( m_fFlags, m_fFlags ^ flagToToggle );
 }
 
-void CSharedBaseEntity::SetEffects( int nEffects )
+void CSharedBaseEntity::SetEffects( Effects_t nEffects )
 {
 	if ( nEffects != m_fEffects )
 	{
@@ -218,7 +218,7 @@ void CSharedBaseEntity::SetEffects( int nEffects )
 	}
 }
 
-void CSharedBaseEntity::AddEffects( int nEffects ) 
+void CSharedBaseEntity::AddEffects( Effects_t nEffects ) 
 { 
 #if !defined( CLIENT_DLL ) && 0
 	if ( (nEffects & (EF_BRIGHTLIGHT|EF_DIMLIGHT)) && !(m_fEffects & (EF_BRIGHTLIGHT|EF_DIMLIGHT)) )
@@ -299,7 +299,7 @@ static void AddDataMapFieldNamesToList( KeyValueNameList_t &list, datamap_t *pDa
 			typedescription_t *pField = &pDataMap->dataDesc[i];
 
 			if(i == 0 &&
-				pField->fieldType == FIELD_VOID &&
+				pField->rawType() == FIELD_VOID &&
 				pField->fieldOffset[0] == 0 &&
 				pField->fieldSize == 0 &&
 				pField->fieldSizeInBytes == 0 &&
@@ -308,7 +308,7 @@ static void AddDataMapFieldNamesToList( KeyValueNameList_t &list, datamap_t *pDa
 				continue;
 			}
 
-			if (pField->fieldType == FIELD_EMBEDDED)
+			if (pField->baseType() == FIELD_EMBEDDED)
 			{
 				AddDataMapFieldNamesToList( list, pField->td );
 				continue;
@@ -634,7 +634,7 @@ bool CSharedBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 	if ( FStrEq( szKeyName, "eflags" ) )
 	{
 		// Can't use DEFINE_KEYFIELD since eflags might be set before KV are parsed
-		AddEFlags( strtoull( szValue, NULL, 10 ) );
+		AddEFlags( (EntityFlags_t)strtoull( szValue, NULL, 10 ) );
 		return true;
 	}
 
@@ -875,7 +875,7 @@ bool CSharedBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int i
 // Input  : collisionGroup - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CSharedBaseEntity::ShouldCollide( int collisionGroup, int contentsMask ) const
+bool CSharedBaseEntity::ShouldCollide( Collision_Group_t collisionGroup, int contentsMask ) const
 {
 	if ( m_CollisionGroup == COLLISION_GROUP_DEBRIS )
 	{
@@ -3100,23 +3100,14 @@ void CSharedBaseEntity::CollisionRulesChanged()
 	}
 }
 
-int CSharedBaseEntity::GetWaterType() const
+WaterType_t CSharedBaseEntity::GetWaterType() const
 {
-	int out = 0;
-	if ( m_nWaterType & 1 )
-		out |= CONTENTS_WATER;
-	if ( m_nWaterType & 2 )
-		out |= CONTENTS_SLIME;
-	return out;
+	return m_nWaterType;
 }
 
-void CSharedBaseEntity::SetWaterType( int nType )
+void CSharedBaseEntity::SetWaterType( WaterType_t nType )
 {
-	m_nWaterType = 0;
-	if ( nType & CONTENTS_WATER )
-		m_nWaterType |= 1;
-	if ( nType & CONTENTS_SLIME )
-		m_nWaterType |= 2;
+	m_nWaterType = nType;
 }
 
 extern ConVarBase	*sv_alternateticks;
@@ -3259,7 +3250,13 @@ ConVar ent_messages_draw( "ent_messages_draw", "0", FCVAR_CHEAT, "Visualizes all
 //			*pCaller - entity from which this event is sent
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CSharedBaseEntity::AcceptInput( const char *szInputName, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, variant_t Value, int outputID )
+bool CSharedBaseEntity::AcceptInput( const char *szInputName, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, const variant_t &Value, int outputID )
+{
+	variant_t tmp(Value);
+	return AcceptInput(szInputName, pActivator, pCaller, Move(tmp), outputID);
+}
+
+bool CSharedBaseEntity::AcceptInput( const char *szInputName, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, variant_t &&Value, int outputID )
 {
 #ifdef GAME_DLL
 	if ( ent_messages_draw.GetBool() )
@@ -3361,24 +3358,15 @@ bool CSharedBaseEntity::AcceptInput( const char *szInputName, CSharedBaseEntity 
 						inputdata_t data;
 						data.pActivator = pActivator;
 						data.pCaller = pCaller;
-						data.value = Value;
+						data.value = Move(Value);
 						data.nOutputID = outputID;
 
-						(this->*pfnInput)( data );
+						(this->*pfnInput)( Move(data) );
 					}
 					else if ( dmap->dataDesc[i].flags & FTYPEDESC_KEY )
 					{
 						// set the value directly
-						Value.SetOther( ((char*)this) + dmap->dataDesc[i].fieldOffset[ TD_OFFSET_NORMAL ]);
-					
-						// TODO: if this becomes evil and causes too many full entity updates, then we should make
-						// a macro like this:
-						//
-						// define MAKE_INPUTVAR(x) void Note##x##Modified() { x.GetForModify(); }
-						//
-						// Then the datadesc points at that function and we call it here. The only pain is to add
-						// that function for all the DEFINE_INPUT calls.
-						NetworkStateChanged();
+						Value.MoveTo( GetField<void>(this, dmap->dataDesc[i]) );
 					}
 
 					return true;

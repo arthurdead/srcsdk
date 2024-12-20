@@ -40,7 +40,7 @@ private:
 	void FindByRandom( void );
 
 	// Input handlers
-	void InputFindEntity( inputdata_t &inputdata );
+	void InputFindEntity( inputdata_t &&inputdata );
 
 	// Output handlers
 	COutputEvent m_OnFoundEntity;
@@ -52,10 +52,10 @@ LINK_ENTITY_TO_CLASS( point_entity_finder, CPointEntityFinder );
 
 BEGIN_MAPENTITY( CPointEntityFinder )
 
-	DEFINE_KEYFIELD(	m_FindMethod,	FIELD_INTEGER,	"method" ),
-	DEFINE_KEYFIELD(	m_iFilterName,	FIELD_STRING,	"filtername" ),
+	DEFINE_KEYFIELD_AUTO( m_FindMethod, "method" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterName, "filtername" ),
 
-	DEFINE_KEYFIELD(	m_iRefName,		FIELD_STRING,	"referencename" ),
+	DEFINE_KEYFIELD_AUTO( m_iRefName, "referencename" ),
 
 	DEFINE_OUTPUT( m_OnFoundEntity, "OnFoundEntity" ),
 
@@ -198,7 +198,7 @@ void CPointEntityFinder::FindByRandom( void )
 	}
 }
 
-void CPointEntityFinder::InputFindEntity( inputdata_t &inputdata )
+void CPointEntityFinder::InputFindEntity( inputdata_t &&inputdata )
 {
 	FindEntity();
 

@@ -34,9 +34,9 @@ private:
 	void OnEntitySpawned( CBaseEntity *pEntity );
 
 	// Inputs
-	void InputTurnOn( inputdata_t &inputdata ) { TurnOn(); }
-	void InputTurnOff( inputdata_t &inputdata ) { TurnOff(); }
-	void InputToggle( inputdata_t &inputdata ) 
+	void InputTurnOn( inputdata_t &&inputdata ) { TurnOn(); }
+	void InputTurnOff( inputdata_t &&inputdata ) { TurnOff(); }
+	void InputToggle( inputdata_t &&inputdata ) 
 	{ 
 		if ( m_isOn )
 			TurnOff();

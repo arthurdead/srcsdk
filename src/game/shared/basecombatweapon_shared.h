@@ -459,8 +459,8 @@ public:
 	// derive this function if you mod uses encrypted weapon info files
 	virtual const unsigned char *GetEncryptionKey( void );
 
-	virtual int				GetPrimaryAmmoType( void )  const { return m_iPrimaryAmmoType; }
-	virtual int				GetSecondaryAmmoType( void )  const { return m_iSecondaryAmmoType; }
+	virtual AmmoIndex_t				GetPrimaryAmmoType( void )  const { return m_iPrimaryAmmoType; }
+	virtual AmmoIndex_t				GetSecondaryAmmoType( void )  const { return m_iSecondaryAmmoType; }
 	virtual int				Clip1() { return m_iClip1; }
 	virtual int				Clip2() { return m_iClip2; }
 
@@ -562,20 +562,20 @@ public:
 	// routed through the character, and then back into CharacterAnimEvent() 
 	void					HandleAnimEvent( animevent_t *pEvent );
 
-	virtual int				UpdateTransmitState( void );
+	virtual EdictStateFlags_t				UpdateTransmitState( void );
 
-	void					InputHideWeapon( inputdata_t &inputdata );
-	void					InputSetAmmo1( inputdata_t &inputdata );
-	void					InputSetAmmo2( inputdata_t &inputdata );
-	void					InputGiveDefaultAmmo( inputdata_t &inputdata );
-	void					InputEnablePlayerPickup( inputdata_t &inputdata );
-	void					InputDisablePlayerPickup( inputdata_t &inputdata );
-	void					InputEnableNPCPickup( inputdata_t &inputdata );
-	void					InputDisableNPCPickup( inputdata_t &inputdata );
-	void					InputBreakConstraint( inputdata_t &inputdata );
+	void					InputHideWeapon( inputdata_t &&inputdata );
+	void					InputSetAmmo1( inputdata_t &&inputdata );
+	void					InputSetAmmo2( inputdata_t &&inputdata );
+	void					InputGiveDefaultAmmo( inputdata_t &&inputdata );
+	void					InputEnablePlayerPickup( inputdata_t &&inputdata );
+	void					InputDisablePlayerPickup( inputdata_t &&inputdata );
+	void					InputEnableNPCPickup( inputdata_t &&inputdata );
+	void					InputDisableNPCPickup( inputdata_t &&inputdata );
+	void					InputBreakConstraint( inputdata_t &&inputdata );
 	void					InputForceFire( inputdata_t &inputdata, bool bSecondary = false );
-	void					InputForcePrimaryFire( inputdata_t &inputdata );
-	void					InputForceSecondaryFire( inputdata_t &inputdata );
+	void					InputForcePrimaryFire( inputdata_t &&inputdata );
+	void					InputForceSecondaryFire( inputdata_t &&inputdata );
 
 	void					Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
@@ -692,9 +692,9 @@ public:
 	CNetworkVar( int, m_nViewModelIndex );
 
 	// Weapon firing
-	CNetworkVar( float, m_flNextPrimaryAttack );						// soonest time ItemPostFrame will call PrimaryAttack
-	CNetworkVar( float, m_flNextSecondaryAttack );					// soonest time ItemPostFrame will call SecondaryAttack
-	CNetworkVar( float, m_flTimeWeaponIdle );							// soonest time ItemPostFrame will call WeaponIdle
+	CNetworkTime( m_flNextPrimaryAttack );						// soonest time ItemPostFrame will call PrimaryAttack
+	CNetworkTime( m_flNextSecondaryAttack );					// soonest time ItemPostFrame will call SecondaryAttack
+	CNetworkTime( m_flTimeWeaponIdle );							// soonest time ItemPostFrame will call WeaponIdle
 
 	CNetworkVar( bool,		m_bHolstered );
 
@@ -738,8 +738,8 @@ public:
 	// Weapon data
 	CNetworkVar( int, m_iState );				// See WEAPON_* definition
 	string_t				m_iszName;				// Classname of this weapon.
-	CNetworkVar( int, m_iPrimaryAmmoType );		// "primary" ammo index into the ammo info array 
-	CNetworkVar( int, m_iSecondaryAmmoType );	// "secondary" ammo index into the ammo info array
+	CNetworkVar( AmmoIndex_t, m_iPrimaryAmmoType );		// "primary" ammo index into the ammo info array 
+	CNetworkVar( AmmoIndex_t, m_iSecondaryAmmoType );	// "secondary" ammo index into the ammo info array
 	CNetworkVar( int, m_iClip1 );				// number of shots left in the primary weapon clip, -1 it not used
 	CNetworkVar( int, m_iClip2 );				// number of shots left in the secondary weapon clip, -1 it not used
 	bool					m_bFiresUnderwater;		// true if this weapon can fire underwater

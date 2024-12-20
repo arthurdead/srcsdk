@@ -110,9 +110,9 @@ public:
 	float GetWaterLevel( void ) const;		///< return Z coordinate of water in world coords
 	float GetMaxRange( void ) const;		///< return how far a fish is allowed to wander
 
-	void	InputSpawnFish( inputdata_t &inputdata );
-	void	InputPanicLoudFromPoint( inputdata_t &inputdata );
-	void	InputPanicQuietFromPoint( inputdata_t &inputdata );
+	void	InputSpawnFish( inputdata_t &&inputdata );
+	void	InputPanicLoudFromPoint( inputdata_t &&inputdata );
+	void	InputPanicQuietFromPoint( inputdata_t &&inputdata );
 
 private:
 	int m_fishCount;						///< number of fish in the pool

@@ -21,6 +21,7 @@ class C_BaseEntity;
 class CBaseEntity;
 #endif
 
+enum Hitgroup_t : unsigned int;
 
 //-----------------------------------------------------------------------------
 // Purpose: A trace is returned when a box is swept through the world
@@ -57,7 +58,7 @@ public:
 	float		fractionleftsolid;		// time we left a solid, only valid if we started in solid
 	csurface_t	surface;				// surface hit (impact surface)
 
-	int			hitgroup;				// 0 == generic, non-zero is specific body part
+	Hitgroup_t			hitgroup;				// 0 == generic, non-zero is specific body part
 	short		physicsbone;			// physics bone hit by trace in studio
 
 #if defined( CLIENT_DLL )

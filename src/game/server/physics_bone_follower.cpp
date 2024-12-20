@@ -248,7 +248,7 @@ bool CBoneFollower::Init( CBaseEntity *pOwner, const char *pModelName, solid_t &
 	return true;
 }
 
-int CBoneFollower::UpdateTransmitState()
+EdictStateFlags_t CBoneFollower::UpdateTransmitState()
 {
 	// Send to the client for client-side collisions and visualization
 	return SetTransmitState( FL_EDICT_PVSCHECK );

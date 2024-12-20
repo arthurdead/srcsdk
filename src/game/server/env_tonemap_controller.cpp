@@ -79,7 +79,7 @@ void CEnvTonemapController::Spawn( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CEnvTonemapController::UpdateTransmitState()
+EdictStateFlags_t CEnvTonemapController::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
@@ -87,7 +87,7 @@ int CEnvTonemapController::UpdateTransmitState()
 //-----------------------------------------------------------------------------
 // Purpose: Set the tonemap scale to the specified value
 //-----------------------------------------------------------------------------
-void CEnvTonemapController::InputSetTonemapScale( inputdata_t &inputdata )
+void CEnvTonemapController::InputSetTonemapScale( inputdata_t &&inputdata )
 {
 	float flRemapped = inputdata.value.Float();
 
@@ -118,7 +118,7 @@ void CEnvTonemapController::InputSetTonemapScale( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Blend the tonemap scale to the specified value
 //-----------------------------------------------------------------------------
-void CEnvTonemapController::InputBlendTonemapScale( inputdata_t &inputdata )
+void CEnvTonemapController::InputBlendTonemapScale( inputdata_t &&inputdata )
 {
 	//Tony; TODO!!! -- tonemap scale blending does _not_ work properly in multiplayer..
 	if ( gpGlobals->maxClients > 1 && ( inputdata.pActivator == NULL || !inputdata.pActivator->IsPlayer() ) )
@@ -172,7 +172,7 @@ void CEnvTonemapController::InputBlendTonemapScale( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: set a base and minimum bloom scale
 //-----------------------------------------------------------------------------
-void CEnvTonemapController::InputSetBloomScaleRange( inputdata_t &inputdata )
+void CEnvTonemapController::InputSetBloomScaleRange( inputdata_t &&inputdata )
 {
 	float bloom_max=1, bloom_min=1;
 	int nargs=sscanf("%f %f",inputdata.value.String(), bloom_max, bloom_min );
@@ -188,7 +188,7 @@ void CEnvTonemapController::InputSetBloomScaleRange( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CEnvTonemapController::InputSetTonemapRate( inputdata_t &inputdata )
+void CEnvTonemapController::InputSetTonemapRate( inputdata_t &&inputdata )
 {
 	//Tony; in multiplayer, we check to see if the activator is a player, if they are, we trigger an input on them, and then get out.
 	//if there is no activator, or the activator is not a player; ie: LogicAuto, we set the 'global' values.
@@ -276,7 +276,7 @@ void CEnvTonemapController::UpdateTonemapScaleBlendMultiplayer( void )
 //-----------------------------------------------------------------------------
 // Purpose: Set the auto exposure min to the specified value
 //-----------------------------------------------------------------------------
-void CEnvTonemapController::InputSetAutoExposureMin( inputdata_t &inputdata )
+void CEnvTonemapController::InputSetAutoExposureMin( inputdata_t &&inputdata )
 {
 	//Tony; in multiplayer, we check to see if the activator is a player, if they are, we trigger an input on them, and then get out.
 	//if there is no activator, or the activator is not a player; ie: LogicAuto, we set the 'global' values.
@@ -301,7 +301,7 @@ void CEnvTonemapController::InputSetAutoExposureMin( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Set the auto exposure max to the specified value
 //-----------------------------------------------------------------------------
-void CEnvTonemapController::InputSetAutoExposureMax( inputdata_t &inputdata )
+void CEnvTonemapController::InputSetAutoExposureMax( inputdata_t &&inputdata )
 {
 	//Tony; in multiplayer, we check to see if the activator is a player, if they are, we trigger an input on them, and then get out.
 	//if there is no activator, or the activator is not a player; ie: LogicAuto, we set the 'global' values.
@@ -326,7 +326,7 @@ void CEnvTonemapController::InputSetAutoExposureMax( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvTonemapController::InputUseDefaultAutoExposure( inputdata_t &inputdata )
+void CEnvTonemapController::InputUseDefaultAutoExposure( inputdata_t &&inputdata )
 {
 	//Tony; in multiplayer, we check to see if the activator is a player, if they are, we trigger an input on them, and then get out.
 	//if there is no activator, or the activator is not a player; ie: LogicAuto, we set the 'global' values.
@@ -353,7 +353,7 @@ void CEnvTonemapController::InputUseDefaultAutoExposure( inputdata_t &inputdata 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvTonemapController::InputSetBloomScale( inputdata_t &inputdata )
+void CEnvTonemapController::InputSetBloomScale( inputdata_t &&inputdata )
 {
 	//Tony; in multiplayer, we check to see if the activator is a player, if they are, we trigger an input on them, and then get out.
 	//if there is no activator, or the activator is not a player; ie: LogicAuto, we set the 'global' values.
@@ -376,7 +376,7 @@ void CEnvTonemapController::InputSetBloomScale( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvTonemapController::InputUseDefaultBloomScale( inputdata_t &inputdata )
+void CEnvTonemapController::InputUseDefaultBloomScale( inputdata_t &&inputdata )
 {
 	//Tony; in multiplayer, we check to see if the activator is a player, if they are, we trigger an input on them, and then get out.
 	//if there is no activator, or the activator is not a player; ie: LogicAuto, we set the 'global' values.
@@ -397,7 +397,7 @@ void CEnvTonemapController::InputUseDefaultBloomScale( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvTonemapController::InputSetBloomExponent( inputdata_t &inputdata )
+void CEnvTonemapController::InputSetBloomExponent( inputdata_t &&inputdata )
 {
 	m_flBloomExponent = inputdata.value.Float();
 }
@@ -405,7 +405,7 @@ void CEnvTonemapController::InputSetBloomExponent( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvTonemapController::InputSetBloomSaturation( inputdata_t &inputdata )
+void CEnvTonemapController::InputSetBloomSaturation( inputdata_t &&inputdata )
 {
 	m_flBloomSaturation = inputdata.value.Float();
 }
@@ -414,7 +414,7 @@ void CEnvTonemapController::InputSetBloomSaturation( inputdata_t &inputdata )
 LINK_ENTITY_TO_CLASS( trigger_tonemap, CTonemapTrigger );
 
 BEGIN_MAPENTITY( CTonemapTrigger )
-	DEFINE_KEYFIELD( m_tonemapControllerName,	FIELD_STRING,	"TonemapName" ),
+	DEFINE_KEYFIELD_AUTO( m_tonemapControllerName, "TonemapName" ),
 END_MAPENTITY()
 
 

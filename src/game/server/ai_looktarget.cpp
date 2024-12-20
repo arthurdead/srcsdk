@@ -15,10 +15,10 @@ LINK_ENTITY_TO_CLASS( ai_looktarget, CAI_LookTarget );
 BEGIN_MAPENTITY( CAI_LookTarget, MAPENT_POINTCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
-	DEFINE_KEYFIELD( m_iContext, FIELD_INTEGER, "context" ),
-	DEFINE_KEYFIELD( m_iPriority, FIELD_INTEGER, "priority" ),
-	DEFINE_KEYFIELD( m_flMaxDist, FIELD_FLOAT, "maxdist" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_iContext, "context" ),
+	DEFINE_KEYFIELD_AUTO( m_iPriority, "priority" ),
+	DEFINE_KEYFIELD_AUTO( m_flMaxDist, "maxdist" ),
 
 END_MAPENTITY()
 

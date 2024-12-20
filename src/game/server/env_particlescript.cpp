@@ -28,9 +28,9 @@ public:
 	virtual void Precache();
 	virtual void Spawn();
 	virtual void Activate();
-	virtual int  UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 
-	void InputSetSequence( inputdata_t &inputdata );
+	void InputSetSequence( inputdata_t &&inputdata );
 
 private:
 
@@ -156,7 +156,7 @@ void CEnvParticleScript::Activate()
 //-----------------------------------------------------------------------------
 // Should we transmit it to the client?
 //-----------------------------------------------------------------------------
-int CEnvParticleScript::UpdateTransmitState()
+EdictStateFlags_t CEnvParticleScript::UpdateTransmitState()
 {
 	if ( IsEffectActive( EF_NODRAW ) )
 	{
@@ -175,7 +175,7 @@ int CEnvParticleScript::UpdateTransmitState()
 //-----------------------------------------------------------------------------
 // Purpose: Input that sets the sequence of the entity
 //-----------------------------------------------------------------------------
-void CEnvParticleScript::InputSetSequence( inputdata_t &inputdata )
+void CEnvParticleScript::InputSetSequence( inputdata_t &&inputdata )
 {
 	if ( inputdata.value.StringID() != NULL_STRING )
 	{

@@ -55,7 +55,7 @@ CBasePlayer* ParticleSmokeGrenade::GetCreator()
 
 // Smoke grenade particles should always transmitted to clients.  If not, a client who
 // enters the PVS late will see the smoke start billowing from then, allowing better vision.
-int ParticleSmokeGrenade::UpdateTransmitState( void )
+EdictStateFlags_t ParticleSmokeGrenade::UpdateTransmitState( void )
 {
 	if ( IsEffectActive( EF_NODRAW ) )
 		return SetTransmitState( FL_EDICT_DONTSEND );

@@ -98,11 +98,11 @@ public:
 	virtual void DampenEyePosition( Vector &vecVehicleEyePos, QAngle &vecVehicleEyeAngles ) {}
 
 	// Inputs
-	void InputThrottle( inputdata_t &inputdata );
-	void InputSteering( inputdata_t &inputdata );
-	void InputAction( inputdata_t &inputdata );
-	void InputHandBrakeOn( inputdata_t &inputdata );
-	void InputHandBrakeOff( inputdata_t &inputdata );
+	void InputThrottle( inputdata_t &&inputdata );
+	void InputSteering( inputdata_t &&inputdata );
+	void InputAction( inputdata_t &&inputdata );
+	void InputHandBrakeOn( inputdata_t &&inputdata );
+	void InputHandBrakeOff( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -179,14 +179,14 @@ public:
 	virtual int		VPhysicsGetObjectList( IPhysicsObject **pList, int listMax );
 
 	// Inputs
-	void	InputLock( inputdata_t &inputdata );
-	void	InputUnlock( inputdata_t &inputdata );
-	void	InputTurnOn( inputdata_t &inputdata );
-	void	InputTurnOff( inputdata_t &inputdata );
-	virtual void	InputEnterVehicle( inputdata_t &inputdata );
-	virtual void	InputEnterVehicleImmediate( inputdata_t &inputdata );
-	virtual void	InputExitVehicle( inputdata_t &inputdata );
-	virtual void	InputExitVehicleImmediate( inputdata_t &inputdata );
+	void	InputLock( inputdata_t &&inputdata );
+	void	InputUnlock( inputdata_t &&inputdata );
+	void	InputTurnOn( inputdata_t &&inputdata );
+	void	InputTurnOff( inputdata_t &&inputdata );
+	virtual void	InputEnterVehicle( inputdata_t &&inputdata );
+	virtual void	InputEnterVehicleImmediate( inputdata_t &&inputdata );
+	virtual void	InputExitVehicle( inputdata_t &&inputdata );
+	virtual void	InputExitVehicleImmediate( inputdata_t &&inputdata );
 
 	// Locals
 	void	ResetUseKey( CBasePlayer *pPlayer );

@@ -26,10 +26,10 @@ public:
 	void	HurtThink( void );
 
 	// Input handlers
-	void InputTurnOn(inputdata_t &inputdata);
-	void InputTurnOff(inputdata_t &inputdata);
-	void InputToggle(inputdata_t &inputdata);
-	void InputHurt(inputdata_t &inputdata);
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputHurt( inputdata_t &&inputdata );
 
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	
@@ -45,11 +45,11 @@ public:
 
 BEGIN_MAPENTITY( CPointHurt )
 
-	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "DamageRadius" ),
-	DEFINE_KEYFIELD( m_nDamage, FIELD_INTEGER, "Damage" ),
-	DEFINE_KEYFIELD( m_flDelay, FIELD_FLOAT, "DamageDelay" ),
-	DEFINE_KEYFIELD( m_bitsDamageType, FIELD_INTEGER64, "DamageType" ),
-	DEFINE_KEYFIELD( m_strTarget, FIELD_STRING, "DamageTarget" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "DamageRadius" ),
+	DEFINE_KEYFIELD_AUTO( m_nDamage, "Damage" ),
+	DEFINE_KEYFIELD_AUTO( m_flDelay, "DamageDelay" ),
+	DEFINE_KEYFIELD_AUTO( m_bitsDamageType, "DamageType" ),
+	DEFINE_KEYFIELD_AUTO( m_strTarget, "DamageTarget" ),
 	
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
@@ -131,7 +131,7 @@ void CPointHurt::HurtThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for turning on the point hurt.
 //-----------------------------------------------------------------------------
-void CPointHurt::InputTurnOn( inputdata_t &data )
+void CPointHurt::InputTurnOn( inputdata_t &&inputdata )
 {
 	SetThink( &CPointHurt::HurtThink );
 
@@ -143,7 +143,7 @@ void CPointHurt::InputTurnOn( inputdata_t &data )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for turning off the point hurt.
 //-----------------------------------------------------------------------------
-void CPointHurt::InputTurnOff( inputdata_t &data )
+void CPointHurt::InputTurnOff( inputdata_t &&inputdata )
 {
 	SetThink( NULL );
 
@@ -153,7 +153,7 @@ void CPointHurt::InputTurnOff( inputdata_t &data )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for toggling the on/off state of the point hurt.
 //-----------------------------------------------------------------------------
-void CPointHurt::InputToggle( inputdata_t &data )
+void CPointHurt::InputToggle( inputdata_t &&inputdata )
 {
 	m_pActivator = data.pActivator;
 
@@ -170,7 +170,7 @@ void CPointHurt::InputToggle( inputdata_t &data )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for instantaneously hurting whatever is near us.
 //-----------------------------------------------------------------------------
-void CPointHurt::InputHurt( inputdata_t &data )
+void CPointHurt::InputHurt( inputdata_t &&inputdata )
 {
 	m_pActivator = data.pActivator;
 

@@ -1830,7 +1830,7 @@ int TreeView::AddItem(KeyValues *data, int parentItemIndex)
     pTreeNode->m_ItemIndex = m_NodeList.AddToTail(pTreeNode);
     pTreeNode->SetKeyValues(data);
 
-	if ( m_Font != 0 )
+	if ( m_Font != INVALID_FONT )
 	{
 		pTreeNode->SetFont( m_Font );
 	}

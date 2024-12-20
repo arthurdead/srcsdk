@@ -9,9 +9,10 @@
 #define AI_ACTIVITY_H
 #pragma once
 
-#define ACTIVITY_NOT_AVAILABLE		-1
+#include "tier0/platform.h"
+#include "studio.h"
 
-typedef enum
+enum Activity : unsigned short
 {
 	#define ACTIVITY_ENUM(name, ...) \
 		name __VA_OPT__( = __VA_ARGS__),
@@ -25,7 +26,7 @@ typedef enum
 		name = value,
 
 	#include "ai_activity_enum.inc"
-} Activity;
+};
 
 
 #endif // AI_ACTIVITY_H

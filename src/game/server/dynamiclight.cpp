@@ -30,9 +30,9 @@ public:
 	DECLARE_MAPENTITY();
 
 	// Turn on and off the light
-	void InputTurnOn( inputdata_t &inputdata );
-	void InputTurnOff( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
 
 public:
 	unsigned char m_ActualFlags;
@@ -112,7 +112,7 @@ bool CDynamicLight::KeyValue( const char *szKeyName, const char *szValue )
 //------------------------------------------------------------------------------
 // Turn on and off the light
 //------------------------------------------------------------------------------
-void CDynamicLight::InputTurnOn( inputdata_t &inputdata )
+void CDynamicLight::InputTurnOn( inputdata_t &&inputdata )
 {
 	m_Flags = m_ActualFlags;
 	m_On = true;
@@ -122,7 +122,7 @@ void CDynamicLight::InputTurnOn( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CDynamicLight::InputTurnOff( inputdata_t &inputdata )
+void CDynamicLight::InputTurnOff( inputdata_t &&inputdata )
 {
 	// This basically shuts it off
 	m_Flags = DLIGHT_NO_MODEL_ILLUMINATION | DLIGHT_NO_WORLD_ILLUMINATION;
@@ -133,7 +133,7 @@ void CDynamicLight::InputTurnOff( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CDynamicLight::InputToggle( inputdata_t &inputdata )
+void CDynamicLight::InputToggle( inputdata_t &&inputdata )
 {
 	if (m_On)
 	{

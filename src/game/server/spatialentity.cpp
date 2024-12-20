@@ -22,15 +22,15 @@ static const char *s_pFadeOutContextThink = "SpatialEntityFadeOutThink";
 
 BEGIN_MAPENTITY( CSpatialEntity )
 
-	DEFINE_KEYFIELD( m_MinFalloff,		  FIELD_FLOAT,   "minfalloff" ),
-	DEFINE_KEYFIELD( m_MaxFalloff,		  FIELD_FLOAT,   "maxfalloff" ),
-	DEFINE_KEYFIELD( m_flMaxWeight,		  FIELD_FLOAT,	 "maxweight" ),
-	DEFINE_KEYFIELD( m_flFadeInDuration,  FIELD_FLOAT,	 "fadeInDuration" ),
-	DEFINE_KEYFIELD( m_flFadeOutDuration,  FIELD_FLOAT,	 "fadeOutDuration" ),
-	DEFINE_KEYFIELD( m_lookupFilename,	  FIELD_STRING,  "filename" ),
+	DEFINE_KEYFIELD_AUTO( m_MinFalloff, "minfalloff" ),
+	DEFINE_KEYFIELD_AUTO( m_MaxFalloff, "maxfalloff" ),
+	DEFINE_KEYFIELD_AUTO( m_flMaxWeight, "maxweight" ),
+	DEFINE_KEYFIELD_AUTO( m_flFadeInDuration, "fadeInDuration" ),
+	DEFINE_KEYFIELD_AUTO( m_flFadeOutDuration, "fadeOutDuration" ),
+	DEFINE_KEYFIELD_AUTO( m_lookupFilename, "filename" ),
 
-	DEFINE_KEYFIELD( m_bEnabled,		  FIELD_BOOLEAN, "enabled" ),
-	DEFINE_KEYFIELD( m_bStartDisabled,    FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bEnabled, "enabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bStartDisabled, "StartDisabled" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -69,7 +69,7 @@ CSpatialEntity::CSpatialEntity() : BaseClass()
 //------------------------------------------------------------------------------
 // Purpose : Send even though we don't have a model
 //------------------------------------------------------------------------------
-int CSpatialEntity::UpdateTransmitState()
+EdictStateFlags_t CSpatialEntity::UpdateTransmitState()
 {
 	// ALWAYS transmit to all clients.
 	return SetTransmitState( FL_EDICT_ALWAYS );
@@ -197,7 +197,7 @@ void CSpatialEntity::FadeOutThink( void )
 //------------------------------------------------------------------------------
 // Purpose : Input handlers
 //------------------------------------------------------------------------------
-void CSpatialEntity::InputEnable( inputdata_t &inputdata )
+void CSpatialEntity::InputEnable( inputdata_t &&inputdata )
 {
 	m_bEnabled = true;
 
@@ -212,7 +212,7 @@ void CSpatialEntity::InputEnable( inputdata_t &inputdata )
 
 }
 
-void CSpatialEntity::InputDisable( inputdata_t &inputdata )
+void CSpatialEntity::InputDisable( inputdata_t &&inputdata )
 {
 	m_bEnabled = false;
 
@@ -227,12 +227,12 @@ void CSpatialEntity::InputDisable( inputdata_t &inputdata )
 
 }
 
-void CSpatialEntity::InputSetFadeInDuration( inputdata_t& inputdata )
+void CSpatialEntity::InputSetFadeInDuration( inputdata_t &&inputdata )
 {
 	m_flFadeInDuration = inputdata.value.Float();
 }
 
-void CSpatialEntity::InputSetFadeOutDuration( inputdata_t& inputdata )
+void CSpatialEntity::InputSetFadeOutDuration( inputdata_t &&inputdata )
 {
 	m_flFadeOutDuration = inputdata.value.Float();
 }

@@ -18,9 +18,9 @@ LINK_ENTITY_TO_CLASS( env_particlelight, CParticleLight );
 BEGIN_MAPENTITY( CParticleLight )
 
 	//Keyvalue fields
-	DEFINE_KEYFIELD( m_flIntensity,		FIELD_FLOAT,	"Intensity" ),
-	DEFINE_KEYFIELD( m_vColor,			FIELD_VECTOR,	"Color" ),
-	DEFINE_KEYFIELD( m_PSName,			FIELD_STRING,	"PSName" ),
+	DEFINE_KEYFIELD_AUTO( m_flIntensity, "Intensity" ),
+	DEFINE_KEYFIELD_AUTO( m_vColor, "Color" ),
+	DEFINE_KEYFIELD_AUTO( m_PSName, "PSName" ),
 	DEFINE_KEYFIELD( m_bDirectional,	FIELD_BOOLEAN,	"Directional" )
 
 END_MAPENTITY()

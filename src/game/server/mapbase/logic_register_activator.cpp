@@ -21,15 +21,15 @@ public:
 	CLogicRegisterActivator();
 
 	// Input handlers
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
 
-	void InputFireRegisteredAsActivator1( inputdata_t &inputdata );
-	void InputFireRegisteredAsActivator2( inputdata_t &inputdata );
-	void InputFireRegisteredAsActivator3( inputdata_t &inputdata );
-	void InputFireRegisteredAsActivator4( inputdata_t &inputdata );
-	void InputRegisterEntity( inputdata_t &inputdata );
+	void InputFireRegisteredAsActivator1( inputdata_t &&inputdata );
+	void InputFireRegisteredAsActivator2( inputdata_t &&inputdata );
+	void InputFireRegisteredAsActivator3( inputdata_t &&inputdata );
+	void InputFireRegisteredAsActivator4( inputdata_t &&inputdata );
+	void InputRegisterEntity( inputdata_t &&inputdata );
 
 	DECLARE_DATADESC();
 
@@ -48,7 +48,7 @@ LINK_ENTITY_TO_CLASS(logic_register_activator, CLogicRegisterActivator);
 
 BEGIN_DATADESC( CLogicRegisterActivator )
 
-	DEFINE_KEYFIELD(m_bDisabled, FIELD_BOOLEAN, "StartDisabled"),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
 	DEFINE_FIELD( m_hActivator, FIELD_EHANDLE ),
 
@@ -82,7 +82,7 @@ CLogicRegisterActivator::CLogicRegisterActivator(void)
 //------------------------------------------------------------------------------
 // Purpose: Turns on the entity, allowing it to fire outputs.
 //------------------------------------------------------------------------------
-void CLogicRegisterActivator::InputEnable( inputdata_t &inputdata )
+void CLogicRegisterActivator::InputEnable( inputdata_t &&inputdata )
 {
 	m_bDisabled = false;
 }
@@ -90,7 +90,7 @@ void CLogicRegisterActivator::InputEnable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Turns off the entity, preventing it from firing outputs.
 //------------------------------------------------------------------------------
-void CLogicRegisterActivator::InputDisable( inputdata_t &inputdata )
+void CLogicRegisterActivator::InputDisable( inputdata_t &&inputdata )
 { 
 	m_bDisabled = true;
 }
@@ -98,7 +98,7 @@ void CLogicRegisterActivator::InputDisable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Toggles the enabled/disabled state of the entity.
 //------------------------------------------------------------------------------
-void CLogicRegisterActivator::InputToggle( inputdata_t &inputdata )
+void CLogicRegisterActivator::InputToggle( inputdata_t &&inputdata )
 { 
 	m_bDisabled = !m_bDisabled;
 }
@@ -107,7 +107,7 @@ void CLogicRegisterActivator::InputToggle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that fires its respective OnRegisteredActivate with the stored activator.
 //-----------------------------------------------------------------------------
-void CLogicRegisterActivator::InputFireRegisteredAsActivator1( inputdata_t &inputdata )
+void CLogicRegisterActivator::InputFireRegisteredAsActivator1( inputdata_t &&inputdata )
 {
 	m_OnRegisteredActivate[0].FireOutput(m_hActivator, this);
 }
@@ -115,7 +115,7 @@ void CLogicRegisterActivator::InputFireRegisteredAsActivator1( inputdata_t &inpu
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that fires its respective OnRegisteredActivate with the stored activator.
 //-----------------------------------------------------------------------------
-void CLogicRegisterActivator::InputFireRegisteredAsActivator2( inputdata_t &inputdata )
+void CLogicRegisterActivator::InputFireRegisteredAsActivator2( inputdata_t &&inputdata )
 {
 	m_OnRegisteredActivate[1].FireOutput(m_hActivator, this);
 }
@@ -123,7 +123,7 @@ void CLogicRegisterActivator::InputFireRegisteredAsActivator2( inputdata_t &inpu
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that fires its respective OnRegisteredActivate with the stored activator.
 //-----------------------------------------------------------------------------
-void CLogicRegisterActivator::InputFireRegisteredAsActivator3( inputdata_t &inputdata )
+void CLogicRegisterActivator::InputFireRegisteredAsActivator3( inputdata_t &&inputdata )
 {
 	m_OnRegisteredActivate[2].FireOutput(m_hActivator, this);
 }
@@ -131,7 +131,7 @@ void CLogicRegisterActivator::InputFireRegisteredAsActivator3( inputdata_t &inpu
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that fires its respective OnRegisteredActivate with the stored activator.
 //-----------------------------------------------------------------------------
-void CLogicRegisterActivator::InputFireRegisteredAsActivator4( inputdata_t &inputdata )
+void CLogicRegisterActivator::InputFireRegisteredAsActivator4( inputdata_t &&inputdata )
 {
 	m_OnRegisteredActivate[3].FireOutput(m_hActivator, this);
 }
@@ -139,7 +139,7 @@ void CLogicRegisterActivator::InputFireRegisteredAsActivator4( inputdata_t &inpu
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that stores an entity as the activator.
 //-----------------------------------------------------------------------------
-void CLogicRegisterActivator::InputRegisterEntity( inputdata_t &inputdata )
+void CLogicRegisterActivator::InputRegisterEntity( inputdata_t &&inputdata )
 {
 	m_hActivator = inputdata.value.Entity();
 }

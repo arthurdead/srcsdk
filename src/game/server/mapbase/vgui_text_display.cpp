@@ -29,7 +29,7 @@ public:
 
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 
-	virtual int  UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 	virtual void SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
 
 	virtual void Spawn( void );
@@ -41,15 +41,15 @@ public:
 	void	Disable( void );
 	void	Enable( void );
 
-	void	InputDisable( inputdata_t &inputdata );
-	void	InputEnable( inputdata_t &inputdata );
-	void	InputToggle( inputdata_t &inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
+	void	InputToggle( inputdata_t &&inputdata );
 
-	void	InputSetMessage( inputdata_t &inputdata );
-	void	InputSetTextAlignment( inputdata_t &inputdata );
-	void	InputSetFont( inputdata_t &inputdata );
-	void	InputSetResolution( inputdata_t &inputdata );
-	void	InputSetTextSize( inputdata_t &inputdata );
+	void	InputSetMessage( inputdata_t &&inputdata );
+	void	InputSetTextAlignment( inputdata_t &&inputdata );
+	void	InputSetFont( inputdata_t &&inputdata );
+	void	InputSetResolution( inputdata_t &&inputdata );
+	void	InputSetTextSize( inputdata_t &&inputdata );
 
 private:
 
@@ -85,10 +85,10 @@ BEGIN_DATADESC( CVGuiTextDisplay )
 	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
 
 	DEFINE_AUTO_ARRAY_KEYFIELD( m_szDisplayText, FIELD_CHARACTER, "message" ),
-	DEFINE_KEYFIELD( m_iContentAlignment, FIELD_INTEGER, "alignment" ),
+	DEFINE_KEYFIELD_AUTO( m_iContentAlignment, "alignment" ),
 	DEFINE_AUTO_ARRAY_KEYFIELD( m_szFont, FIELD_CHARACTER, "font" ),
-	DEFINE_KEYFIELD( m_iResolution, FIELD_INTEGER, "resolution" ),
-	DEFINE_KEYFIELD( m_flTextSize, FIELD_FLOAT, "textsize" ),
+	DEFINE_KEYFIELD_AUTO( m_iResolution, "resolution" ),
+	DEFINE_KEYFIELD_AUTO( m_flTextSize, "textsize" ),
 
 	DEFINE_FIELD( m_bDoFullTransmit, FIELD_BOOLEAN ),
 
@@ -171,7 +171,7 @@ bool CVGuiTextDisplay::KeyValue( const char *szKeyName, const char *szValue )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-int CVGuiTextDisplay::UpdateTransmitState()
+EdictStateFlags_t CVGuiTextDisplay::UpdateTransmitState()
 {
 	if ( m_bDoFullTransmit )
 	{
@@ -284,7 +284,7 @@ void CVGuiTextDisplay::Enable( void )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CVGuiTextDisplay::InputDisable( inputdata_t &inputdata )
+void CVGuiTextDisplay::InputDisable( inputdata_t &&inputdata )
 {
 	Disable();
 }
@@ -292,7 +292,7 @@ void CVGuiTextDisplay::InputDisable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CVGuiTextDisplay::InputEnable( inputdata_t &inputdata )
+void CVGuiTextDisplay::InputEnable( inputdata_t &&inputdata )
 {
 	Enable();
 }
@@ -300,7 +300,7 @@ void CVGuiTextDisplay::InputEnable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CVGuiTextDisplay::InputToggle( inputdata_t &inputdata )
+void CVGuiTextDisplay::InputToggle( inputdata_t &&inputdata )
 {
 	m_bEnabled ? Disable() : Enable();
 }
@@ -308,7 +308,7 @@ void CVGuiTextDisplay::InputToggle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CVGuiTextDisplay::InputSetMessage( inputdata_t &inputdata )
+void CVGuiTextDisplay::InputSetMessage( inputdata_t &&inputdata )
 {
 	Q_strcpy( m_szDisplayText.GetForModify(), inputdata.value.String() );
 }
@@ -316,7 +316,7 @@ void CVGuiTextDisplay::InputSetMessage( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CVGuiTextDisplay::InputSetTextAlignment( inputdata_t &inputdata )
+void CVGuiTextDisplay::InputSetTextAlignment( inputdata_t &&inputdata )
 {
 	m_iContentAlignment = inputdata.value.Int();
 }
@@ -324,7 +324,7 @@ void CVGuiTextDisplay::InputSetTextAlignment( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CVGuiTextDisplay::InputSetFont( inputdata_t &inputdata )
+void CVGuiTextDisplay::InputSetFont( inputdata_t &&inputdata )
 {
 	Q_strcpy( m_szFont.GetForModify(), inputdata.value.String() );
 }
@@ -332,7 +332,7 @@ void CVGuiTextDisplay::InputSetFont( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CVGuiTextDisplay::InputSetResolution( inputdata_t &inputdata )
+void CVGuiTextDisplay::InputSetResolution( inputdata_t &&inputdata )
 {
 	m_iResolution = inputdata.value.Int();
 }
@@ -340,7 +340,7 @@ void CVGuiTextDisplay::InputSetResolution( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CVGuiTextDisplay::InputSetTextSize( inputdata_t &inputdata )
+void CVGuiTextDisplay::InputSetTextSize( inputdata_t &&inputdata )
 {
 	m_flTextSize = inputdata.value.Float();
 

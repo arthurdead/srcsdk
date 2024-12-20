@@ -80,47 +80,47 @@ public:
 	virtual float	GetIdealAccel( ) const;
 	virtual void	StudioFrameAdvance(); // advance animation frame to some time in the future
 	void StudioFrameAdvanceManual( float flInterval );
-	bool	IsValidSequence( int iSequence );
+	bool	IsValidSequence( sequence_t iSequence );
 	virtual void ReachedEndOfSequence() { return; }
 
 	inline float					GetPlaybackRate() const;
 	inline void						SetPlaybackRate( float rate );
 
-	inline int GetSequence() { return m_nSequence; }
-	virtual void SetSequence(int nSequence);
-	virtual void OnSequenceSet( int nOldSequence ) {}
-	/* inline */ void ResetSequence(int nSequence);
+	inline sequence_t GetSequence() { return m_nSequence; }
+	virtual void SetSequence(sequence_t nSequence);
+	virtual void OnSequenceSet( sequence_t nOldSequence ) {}
+	/* inline */ void ResetSequence(sequence_t nSequence);
 	// FIXME: push transitions support down into CBaseAnimating?
 	virtual bool IsActivityFinished( void ) { return m_bSequenceFinished; }
 	inline bool IsSequenceFinished( void ) { return m_bSequenceFinished; }
 	inline bool SequenceLoops( void ) { return m_bSequenceLoops; }
-	bool		 IsSequenceLooping( CStudioHdr *pStudioHdr, int iSequence );
-	inline bool	 IsSequenceLooping( int iSequence ) { return IsSequenceLooping(GetModelPtr(),iSequence); }
+	bool		 IsSequenceLooping( CStudioHdr *pStudioHdr, sequence_t iSequence );
+	inline bool	 IsSequenceLooping( sequence_t iSequence ) { return IsSequenceLooping(GetModelPtr(),iSequence); }
 	inline float SequenceDuration( void ) { return SequenceDuration( m_nSequence ); }
-	float	SequenceDuration( CStudioHdr *pStudioHdr, int iSequence );
-	inline float SequenceDuration( int iSequence ) { return SequenceDuration(GetModelPtr(), iSequence); }
-	float	GetSequenceCycleRate( CStudioHdr *pStudioHdr, int iSequence );
-	inline float	GetSequenceCycleRate( int iSequence ) { return GetSequenceCycleRate(GetModelPtr(),iSequence); }
-	float	GetLastVisibleCycle( CStudioHdr *pStudioHdr, int iSequence );
-	virtual float	GetSequenceGroundSpeed( CStudioHdr *pStudioHdr, int iSequence );
-	inline float GetSequenceGroundSpeed( int iSequence ) { return GetSequenceGroundSpeed(GetModelPtr(), iSequence); }
+	float	SequenceDuration( CStudioHdr *pStudioHdr, sequence_t iSequence );
+	inline float SequenceDuration( sequence_t iSequence ) { return SequenceDuration(GetModelPtr(), iSequence); }
+	float	GetSequenceCycleRate( CStudioHdr *pStudioHdr, sequence_t iSequence );
+	inline float	GetSequenceCycleRate( sequence_t iSequence ) { return GetSequenceCycleRate(GetModelPtr(),iSequence); }
+	float	GetLastVisibleCycle( CStudioHdr *pStudioHdr, sequence_t iSequence );
+	virtual float	GetSequenceGroundSpeed( CStudioHdr *pStudioHdr, sequence_t iSequence );
+	inline float GetSequenceGroundSpeed( sequence_t iSequence ) { return GetSequenceGroundSpeed(GetModelPtr(), iSequence); }
 	void	ResetActivityIndexes ( void );
 	void    ResetEventIndexes ( void );
-	int		SelectWeightedSequence ( Activity activity );
-	int		SelectWeightedSequence ( Activity activity, int curSequence );
-	int		SelectWeightedSequenceFromModifiers( Activity activity, CUtlSymbol *pActivityModifiers, int iModifierCount );
-	int		SelectHeaviestSequence ( Activity activity );
-	int		LookupActivity( const char *label );
-	int		LookupSequence ( const char *label );
-	KeyValues *GetSequenceKeyValues( int iSequence );
+	sequence_t		SelectWeightedSequence ( Activity activity );
+	sequence_t		SelectWeightedSequence ( Activity activity, sequence_t curSequence );
+	sequence_t		SelectWeightedSequenceFromModifiers( Activity activity, CUtlSymbol *pActivityModifiers, int iModifierCount );
+	sequence_t		SelectHeaviestSequence ( Activity activity );
+	Activity		LookupActivity( const char *label );
+	sequence_t		LookupSequence ( const char *label );
+	KeyValues *GetSequenceKeyValues( sequence_t iSequence );
 
-	float GetSequenceMoveYaw( int iSequence );
-	float GetSequenceMoveDist( CStudioHdr *pStudioHdr, int iSequence );
-	inline float GetSequenceMoveDist( int iSequence ) { return GetSequenceMoveDist(GetModelPtr(),iSequence);}
-	void  GetSequenceLinearMotion( int iSequence, Vector *pVec );
-	const char *GetSequenceName( int iSequence );
-	const char *GetSequenceActivityName( int iSequence );
-	Activity GetSequenceActivity( int iSequence );
+	float GetSequenceMoveYaw( sequence_t iSequence );
+	float GetSequenceMoveDist( CStudioHdr *pStudioHdr, sequence_t iSequence );
+	inline float GetSequenceMoveDist( sequence_t iSequence ) { return GetSequenceMoveDist(GetModelPtr(),iSequence);}
+	void  GetSequenceLinearMotion( sequence_t iSequence, Vector *pVec );
+	const char *GetSequenceName( sequence_t iSequence );
+	const char *GetSequenceActivityName( sequence_t iSequence );
+	Activity GetSequenceActivity( sequence_t iSequence );
 
 	void ResetSequenceInfo ( );
 	// This will stop animation until you call ResetSequenceInfo() at some point in the future
@@ -141,7 +141,7 @@ public:
 	virtual void CalculateIKLocks( float currentTime );
 	virtual void Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity );
 
-	bool HasAnimEvent( int nSequence, Animevent nEvent );
+	bool HasAnimEvent( sequence_t nSequence, Animevent nEvent );
 	virtual	void DispatchAnimEvents ( CBaseAnimating *eventHandler ); // Handle events that have happend since last time called up until X seconds into the future
 	virtual void HandleAnimEvent( animevent_t *pEvent );
 	virtual bool HandleBehaviorAnimEvent( animevent_t *pEvent ) { return false; }
@@ -157,8 +157,8 @@ public:
 	float	GetPoseParameter( const char *szName );
 	float	GetPoseParameter( int iParameter );
 	bool	GetPoseParameterRange( int index, float &minValue, float &maxValue );
-	bool	HasPoseParameter( int iSequence, const char *szName );
-	bool	HasPoseParameter( int iSequence, int iParameter );
+	bool	HasPoseParameter( sequence_t iSequence, const char *szName );
+	bool	HasPoseParameter( sequence_t iSequence, int iParameter );
 	float	EdgeLimitPoseParameter( int iParameter, float flValue, float flBase = 0.0f );
 
 protected:
@@ -177,10 +177,10 @@ public:
 
 	int GetNumBones ( void );
 
-	int  FindTransitionSequence( int iCurrentSequence, int iGoalSequence, int *piDir );
-	bool GotoSequence( int iCurrentSequence, float flCurrentCycle, float flCurrentRate,  int iGoalSequence, int &iNextSequence, float &flCycle, int &iDir );
-	int  GetEntryNode( int iSequence );
-	int  GetExitNode( int iSequence );
+	int  FindTransitionSequence( sequence_t iCurrentSequence, sequence_t iGoalSequence, int *piDir );
+	bool GotoSequence( int iCurrentSequence, float flCurrentCycle, float flCurrentRate,  sequence_t iGoalSequence, sequence_t &iNextSequence, float &flCycle, int &iDir );
+	int  GetEntryNode( sequence_t iSequence );
+	int  GetExitNode( sequence_t iSequence );
 	
 	void GetEyeballs( Vector &origin, QAngle &angles ); // ?? remove ??
 
@@ -313,14 +313,14 @@ public:
 	virtual void Extinguish() { RemoveFlag( FL_ONFIRE ); }
 	bool IsOnFire() { return ( (GetFlags() & FL_ONFIRE) != 0 ); }
 	void Scorch( int rate, int floor );
-	void InputIgnite( inputdata_t &inputdata );
-	void InputIgniteLifetime( inputdata_t &inputdata );
-	void InputIgniteNumHitboxFires( inputdata_t &inputdata );
-	void InputIgniteHitboxFireScale( inputdata_t &inputdata );
-	void InputBecomeRagdoll( inputdata_t &inputdata );
-	void InputCreateSeparateRagdoll( inputdata_t &inputdata );
-	void InputCreateSeparateRagdollClient( inputdata_t &inputdata );
-	void InputSetPoseParameter( inputdata_t &inputdata );
+	void InputIgnite( inputdata_t &&inputdata );
+	void InputIgniteLifetime( inputdata_t &&inputdata );
+	void InputIgniteNumHitboxFires( inputdata_t &&inputdata );
+	void InputIgniteHitboxFireScale( inputdata_t &&inputdata );
+	void InputBecomeRagdoll( inputdata_t &&inputdata );
+	void InputCreateSeparateRagdoll( inputdata_t &&inputdata );
+	void InputCreateSeparateRagdollClient( inputdata_t &&inputdata );
+	void InputSetPoseParameter( inputdata_t &&inputdata );
 
 	// Ice
 	virtual bool	IsFrozen( void ) { return m_flFrozen >= 1.0f; }
@@ -360,20 +360,20 @@ public:
 	inline void	SetBoneCacheFlags( unsigned short fFlag ) { m_fBoneCacheFlags |= fFlag; }
 	inline void	ClearBoneCacheFlags( unsigned short fFlag ) { m_fBoneCacheFlags &= ~fFlag; }
 
-	bool PrefetchSequence( int iSequence );
+	bool PrefetchSequence( sequence_t iSequence );
 
 private:
 	void LockStudioHdr();
 	void UnlockStudioHdr();
 
 	void StudioFrameAdvanceInternal( CStudioHdr *pStudioHdr, float flInterval );
-	void InputSetLightingOriginRelative( inputdata_t &inputdata );
-	void InputSetLightingOrigin( inputdata_t &inputdata );
-	void InputSetModelScale( inputdata_t &inputdata );
-	void InputSetModel( inputdata_t &inputdata );
+	void InputSetLightingOriginRelative( inputdata_t &&inputdata );
+	void InputSetLightingOrigin( inputdata_t &&inputdata );
+	void InputSetModelScale( inputdata_t &&inputdata );
+	void InputSetModel( inputdata_t &&inputdata );
 
-	void InputSetCycle( inputdata_t &inputdata );
-	void InputSetPlaybackRate( inputdata_t &inputdata );
+	void InputSetCycle( inputdata_t &&inputdata );
+	void InputSetPlaybackRate( inputdata_t &&inputdata );
 public:
 
 	bool CanSkipAnimation(void); // this shouldnt be private
@@ -427,8 +427,8 @@ private:
 	float				m_flDissolveStartTime;
 
 	// was pev->frame
-	CNetworkVar( float, m_flCycle );
-	CNetworkVar( int, m_nSequence );	
+	CNetworkAnimCycle( m_flCycle );
+	CNetworkSequence( m_nSequence );	
 	CNetworkArray( float, m_flPoseParameter, NUM_POSEPAREMETERS );	// must be private so manual mode works!
 	CNetworkArray( float, m_flEncodedController, NUM_BONECTRLS );		// bone controller setting (0..1)
 
@@ -553,16 +553,6 @@ inline void CBaseAnimating::SetCycle( float flCycle )
 	m_flCycle = flCycle;
 }
 
-
 EXTERN_SEND_TABLE(DT_BaseAnimating);
-
-
-
-#define ANIMATION_SEQUENCE_BITS			12	// 4096 sequences
-#define ANIMATION_SKIN_BITS				10	// 1024 body skin selections FIXME: this seems way high
-#define ANIMATION_BODY_BITS				32	// body combinations
-#define ANIMATION_HITBOXSET_BITS		2	// hit box sets 
-#define ANIMATION_POSEPARAMETER_BITS	11	// pose parameter resolution
-#define ANIMATION_PLAYBACKRATE_BITS		8	// default playback rate, only used on leading edge detect sequence changes
 
 #endif // BASEANIMATING_H

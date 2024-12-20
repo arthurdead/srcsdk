@@ -23,7 +23,7 @@ LINK_ENTITY_TO_CLASS(logic_random_outputs, CLogicRandomOutputs);
 
 BEGIN_MAPENTITY( CLogicRandomOutputs )
 
-	DEFINE_KEYFIELD(m_bDisabled, FIELD_BOOLEAN, "StartDisabled"),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "Enable", InputEnable),
@@ -111,7 +111,7 @@ void CLogicRandomOutputs::Think()
 //------------------------------------------------------------------------------
 // Purpose: Turns on the entity, allowing it to fire outputs.
 //------------------------------------------------------------------------------
-void CLogicRandomOutputs::InputEnable( inputdata_t &inputdata )
+void CLogicRandomOutputs::InputEnable( inputdata_t &&inputdata )
 {
 	m_bDisabled = false;
 }
@@ -120,7 +120,7 @@ void CLogicRandomOutputs::InputEnable( inputdata_t &inputdata )
 // Purpose: Enables us to fire again. This input is only posted from our Trigger
 //			function to prevent rapid refire.
 //------------------------------------------------------------------------------
-void CLogicRandomOutputs::InputEnableRefire( inputdata_t &inputdata )
+void CLogicRandomOutputs::InputEnableRefire( inputdata_t &&inputdata )
 { 
 	Msg(" now enabling refire\n" );
 	m_bWaitForRefire = false;
@@ -130,7 +130,7 @@ void CLogicRandomOutputs::InputEnableRefire( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Cancels any I/O events in the queue that were fired by us.
 //------------------------------------------------------------------------------
-void CLogicRandomOutputs::InputCancelPending( inputdata_t &inputdata )
+void CLogicRandomOutputs::InputCancelPending( inputdata_t &&inputdata )
 { 
 	g_EventQueue.CancelEvents( this );
 
@@ -142,7 +142,7 @@ void CLogicRandomOutputs::InputCancelPending( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Turns off the entity, preventing it from firing outputs.
 //------------------------------------------------------------------------------
-void CLogicRandomOutputs::InputDisable( inputdata_t &inputdata )
+void CLogicRandomOutputs::InputDisable( inputdata_t &&inputdata )
 { 
 	m_bDisabled = true;
 }
@@ -151,7 +151,7 @@ void CLogicRandomOutputs::InputDisable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Toggles the enabled/disabled state of the entity.
 //------------------------------------------------------------------------------
-void CLogicRandomOutputs::InputToggle( inputdata_t &inputdata )
+void CLogicRandomOutputs::InputToggle( inputdata_t &&inputdata )
 { 
 	m_bDisabled = !m_bDisabled;
 }
@@ -160,7 +160,7 @@ void CLogicRandomOutputs::InputToggle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that triggers the logic_random_outputs.
 //-----------------------------------------------------------------------------
-void CLogicRandomOutputs::InputTrigger( inputdata_t &inputdata )
+void CLogicRandomOutputs::InputTrigger( inputdata_t &&inputdata )
 {
 	if ((!m_bDisabled) && (!m_bWaitForRefire))
 	{

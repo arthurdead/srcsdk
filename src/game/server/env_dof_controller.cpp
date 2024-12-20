@@ -18,15 +18,15 @@ LINK_ENTITY_TO_CLASS( env_dof_controller, CEnvDOFController );
 
 BEGIN_MAPENTITY( CEnvDOFController )
 	
-	DEFINE_KEYFIELD( m_bDOFEnabled,			FIELD_BOOLEAN,	"enabled" ),
-	DEFINE_KEYFIELD( m_flNearBlurDepth, 	FIELD_FLOAT,	"near_blur" ),
-	DEFINE_KEYFIELD( m_flNearFocusDepth,	FIELD_FLOAT,	"near_focus" ),
-	DEFINE_KEYFIELD( m_flFarFocusDepth, 	FIELD_FLOAT,	"far_focus" ),
-	DEFINE_KEYFIELD( m_flFarBlurDepth,		FIELD_FLOAT,	"far_blur" ),
-	DEFINE_KEYFIELD( m_flNearBlurRadius,	FIELD_FLOAT,	"near_radius" ),
-	DEFINE_KEYFIELD( m_flFarBlurRadius,		FIELD_FLOAT,	"far_radius" ),
-	DEFINE_KEYFIELD( m_strFocusTargetName,	FIELD_STRING,	"focus_target" ),
-	DEFINE_KEYFIELD( m_flFocusTargetRange,	FIELD_FLOAT,	"focus_range" ),
+	DEFINE_KEYFIELD_AUTO( m_bDOFEnabled, "enabled" ),
+	DEFINE_KEYFIELD_AUTO( m_flNearBlurDepth, "near_blur" ),
+	DEFINE_KEYFIELD_AUTO( m_flNearFocusDepth, "near_focus" ),
+	DEFINE_KEYFIELD_AUTO( m_flFarFocusDepth, "far_focus" ),
+	DEFINE_KEYFIELD_AUTO( m_flFarBlurDepth, "far_blur" ),
+	DEFINE_KEYFIELD_AUTO( m_flNearBlurRadius, "near_radius" ),
+	DEFINE_KEYFIELD_AUTO( m_flFarBlurRadius, "far_radius" ),
+	DEFINE_KEYFIELD_AUTO( m_strFocusTargetName, "focus_target" ),
+	DEFINE_KEYFIELD_AUTO( m_flFocusTargetRange, "focus_range" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT,	"SetNearBlurDepth",		InputSetNearBlurDepth ),
@@ -80,7 +80,7 @@ void CEnvDOFController::Activate( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CEnvDOFController::UpdateTransmitState()
+EdictStateFlags_t CEnvDOFController::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
@@ -88,7 +88,7 @@ int CEnvDOFController::UpdateTransmitState()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvDOFController::InputSetNearBlurDepth( inputdata_t &inputdata )
+void CEnvDOFController::InputSetNearBlurDepth( inputdata_t &&inputdata )
 {
 	m_flNearBlurDepth = inputdata.value.Float();
 }
@@ -96,7 +96,7 @@ void CEnvDOFController::InputSetNearBlurDepth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvDOFController::InputSetNearFocusDepth( inputdata_t &inputdata )
+void CEnvDOFController::InputSetNearFocusDepth( inputdata_t &&inputdata )
 {
 	m_flNearFocusDepth = inputdata.value.Float();
 }
@@ -104,7 +104,7 @@ void CEnvDOFController::InputSetNearFocusDepth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvDOFController::InputSetFarFocusDepth( inputdata_t &inputdata )
+void CEnvDOFController::InputSetFarFocusDepth( inputdata_t &&inputdata )
 {
 	m_flFarFocusDepth = inputdata.value.Float();
 }
@@ -112,7 +112,7 @@ void CEnvDOFController::InputSetFarFocusDepth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvDOFController::InputSetFarBlurDepth( inputdata_t &inputdata )
+void CEnvDOFController::InputSetFarBlurDepth( inputdata_t &&inputdata )
 {
 	m_flFarBlurDepth = inputdata.value.Float();
 }
@@ -120,7 +120,7 @@ void CEnvDOFController::InputSetFarBlurDepth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvDOFController::InputSetNearBlurRadius( inputdata_t &inputdata )
+void CEnvDOFController::InputSetNearBlurRadius( inputdata_t &&inputdata )
 {
 	m_flNearBlurRadius = inputdata.value.Float();
 	m_bDOFEnabled = ( m_flNearBlurRadius > 0.0f ) || ( m_flFarBlurRadius > 0.0f );
@@ -129,7 +129,7 @@ void CEnvDOFController::InputSetNearBlurRadius( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvDOFController::InputSetFarBlurRadius( inputdata_t &inputdata )
+void CEnvDOFController::InputSetFarBlurRadius( inputdata_t &&inputdata )
 {
 	m_flFarBlurRadius = inputdata.value.Float();
 	m_bDOFEnabled = ( m_flNearBlurRadius > 0.0f ) || ( m_flFarBlurRadius > 0.0f );
@@ -174,7 +174,7 @@ void CEnvDOFController::UpdateParamBlend( void )
 //-----------------------------------------------------------------------------
 // Purpose: Set the "focus" target entity
 //-----------------------------------------------------------------------------
-void CEnvDOFController::InputSetFocusTarget( inputdata_t &inputdata )
+void CEnvDOFController::InputSetFocusTarget( inputdata_t &&inputdata )
 {
 	m_hFocusTarget = gEntList.FindEntityByName( NULL, inputdata.value.String() );
 	
@@ -189,7 +189,7 @@ void CEnvDOFController::InputSetFocusTarget( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Set the range behind the focus entity that we'll blur (in units)
 //-----------------------------------------------------------------------------
-void CEnvDOFController::InputSetFocusTargetRange( inputdata_t &inputdata )
+void CEnvDOFController::InputSetFocusTargetRange( inputdata_t &&inputdata )
 {
 	m_flFocusTargetRange = inputdata.value.Float();
 }

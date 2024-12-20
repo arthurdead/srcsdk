@@ -15,10 +15,10 @@
 LINK_ENTITY_TO_CLASS( ai_speechfilter, CAI_SpeechFilter );
 
 BEGIN_MAPENTITY( CAI_SpeechFilter )
-	DEFINE_KEYFIELD( m_iszSubject,		FIELD_STRING, "subject" ),
-	DEFINE_KEYFIELD( m_flIdleModifier,	FIELD_FLOAT, "IdleModifier" ),
-	DEFINE_KEYFIELD( m_bNeverSayHello,	FIELD_BOOLEAN, "NeverSayHello" ),
-	DEFINE_KEYFIELD( m_bDisabled,		FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSubject, "subject" ),
+	DEFINE_KEYFIELD_AUTO( m_flIdleModifier, "IdleModifier" ),
+	DEFINE_KEYFIELD_AUTO( m_bNeverSayHello, "NeverSayHello" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -66,21 +66,21 @@ void CAI_SpeechFilter::Enable( bool bEnable )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CAI_SpeechFilter::InputEnable( inputdata_t &inputdata )
+void CAI_SpeechFilter::InputEnable( inputdata_t &&inputdata )
 {
 	Enable( true );
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CAI_SpeechFilter::InputDisable( inputdata_t &inputdata )
+void CAI_SpeechFilter::InputDisable( inputdata_t &&inputdata )
 {
 	Enable( false );
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CAI_SpeechFilter::InputSetIdleModifier( inputdata_t &inputdata )
+void CAI_SpeechFilter::InputSetIdleModifier( inputdata_t &&inputdata )
 {
 	m_flIdleModifier = inputdata.value.Float();
 }

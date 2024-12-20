@@ -87,9 +87,9 @@ LINK_ENTITY_TO_CLASS( ambient_generic, CAmbientGeneric );
 
 BEGIN_MAPENTITY( CAmbientGeneric, MAPENT_POINTCLASS )
 
-DEFINE_KEYFIELD( m_iszSound, FIELD_SOUNDNAME, "message" ),
-DEFINE_KEYFIELD( m_radius,			FIELD_FLOAT, "radius" ),
-DEFINE_KEYFIELD( m_sSourceEntName,	FIELD_STRING, "SourceEntityName" ),
+DEFINE_KEYFIELD_AUTO( m_iszSound, "message" ),
+DEFINE_KEYFIELD_AUTO( m_radius, "radius" ),
+DEFINE_KEYFIELD_AUTO( m_sSourceEntName, "SourceEntityName" ),
 
 // Inputs
 DEFINE_INPUTFUNC(FIELD_VOID, "PlaySound", InputPlaySound ),
@@ -99,7 +99,7 @@ DEFINE_INPUTFUNC(FIELD_FLOAT, "Pitch", InputPitch ),
 DEFINE_INPUTFUNC(FIELD_FLOAT, "Volume", InputVolume ),
 DEFINE_INPUTFUNC(FIELD_FLOAT, "FadeIn", InputFadeIn ),
 DEFINE_INPUTFUNC(FIELD_FLOAT, "FadeOut", InputFadeOut ),
-DEFINE_KEYFIELD( m_iSoundFlags, FIELD_INTEGER, "soundflags" ),
+DEFINE_KEYFIELD_AUTO( m_iSoundFlags, "soundflags" ),
 
 DEFINE_INPUTFUNC(FIELD_STRING, "SetSound", InputSetSound ),
 
@@ -222,7 +222,7 @@ void CAmbientGeneric::ComputeMaxAudibleDistance( )
 // Purpose: Input handler for changing pitch.
 // Input  : Float new pitch from 0 - 255 (100 = as recorded).
 //-----------------------------------------------------------------------------
-void CAmbientGeneric::InputPitch( inputdata_t &inputdata )
+void CAmbientGeneric::InputPitch( inputdata_t &&inputdata )
 {
 	m_dpv.pitch = clamp( inputdata.value.Float(), 0, 255 );
 
@@ -234,7 +234,7 @@ void CAmbientGeneric::InputPitch( inputdata_t &inputdata )
 // Purpose: Input handler for changing volume.
 // Input  : Float new volume, from 0 - 10.
 //-----------------------------------------------------------------------------
-void CAmbientGeneric::InputVolume( inputdata_t &inputdata )
+void CAmbientGeneric::InputVolume( inputdata_t &&inputdata )
 {
 	//
 	// Multiply the input value by ten since volumes are expected to be from 0 - 100.
@@ -250,7 +250,7 @@ void CAmbientGeneric::InputVolume( inputdata_t &inputdata )
 // Purpose: Input handler for fading in volume over time.
 // Input  : Float volume fade in time 0 - 100 seconds
 //-----------------------------------------------------------------------------
-void CAmbientGeneric::InputFadeIn( inputdata_t &inputdata )
+void CAmbientGeneric::InputFadeIn( inputdata_t &&inputdata )
 {
 	// cancel any fade out that might be happening
 	m_dpv.fadeout = 0;
@@ -270,7 +270,7 @@ void CAmbientGeneric::InputFadeIn( inputdata_t &inputdata )
 // Purpose: Input handler for fading out volume over time.
 // Input  : Float volume fade out time 0 - 100 seconds
 //-----------------------------------------------------------------------------
-void CAmbientGeneric::InputFadeOut( inputdata_t &inputdata )
+void CAmbientGeneric::InputFadeOut( inputdata_t &&inputdata )
 {
 	// cancel any fade in that might be happening
 	m_dpv.fadein = 0;
@@ -289,7 +289,7 @@ void CAmbientGeneric::InputFadeOut( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CAmbientGeneric::InputSetSound( inputdata_t &inputdata )
+void CAmbientGeneric::InputSetSound( inputdata_t &&inputdata )
 {
 	m_iszSound = inputdata.value.StringID();
 	if (STRING(m_iszSound)[0] != '!')
@@ -726,7 +726,7 @@ void CAmbientGeneric::InitModulationParms(void)
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that begins playing the sound.
 //-----------------------------------------------------------------------------
-void CAmbientGeneric::InputPlaySound( inputdata_t &inputdata )
+void CAmbientGeneric::InputPlaySound( inputdata_t &&inputdata )
 {
 	if (!m_fActive)
 	{
@@ -752,7 +752,7 @@ void CAmbientGeneric::InputPlaySound( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that stops playing the sound.
 //-----------------------------------------------------------------------------
-void CAmbientGeneric::InputStopSound( inputdata_t &inputdata )
+void CAmbientGeneric::InputStopSound( inputdata_t &&inputdata )
 {
 	if (m_fActive)
 	{
@@ -816,7 +816,7 @@ void CAmbientGeneric::SoundEnd()
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that stops playing the sound.
 //-----------------------------------------------------------------------------
-void CAmbientGeneric::InputToggleSound( inputdata_t &inputdata )
+void CAmbientGeneric::InputToggleSound( inputdata_t &&inputdata )
 {
 	// Procedural handling like !activator
 	if (STRING(m_sSourceEntName)[0] == '!')

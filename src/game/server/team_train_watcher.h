@@ -44,18 +44,18 @@ public:
 	~CTeamTrainWatcher();
 
 	virtual void UpdateOnRemove( void );
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 
-	void InputRoundActivate( inputdata_t &inputdata );
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputRoundActivate( inputdata_t &&inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
-	void InputSetNumTrainCappers( inputdata_t &inputdata );
-	void InputOnStartOvertime( inputdata_t &inputdata );
-	void InputSetSpeedForwardModifier( inputdata_t &inputdata );
-	void InputSetTrainRecedeTime( inputdata_t &inputdata );
-	void InputSetTrainCanRecede( inputdata_t &inputdata );
-	void InputSetTrainRecedeTimeAndUpdate( inputdata_t &inputdata );
+	void InputSetNumTrainCappers( inputdata_t &&inputdata );
+	void InputOnStartOvertime( inputdata_t &&inputdata );
+	void InputSetSpeedForwardModifier( inputdata_t &&inputdata );
+	void InputSetTrainRecedeTime( inputdata_t &&inputdata );
+	void InputSetTrainCanRecede( inputdata_t &&inputdata );
+	void InputSetTrainRecedeTimeAndUpdate( inputdata_t &&inputdata );
 
 	// ==========================================================
 	// given a start node and a list of goal nodes
@@ -154,7 +154,7 @@ private:
 	CNetworkVar( int, m_nNumCappers );
 
 	bool m_bWaitingToRecede;
-	CNetworkVar( float, m_flRecedeTime );
+	CNetworkTime( m_flRecedeTime );
 	float m_flRecedeTotalTime;
 	float m_flRecedeStartTime;
 	COutputEvent m_OnTrainStartRecede;

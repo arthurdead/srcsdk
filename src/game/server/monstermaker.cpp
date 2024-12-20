@@ -34,8 +34,8 @@ ConVar ai_inhibit_spawners( "ai_inhibit_spawners", "0", FCVAR_CHEAT );
 LINK_ENTITY_TO_CLASS( info_npc_spawn_destination, CNPCSpawnDestination );
 
 BEGIN_MAPENTITY( CNPCSpawnDestination )
-	DEFINE_KEYFIELD( m_ReuseDelay, FIELD_FLOAT, "ReuseDelay" ),
-	DEFINE_KEYFIELD( m_RenameNPC,FIELD_STRING, "RenameNPC" ),
+	DEFINE_KEYFIELD_AUTO( m_ReuseDelay, "ReuseDelay" ),
+	DEFINE_KEYFIELD_AUTO( m_RenameNPC, "RenameNPC" ),
 
 	DEFINE_OUTPUT( m_OnSpawnNPC,	"OnSpawnNPC" ),
 END_MAPENTITY()
@@ -77,11 +77,11 @@ void CNPCSpawnDestination::OnSpawnedNPC( CAI_BaseNPC *pNPC )
 //-------------------------------------
 BEGIN_MAPENTITY( CBaseNPCMaker )
 
-	DEFINE_KEYFIELD( m_nMaxNumNPCs,			FIELD_INTEGER,	"MaxNPCCount" ),
-	DEFINE_KEYFIELD( m_nMaxLiveChildren,		FIELD_INTEGER,	"MaxLiveChildren" ),
-	DEFINE_KEYFIELD( m_flSpawnFrequency,		FIELD_FLOAT,	"SpawnFrequency" ),
-	DEFINE_KEYFIELD( m_bDisabled,			FIELD_BOOLEAN,	"StartDisabled" ),
-	DEFINE_KEYFIELD( m_nHullCheckMode,		FIELD_INTEGER,	"HullCheckMode" ),
+	DEFINE_KEYFIELD_AUTO( m_nMaxNumNPCs, "MaxNPCCount" ),
+	DEFINE_KEYFIELD_AUTO( m_nMaxLiveChildren, "MaxLiveChildren" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpawnFrequency, "SpawnFrequency" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_nHullCheckMode, "HullCheckMode" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID,	"Spawn",	InputSpawnNPC ),
@@ -99,7 +99,7 @@ BEGIN_MAPENTITY( CBaseNPCMaker )
 	DEFINE_OUTPUT( m_OnAllLiveChildrenDead,	"OnAllLiveChildrenDead" ),
 	DEFINE_OUTPUT( m_OnSpawnNPC,		"OnSpawnNPC" ),
 
-	DEFINE_KEYFIELD( m_iszIngoreEnt, FIELD_STRING, "IgnoreEntity" ), 
+	DEFINE_KEYFIELD_AUTO( m_iszIngoreEnt, "IgnoreEntity" ) 
 END_MAPENTITY()
 
 
@@ -298,7 +298,7 @@ void CBaseNPCMaker::Disable( void )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that spawns an NPC.
 //-----------------------------------------------------------------------------
-void CBaseNPCMaker::InputSpawnNPC( inputdata_t &inputdata )
+void CBaseNPCMaker::InputSpawnNPC( inputdata_t &&inputdata )
 {
 	if( !IsDepleted() )
 	{
@@ -310,7 +310,7 @@ void CBaseNPCMaker::InputSpawnNPC( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input hander that starts the spawner
 //-----------------------------------------------------------------------------
-void CBaseNPCMaker::InputEnable( inputdata_t &inputdata )
+void CBaseNPCMaker::InputEnable( inputdata_t &&inputdata )
 {
 	Enable();
 }
@@ -319,7 +319,7 @@ void CBaseNPCMaker::InputEnable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input hander that stops the spawner
 //-----------------------------------------------------------------------------
-void CBaseNPCMaker::InputDisable( inputdata_t &inputdata )
+void CBaseNPCMaker::InputDisable( inputdata_t &&inputdata )
 {
 	Disable();
 }
@@ -328,7 +328,7 @@ void CBaseNPCMaker::InputDisable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input hander that toggles the spawner
 //-----------------------------------------------------------------------------
-void CBaseNPCMaker::InputToggle( inputdata_t &inputdata )
+void CBaseNPCMaker::InputToggle( inputdata_t &&inputdata )
 {
 	Toggle();
 }
@@ -336,7 +336,7 @@ void CBaseNPCMaker::InputToggle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseNPCMaker::InputSetMaxChildren( inputdata_t &inputdata )
+void CBaseNPCMaker::InputSetMaxChildren( inputdata_t &&inputdata )
 {
 	m_nMaxNumNPCs = inputdata.value.Int();
 }
@@ -344,7 +344,7 @@ void CBaseNPCMaker::InputSetMaxChildren( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseNPCMaker::InputAddMaxChildren( inputdata_t &inputdata )
+void CBaseNPCMaker::InputAddMaxChildren( inputdata_t &&inputdata )
 {
 	m_nMaxNumNPCs += inputdata.value.Int();
 }
@@ -352,12 +352,12 @@ void CBaseNPCMaker::InputAddMaxChildren( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseNPCMaker::InputSetMaxLiveChildren( inputdata_t &inputdata )
+void CBaseNPCMaker::InputSetMaxLiveChildren( inputdata_t &&inputdata )
 {
 	m_nMaxLiveChildren = inputdata.value.Int();
 }
 
-void CBaseNPCMaker::InputSetSpawnFrequency( inputdata_t &inputdata )
+void CBaseNPCMaker::InputSetSpawnFrequency( inputdata_t &&inputdata )
 {
 	m_flSpawnFrequency = inputdata.value.Float();
 }
@@ -366,12 +366,12 @@ LINK_ENTITY_TO_CLASS( npc_maker, CNPCMaker );
 
 BEGIN_MAPENTITY( CNPCMaker )
 
-	DEFINE_KEYFIELD( m_iszNPCClassname,		FIELD_STRING,	"NPCType" ),
-	DEFINE_KEYFIELD( m_ChildTargetName,		FIELD_STRING,	"NPCTargetname" ),
-	DEFINE_KEYFIELD( m_SquadName,			FIELD_STRING,	"NPCSquadName" ),
-	DEFINE_KEYFIELD( m_spawnEquipment,		FIELD_STRING,	"additionalequipment" ),
-	DEFINE_KEYFIELD( m_strHintGroup,			FIELD_STRING,	"NPCHintGroup" ),
-	DEFINE_KEYFIELD( m_RelationshipString,	FIELD_STRING,	"Relationship" ),
+	DEFINE_KEYFIELD_AUTO( m_iszNPCClassname, "NPCType" ),
+	DEFINE_KEYFIELD_AUTO( m_ChildTargetName, "NPCTargetname" ),
+	DEFINE_KEYFIELD_AUTO( m_SquadName, "NPCSquadName" ),
+	DEFINE_KEYFIELD_AUTO( m_spawnEquipment, "additionalequipment" ),
+	DEFINE_KEYFIELD_AUTO( m_strHintGroup, "NPCHintGroup" ),
+	DEFINE_KEYFIELD_AUTO( m_RelationshipString, "Relationship" ),
 
 END_MAPENTITY()
 
@@ -554,12 +554,12 @@ LINK_ENTITY_TO_CLASS( npc_template_maker, CTemplateNPCMaker );
 
 BEGIN_MAPENTITY( CTemplateNPCMaker )
 
-	DEFINE_KEYFIELD( m_iszTemplateName, FIELD_STRING, "TemplateName" ),
-	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "radius" ),
-	DEFINE_KEYFIELD( m_iszDestinationGroup, FIELD_STRING, "DestinationGroup" ),
-	DEFINE_KEYFIELD( m_CriterionVisibility, FIELD_INTEGER, "CriterionVisibility" ),
-	DEFINE_KEYFIELD( m_CriterionDistance, FIELD_INTEGER, "CriterionDistance" ),
-	DEFINE_KEYFIELD( m_iMinSpawnDistance, FIELD_INTEGER, "MinSpawnDistance" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTemplateName, "TemplateName" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_iszDestinationGroup, "DestinationGroup" ),
+	DEFINE_KEYFIELD_AUTO( m_CriterionVisibility, "CriterionVisibility" ),
+	DEFINE_KEYFIELD_AUTO( m_CriterionDistance, "CriterionDistance" ),
+	DEFINE_KEYFIELD_AUTO( m_iMinSpawnDistance, "MinSpawnDistance" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "SpawnNPCInRadius", InputSpawnInRadius ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "SpawnNPCInLine", InputSpawnInLine ),
@@ -1069,21 +1069,21 @@ void CTemplateNPCMaker::MakeMultipleNPCS( int nNPCs )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CTemplateNPCMaker::InputSpawnMultiple( inputdata_t &inputdata )
+void CTemplateNPCMaker::InputSpawnMultiple( inputdata_t &&inputdata )
 {
 	MakeMultipleNPCS( inputdata.value.Int() );
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CTemplateNPCMaker::InputChangeDestinationGroup( inputdata_t &inputdata )
+void CTemplateNPCMaker::InputChangeDestinationGroup( inputdata_t &&inputdata )
 {
 	m_iszDestinationGroup = inputdata.value.StringID();
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CTemplateNPCMaker::InputSetMinimumSpawnDistance( inputdata_t &inputdata )
+void CTemplateNPCMaker::InputSetMinimumSpawnDistance( inputdata_t &&inputdata )
 {
 	m_iMinSpawnDistance = inputdata.value.Int();
 }

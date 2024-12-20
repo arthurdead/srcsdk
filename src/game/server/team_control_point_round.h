@@ -62,10 +62,10 @@ private:
 	DECLARE_MAPENTITY();
 
 	bool m_bDisabled;
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
-	void InputRoundSpawn( inputdata_t &inputdata );
+	void InputRoundSpawn( inputdata_t &&inputdata );
 
 	string_t	m_iszCPNames;
 	int			m_nPriority;

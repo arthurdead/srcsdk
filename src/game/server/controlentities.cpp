@@ -23,8 +23,8 @@ public:
 
 	DECLARE_MAPENTITY();
 
-	void InputChangeGrav( inputdata_t &inputdata );
-	void InputResetGrav( inputdata_t &inputdata );
+	void InputChangeGrav( inputdata_t &&inputdata );
+	void InputResetGrav( inputdata_t &&inputdata );
 
 	int m_iGravity;
 
@@ -35,7 +35,7 @@ LINK_ENTITY_TO_CLASS( target_changegravity, CTargetChangeGravity );
 
 BEGIN_MAPENTITY( CTargetChangeGravity )
 
-	DEFINE_KEYFIELD( m_iGravity, FIELD_INTEGER, "gravity" ),
+	DEFINE_KEYFIELD_AUTO( m_iGravity, "gravity" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "ChangeGrav", InputChangeGrav ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "ResetGrav", InputResetGrav ),
 
@@ -46,7 +46,7 @@ END_MAPENTITY()
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for changing the activator's gravity.
 //-----------------------------------------------------------------------------
-void CTargetChangeGravity::InputChangeGrav( inputdata_t &inputdata )
+void CTargetChangeGravity::InputChangeGrav( inputdata_t &&inputdata )
 {
 	CBasePlayer *pl = ToBasePlayer( inputdata.pActivator );
 	if ( !pl )
@@ -63,7 +63,7 @@ void CTargetChangeGravity::InputChangeGrav( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for resetting the activator's gravity.
 //-----------------------------------------------------------------------------
-void CTargetChangeGravity::InputResetGrav( inputdata_t &inputdata )
+void CTargetChangeGravity::InputResetGrav( inputdata_t &&inputdata )
 {
 	CBasePlayer *pl = ToBasePlayer( inputdata.pActivator );
 	if ( !pl )

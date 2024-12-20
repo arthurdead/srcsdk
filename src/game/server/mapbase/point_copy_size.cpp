@@ -25,12 +25,12 @@ private:
 	void CopySize(CBaseEntity *pSource, CBaseEntity *pTarget);
 
 	// Inputs
-	void InputCopySize( inputdata_t &inputdata );
-	void InputCopySizeToEntity( inputdata_t &inputdata );
-	void InputCopySizeFromEntity( inputdata_t &inputdata );
+	void InputCopySize( inputdata_t &&inputdata );
+	void InputCopySizeToEntity( inputdata_t &&inputdata );
+	void InputCopySizeFromEntity( inputdata_t &&inputdata );
 
-	void InputSetTarget( inputdata_t &inputdata ) { BaseClass::InputSetTarget(inputdata); m_hTarget = NULL; }
-	void InputSetSource( inputdata_t &inputdata ) { m_iszSizeSource = inputdata.value.StringID(); m_hSizeSource = NULL; }
+	void InputSetTarget( inputdata_t &&inputdata ) { BaseClass::InputSetTarget(inputdata); m_hTarget = NULL; }
+	void InputSetSource( inputdata_t &&inputdata ) { m_iszSizeSource = inputdata.value.StringID(); m_hSizeSource = NULL; }
 
 	// Outputs
 	COutputEvent m_OnCopy;
@@ -44,7 +44,7 @@ LINK_ENTITY_TO_CLASS(point_copy_size, CPointCopySize);
 BEGIN_DATADESC( CPointCopySize )
 
 	// Keys
-	DEFINE_KEYFIELD(m_iszSizeSource, FIELD_STRING, "source"),
+	DEFINE_KEYFIELD_AUTO( m_iszSizeSource, "source" ),
 	DEFINE_FIELD(m_hSizeSource, FIELD_EHANDLE),
 	DEFINE_FIELD(m_hTarget, FIELD_EHANDLE),
 
@@ -86,7 +86,7 @@ void CPointCopySize::CopySize(CBaseEntity *pSource, CBaseEntity *pTarget)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointCopySize::InputCopySize( inputdata_t &inputdata )
+void CPointCopySize::InputCopySize( inputdata_t &&inputdata )
 {
 	if (!m_hSizeSource)
 		m_hSizeSource = gEntList.FindEntityByName(NULL, STRING(m_iszSizeSource), this, inputdata.pActivator, inputdata.pCaller);
@@ -105,7 +105,7 @@ void CPointCopySize::InputCopySize( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointCopySize::InputCopySizeToEntity( inputdata_t &inputdata )
+void CPointCopySize::InputCopySizeToEntity( inputdata_t &&inputdata )
 {
 	if (!m_hSizeSource)
 		m_hSizeSource = gEntList.FindEntityByName(NULL, STRING(m_iszSizeSource), this, inputdata.pActivator, inputdata.pCaller);
@@ -125,7 +125,7 @@ void CPointCopySize::InputCopySizeToEntity( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointCopySize::InputCopySizeFromEntity( inputdata_t &inputdata )
+void CPointCopySize::InputCopySizeFromEntity( inputdata_t &&inputdata )
 {
 	if (!m_hTarget)
 		m_hTarget = gEntList.FindEntityByName(NULL, STRING(m_target), this, inputdata.pActivator, inputdata.pCaller);

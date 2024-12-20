@@ -14,7 +14,7 @@
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-struct vehicleview_t
+struct vehicleview_t : public INetworkableObject
 {
 	DECLARE_CLASS_NOBASE( vehicleview_t );
 	DECLARE_EMBEDDED_NETWORKVAR();

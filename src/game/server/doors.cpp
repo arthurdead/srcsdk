@@ -23,26 +23,26 @@
 
 BEGIN_MAPENTITY( CBaseDoor )
 
-	DEFINE_KEYFIELD( m_vecMoveDir, FIELD_VECTOR, "movedir" ),
+	DEFINE_KEYFIELD_AUTO( m_vecMoveDir, "movedir" ),
 
-	DEFINE_KEYFIELD( m_NoiseMoving, FIELD_SOUNDNAME, "noise1" ),
-	DEFINE_KEYFIELD( m_NoiseArrived, FIELD_SOUNDNAME, "noise2" ),
-	DEFINE_KEYFIELD( m_NoiseMovingClosed, FIELD_SOUNDNAME, "startclosesound" ),
-	DEFINE_KEYFIELD( m_NoiseArrivedClosed, FIELD_SOUNDNAME, "closesound" ),
-	DEFINE_KEYFIELD( m_ChainTarget, FIELD_STRING, "chainstodoor" ),
+	DEFINE_KEYFIELD_AUTO( m_NoiseMoving, "noise1" ),
+	DEFINE_KEYFIELD_AUTO( m_NoiseArrived, "noise2" ),
+	DEFINE_KEYFIELD_AUTO( m_NoiseMovingClosed, "startclosesound" ),
+	DEFINE_KEYFIELD_AUTO( m_NoiseArrivedClosed, "closesound" ),
+	DEFINE_KEYFIELD_AUTO( m_ChainTarget, "chainstodoor" ),
 
 	DEFINE_KEYFIELD( m_ls.sLockedSound, FIELD_SOUNDNAME, "locked_sound" ),
 	DEFINE_KEYFIELD( m_ls.sUnlockedSound, FIELD_SOUNDNAME, "unlocked_sound" ),
-	DEFINE_KEYFIELD( m_flWaveHeight, FIELD_FLOAT, "WaveHeight" ),
-	DEFINE_KEYFIELD( m_flBlockDamage, FIELD_FLOAT, "dmg" ),
-	DEFINE_KEYFIELD( m_eSpawnPosition, FIELD_INTEGER, "spawnpos" ),
+	DEFINE_KEYFIELD_AUTO( m_flWaveHeight, "WaveHeight" ),
+	DEFINE_KEYFIELD_AUTO( m_flBlockDamage, "dmg" ),
+	DEFINE_KEYFIELD_AUTO( m_eSpawnPosition, "spawnpos" ),
 
-	DEFINE_KEYFIELD( m_bForceClosed, FIELD_BOOLEAN, "forceclosed" ),
+	DEFINE_KEYFIELD_AUTO( m_bForceClosed, "forceclosed" ),
 
-	DEFINE_KEYFIELD( m_iBlockFilterName,	FIELD_STRING,	"filtername" ),
+	DEFINE_KEYFIELD_AUTO( m_iBlockFilterName, "filtername" ),
 
-	DEFINE_KEYFIELD( m_bLoopMoveSound, FIELD_BOOLEAN, "loopmovesound" ),
-	DEFINE_KEYFIELD( m_bIgnoreDebris, FIELD_BOOLEAN, "ignoredebris" ),
+	DEFINE_KEYFIELD_AUTO( m_bLoopMoveSound, "loopmovesound" ),
+	DEFINE_KEYFIELD_AUTO( m_bIgnoreDebris, "ignoredebris" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Open", InputOpen ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Close", InputClose ),
@@ -482,7 +482,7 @@ void CBaseDoor::Activate( void )
 // Input  : state - 
 //-----------------------------------------------------------------------------
 // This is ONLY used by the node graph to test movement through a door
-void CBaseDoor::InputSetToggleState( inputdata_t &inputdata )
+void CBaseDoor::InputSetToggleState( inputdata_t &&inputdata )
 {
 	SetToggleState( inputdata.value.Int() );
 }
@@ -775,7 +775,7 @@ void CBaseDoor::ChainTouch( CBaseEntity *pOther )
 //-----------------------------------------------------------------------------
 // Purpose: Closes the door if it is not already closed.
 //-----------------------------------------------------------------------------
-void CBaseDoor::InputClose( inputdata_t &inputdata )
+void CBaseDoor::InputClose( inputdata_t &&inputdata )
 {
 	if ( m_toggle_state != TS_AT_BOTTOM )
 	{	
@@ -787,7 +787,7 @@ void CBaseDoor::InputClose( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that locks the door.
 //-----------------------------------------------------------------------------
-void CBaseDoor::InputLock( inputdata_t &inputdata )
+void CBaseDoor::InputLock( inputdata_t &&inputdata )
 {
 	Lock();
 }
@@ -796,7 +796,7 @@ void CBaseDoor::InputLock( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Opens the door if it is not already open.
 //-----------------------------------------------------------------------------
-void CBaseDoor::InputOpen( inputdata_t &inputdata )
+void CBaseDoor::InputOpen( inputdata_t &&inputdata )
 {
 	if (m_toggle_state != TS_AT_TOP && m_toggle_state != TS_GOING_UP )
 	{	
@@ -814,7 +814,7 @@ void CBaseDoor::InputOpen( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Opens the door if it is not already open.
 //-----------------------------------------------------------------------------
-void CBaseDoor::InputToggle( inputdata_t &inputdata )
+void CBaseDoor::InputToggle( inputdata_t &&inputdata )
 {
 	// I'm locked, can't open
 	if (m_bLocked)
@@ -834,7 +834,7 @@ void CBaseDoor::InputToggle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that unlocks the door.
 //-----------------------------------------------------------------------------
-void CBaseDoor::InputUnlock( inputdata_t &inputdata )
+void CBaseDoor::InputUnlock( inputdata_t &&inputdata )
 {
 	Unlock();
 }
@@ -842,7 +842,7 @@ void CBaseDoor::InputUnlock( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseDoor::InputSetSpeed( inputdata_t &inputdata )
+void CBaseDoor::InputSetSpeed( inputdata_t &&inputdata )
 {
 	m_flSpeed = inputdata.value.Float();
 }
@@ -1319,7 +1319,7 @@ public:
 LINK_ENTITY_TO_CLASS( func_door_rotating, CRotDoor );
 
 BEGIN_MAPENTITY( CRotDoor )
-	DEFINE_KEYFIELD( m_bSolidBsp, FIELD_BOOLEAN, "solidbsp" ),
+	DEFINE_KEYFIELD_AUTO( m_bSolidBsp, "solidbsp" ),
 END_MAPENTITY()
 
 //-----------------------------------------------------------------------------

@@ -38,7 +38,7 @@ struct FlashlightState_t;
 //-----------------------------------------------------------------------------
 // Flags for the creation method
 //-----------------------------------------------------------------------------
-enum ShadowFlags_t
+enum ShadowFlags_t : unsigned int
 {
 	SHADOW_FLAGS_FLASHLIGHT				= (1 << 0),
 	SHADOW_FLAGS_SHADOW					= (1 << 1),
@@ -55,10 +55,11 @@ enum ShadowFlags_t
 	SHADOW_FLAGS_PLAYER_FLASHLIGHT		= (NEW_SHADOW_FLAGS_BEGIN_BIT << 2),
 
 	SHADOW_FLAGS_ACTUAL_LAST_FLAG = SHADOW_FLAGS_PLAYER_FLASHLIGHT,
+
+	SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK = ( SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_SHADOW | SHADOW_FLAGS_SIMPLE_PROJECTION ),
 };
 
-#define SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK ( SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_SHADOW | SHADOW_FLAGS_SIMPLE_PROJECTION )
-
+FLAGENUM_OPERATORS( ShadowFlags_t, unsigned int )
 
 //-----------------------------------------------------------------------------
 //
@@ -70,17 +71,14 @@ enum ShadowFlags_t
 //-----------------------------------------------------------------------------
 // This is a handle	to shadows, clients can create as many as they want
 //-----------------------------------------------------------------------------
-enum class ShadowHandle_t : unsigned short
-{
-};
-
+enum ShadowHandle_t : unsigned short;
 inline const ShadowHandle_t SHADOW_HANDLE_INVALID = (ShadowHandle_t)~0;
 
 
 //-----------------------------------------------------------------------------
 // Used for the creation Flags field of CreateShadow
 //-----------------------------------------------------------------------------
-enum ShadowCreateFlags_t
+enum ShadowCreateFlags_t : unsigned int
 {
 	SHADOW_CACHE_VERTS =  ( 1 << 0 ),
 	SHADOW_FLASHLIGHT =   ( 1 << 1 ),
@@ -90,6 +88,7 @@ enum ShadowCreateFlags_t
 	SHADOW_SIMPLE_PROJECTION	= ( SHADOW_LAST_FLAG << 2 ),
 };
 
+FLAGENUM_OPERATORS( ShadowCreateFlags_t, unsigned int )
 
 //-----------------------------------------------------------------------------
 // Information about a particular shadow
@@ -122,7 +121,7 @@ abstract_class IShadowMgr
 {
 public:
 	// Create, destroy shadows (see ShadowCreateFlags_t for creationFlags)
-	virtual ShadowHandle_t CreateShadow( IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, int creationFlags ) = 0;
+	virtual ShadowHandle_t CreateShadow( IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, ShadowCreateFlags_t creationFlags ) = 0;
 	virtual void DestroyShadow( ShadowHandle_t handle ) = 0;
 
 	// Resets the shadow material (useful for shadow LOD.. doing blobby at distance) 
@@ -195,8 +194,8 @@ public:
 	virtual void DrawFlashlightDepthTexture( ) = 0;
 
 	virtual void AddFlashlightRenderable( ShadowHandle_t shadow, IClientRenderable *pRenderable ) = 0;
-	virtual ShadowHandle_t CreateShadowEx( IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, int creationFlags ) = 0;
-	HACKMGR_CLASS_API ShadowHandle_t CreateShadowEx( IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, int creationFlags, int nEntIndex );
+	virtual ShadowHandle_t CreateShadowEx( IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, ShadowCreateFlags_t creationFlags ) = 0;
+	HACKMGR_CLASS_API ShadowHandle_t CreateShadowEx( IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, ShadowCreateFlags_t creationFlags, int nEntIndex );
 
 	virtual void SetFlashlightDepthTexture( ShadowHandle_t shadowHandle, ITexture *pFlashlightDepthTexture, unsigned char ucShadowStencilBit ) = 0;
 

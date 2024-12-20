@@ -18,7 +18,7 @@ public:
 #ifdef GAME_DLL
 	virtual void Activate();
 
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 
 	void AddWorldLight( CDeferredLight *l );
 #else

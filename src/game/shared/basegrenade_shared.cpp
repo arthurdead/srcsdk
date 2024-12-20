@@ -30,9 +30,9 @@ extern modelindex_t	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the ind
 // Global Savedata for friction modifier
 BEGIN_MAPENTITY( CBaseGrenade )
 
-	DEFINE_KEYFIELD( m_DmgRadius, FIELD_FLOAT, "Radius" ),
+	DEFINE_KEYFIELD_AUTO( m_DmgRadius, "Radius" ),
 
-	DEFINE_KEYFIELD( m_flDamage, FIELD_FLOAT, "Damage" ),
+	DEFINE_KEYFIELD_AUTO( m_flDamage, "Damage" ),
 
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetDamage", InputSetDamage ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Detonate", InputDetonate ),
@@ -63,9 +63,9 @@ BEGIN_NETWORK_TABLE( CSharedBaseGrenade, DT_BaseGrenade )
 	SendPropEHandle( SENDINFO( m_hThrower ) ),
 
 	// Resend smaller
-	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 0), 10, SPROP_CHANGES_OFTEN, CBaseEntity::SendProxy_AnglesX ),
-	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 1), 10, SPROP_CHANGES_OFTEN, CBaseEntity::SendProxy_AnglesY ),
-	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 2), 10, SPROP_CHANGES_OFTEN, CBaseEntity::SendProxy_AnglesZ ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 0), 10, SPROP_CHANGES_OFTEN, CBaseEntity::SendProxy_AnglesX, SENDPROP_CHANGES_OFTEN_PRIORITY ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 1), 10, SPROP_CHANGES_OFTEN, CBaseEntity::SendProxy_AnglesY, SENDPROP_CHANGES_OFTEN_PRIORITY ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 2), 10, SPROP_CHANGES_OFTEN, CBaseEntity::SendProxy_AnglesZ, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 #else
 	RecvPropFloat( RECVINFO( m_flDamage ) ),
 	RecvPropFloat( RECVINFO( m_DmgRadius ) ),
@@ -544,7 +544,7 @@ CSharedBaseGrenade::CBaseGrenade(void)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSharedBaseGrenade::InputSetDamage( inputdata_t &inputdata )
+void CSharedBaseGrenade::InputSetDamage( inputdata_t &&inputdata )
 {
 	SetDamage( inputdata.value.Float() );
 }
@@ -552,7 +552,7 @@ void CSharedBaseGrenade::InputSetDamage( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSharedBaseGrenade::InputDetonate( inputdata_t &inputdata )
+void CSharedBaseGrenade::InputDetonate( inputdata_t &&inputdata )
 {
 	Detonate();
 }

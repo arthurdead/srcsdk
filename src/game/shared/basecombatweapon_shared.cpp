@@ -1715,7 +1715,7 @@ void CSharedBaseCombatWeapon::BoneMergeFastCullBloat( Vector &localMins, Vector 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSharedBaseCombatWeapon::InputHideWeapon( inputdata_t &inputdata )
+void CSharedBaseCombatWeapon::InputHideWeapon( inputdata_t &&inputdata )
 {
 	// Only hide if we're still the active weapon. If we're not the active weapon
 	if ( GetOwner() && GetOwner()->GetActiveWeapon() == this )

@@ -99,8 +99,8 @@ public:
 	//---------------------------------
 	// Entity I/O
 	//---------------------------------
-	void InputInstall( inputdata_t &data );
-	void InputRemove( inputdata_t &data );
+	void InputInstall( inputdata_t &&inputdata );
+	void InputRemove( inputdata_t &&inputdata );
 
 	//---------------------------------
 	// Schedule/Task/Conditions

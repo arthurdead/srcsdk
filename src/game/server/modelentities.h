@@ -37,11 +37,11 @@ public:
 	virtual void TurnOn( void );
 
 	// Input handlers
-	void InputTurnOff( inputdata_t &inputdata );
-	void InputTurnOn( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
-	void InputSetExcluded( inputdata_t &inputdata );
-	void InputSetInvert( inputdata_t &inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputSetExcluded( inputdata_t &&inputdata );
+	void InputSetInvert( inputdata_t &&inputdata );
 
 	enum BrushSolidities_e {
 		BRUSHSOLID_TOGGLE = 0,

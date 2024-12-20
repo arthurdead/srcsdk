@@ -37,10 +37,10 @@ public:
 
 	void		 SpawnEntity( Vector vecAlternateOrigin = vec3_invalid, QAngle vecAlternateAngles = vec3_angle );
 	void		 CheckSpawnThink( void );
-	void		 InputForceSpawn( inputdata_t &inputdata );
-	void		 InputForceSpawnAtEntityOrigin( inputdata_t &inputdata );
-	void		 InputForceSpawnAtEntityCenter( inputdata_t &inputdata );
-	void		 InputForceSpawnAtPosition( inputdata_t &inputdata );
+	void		 InputForceSpawn( inputdata_t &&inputdata );
+	void		 InputForceSpawnAtEntityOrigin( inputdata_t &&inputdata );
+	void		 InputForceSpawnAtEntityCenter( inputdata_t &&inputdata );
+	void		 InputForceSpawnAtPosition( inputdata_t &&inputdata );
 
 private:
 
@@ -70,11 +70,11 @@ private:
 
 BEGIN_MAPENTITY( CEnvEntityMaker )
 
-	DEFINE_KEYFIELD( m_iszTemplate, FIELD_STRING, "EntityTemplate" ),
-	DEFINE_KEYFIELD( m_angPostSpawnDirection, FIELD_VECTOR, "PostSpawnDirection" ),
-	DEFINE_KEYFIELD( m_flPostSpawnDirectionVariance, FIELD_FLOAT, "PostSpawnDirectionVariance" ),
-	DEFINE_KEYFIELD( m_flPostSpawnSpeed, FIELD_FLOAT, "PostSpawnSpeed" ),
-	DEFINE_KEYFIELD( m_bPostSpawnUseAngles, FIELD_BOOLEAN, "PostSpawnInheritAngles" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTemplate, "EntityTemplate" ),
+	DEFINE_KEYFIELD_AUTO( m_angPostSpawnDirection, "PostSpawnDirection" ),
+	DEFINE_KEYFIELD_AUTO( m_flPostSpawnDirectionVariance, "PostSpawnDirectionVariance" ),
+	DEFINE_KEYFIELD_AUTO( m_flPostSpawnSpeed, "PostSpawnSpeed" ),
+	DEFINE_KEYFIELD_AUTO( m_bPostSpawnUseAngles, "PostSpawnInheritAngles" ),
 
 	// Outputs
 	DEFINE_OUTPUT( m_pOutputOnSpawned, "OnEntitySpawned" ),
@@ -345,7 +345,7 @@ void CEnvEntityMaker::CheckSpawnThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: Spawns the entities, checking for space if flagged to do so.
 //-----------------------------------------------------------------------------
-void CEnvEntityMaker::InputForceSpawn( inputdata_t &inputdata )
+void CEnvEntityMaker::InputForceSpawn( inputdata_t &&inputdata )
 {
 	CPointTemplate *pTemplate = FindTemplate();
 	if (!pTemplate)
@@ -368,7 +368,7 @@ void CEnvEntityMaker::InputForceSpawn( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CEnvEntityMaker::InputForceSpawnAtEntityOrigin( inputdata_t &inputdata )
+void CEnvEntityMaker::InputForceSpawnAtEntityOrigin( inputdata_t &&inputdata )
 {
 	CBaseEntity *pTargetEntity = gEntList.FindEntityByName( NULL, inputdata.value.String(), this, inputdata.pActivator, inputdata.pCaller );
 		
@@ -380,7 +380,7 @@ void CEnvEntityMaker::InputForceSpawnAtEntityOrigin( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CEnvEntityMaker::InputForceSpawnAtEntityCenter( inputdata_t &inputdata )
+void CEnvEntityMaker::InputForceSpawnAtEntityCenter( inputdata_t &&inputdata )
 {
 	CBaseEntity *pTargetEntity = gEntList.FindEntityByName( NULL, inputdata.value.String(), this, inputdata.pActivator, inputdata.pCaller );
 		
@@ -392,7 +392,7 @@ void CEnvEntityMaker::InputForceSpawnAtEntityCenter( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CEnvEntityMaker::InputForceSpawnAtPosition(inputdata_t &inputdata)
+void CEnvEntityMaker::InputForceSpawnAtPosition( inputdata_t &&inputdata )
 {
 	Vector vecPos;
 	inputdata.value.Vector3D(vecPos);

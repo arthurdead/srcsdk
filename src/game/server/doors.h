@@ -77,7 +77,7 @@ public:
 	DECLARE_MAPENTITY();
 
 	// This is ONLY used by the node graph to test movement through a door
-	void InputSetToggleState( inputdata_t &inputdata );
+	void InputSetToggleState( inputdata_t &&inputdata );
 	virtual void SetToggleState( int state );
 
 	virtual bool IsRotatingDoor() { return false; }
@@ -97,12 +97,12 @@ public:
 	int GetDoorMovementGroup( CBaseDoor *pDoorList[], int listMax );
 
 	// Input handlers
-	void InputClose( inputdata_t &inputdata );
-	void InputLock( inputdata_t &inputdata );
-	void InputOpen( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
-	void InputUnlock( inputdata_t &inputdata );
-	void InputSetSpeed( inputdata_t &inputdata );
+	void InputClose( inputdata_t &&inputdata );
+	void InputLock( inputdata_t &&inputdata );
+	void InputOpen( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputUnlock( inputdata_t &&inputdata );
+	void InputSetSpeed( inputdata_t &&inputdata );
 
 	Vector m_vecMoveDir;		// The direction of motion for linear moving doors.
 

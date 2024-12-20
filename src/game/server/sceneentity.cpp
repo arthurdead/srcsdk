@@ -92,7 +92,7 @@ public:
 	void		 RemoveScene( int iIndex );
 
 	// Inputs
-	void	InputShutdown( inputdata_t &inputdata );
+	void	InputShutdown( inputdata_t &&inputdata );
 
 private:
 	CUtlVector< CHandle< CSceneListManager > >	m_hListManagers;
@@ -299,17 +299,17 @@ END_SEND_TABLE()
 BEGIN_MAPENTITY( CSceneEntity )
 
 	// Keys
-	DEFINE_KEYFIELD( m_iszSceneFile, FIELD_STRING, "SceneFile" ),
-	DEFINE_KEYFIELD( m_iszResumeSceneFile, FIELD_STRING, "ResumeSceneFile" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSceneFile, "SceneFile" ),
+	DEFINE_KEYFIELD_AUTO( m_iszResumeSceneFile, "ResumeSceneFile" ),
 
-	DEFINE_KEYFIELD( m_iszTarget1, FIELD_STRING, "target1" ),
-	DEFINE_KEYFIELD( m_iszTarget2, FIELD_STRING, "target2" ),
-	DEFINE_KEYFIELD( m_iszTarget3, FIELD_STRING, "target3" ),
-	DEFINE_KEYFIELD( m_iszTarget4, FIELD_STRING, "target4" ),
-	DEFINE_KEYFIELD( m_iszTarget5, FIELD_STRING, "target5" ),
-	DEFINE_KEYFIELD( m_iszTarget6, FIELD_STRING, "target6" ),
-	DEFINE_KEYFIELD( m_iszTarget7, FIELD_STRING, "target7" ),
-	DEFINE_KEYFIELD( m_iszTarget8, FIELD_STRING, "target8" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTarget1, "target1" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTarget2, "target2" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTarget3, "target3" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTarget4, "target4" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTarget5, "target5" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTarget6, "target6" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTarget7, "target7" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTarget8, "target8" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget1", InputSetTarget1 ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget2", InputSetTarget2 ),
@@ -320,7 +320,7 @@ BEGIN_MAPENTITY( CSceneEntity )
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget7", InputSetTarget7 ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget8", InputSetTarget8 ),
 
-	DEFINE_KEYFIELD( m_BusyActor, FIELD_INTEGER, "busyactor" ),
+	DEFINE_KEYFIELD_AUTO( m_BusyActor, "busyactor" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Start", InputStartPlayback ),
@@ -333,7 +333,7 @@ BEGIN_MAPENTITY( CSceneEntity )
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopWaitingForActor", 	InputStopWaitingForActor ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "Trigger", InputTriggerEvent ),
 
-	DEFINE_KEYFIELD( m_iPlayerDeathBehavior, FIELD_INTEGER, "onplayerdeath" ),
+	DEFINE_KEYFIELD_AUTO( m_iPlayerDeathBehavior, "onplayerdeath" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "ScriptPlayerDeath", InputScriptPlayerDeath ),
 
 	// Outputs
@@ -1636,7 +1636,7 @@ void CSceneEntity::DoThink( float frametime )
 //-----------------------------------------------------------------------------
 // Purpose: Input handlers
 //-----------------------------------------------------------------------------
-void CSceneEntity::InputStartPlayback( inputdata_t &inputdata )
+void CSceneEntity::InputStartPlayback( inputdata_t &&inputdata )
 {
 	// Already playing, ignore
 	if ( m_bIsPlayingBack )
@@ -1651,24 +1651,24 @@ void CSceneEntity::InputStartPlayback( inputdata_t &inputdata )
 	StartPlayback();
 }
 
-void CSceneEntity::InputPausePlayback( inputdata_t &inputdata )
+void CSceneEntity::InputPausePlayback( inputdata_t &&inputdata )
 {
 	PausePlayback();
 	m_bPausedViaInput = true;
 }
 
-void CSceneEntity::InputResumePlayback( inputdata_t &inputdata )
+void CSceneEntity::InputResumePlayback( inputdata_t &&inputdata )
 {
 	ResumePlayback();
 }
 
-void CSceneEntity::InputCancelPlayback( inputdata_t &inputdata )
+void CSceneEntity::InputCancelPlayback( inputdata_t &&inputdata )
 {
 	LocalScene_Printf( "%s : cancelled via input\n", STRING( m_iszSceneFile ) );
 	CancelPlayback();
 }
 
-void CSceneEntity::InputScriptPlayerDeath( inputdata_t &inputdata )
+void CSceneEntity::InputScriptPlayerDeath( inputdata_t &&inputdata )
 {
 	if ( m_iPlayerDeathBehavior == SCRIPT_CANCEL )
 	{
@@ -1678,7 +1678,7 @@ void CSceneEntity::InputScriptPlayerDeath( inputdata_t &inputdata )
 }
 
 
-void CSceneEntity::InputCancelAtNextInterrupt( inputdata_t &inputdata )
+void CSceneEntity::InputCancelAtNextInterrupt( inputdata_t &&inputdata )
 {
 	// If we're currently in an interruptable point, interrupt immediately
 	if ( IsInterruptable() )
@@ -1692,12 +1692,12 @@ void CSceneEntity::InputCancelAtNextInterrupt( inputdata_t &inputdata )
 	m_bCancelAtNextInterrupt = true;
 }
 
-void CSceneEntity::InputPitchShiftPlayback( inputdata_t &inputdata )
+void CSceneEntity::InputPitchShiftPlayback( inputdata_t &&inputdata )
 {
 	PitchShiftPlayback( inputdata.value.Float() );
 }
 
-void CSceneEntity::InputTriggerEvent( inputdata_t &inputdata )
+void CSceneEntity::InputTriggerEvent( inputdata_t &&inputdata )
 {
 	CBaseEntity *pActivator = inputdata.pActivator; // at some point, find this from the inputdata
 	switch ( inputdata.value.Int() )
@@ -1762,7 +1762,7 @@ struct NPCInterjection
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CSceneEntity::InputInterjectResponse( inputdata_t &inputdata )
+void CSceneEntity::InputInterjectResponse( inputdata_t &&inputdata )
 {
 	// Not currently playing a scene
 	if ( !m_pScene )
@@ -1913,49 +1913,49 @@ void CSceneEntity::SetTarget( int nTarget, string_t pTargetName, CBaseEntity *pA
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CSceneEntity::InputSetTarget1( inputdata_t &inputdata )
+void CSceneEntity::InputSetTarget1( inputdata_t &&inputdata )
 {
 	SetTarget(1, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
 }
 
-void CSceneEntity::InputSetTarget2( inputdata_t &inputdata )
+void CSceneEntity::InputSetTarget2( inputdata_t &&inputdata )
 {
 	SetTarget(2, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
 }
 
-void CSceneEntity::InputSetTarget3( inputdata_t &inputdata )
+void CSceneEntity::InputSetTarget3( inputdata_t &&inputdata )
 {
 	SetTarget(3, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
 }
 
-void CSceneEntity::InputSetTarget4( inputdata_t &inputdata )
+void CSceneEntity::InputSetTarget4( inputdata_t &&inputdata )
 {
 	SetTarget(4, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
 }
 
-void CSceneEntity::InputSetTarget5( inputdata_t &inputdata )
+void CSceneEntity::InputSetTarget5( inputdata_t &&inputdata )
 {
 	SetTarget(5, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
 }
 
-void CSceneEntity::InputSetTarget6( inputdata_t &inputdata )
+void CSceneEntity::InputSetTarget6( inputdata_t &&inputdata )
 {
 	SetTarget(6, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
 }
 
-void CSceneEntity::InputSetTarget7( inputdata_t &inputdata )
+void CSceneEntity::InputSetTarget7( inputdata_t &&inputdata )
 {
 	SetTarget(7, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
 }
 
-void CSceneEntity::InputSetTarget8( inputdata_t &inputdata )
+void CSceneEntity::InputSetTarget8( inputdata_t &&inputdata )
 {
 	SetTarget(8, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CSceneEntity::InputStopWaitingForActor( inputdata_t &inputdata )
+void CSceneEntity::InputStopWaitingForActor( inputdata_t &&inputdata )
 {
 	if( m_bIsPlayingBack )
 	{
@@ -4148,7 +4148,7 @@ void CSceneEntity::OnSceneFinished( bool canceled, bool fireoutput )
 //-----------------------------------------------------------------------------
 // Should we transmit it to the client?
 //-----------------------------------------------------------------------------
-int CSceneEntity::UpdateTransmitState()
+EdictStateFlags_t CSceneEntity::UpdateTransmitState()
 {
 	if ( !ShouldNetwork() )
 	{
@@ -5038,7 +5038,7 @@ void CSceneManager::PauseActorsScenes( CBaseFlex *pActor, bool bInstancedOnly  )
 			LocalScene_Printf( "Pausing actor %s scripted scene: %s\n", pActor->GetDebugName(), STRING(pScene->m_iszSceneFile) );
 
 			variant_t emptyVariant;
-			pScene->AcceptInput( "Pause", pScene, pScene, emptyVariant, 0 );
+			pScene->AcceptInput( "Pause", pScene, pScene, Move(emptyVariant), 0 );
 		}
 	}
 }
@@ -5095,7 +5095,7 @@ void CSceneManager::ResumeActorsScenes( CBaseFlex *pActor, bool bInstancedOnly  
 			LocalScene_Printf( "Resuming actor %s scripted scene: %s\n", pActor->GetDebugName(), STRING(pScene->m_iszSceneFile) );
 
 			variant_t emptyVariant;
-			pScene->AcceptInput( "Resume", pScene, pScene, emptyVariant, 0 );
+			pScene->AcceptInput( "Resume", pScene, pScene, Move(emptyVariant), 0 );
 		}
 	}
 }
@@ -5510,7 +5510,7 @@ void CSceneListManager::AddListManager( CSceneListManager *pManager )
 //-----------------------------------------------------------------------------
 // Purpose: Shut down all scenes, and then remove this entity
 //-----------------------------------------------------------------------------
-void CSceneListManager::InputShutdown( inputdata_t &inputdata )
+void CSceneListManager::InputShutdown( inputdata_t &&inputdata )
 {
 	ShutdownList();
 }

@@ -52,16 +52,14 @@ class CServerBaseTempEntity;
 //-----------------------------------------------------------------------------
 // Safe accessor to an entity
 //-----------------------------------------------------------------------------
-enum class HTOOLHANDLE : unsigned int
-{
-};
+enum HTOOLHANDLE : unsigned int;
 inline const HTOOLHANDLE HTOOLHANDLE_INVALID = (HTOOLHANDLE)0;
 
 
 //-----------------------------------------------------------------------------
 // If you change this, change the flags in IClientShadowMgr.h also
 //-----------------------------------------------------------------------------
-enum ClientShadowFlags_t
+enum ClientShadowFlags_t : unsigned int
 {
 	SHADOW_FLAGS_USE_RENDER_TO_TEXTURE	= (SHADOW_FLAGS_LAST_FLAG<<1),
 	SHADOW_FLAGS_ANIMATING_SOURCE		= (SHADOW_FLAGS_LAST_FLAG<<2),
@@ -72,6 +70,7 @@ enum ClientShadowFlags_t
 	//if you add new flags you must update ShadowFlags_t from public/engine/ishadowmgr.h
 };
 
+FLAGENUM_OPERATORS( ClientShadowFlags_t, unsigned int )
 
 //-----------------------------------------------------------------------------
 // Opaque pointer returned from Find* methods, don't store this, you need to 

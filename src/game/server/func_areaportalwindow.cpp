@@ -32,11 +32,11 @@ END_SEND_TABLE()
 
 BEGIN_MAPENTITY( CFuncAreaPortalWindow )
 
-	DEFINE_KEYFIELD( m_portalNumber, FIELD_INTEGER,	"portalnumber" ),
-	DEFINE_KEYFIELD( m_flFadeStartDist,	FIELD_FLOAT,	"FadeStartDist" ),
-	DEFINE_KEYFIELD( m_flFadeDist,	FIELD_FLOAT,	"FadeDist" ),
-	DEFINE_KEYFIELD( m_flTranslucencyLimit,	FIELD_FLOAT,	"TranslucencyLimit" ),
-	DEFINE_KEYFIELD( m_iBackgroundBModelName,FIELD_STRING,	"BackgroundBModel" ),
+	DEFINE_KEYFIELD_AUTO( m_portalNumber, "portalnumber" ),
+	DEFINE_KEYFIELD_AUTO( m_flFadeStartDist, "FadeStartDist" ),
+	DEFINE_KEYFIELD_AUTO( m_flFadeDist, "FadeDist" ),
+	DEFINE_KEYFIELD_AUTO( m_flTranslucencyLimit, "TranslucencyLimit" ),
+	DEFINE_KEYFIELD_AUTO( m_iBackgroundBModelName, "BackgroundBModel" ),
 	
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFadeStartDistance", InputSetFadeStartDistance ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFadeEndDistance", InputSetFadeEndDistance ),
@@ -113,7 +113,7 @@ bool CFuncAreaPortalWindow::UpdateVisibility( const Vector &vOrigin, float fovDi
 // Purpose: Changes the fade start distance 
 // Input: float distance in inches
 //-----------------------------------------------------------------------------
-void CFuncAreaPortalWindow::InputSetFadeStartDistance( inputdata_t &inputdata )
+void CFuncAreaPortalWindow::InputSetFadeStartDistance( inputdata_t &&inputdata )
 {
 	m_flFadeStartDist = inputdata.value.Float();
 }
@@ -122,7 +122,7 @@ void CFuncAreaPortalWindow::InputSetFadeStartDistance( inputdata_t &inputdata )
 // Purpose: Changes the fade end distance
 // Input: float distance in inches
 //-----------------------------------------------------------------------------
-void CFuncAreaPortalWindow::InputSetFadeEndDistance( inputdata_t &inputdata )
+void CFuncAreaPortalWindow::InputSetFadeEndDistance( inputdata_t &&inputdata )
 {
 	m_flFadeDist = inputdata.value.Float();
 }

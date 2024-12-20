@@ -44,7 +44,7 @@ BEGIN_MAPENTITY( CSkyCamera )
 	DEFINE_KEYFIELD( m_skyboxData.scale, FIELD_INTEGER, "scale" ),
 
 	// fog data for 3d skybox
-	DEFINE_KEYFIELD( m_bUseAngles,						FIELD_BOOLEAN,	"use_angles" ),
+	DEFINE_KEYFIELD_AUTO( m_bUseAngles, "use_angles" ),
 	DEFINE_KEYFIELD( m_skyboxData.fog.enable,			FIELD_BOOLEAN, "fogenable" ),
 	DEFINE_KEYFIELD( m_skyboxData.fog.blend,			FIELD_BOOLEAN, "fogblend" ),
 	DEFINE_KEYFIELD( m_skyboxData.fog.dirPrimary,		FIELD_VECTOR, "fogdir" ),
@@ -56,7 +56,7 @@ BEGIN_MAPENTITY( CSkyCamera )
 	DEFINE_KEYFIELD( m_skyboxData.fog.HDRColorScale,	FIELD_FLOAT, "HDRColorScale" ),
 	DEFINE_KEYFIELD( m_skyboxData.fog.farz, FIELD_FLOAT, "farz" ),
 	DEFINE_KEYFIELD( m_skyboxData.skycolor, FIELD_COLOR32, "skycolor" ),
-	DEFINE_KEYFIELD( m_bUseAnglesForSky, FIELD_BOOLEAN, "use_angles_for_sky" ),
+	DEFINE_KEYFIELD_AUTO( m_bUseAnglesForSky, "use_angles_for_sky" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "ForceUpdate", InputForceUpdate ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartUpdating", InputStartUpdating ),
@@ -138,9 +138,9 @@ void CSkyCamera::Activate( )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CSkyCamera::AcceptInput( const char *szInputName, CBaseEntity *pActivator, CBaseEntity *pCaller, variant_t Value, int outputID )
+bool CSkyCamera::AcceptInput( const char *szInputName, CBaseEntity *pActivator, CBaseEntity *pCaller, variant_t &&Value, int outputID )
 {
-	if (!BaseClass::AcceptInput( szInputName, pActivator, pCaller, Value, outputID ))
+	if (!BaseClass::AcceptInput( szInputName, pActivator, pCaller, Move(Value), outputID ))
 		return false;
 
 	if (g_hActiveSkybox == this)
@@ -234,7 +234,7 @@ void CSkyCamera::UpdateThink()
 	}
 }
 
-void CSkyCamera::InputForceUpdate( inputdata_t &inputdata )
+void CSkyCamera::InputForceUpdate( inputdata_t &&inputdata )
 {
 	if (m_skyboxData.skycamera == NULL)
 	{
@@ -249,7 +249,7 @@ void CSkyCamera::InputForceUpdate( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSkyCamera::InputStartUpdating( inputdata_t &inputdata )
+void CSkyCamera::InputStartUpdating( inputdata_t &&inputdata )
 {
 	if (GetCurrentSkyCamera() == this)
 	{
@@ -267,7 +267,7 @@ void CSkyCamera::InputStartUpdating( inputdata_t &inputdata )
 	DispatchUpdateTransmitState();
 }
 
-void CSkyCamera::InputStopUpdating( inputdata_t &inputdata )
+void CSkyCamera::InputStopUpdating( inputdata_t &&inputdata )
 {
 	SetThink( NULL );
 	SetNextThink( TICK_NEVER_THINK );
@@ -281,7 +281,7 @@ void CSkyCamera::InputStopUpdating( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Activate!
 //-----------------------------------------------------------------------------
-void CSkyCamera::InputActivateSkybox( inputdata_t &inputdata )
+void CSkyCamera::InputActivateSkybox( inputdata_t &&inputdata )
 {
 	CSkyCamera *pActiveSky = GetCurrentSkyCamera();
 	if (pActiveSky && pActiveSky->GetNextThink() != TICK_NEVER_THINK && pActiveSky != this)
@@ -300,7 +300,7 @@ void CSkyCamera::InputActivateSkybox( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Deactivate!
 //-----------------------------------------------------------------------------
-void CSkyCamera::InputDeactivateSkybox( inputdata_t &inputdata )
+void CSkyCamera::InputDeactivateSkybox( inputdata_t &&inputdata )
 {
 	if (GetCurrentSkyCamera() == this)
 	{
@@ -323,17 +323,17 @@ void CSkyCamera::InputDeactivateSkybox( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Input handlers for setting fog stuff.
 //------------------------------------------------------------------------------
-void CSkyCamera::InputSetFogStartDist( inputdata_t &inputdata ) { m_skyboxData.fog.start = inputdata.value.Float(); }
-void CSkyCamera::InputSetFogEndDist( inputdata_t &inputdata ) { m_skyboxData.fog.end = inputdata.value.Float(); }
-void CSkyCamera::InputSetFogMaxDensity( inputdata_t &inputdata ) { m_skyboxData.fog.maxdensity = inputdata.value.Float(); }
-void CSkyCamera::InputTurnOnFog( inputdata_t &inputdata ) { m_skyboxData.fog.enable = true; }
-void CSkyCamera::InputTurnOffFog( inputdata_t &inputdata ) { m_skyboxData.fog.enable = false; }
-void CSkyCamera::InputSetFogColor( inputdata_t &inputdata ) { m_skyboxData.fog.colorPrimary = inputdata.value.Color32(); }
-void CSkyCamera::InputSetFogColorSecondary( inputdata_t &inputdata ) { m_skyboxData.fog.colorSecondary = inputdata.value.Color32(); }
+void CSkyCamera::InputSetFogStartDist( inputdata_t &&inputdata ) { m_skyboxData.fog.start = inputdata.value.Float(); }
+void CSkyCamera::InputSetFogEndDist( inputdata_t &&inputdata ) { m_skyboxData.fog.end = inputdata.value.Float(); }
+void CSkyCamera::InputSetFogMaxDensity( inputdata_t &&inputdata ) { m_skyboxData.fog.maxdensity = inputdata.value.Float(); }
+void CSkyCamera::InputTurnOnFog( inputdata_t &&inputdata ) { m_skyboxData.fog.enable = true; }
+void CSkyCamera::InputTurnOffFog( inputdata_t &&inputdata ) { m_skyboxData.fog.enable = false; }
+void CSkyCamera::InputSetFogColor( inputdata_t &&inputdata ) { m_skyboxData.fog.colorPrimary = inputdata.value.Color32(); }
+void CSkyCamera::InputSetFogColorSecondary( inputdata_t &&inputdata ) { m_skyboxData.fog.colorSecondary = inputdata.value.Color32(); }
 
-void CSkyCamera::InputSetFarZ( inputdata_t &inputdata ) { m_skyboxData.fog.farz = inputdata.value.Int(); }
+void CSkyCamera::InputSetFarZ( inputdata_t &&inputdata ) { m_skyboxData.fog.farz = inputdata.value.Int(); }
 
-void CSkyCamera::InputCopyFogController( inputdata_t &inputdata )
+void CSkyCamera::InputCopyFogController( inputdata_t &&inputdata )
 {
 	CFogController *pFogController = dynamic_cast<CFogController*>(inputdata.value.Entity().Get());
 	if (!pFogController)
@@ -357,7 +357,7 @@ void CSkyCamera::InputCopyFogController( inputdata_t &inputdata )
 	m_skyboxData.fog.blend = pFogController->m_fog.blend;
 }
 
-void CSkyCamera::InputCopyFogControllerWithScale( inputdata_t &inputdata )
+void CSkyCamera::InputCopyFogControllerWithScale( inputdata_t &&inputdata )
 {
 	CFogController *pFogController = dynamic_cast<CFogController*>(inputdata.value.Entity().Get());
 	if (!pFogController)

@@ -56,13 +56,13 @@ public:
 	bool ShouldHearSentences() const { return HasSpawnFlags( SF_MICROPHONE_SOUND_SENTENCE ); }
 	inline void ToggleHearingSentence( bool bToggle ) { m_bHearingSentence = bToggle; }
 
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
-	void InputSetSpeakerName( inputdata_t &inputdata );
-	void InputSetDSPPreset( inputdata_t &inputdata );
-	void InputSetPitchScale( inputdata_t &inputdata );
-	void InputSetVolumeScale( inputdata_t &inputdata );
-	void InputSetChannel( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputSetSpeakerName( inputdata_t &&inputdata );
+	void InputSetDSPPreset( inputdata_t &&inputdata );
+	void InputSetPitchScale( inputdata_t &&inputdata );
+	void InputSetVolumeScale( inputdata_t &&inputdata );
+	void InputSetChannel( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 

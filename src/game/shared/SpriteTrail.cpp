@@ -37,11 +37,11 @@ extern CEngineSprite *Draw_SetSpriteTexture( const model_t *pSpriteModel, int fr
 
 BEGIN_MAPENTITY( CSharedSpriteTrail )
 
-	DEFINE_KEYFIELD( m_flLifeTime,			FIELD_FLOAT, "lifetime" ),
-	DEFINE_KEYFIELD( m_flStartWidth,		FIELD_FLOAT, "startwidth" ),
-	DEFINE_KEYFIELD( m_flEndWidth,			FIELD_FLOAT, "endwidth" ),
-	DEFINE_KEYFIELD( m_iszSpriteName,		FIELD_STRING, "spritename" ),
-	DEFINE_KEYFIELD( m_bAnimate,			FIELD_BOOLEAN, "animate" ),
+	DEFINE_KEYFIELD_AUTO( m_flLifeTime, "lifetime" ),
+	DEFINE_KEYFIELD_AUTO( m_flStartWidth, "startwidth" ),
+	DEFINE_KEYFIELD_AUTO( m_flEndWidth, "endwidth" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSpriteName, "spritename" ),
+	DEFINE_KEYFIELD_AUTO( m_bAnimate, "animate" ),
 
 END_MAPENTITY()
 

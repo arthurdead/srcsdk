@@ -43,6 +43,7 @@ if build_libs
 			join_paths(tier1_src_dir,'tier1.cpp'),
 			join_paths(tier1_src_dir,'checksum_crc.cpp'),
 			join_paths(tier1_src_dir,'bitbuf.cpp'),
+			join_paths(tier1_src_dir,'bittools.cpp'),
 			join_paths(tier1_src_dir,'fileio.cpp'),
 			join_paths(tier1_src_dir,'newbitbuf.cpp'),
 			join_paths(tier1_src_dir,'diff.cpp'),

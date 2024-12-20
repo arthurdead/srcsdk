@@ -42,7 +42,7 @@ public:
 
 	DECLARE_MAPENTITY();
 
-	CNetworkVar( float, m_flStartTime );
+	CNetworkTime( m_flStartTime );
 	CNetworkVar( float, m_flFadeInStart );
 	CNetworkVar( float, m_flFadeInLength );
 	CNetworkVar( float, m_flFadeOutModelStart );
@@ -51,7 +51,7 @@ public:
 	CNetworkVar( float, m_flFadeOutLength );
 
 protected:
-	void	InputDissolve( inputdata_t &inputdata );
+	void	InputDissolve( inputdata_t &&inputdata );
 	void	DissolveThink( void );
 	void	ElectrocuteThink( void );
 

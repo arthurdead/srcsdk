@@ -14,13 +14,13 @@ class CLogicSkill : public CLogicalEntity
 
 private:
 	// Inputs
-	void InputTest( inputdata_t &inputdata );
-	void InputStartListening( inputdata_t &inputdata ) {m_bListeningForSkillChanges = true;}
-	void InputStopListening( inputdata_t &inputdata ) {m_bListeningForSkillChanges = false;}
+	void InputTest( inputdata_t &&inputdata );
+	void InputStartListening( inputdata_t &&inputdata ) {m_bListeningForSkillChanges = true;}
+	void InputStopListening( inputdata_t &&inputdata ) {m_bListeningForSkillChanges = false;}
 
 	// Used by gamerules to fire OnSkillChanged.
 	// Passes the level it changed to as well.
-	void InputSkillLevelChanged(inputdata_t &inputdata) { m_bListeningForSkillChanges ? m_OnSkillChanged.Set(inputdata.value.Int(), inputdata.pActivator, this) : (void)0; }
+	void InputSkillLevelChanged( inputdata_t &&inputdata ) { m_bListeningForSkillChanges ? m_OnSkillChanged.Set(inputdata.value.Int(), inputdata.pActivator, this) : (void)0; }
 
 	COutputInt m_OnSkillChanged;
 	COutputEvent m_OnEasy;
@@ -36,7 +36,7 @@ LINK_ENTITY_TO_CLASS(logic_skill, CLogicSkill);
 
 BEGIN_DATADESC( CLogicSkill )
 
-	DEFINE_KEYFIELD( m_bListeningForSkillChanges, FIELD_BOOLEAN, "ListenForSkillChange" ),
+	DEFINE_KEYFIELD_AUTO( m_bListeningForSkillChanges, "ListenForSkillChange" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Test", InputTest ),
@@ -55,7 +55,7 @@ END_DATADESC()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CLogicSkill::InputTest( inputdata_t &inputdata )
+void CLogicSkill::InputTest( inputdata_t &&inputdata )
 {
 	switch (g_pGameRules->GetSkillLevel())
 	{

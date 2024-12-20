@@ -51,14 +51,14 @@ private:
 
 	// Input for setting remote portal entity (for teleporting to it)
 	void SetRemotePortal ( const char* strRemotePortalName );
-	void InputSetRemotePortal ( inputdata_t &inputdata );
+	void InputSetRemotePortal ( inputdata_t &&inputdata );
 
 };
 
 LINK_ENTITY_TO_CLASS( trigger_portal, CTriggerPortal );
 
 BEGIN_MAPENTITY( CTriggerPortal )
-	DEFINE_KEYFIELD( m_strRemotePortal, FIELD_STRING, "RemotePortal" ),
+	DEFINE_KEYFIELD_AUTO( m_strRemotePortal, "RemotePortal" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -101,7 +101,7 @@ void CTriggerPortal::Activate()
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CTriggerPortal::InputSetRemotePortal(inputdata_t &inputdata )
+void CTriggerPortal::InputSetRemotePortal( inputdata_t &&inputdata )
 {
 	SetRemotePortal( inputdata.value.String() );
 }

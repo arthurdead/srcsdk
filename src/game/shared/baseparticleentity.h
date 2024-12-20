@@ -55,7 +55,7 @@ public:
 	// CBaseEntity overrides.
 public:
 #if !defined( CLIENT_DLL )
-	virtual int		UpdateTransmitState( void );	
+	virtual EdictStateFlags_t		UpdateTransmitState( void );	
 #else
 // Default IParticleEffect overrides.
 public:

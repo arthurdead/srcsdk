@@ -23,8 +23,8 @@ IMPLEMENT_AUTO_LIST( ITriggerAreaCaptureAutoList );
 BEGIN_MAPENTITY(CTriggerAreaCapture)
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iszCapPointName,	FIELD_STRING,	"area_cap_point" ),
-	DEFINE_KEYFIELD( m_flCapTime,		FIELD_FLOAT,	"area_time_to_cap" ),
+	DEFINE_KEYFIELD_AUTO( m_iszCapPointName, "area_cap_point" ),
+	DEFINE_KEYFIELD_AUTO( m_flCapTime, "area_time_to_cap" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "RoundSpawn", InputRoundSpawn ),
@@ -992,7 +992,7 @@ void CTriggerAreaCapture::IncrementCapAttemptNumber( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTriggerAreaCapture::InputRoundSpawn( inputdata_t &inputdata )
+void CTriggerAreaCapture::InputRoundSpawn( inputdata_t &&inputdata )
 {
 	// find the flag we're linked to
 	if( !m_hPoint )
@@ -1028,7 +1028,7 @@ void CTriggerAreaCapture::InputRoundSpawn( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTriggerAreaCapture::InputSetTeamCanCap( inputdata_t &inputdata )
+void CTriggerAreaCapture::InputSetTeamCanCap( inputdata_t &&inputdata )
 {
 	// Get the interaction name & target
 	char parseString[255];
@@ -1059,7 +1059,7 @@ void CTriggerAreaCapture::InputSetTeamCanCap( inputdata_t &inputdata )
 	Warning("%s(%s) received SetTeamCanCap input with invalid format. Format should be: <team number> <can cap (0/1)>.\n", GetClassname(), GetDebugName() );
 }
 
-void CTriggerAreaCapture::InputCaptureCurrentCP( inputdata_t &inputdata )
+void CTriggerAreaCapture::InputCaptureCurrentCP( inputdata_t &&inputdata )
 {
 	if ( m_bCapturing )
 	{
@@ -1067,7 +1067,7 @@ void CTriggerAreaCapture::InputCaptureCurrentCP( inputdata_t &inputdata )
 	}
 }
 
-void CTriggerAreaCapture::InputSetControlPoint( inputdata_t &inputdata )
+void CTriggerAreaCapture::InputSetControlPoint( inputdata_t &&inputdata )
 {
 	BreakCapture( false );	// clear the capping for the previous point, forces us to recalc on the new one
 

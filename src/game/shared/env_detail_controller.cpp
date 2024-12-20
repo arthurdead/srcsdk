@@ -54,7 +54,7 @@ CSharedEnvDetailController::~CEnvDetailController()
 #endif // CLIENT_DLL
 
 //--------------------------------------------------------------------------------------------------------------
-int CSharedEnvDetailController::UpdateTransmitState()
+EdictStateFlags_t CSharedEnvDetailController::UpdateTransmitState()
 {
 #ifndef CLIENT_DLL
 	// ALWAYS transmit to all clients.

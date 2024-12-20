@@ -20,12 +20,12 @@ class CPointPlayerMoveConstraint : public CBaseEntity
 public:
 	DECLARE_MAPENTITY();
 
-	int		UpdateTransmitState( void );
+	EdictStateFlags_t UpdateTransmitState( void );
 	void	Activate( void );
 	void	ConstraintThink( void );
 
-	void	InputTurnOn( inputdata_t &inputdata );
-	void	InputTurnOff( inputdata_t &inputdata );
+	void	InputTurnOn( inputdata_t &&inputdata );
+	void	InputTurnOff( inputdata_t &&inputdata );
 
 private:
 	float				m_flRadius;	
@@ -40,9 +40,9 @@ LINK_ENTITY_TO_CLASS( point_playermoveconstraint, CPointPlayerMoveConstraint );
 
 BEGIN_MAPENTITY( CPointPlayerMoveConstraint )
 
-	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "radius" ),
-	DEFINE_KEYFIELD( m_flConstraintWidth, FIELD_FLOAT, "width" ),
-	DEFINE_KEYFIELD( m_flSpeedFactor, FIELD_FLOAT, "speedfactor" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_flConstraintWidth, "width" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpeedFactor, "speedfactor" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
@@ -54,7 +54,7 @@ END_MAPENTITY()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CPointPlayerMoveConstraint::UpdateTransmitState()
+EdictStateFlags_t CPointPlayerMoveConstraint::UpdateTransmitState()
 {
 	// ALWAYS transmit to all clients.
 	return SetTransmitState( FL_EDICT_ALWAYS );
@@ -73,7 +73,7 @@ void CPointPlayerMoveConstraint::Activate( void )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CPointPlayerMoveConstraint::InputTurnOn( inputdata_t &inputdata )
+void CPointPlayerMoveConstraint::InputTurnOn( inputdata_t &&inputdata )
 {
 	// Find all players within our radius and constraint them
 	float flRadius = m_flRadius;
@@ -108,7 +108,7 @@ void CPointPlayerMoveConstraint::InputTurnOn( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Release all players we've constrained
 //------------------------------------------------------------------------------
-void CPointPlayerMoveConstraint::InputTurnOff( inputdata_t &inputdata )
+void CPointPlayerMoveConstraint::InputTurnOff( inputdata_t &&inputdata )
 {
 	int iCount = m_hConstrainedPlayers.Count();
 	for ( int i = 0; i < iCount; i++ )

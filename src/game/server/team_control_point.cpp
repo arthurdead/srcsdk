@@ -18,19 +18,19 @@
 #define CONTROL_POINT_UNLOCK_THINK			"UnlockThink"
 
 BEGIN_MAPENTITY(CTeamControlPoint)
-	DEFINE_KEYFIELD( m_iszPrintName,			FIELD_STRING,	"point_printname" ),
-	DEFINE_KEYFIELD( m_iCPGroup,				FIELD_INTEGER,	"point_group" ),
-	DEFINE_KEYFIELD( m_iDefaultOwner,			FIELD_INTEGER,	"point_default_owner" ),
-	DEFINE_KEYFIELD( m_iPointIndex,				FIELD_INTEGER,	"point_index" ),
-	DEFINE_KEYFIELD( m_iWarnOnCap,				FIELD_INTEGER,	"point_warn_on_cap" ),
-	DEFINE_KEYFIELD( m_iszWarnSound,			FIELD_STRING,	"point_warn_sound" ),
+	DEFINE_KEYFIELD_AUTO( m_iszPrintName, "point_printname" ),
+	DEFINE_KEYFIELD_AUTO( m_iCPGroup, "point_group" ),
+	DEFINE_KEYFIELD_AUTO( m_iDefaultOwner, "point_default_owner" ),
+	DEFINE_KEYFIELD_AUTO( m_iPointIndex, "point_index" ),
+	DEFINE_KEYFIELD_AUTO( m_iWarnOnCap, "point_warn_on_cap" ),
+	DEFINE_KEYFIELD_AUTO( m_iszWarnSound, "point_warn_sound" ),
 
-	DEFINE_KEYFIELD( m_iszCaptureStartSound,	FIELD_STRING,	"point_capture_start_sound" ),
-	DEFINE_KEYFIELD( m_iszCaptureEndSound,		FIELD_STRING,	"point_capture_end_sound" ),
-	DEFINE_KEYFIELD( m_iszCaptureInProgress,	FIELD_STRING,	"point_capture_progress_sound" ),
-	DEFINE_KEYFIELD( m_iszCaptureInterrupted,	FIELD_STRING,	"point_capture_interrupted_sound" ),
-	DEFINE_KEYFIELD( m_bRandomOwnerOnRestart,	FIELD_BOOLEAN,	"random_owner_on_restart" ),
-	DEFINE_KEYFIELD( m_bLocked,					FIELD_BOOLEAN,	"point_start_locked" ),
+	DEFINE_KEYFIELD_AUTO( m_iszCaptureStartSound, "point_capture_start_sound" ),
+	DEFINE_KEYFIELD_AUTO( m_iszCaptureEndSound, "point_capture_end_sound" ),
+	DEFINE_KEYFIELD_AUTO( m_iszCaptureInProgress, "point_capture_progress_sound" ),
+	DEFINE_KEYFIELD_AUTO( m_iszCaptureInterrupted, "point_capture_interrupted_sound" ),
+	DEFINE_KEYFIELD_AUTO( m_bRandomOwnerOnRestart, "random_owner_on_restart" ),
+	DEFINE_KEYFIELD_AUTO( m_bLocked, "point_start_locked" ),
 
 	DEFINE_INPUTFUNC( FIELD_INTEGER,	"SetOwner",			InputSetOwner ),
 	DEFINE_INPUTFUNC( FIELD_VOID,		"ShowModel",		InputShowModel ),
@@ -263,7 +263,7 @@ void CTeamControlPoint::AnimThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: Used by ControlMaster to this point to its default owner
 //-----------------------------------------------------------------------------
-void CTeamControlPoint::InputReset( inputdata_t &input )
+void CTeamControlPoint::InputReset( inputdata_t &&inputdata )
 {
 	m_flLastContestedAt = -1;
 	InternalSetOwner( m_iDefaultOwner, false );
@@ -301,7 +301,7 @@ void CTeamControlPoint::HandleScoring( int iTeam )
 //-----------------------------------------------------------------------------
 // Purpose: Used by Area caps to set the owner
 //-----------------------------------------------------------------------------
-void CTeamControlPoint::InputSetOwner( inputdata_t &input )
+void CTeamControlPoint::InputSetOwner( inputdata_t &&inputdata )
 {
 	int iCapTeam = input.value.Int();
 
@@ -338,7 +338,7 @@ void CTeamControlPoint::InputSetOwner( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPoint::InputShowModel( inputdata_t &input )
+void CTeamControlPoint::InputShowModel( inputdata_t &&inputdata )
 {
 	RemoveEffects( EF_NODRAW );
 }
@@ -346,7 +346,7 @@ void CTeamControlPoint::InputShowModel( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPoint::InputHideModel( inputdata_t &input )
+void CTeamControlPoint::InputHideModel( inputdata_t &&inputdata )
 {
 	AddEffects( EF_NODRAW );
 }
@@ -940,7 +940,7 @@ void CTeamControlPoint::PlayerBlocked( CBaseMultiplayerPlayer *pPlayer )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPoint::InputRoundActivate( inputdata_t &inputdata )
+void CTeamControlPoint::InputRoundActivate( inputdata_t &&inputdata )
 {
 	switch ( m_iTeam - FIRST_GAME_TEAM+1 )
 	{
@@ -958,7 +958,7 @@ void CTeamControlPoint::InputRoundActivate( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPoint::InputSetLocked( inputdata_t &inputdata )
+void CTeamControlPoint::InputSetLocked( inputdata_t &&inputdata )
 {
 	// never lock/unlock the point if we're in waiting for players
 	if ( TeamplayRoundBasedRules() && TeamplayRoundBasedRules()->IsInWaitingForPlayers() )
@@ -1017,7 +1017,7 @@ void CTeamControlPoint::InternalSetLocked( bool bLocked )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPoint::InputSetUnlockTime( inputdata_t &inputdata )
+void CTeamControlPoint::InputSetUnlockTime( inputdata_t &&inputdata )
 {
 	// never lock/unlock the point if we're in waiting for players
 	if ( TeamplayRoundBasedRules() && TeamplayRoundBasedRules()->IsInWaitingForPlayers() )

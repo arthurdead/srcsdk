@@ -529,7 +529,7 @@ void CBasePlayer::SetupVisibility( CBaseEntity *pViewEntity, unsigned char *pvs,
 	engine->AddOriginToPVS( org );
 }
 
-int	CBasePlayer::UpdateTransmitState()
+EdictStateFlags_t CBasePlayer::UpdateTransmitState()
 {
 	// always call ShouldTransmit() for players
 	return SetTransmitState( FL_EDICT_FULLCHECK );
@@ -712,7 +712,7 @@ int CBasePlayer::TakeHealth( float flHealth, uint64 bitsDamageType )
 	// clear out any damage types we healed.
 	// UNDONE: generic health should not heal any
 	// UNDONE: time-based damage
-	if (m_takedamage)
+	if (m_takedamage != DAMAGE_NO)
 	{
 		uint64 bitsDmgTimeBased = GameRules()->Damage_GetTimeBased();
 		m_bitsDamageType &= ~( bitsDamageType & ~bitsDmgTimeBased );
@@ -761,7 +761,7 @@ void CBasePlayer::DrawDebugGeometryOverlays(void)
 //=========================================================
 void CBasePlayer::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
-	if ( m_takedamage )
+	if ( m_takedamage != DAMAGE_NO )
 	{
 		CTakeDamageInfo info = inputInfo;
 
@@ -4477,38 +4477,38 @@ void CBasePlayer::ClearTonemapParams( void )
 	m_Local.m_TonemapParams.m_flBloomScale = -1.0f;
 	m_Local.m_TonemapParams.m_flTonemapRate = -1.0f;
 }
-void CBasePlayer::InputSetTonemapScale( inputdata_t &inputdata )
+void CBasePlayer::InputSetTonemapScale( inputdata_t &&inputdata )
 {
 	m_Local.m_TonemapParams.m_flTonemapScale = inputdata.value.Float();
 }
 
-void CBasePlayer::InputSetTonemapRate( inputdata_t &inputdata )
+void CBasePlayer::InputSetTonemapRate( inputdata_t &&inputdata )
 {
 	m_Local.m_TonemapParams.m_flTonemapRate = inputdata.value.Float();
 }
-void CBasePlayer::InputSetAutoExposureMin( inputdata_t &inputdata )
+void CBasePlayer::InputSetAutoExposureMin( inputdata_t &&inputdata )
 {
 	m_Local.m_TonemapParams.m_flAutoExposureMin = inputdata.value.Float();
 }
 
-void CBasePlayer::InputSetAutoExposureMax( inputdata_t &inputdata )
+void CBasePlayer::InputSetAutoExposureMax( inputdata_t &&inputdata )
 {
 	m_Local.m_TonemapParams.m_flAutoExposureMax = inputdata.value.Float();
 }
 
-void CBasePlayer::InputSetBloomScale( inputdata_t &inputdata )
+void CBasePlayer::InputSetBloomScale( inputdata_t &&inputdata )
 {
 	m_Local.m_TonemapParams.m_flBloomScale = inputdata.value.Float();
 }
 
 //Tony; restore defaults (set min/max to -1.0 so nothing gets overridden)
-void CBasePlayer::InputUseDefaultAutoExposure( inputdata_t &inputdata )
+void CBasePlayer::InputUseDefaultAutoExposure( inputdata_t &&inputdata )
 {
 	m_Local.m_TonemapParams.m_flAutoExposureMin = -1.0f;
 	m_Local.m_TonemapParams.m_flAutoExposureMax = -1.0f;
 	m_Local.m_TonemapParams.m_flTonemapRate = -1.0f;
 }
-void CBasePlayer::InputUseDefaultBloomScale( inputdata_t &inputdata )
+void CBasePlayer::InputUseDefaultBloomScale( inputdata_t &&inputdata )
 {
 	m_Local.m_TonemapParams.m_flBloomScale = -1.0f;
 }
@@ -7212,8 +7212,8 @@ class CStripWeapons : public CPointEntity
 {
 	DECLARE_CLASS( CStripWeapons, CPointEntity );
 public:
-	void InputStripWeapons(inputdata_t &data);
-	void InputStripWeaponsAndSuit(inputdata_t &data);
+	void InputStripWeapons( inputdata_t &&inputdata );
+	void InputStripWeaponsAndSuit( inputdata_t &&inputdata );
 
 	void StripWeapons(inputdata_t &data, bool stripSuit);
 	DECLARE_MAPENTITY();
@@ -7227,12 +7227,12 @@ BEGIN_MAPENTITY( CStripWeapons )
 END_MAPENTITY()
 	
 
-void CStripWeapons::InputStripWeapons(inputdata_t &data)
+void CStripWeapons::InputStripWeapons( inputdata_t &&inputdata )
 {
 	StripWeapons(data, false);
 }
 
-void CStripWeapons::InputStripWeaponsAndSuit(inputdata_t &data)
+void CStripWeapons::InputStripWeaponsAndSuit( inputdata_t &&inputdata )
 {
 	StripWeapons(data, true);
 }
@@ -7279,12 +7279,12 @@ class CMovementSpeedMod : public CPointEntity
 {
 	DECLARE_CLASS( CMovementSpeedMod, CPointEntity );
 public:
-	void InputSpeedMod(inputdata_t &data);
+	void InputSpeedMod( inputdata_t &&inputdata );
 
-	void InputEnable(inputdata_t &data);
-	void InputDisable(inputdata_t &data);
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
-	void InputSetAdditionalButtons(inputdata_t &data);
+	void InputSetAdditionalButtons( inputdata_t &&inputdata );
 
 private:
 	uint64 GetDisabledButtonMask( void );
@@ -7302,7 +7302,7 @@ BEGIN_MAPENTITY( CMovementSpeedMod )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
-	DEFINE_KEYFIELD( m_iAdditionalButtons, FIELD_INTEGER64, "AdditionalButtons" ),
+	DEFINE_KEYFIELD_AUTO( m_iAdditionalButtons, "AdditionalButtons" ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER64, "SetAdditionalButtons", InputSetAdditionalButtons ),
 END_MAPENTITY()
 	
@@ -7348,7 +7348,7 @@ uint64 CMovementSpeedMod::GetDisabledButtonMask( void )
 	return nMask;
 }
 
-void CMovementSpeedMod::InputSpeedMod(inputdata_t &data)
+void CMovementSpeedMod::InputSpeedMod( inputdata_t &&inputdata )
 {
 	CBasePlayer *pPlayer = NULL;
 
@@ -7427,7 +7427,7 @@ void CMovementSpeedMod::InputSpeedMod(inputdata_t &data)
 	}
 }
 
-void CMovementSpeedMod::InputEnable(inputdata_t &data)
+void CMovementSpeedMod::InputEnable( inputdata_t &&inputdata )
 {
 	CBasePlayer *pPlayer = NULL;
 
@@ -7473,7 +7473,7 @@ void CMovementSpeedMod::InputEnable(inputdata_t &data)
 	}
 }
 
-void CMovementSpeedMod::InputDisable(inputdata_t &data)
+void CMovementSpeedMod::InputDisable( inputdata_t &&inputdata )
 {
 	CBasePlayer *pPlayer = NULL;
 
@@ -7510,7 +7510,7 @@ void CMovementSpeedMod::InputDisable(inputdata_t &data)
 	}
 }
 
-void CMovementSpeedMod::InputSetAdditionalButtons(inputdata_t &data)
+void CMovementSpeedMod::InputSetAdditionalButtons( inputdata_t &&inputdata )
 {
 	CBasePlayer *pPlayer = NULL;
 
@@ -7543,9 +7543,9 @@ class CLogicPlayerInfo : public CPointEntity
 {
 	DECLARE_CLASS( CLogicPlayerInfo, CPointEntity );
 public:
-	void InputGetPlayerInfo( inputdata_t &inputdata );
-	void InputGetPlayerByID( inputdata_t &inputdata );
-	void InputGetPlayerByName( inputdata_t &inputdata );
+	void InputGetPlayerInfo( inputdata_t &&inputdata );
+	void InputGetPlayerByID( inputdata_t &&inputdata );
+	void InputGetPlayerByName( inputdata_t &&inputdata );
 
 	void GetPlayerInfo( CBasePlayer *pPlayer );
 
@@ -7569,7 +7569,7 @@ BEGIN_MAPENTITY( CLogicPlayerInfo )
 END_MAPENTITY()
 	
 
-void CLogicPlayerInfo::InputGetPlayerInfo( inputdata_t &inputdata )
+void CLogicPlayerInfo::InputGetPlayerInfo( inputdata_t &&inputdata )
 {
 	CBasePlayer *pPlayer = ToBasePlayer(inputdata.value.Entity());
 
@@ -7581,7 +7581,7 @@ void CLogicPlayerInfo::InputGetPlayerInfo( inputdata_t &inputdata )
 		GetPlayerInfo( pPlayer );
 }
 
-void CLogicPlayerInfo::InputGetPlayerByID( inputdata_t &inputdata )
+void CLogicPlayerInfo::InputGetPlayerByID( inputdata_t &&inputdata )
 {
 	for (int i = 1; i < gpGlobals->maxClients; i++)
 	{
@@ -7597,7 +7597,7 @@ void CLogicPlayerInfo::InputGetPlayerByID( inputdata_t &inputdata )
 	}
 }
 
-void CLogicPlayerInfo::InputGetPlayerByName( inputdata_t &inputdata )
+void CLogicPlayerInfo::InputGetPlayerByName( inputdata_t &&inputdata )
 {
 	for (int i = 1; i < gpGlobals->maxClients; i++)
 	{
@@ -7652,16 +7652,16 @@ void SendProxy_ShiftPlayerSpawnflags( const SendProp *pProp, const void *pStruct
 
 	BEGIN_SEND_TABLE_NOBASE( CBasePlayer, DT_LocalPlayerExclusive )
 
-		SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_COORD|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin ),
+		SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_COORD|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 
-		SendPropFloat(SENDINFO_VECTORELEM(m_angEyeAngles, 0), 8, SPROP_CHANGES_OFTEN, -90.0f, 90.0f),
-		SendPropAngle(SENDINFO_VECTORELEM(m_angEyeAngles, 1), 10, SPROP_CHANGES_OFTEN),
+		SendPropFloat(SENDINFO_VECTORELEM(m_angEyeAngles, 0), 8, SPROP_CHANGES_OFTEN, -90.0f, 90.0f, SendProxy_FloatAngle, SENDPROP_CHANGES_OFTEN_PRIORITY),
+		SendPropAngle(SENDINFO_VECTORELEM(m_angEyeAngles, 1), 10, SPROP_CHANGES_OFTEN, SendProxy_FloatAngle, SENDPROP_CHANGES_OFTEN_PRIORITY),
 
 		SendPropDataTable	( SENDINFO_DT(m_Local), &REFERENCE_SEND_TABLE(DT_Local) ),
 		
 		SendPropFloat		( SENDINFO_VECTORELEM(m_vecViewOffset, 0), 8, SPROP_ROUNDDOWN, -32.0, 32.0f),
 		SendPropFloat		( SENDINFO_VECTORELEM(m_vecViewOffset, 1), 8, SPROP_ROUNDDOWN, -32.0, 32.0f),
-		SendPropFloat		( SENDINFO_VECTORELEM(m_vecViewOffset, 2), 20, SPROP_CHANGES_OFTEN,	0.0f, 256.0f),
+		SendPropFloat		( SENDINFO_VECTORELEM(m_vecViewOffset, 2), 20, SPROP_CHANGES_OFTEN,	0.0f, 256.0f, SendProxy_Float, SENDPROP_CHANGES_OFTEN_PRIORITY),
 
 		SendPropFloat		( SENDINFO(m_flFriction),		8,	SPROP_ROUNDDOWN,	0.0f,	4.0f),
 
@@ -7673,7 +7673,7 @@ void SendProxy_ShiftPlayerSpawnflags( const SendProp *pProp, const void *pStruct
 		SendPropInt			( SENDINFO( m_nNextThinkTick ) ),
 
 		SendPropEHandle		( SENDINFO( m_hLastWeapon ) ),
-		SendPropEHandle		( SENDINFO( m_hGroundEntity ), SPROP_CHANGES_OFTEN ),
+		SendPropEHandle		( SENDINFO( m_hGroundEntity ), SPROP_CHANGES_OFTEN, SendProxy_EHandle, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 
 		SendPropFloat		( SENDINFO_VECTORELEM(m_vecVelocity, 0), 32, SPROP_NOSCALE|SPROP_CHANGES_OFTEN, 0, HIGH_DEFAULT, SendProxy_Float, SENDPROP_PLAYER_VELOCITY_XY_PRIORITY ),
 		SendPropFloat		( SENDINFO_VECTORELEM(m_vecVelocity, 1), 32, SPROP_NOSCALE|SPROP_CHANGES_OFTEN, 0, HIGH_DEFAULT, SendProxy_Float, SENDPROP_PLAYER_VELOCITY_XY_PRIORITY ),
@@ -7710,8 +7710,8 @@ void SendProxy_ShiftPlayerSpawnflags( const SendProp *pProp, const void *pStruct
 
 	BEGIN_SEND_TABLE_NOBASE( CBasePlayer, DT_NonLocalPlayerExclusive )
 		SendPropVector(SENDINFO(m_vecOrigin), SENDPROP_VECORIGIN_BITS, SENDPROP_VECORIGIN_FLAGS, 0.0f, HIGH_DEFAULT, SENDPROP_VECORIGIN_PROXY ),
-		SendPropFloat( SENDINFO_VECTORELEM(m_angEyeAngles, 0), 8, SPROP_CHANGES_OFTEN, -90.0f, 90.0f ),
-		SendPropAngle( SENDINFO_VECTORELEM(m_angEyeAngles, 1), 10, SPROP_CHANGES_OFTEN ),
+		SendPropFloat( SENDINFO_VECTORELEM(m_angEyeAngles, 0), 8, SPROP_CHANGES_OFTEN, -90.0f, 90.0f, SendProxy_Float, SENDPROP_CHANGES_OFTEN_PRIORITY ),
+		SendPropAngle( SENDINFO_VECTORELEM(m_angEyeAngles, 1), 10, SPROP_CHANGES_OFTEN, SendProxy_FloatAngle, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 		SendPropInt(SENDINFO(m_cycleLatch), 4, SPROP_UNSIGNED),
 	END_SEND_TABLE()
 
@@ -7746,13 +7746,13 @@ void SendProxy_ShiftPlayerSpawnflags( const SendProp *pProp, const void *pStruct
 
 		SendPropEHandle(SENDINFO(m_hVehicle)),
 		SendPropEHandle(SENDINFO(m_hUseEntity)),
-		SendPropEHandle( SENDINFO( m_hGroundEntity ), SPROP_CHANGES_OFTEN ),
-		SendPropInt		(SENDINFO(m_iHealth), -1, SPROP_VARINT | SPROP_CHANGES_OFTEN ),
+		SendPropEHandle( SENDINFO( m_hGroundEntity ), SPROP_CHANGES_OFTEN, SendProxy_EHandle, SENDPROP_CHANGES_OFTEN_PRIORITY ),
+		SendPropInt		(SENDINFO(m_iHealth), -1, SPROP_VARINT | SPROP_CHANGES_OFTEN, NULL, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 		SendPropInt		(SENDINFO(m_lifeState), 3, SPROP_UNSIGNED ),
 		SendPropInt		(SENDINFO(m_iBonusProgress), 15 ),
 		SendPropInt		(SENDINFO(m_iBonusChallenge), 4 ),
 		SendPropFloat	(SENDINFO(m_flMaxspeed), 12, SPROP_ROUNDDOWN, 0.0f, 2048.0f ),  // CL
-		SendPropInt		(SENDINFO(m_fFlags), PLAYER_FLAG_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN, SendProxy_CropFlagsToPlayerFlagBitsLength ),
+		SendPropInt		(SENDINFO(m_fFlags), PLAYER_FLAG_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN, SendProxy_CropFlagsToPlayerFlagBitsLength, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 		SendPropInt		(SENDINFO(m_iObserverMode), 3, SPROP_UNSIGNED ),
 		SendPropEHandle	(SENDINFO(m_hObserverTarget) ),
 		SendPropInt		(SENDINFO(m_iFOV), 8, SPROP_UNSIGNED ),
@@ -8450,7 +8450,7 @@ void CBasePlayer::DoImpactEffect( trace_t &tr, int nDamageType )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CBasePlayer::InputSetHealth( inputdata_t &inputdata )
+void CBasePlayer::InputSetHealth( inputdata_t &&inputdata )
 {
 	int iNewHealth = inputdata.value.Int();
 	int iDelta = abs(GetHealth() - iNewHealth);
@@ -8471,7 +8471,7 @@ void CBasePlayer::InputSetHealth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CBasePlayer::InputHandleMapEvent( inputdata_t &inputdata )
+void CBasePlayer::InputHandleMapEvent( inputdata_t &&inputdata )
 {
 	Internal_HandleMapEvent( inputdata );
 }
@@ -8480,7 +8480,7 @@ void CBasePlayer::InputHandleMapEvent( inputdata_t &inputdata )
 // Purpose: Hides or displays the HUD
 // Input  : &inputdata -
 //-----------------------------------------------------------------------------
-void CBasePlayer::InputSetHUDVisibility( inputdata_t &inputdata )
+void CBasePlayer::InputSetHUDVisibility( inputdata_t &&inputdata )
 {
 	bool bEnable = inputdata.value.Bool();
 
@@ -8498,7 +8498,7 @@ void CBasePlayer::InputSetHUDVisibility( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata -
 //-----------------------------------------------------------------------------
-void CBasePlayer::InputSetSuppressAttacks( inputdata_t &inputdata )
+void CBasePlayer::InputSetSuppressAttacks( inputdata_t &&inputdata )
 {
 	if(inputdata.value.Bool())
 		AddSpawnFlags( SF_PLAYER_SUPPRESS_FIRING );
@@ -8510,7 +8510,7 @@ void CBasePlayer::InputSetSuppressAttacks( inputdata_t &inputdata )
 // Purpose: Set the fog controller data per player.
 // Input  : &inputdata -
 //-----------------------------------------------------------------------------
-void CBasePlayer::InputSetFogController( inputdata_t &inputdata )
+void CBasePlayer::InputSetFogController( inputdata_t &&inputdata )
 {
 	// Find the fog controller with the given name.
 	CFogController *pFogController = NULL;
@@ -8558,7 +8558,7 @@ void CBasePlayer::InitColorCorrectionController( void )
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-void CBasePlayer::InputSetPostProcessController( inputdata_t &inputdata )
+void CBasePlayer::InputSetPostProcessController( inputdata_t &&inputdata )
 {
 	// Find the fog controller with the given name.
 	CPostProcessController *pController = NULL;
@@ -8580,7 +8580,7 @@ void CBasePlayer::InputSetPostProcessController( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-void CBasePlayer::InputSetColorCorrectionController( inputdata_t &inputdata )
+void CBasePlayer::InputSetColorCorrectionController( inputdata_t &&inputdata )
 {
 	// Find the fog controller with the given name.
 	CColorCorrection *pController = NULL;

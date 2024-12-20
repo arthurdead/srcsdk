@@ -65,13 +65,13 @@ extern ConVarBase *violence_agibs;
 
 BEGIN_MAPENTITY( CBaseCombatCharacter )
 
-	DEFINE_KEYFIELD( m_bloodColor, FIELD_INTEGER, "BloodColor" ),
+	DEFINE_KEYFIELD_AUTO( m_bloodColor, "BloodColor" ),
 
 	DEFINE_INPUT( m_ProficiencyOverride, FIELD_INTEGER, "SetProficiencyOverride"),
 
 	DEFINE_INPUT( m_bForceServerRagdoll, FIELD_BOOLEAN, "SetForceServerRagdoll" ),
 
-	DEFINE_KEYFIELD( m_RelationshipString, FIELD_STRING, "Relationship" ),
+	DEFINE_KEYFIELD_AUTO( m_RelationshipString, "Relationship" ),
 
 	DEFINE_INPUT( m_impactEnergyScale, FIELD_FLOAT, "physdamagescale" ),
 	
@@ -3356,7 +3356,7 @@ void CBaseCombatCharacter::AddRelationship( const char *pszRelationship, CBaseEn
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::InputSetRelationship( inputdata_t &inputdata )
+void CBaseCombatCharacter::InputSetRelationship( inputdata_t &&inputdata )
 {
 	AddRelationship( inputdata.value.String(), inputdata.pActivator );
 }
@@ -3918,7 +3918,7 @@ bool CBaseCombatCharacter::ShouldShootMissTarget( CBaseCombatCharacter *pAttacke
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::InputKilledNPC( inputdata_t &inputdata )
+void CBaseCombatCharacter::InputKilledNPC( inputdata_t &&inputdata )
 {
 	OnKilledNPC( inputdata.pActivator ? inputdata.pActivator->MyCombatCharacterPointer() : NULL );
 }
@@ -3926,7 +3926,7 @@ void CBaseCombatCharacter::InputKilledNPC( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets blood color
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::InputSetBloodColor( inputdata_t &inputdata )
+void CBaseCombatCharacter::InputSetBloodColor( inputdata_t &&inputdata )
 {
 	SetBloodColor(inputdata.value.Int());
 }
@@ -3946,7 +3946,7 @@ void CBaseCombatCharacter::OnKilledNPC( CBaseCombatCharacter *pKilled )
 //------------------------------------------------------------------------------
 // Purpose: Give the NPC in question the weapon specified
 //------------------------------------------------------------------------------
-void CBaseCombatCharacter::InputGiveWeapon( inputdata_t &inputdata )
+void CBaseCombatCharacter::InputGiveWeapon( inputdata_t &&inputdata )
 {
 	// Give the NPC the specified weapon
 	string_t iszWeaponName = inputdata.value.StringID();
@@ -3983,7 +3983,7 @@ void CBaseCombatCharacter::InputGiveWeapon( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::InputDropWeapon( inputdata_t &inputdata )
+void CBaseCombatCharacter::InputDropWeapon( inputdata_t &&inputdata )
 {
 	CBaseCombatWeapon *pWeapon = FStrEq(inputdata.value.String(), "") ? GetActiveWeapon() : Weapon_OwnsThisType(inputdata.value.String());
 	if (pWeapon)
@@ -3994,7 +3994,7 @@ void CBaseCombatCharacter::InputDropWeapon( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::InputPickupWeaponInstant( inputdata_t &inputdata )
+void CBaseCombatCharacter::InputPickupWeaponInstant( inputdata_t &&inputdata )
 {
 	if (inputdata.value.Entity() && inputdata.value.Entity()->IsBaseCombatWeapon())
 	{
@@ -4032,7 +4032,7 @@ void CBaseCombatCharacter::InputPickupWeaponInstant( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::InputHolsterWeapon( inputdata_t &inputdata )
+void CBaseCombatCharacter::InputHolsterWeapon( inputdata_t &&inputdata )
 {
 	CBaseCombatWeapon *pWeapon = GetActiveWeapon();
 	if (pWeapon)
@@ -4045,7 +4045,7 @@ void CBaseCombatCharacter::InputHolsterWeapon( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::InputHolsterAndDestroyWeapon( inputdata_t &inputdata )
+void CBaseCombatCharacter::InputHolsterAndDestroyWeapon( inputdata_t &&inputdata )
 {
 	CBaseCombatWeapon *pWeapon = GetActiveWeapon();
 	if (pWeapon)
@@ -4069,7 +4069,7 @@ void CBaseCombatCharacter::InputHolsterAndDestroyWeapon( inputdata_t &inputdata 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::InputUnholsterWeapon( inputdata_t &inputdata )
+void CBaseCombatCharacter::InputUnholsterWeapon( inputdata_t &&inputdata )
 {
 	// NPCs can handle strings, but players fall back to SwitchToWeapon
 	if (inputdata.value.StringID() != NULL_STRING)
@@ -4085,7 +4085,7 @@ void CBaseCombatCharacter::InputUnholsterWeapon( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Makes the NPC instantly switch to the specified weapon, creates it if it doesn't exist
 //------------------------------------------------------------------------------
-void CBaseCombatCharacter::InputSwitchToWeapon( inputdata_t &inputdata )
+void CBaseCombatCharacter::InputSwitchToWeapon( inputdata_t &&inputdata )
 {
 	for (int i = 0; i<MAX_WEAPONS; i++)
 	{

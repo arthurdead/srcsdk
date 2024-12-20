@@ -76,9 +76,9 @@ LINK_ENTITY_TO_CLASS( light, CLight );
 
 BEGIN_MAPENTITY( CLight )
 
-	DEFINE_KEYFIELD( m_iStyle, FIELD_INTEGER, "style" ),
-	DEFINE_KEYFIELD( m_iDefaultStyle, FIELD_INTEGER, "defaultstyle" ),
-	DEFINE_KEYFIELD( m_iszPattern, FIELD_STRING, "pattern" ),
+	DEFINE_KEYFIELD_AUTO( m_iStyle, "style" ),
+	DEFINE_KEYFIELD_AUTO( m_iDefaultStyle, "defaultstyle" ),
+	DEFINE_KEYFIELD_AUTO( m_iszPattern, "pattern" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetPattern", InputSetPattern ),
@@ -192,7 +192,7 @@ void CLight::Toggle( void )
 // Purpose: Handle the "turnon" input handler
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CLight::InputTurnOn( inputdata_t &inputdata )
+void CLight::InputTurnOn( inputdata_t &&inputdata )
 {
 	TurnOn();
 }
@@ -201,7 +201,7 @@ void CLight::InputTurnOn( inputdata_t &inputdata )
 // Purpose: Handle the "turnoff" input handler
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CLight::InputTurnOff( inputdata_t &inputdata )
+void CLight::InputTurnOff( inputdata_t &&inputdata )
 {
 	TurnOff();
 }
@@ -210,7 +210,7 @@ void CLight::InputTurnOff( inputdata_t &inputdata )
 // Purpose: Handle the "toggle" input handler
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CLight::InputToggle( inputdata_t &inputdata )
+void CLight::InputToggle( inputdata_t &&inputdata )
 {
 	Toggle();
 }
@@ -218,7 +218,7 @@ void CLight::InputToggle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for setting a light pattern
 //-----------------------------------------------------------------------------
-void CLight::InputSetPattern( inputdata_t &inputdata )
+void CLight::InputSetPattern( inputdata_t &&inputdata )
 {
 	m_iszPattern = inputdata.value.StringID();
 	engine->LightStyle(m_iStyle, (char *)STRING( m_iszPattern ));
@@ -232,7 +232,7 @@ void CLight::InputSetPattern( inputdata_t &inputdata )
 // Purpose: Input handler for fading from first value in old pattern to 
 //			first value in new pattern
 //-----------------------------------------------------------------------------
-void CLight::InputFadeToPattern( inputdata_t &inputdata )
+void CLight::InputFadeToPattern( inputdata_t &&inputdata )
 {
 	m_iCurrentFade	= (STRING(m_iszPattern))[0];
 	m_iTargetFade	= inputdata.value.String()[0];

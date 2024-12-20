@@ -22,8 +22,8 @@ class CFuncReflectiveGlass : public CFuncBrush
 		m_iszRefractRenderTarget = AllocPooledString( "_rt_WaterRefraction" );
 	}
 
-	void InputSetReflectRenderTarget( inputdata_t &inputdata ) { m_iszReflectRenderTarget = inputdata.value.StringID(); }
-	void InputSetRefractRenderTarget( inputdata_t &inputdata ) { m_iszRefractRenderTarget = inputdata.value.StringID(); }
+	void InputSetReflectRenderTarget( inputdata_t &&inputdata ) { m_iszReflectRenderTarget = inputdata.value.StringID(); }
+	void InputSetRefractRenderTarget( inputdata_t &&inputdata ) { m_iszRefractRenderTarget = inputdata.value.StringID(); }
 
 	CNetworkStringT( m_iszReflectRenderTarget );
 	CNetworkStringT( m_iszRefractRenderTarget );
@@ -34,8 +34,8 @@ LINK_ENTITY_TO_CLASS( func_reflective_glass, CFuncReflectiveGlass );
 // automatically hooks in the system's callbacks
 BEGIN_MAPENTITY( CFuncReflectiveGlass )
 
-	DEFINE_KEYFIELD( m_iszReflectRenderTarget, FIELD_STRING, "ReflectRenderTarget" ),
-	DEFINE_KEYFIELD( m_iszRefractRenderTarget, FIELD_STRING, "RefractRenderTarget" ),
+	DEFINE_KEYFIELD_AUTO( m_iszReflectRenderTarget, "ReflectRenderTarget" ),
+	DEFINE_KEYFIELD_AUTO( m_iszRefractRenderTarget, "RefractRenderTarget" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetReflectRenderTarget", InputSetReflectRenderTarget ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetRefractRenderTarget", InputSetRefractRenderTarget ),

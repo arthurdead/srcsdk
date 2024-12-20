@@ -278,10 +278,10 @@ class CPointRagdollBoogie : public CServerOnlyPointEntity
 public:
 	bool ApplyBoogie(CBaseEntity *pTarget, CBaseEntity *pActivator);
 
-	void InputActivate( inputdata_t &inputdata );
-	void InputDeactivate( inputdata_t &inputdata );
-	void InputBoogieTarget( inputdata_t &inputdata );
-	void InputSetZapColor( inputdata_t &inputdata );
+	void InputActivate( inputdata_t &&inputdata );
+	void InputDeactivate( inputdata_t &&inputdata );
+	void InputBoogieTarget( inputdata_t &&inputdata );
+	void InputSetZapColor( inputdata_t &&inputdata );
 
 	bool KeyValue( const char *szKeyName, const char *szValue );
 
@@ -301,11 +301,11 @@ private:
 //-----------------------------------------------------------------------------
 BEGIN_MAPENTITY( CPointRagdollBoogie )
 
-	DEFINE_KEYFIELD( m_flStartTime, FIELD_FLOAT, "StartTime" ),
-	DEFINE_KEYFIELD( m_BoogieLength, FIELD_INTERVAL, "BoogieLength" ),
-	DEFINE_KEYFIELD( m_flMagnitude, FIELD_FLOAT, "Magnitude" ),
+	DEFINE_KEYFIELD_AUTO( m_flStartTime, "StartTime" ),
+	DEFINE_KEYFIELD_AUTO( m_BoogieLength, "BoogieLength" ),
+	DEFINE_KEYFIELD_AUTO( m_flMagnitude, "Magnitude" ),
 
-	DEFINE_KEYFIELD( m_vecZapColor, FIELD_VECTOR, "ZapColor" ),
+	DEFINE_KEYFIELD_AUTO( m_vecZapColor, "ZapColor" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
@@ -356,7 +356,7 @@ bool CPointRagdollBoogie::ApplyBoogie( CBaseEntity *pTarget, CBaseEntity *pActiv
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CPointRagdollBoogie::InputActivate( inputdata_t &inputdata )
+void CPointRagdollBoogie::InputActivate( inputdata_t &&inputdata )
 {
 	CBaseEntity *pEnt = gEntList.FindEntityByName(NULL, STRING(m_target), this, inputdata.pActivator, inputdata.pCaller);
 	while (pEnt)
@@ -371,7 +371,7 @@ void CPointRagdollBoogie::InputActivate( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CPointRagdollBoogie::InputDeactivate( inputdata_t &inputdata )
+void CPointRagdollBoogie::InputDeactivate( inputdata_t &&inputdata )
 {
 	if (m_Boogies.Count() == 0)
 		return;
@@ -390,7 +390,7 @@ void CPointRagdollBoogie::InputDeactivate( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CPointRagdollBoogie::InputBoogieTarget( inputdata_t &inputdata )
+void CPointRagdollBoogie::InputBoogieTarget( inputdata_t &&inputdata )
 {
 	CBaseEntity *pEnt = gEntList.FindEntityByName(NULL, inputdata.value.String(), this, inputdata.pActivator, inputdata.pCaller);
 	while (pEnt)
@@ -408,7 +408,7 @@ void CPointRagdollBoogie::InputBoogieTarget( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CPointRagdollBoogie::InputSetZapColor( inputdata_t &inputdata )
+void CPointRagdollBoogie::InputSetZapColor( inputdata_t &&inputdata )
 {
 	inputdata.value.Vector3D( m_vecZapColor );
 	if (!m_vecZapColor.IsZero())

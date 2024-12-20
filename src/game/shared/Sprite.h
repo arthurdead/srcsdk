@@ -125,8 +125,8 @@ public:
 
 #if !defined( CLIENT_DLL )
 
-	virtual int ShouldTransmit( const CCheckTransmitInfo *pInfo );
-	virtual int UpdateTransmitState( void );
+	virtual EdictStateFlags_t ShouldTransmit( const CCheckTransmitInfo *pInfo );
+	virtual EdictStateFlags_t UpdateTransmitState( void );
 	
 	void SetAsTemporary( void ) { AddSpawnFlags( SF_SPRITE_TEMPORARY ); }
 	bool IsTemporary( void ) { return ( HasSpawnFlags( SF_SPRITE_TEMPORARY ) ); }
@@ -146,12 +146,12 @@ public:
 #if !defined( CLIENT_DLL )
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	// Input handlers
-	void InputHideSprite( inputdata_t &inputdata );
-	void InputShowSprite( inputdata_t &inputdata );
-	void InputToggleSprite( inputdata_t &inputdata );
-	void InputColorRedValue( inputdata_t &inputdata );
-	void InputColorBlueValue( inputdata_t &inputdata );
-	void InputColorGreenValue( inputdata_t &inputdata );
+	void InputHideSprite( inputdata_t &&inputdata );
+	void InputShowSprite( inputdata_t &&inputdata );
+	void InputToggleSprite( inputdata_t &&inputdata );
+	void InputColorRedValue( inputdata_t &&inputdata );
+	void InputColorBlueValue( inputdata_t &&inputdata );
+	void InputColorGreenValue( inputdata_t &&inputdata );
 #endif
 
 	inline void SetAttachment( CSharedBaseEntity *pEntity, int attachment )

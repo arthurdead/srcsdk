@@ -410,12 +410,16 @@ typedef struct tagRGBQUAD RGBQUAD;
 
 #ifdef _MSC_VER
 // MSVC has the align at the start of the struct
+#define ALIGN1 DECL_ALIGN(1)
+#define ALIGN2 DECL_ALIGN(2)
 #define ALIGN4 DECL_ALIGN(4)
 #define ALIGN8 DECL_ALIGN(8)
 #define ALIGN16 DECL_ALIGN(16)
 #define ALIGN32 DECL_ALIGN(32)
 #define ALIGN128 DECL_ALIGN(128)
 
+#define ALIGN1_POST
+#define ALIGN2_POST
 #define ALIGN4_POST
 #define ALIGN8_POST
 #define ALIGN16_POST
@@ -423,12 +427,16 @@ typedef struct tagRGBQUAD RGBQUAD;
 #define ALIGN128_POST
 #elif defined( GNUC )
 // gnuc has the align decoration at the end
+#define ALIGN1
+#define ALIGN2
 #define ALIGN4
 #define ALIGN8 
 #define ALIGN16
 #define ALIGN32
 #define ALIGN128
 
+#define ALIGN1_POST DECL_ALIGN(1)
+#define ALIGN2_POST DECL_ALIGN(2)
 #define ALIGN4_POST DECL_ALIGN(4)
 #define ALIGN8_POST DECL_ALIGN(8)
 #define ALIGN16_POST DECL_ALIGN(16)
@@ -1075,6 +1083,22 @@ inline uint64 Plat_Rdtsc()
 			return *this;								\
 		}
 
+#define FLAGENUM_OPERATORS( Enum, Type ) \
+	inline Enum operator&( Enum lhs, Enum rhs ) \
+	{ return (Enum)((Type)lhs & (Type)rhs); } \
+	inline Enum &operator&=( Enum &lhs, Enum rhs ) \
+	{ lhs = operator&(lhs, rhs); return lhs; } \
+	inline Enum operator|( Enum lhs, Enum rhs ) \
+	{ return (Enum)((Type)lhs | (Type)rhs); } \
+	inline Enum &operator|=( Enum &lhs, Enum rhs ) \
+	{ lhs = operator|(lhs, rhs); return lhs; } \
+	inline Enum operator^( Enum lhs, Enum rhs ) \
+	{ return (Enum)((Type)lhs ^ (Type)rhs); } \
+	inline Enum &operator^=( Enum &lhs, Enum rhs ) \
+	{ lhs = operator^(lhs, rhs); return lhs; } \
+	inline Enum operator~( Enum lhs ) \
+	{ return (Enum)(~(Type)lhs); }
+
 #define Plat_FastMemset memset
 #define Plat_FastMemcpy memcpy
 
@@ -1125,6 +1149,49 @@ namespace valve_type_traits
 	template <typename T>
 	using rem_const_t = typename rem_const<T>::type;
 }
+
+template <typename T>
+struct type_identity
+{
+};
+
+template <typename T> struct is_integral_ { static constexpr inline const bool value = false; };
+template<> struct is_integral_<bool> { static constexpr inline const bool value = true; };
+template<> struct is_integral_<char> { static constexpr inline const bool value = true; };
+template<> struct is_integral_<signed char> { static constexpr inline const bool value = true; };
+template<> struct is_integral_<unsigned char> { static constexpr inline const bool value = true; };
+template<> struct is_integral_<short> { static constexpr inline const bool value = true; };
+template<> struct is_integral_<unsigned short> { static constexpr inline const bool value = true; };
+template<> struct is_integral_<int> { static constexpr inline const bool value = true; };
+template<> struct is_integral_<unsigned int> { static constexpr inline const bool value = true; };
+template<> struct is_integral_<long> { static constexpr inline const bool value = true; };
+template<> struct is_integral_<unsigned long> { static constexpr inline const bool value = true; };
+template<> struct is_integral_<long long> { static constexpr inline const bool value = true; };
+template<> struct is_integral_<unsigned long long> { static constexpr inline const bool value = true; };
+template <typename T>
+constexpr inline const bool is_integral_v = is_integral_<T>::value;
+
+template <typename T> struct is_unsigned_ { static constexpr inline const bool value = false; };
+template<> struct is_unsigned_<bool> { static constexpr inline const bool value = true; };
+template<> struct is_unsigned_<unsigned char> { static constexpr inline const bool value = true; };
+template<> struct is_unsigned_<unsigned short> { static constexpr inline const bool value = true; };
+template<> struct is_unsigned_<unsigned int> { static constexpr inline const bool value = true; };
+template<> struct is_unsigned_<unsigned long> { static constexpr inline const bool value = true; };
+template<> struct is_unsigned_<unsigned long long> { static constexpr inline const bool value = true; };
+template <typename T>
+constexpr inline const bool is_unsigned_v = is_unsigned_<T>::value;
+
+template <typename T> struct is_floating_point_ { static constexpr inline const bool value = false; };
+template<> struct is_floating_point_<float> { static constexpr inline const bool value = true; };
+template<> struct is_floating_point_<double> { static constexpr inline const bool value = true; };
+template<> struct is_floating_point_<long double> { static constexpr inline const bool value = true; };
+template <typename T>
+constexpr inline const bool is_floating_point_v = is_floating_point_<T>::value;
+
+template <typename T, typename U> struct is_same_ { static constexpr inline const bool value = false; };
+template<typename T> struct is_same_<T, T> { static constexpr inline const bool value = true; };
+template <typename T, typename U>
+constexpr inline const bool is_same_v = is_same_<T, U>::value;
 
 template <typename T>
 inline valve_type_traits::rem_ref_t<T> &&Move(T &&x)
@@ -1237,7 +1304,6 @@ inline void Destruct( T* pMemory )
 
 #define GET_OUTER( OuterType, OuterMember ) \
    ( ( OuterType * ) ( (uint8 *)this - offsetof( OuterType, OuterMember ) ) )
-
 
 /*	TEMPLATE_FUNCTION_TABLE()
 

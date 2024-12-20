@@ -37,17 +37,17 @@ public:
 	int DrawDebugTextOverlays(void);
 
 	// Inputs
-	void InputFade( inputdata_t &inputdata );
-	void InputFadeReverse( inputdata_t &inputdata );
+	void InputFade( inputdata_t &&inputdata );
+	void InputFadeReverse( inputdata_t &&inputdata );
 };
 
 LINK_ENTITY_TO_CLASS( env_fade, CEnvFade );
 
 BEGIN_MAPENTITY( CEnvFade )
 
-	DEFINE_KEYFIELD( m_Duration, FIELD_FLOAT, "duration" ),
-	DEFINE_KEYFIELD( m_HoldTime, FIELD_FLOAT, "holdtime" ),
-	DEFINE_KEYFIELD( m_ReverseDuration, FIELD_FLOAT, "ReverseFadeDuration" ),
+	DEFINE_KEYFIELD_AUTO( m_Duration, "duration" ),
+	DEFINE_KEYFIELD_AUTO( m_HoldTime, "holdtime" ),
+	DEFINE_KEYFIELD_AUTO( m_ReverseDuration, "ReverseFadeDuration" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Fade", InputFade ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "FadeReverse", InputFadeReverse ),
@@ -75,7 +75,7 @@ void CEnvFade::Spawn( void )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that does the screen fade.
 //-----------------------------------------------------------------------------
-void CEnvFade::InputFade( inputdata_t &inputdata )
+void CEnvFade::InputFade( inputdata_t &&inputdata )
 {
 	int fadeFlags = 0;
 
@@ -123,7 +123,7 @@ void CEnvFade::InputFade( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input that does the exact opposite of the Fade input
 //-----------------------------------------------------------------------------
-void CEnvFade::InputFadeReverse(inputdata_t &inputdata)
+void CEnvFade::InputFadeReverse( inputdata_t &&inputdata )
 {
 	int fadeFlags = 0;
 

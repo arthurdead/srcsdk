@@ -21,7 +21,7 @@ public:
 #ifdef GAME_DLL
 	virtual void Activate();
 
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 #else
 	lightData_Global_t GetState();
 

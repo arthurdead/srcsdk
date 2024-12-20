@@ -107,7 +107,14 @@ class RecvProp
 {
 // This info comes from the receive data table.
 public:
-							RecvProp();
+	RecvProp();
+	~RecvProp();
+
+	RecvProp(RecvProp &&other);
+	RecvProp &operator=(RecvProp &&other);
+
+	RecvProp(const RecvProp &other) = delete;
+	RecvProp &operator=(const RecvProp &other) = delete;
 
 	void					InitArray( int nElements, int elementStride );
 
@@ -117,7 +124,7 @@ public:
 	int						GetElementStride() const;
 	void					SetElementStride( int stride );
 
-	int						GetFlags() const;
+	DTFlags_t						GetFlags() const;
 
 	const char*				GetName() const;
 	SendPropType			GetType() const;
@@ -158,11 +165,11 @@ public:
 
 	const char              *m_pVarName;
 	SendPropType			m_RecvType;
-	int						m_Flags;
+	DTFlags_t						m_Flags;
 	int						m_StringBufferSize;
 
 
-private:
+public:
 
 	bool					m_bInsideArray;		// Set to true by the engine if this property sits inside an array.
 
@@ -187,6 +194,21 @@ private:
 	const char				*m_pParentArrayPropName;
 };
 
+typedef void (*EnsureCapacityFn)( void *pVoid, int offsetToUtlVector, int len );
+typedef void (*ResizeUtlVectorFn)( void *pVoid, int offsetToUtlVector, int len );
+
+class CRecvPropExtra_UtlVector
+{
+public:
+	DataTableRecvVarProxyFn m_DataTableProxyFn;	// If it's a datatable, then this is the proxy they specified.
+	RecvVarProxyFn m_ProxyFn;				// If it's a non-datatable, then this is the proxy they specified.
+	ResizeUtlVectorFn m_ResizeFn;			// The function used to resize the CUtlVector.
+	EnsureCapacityFn m_EnsureCapacityFn;
+	int m_ElementStride;					// Distance between each element in the array.
+	int m_Offset;							// Offset of the CUtlVector from its parent structure.
+	int m_nMaxElements;						// For debugging...
+};
+
 
 class RecvTable
 {
@@ -194,9 +216,14 @@ public:
 
 	typedef RecvProp	PropType;
 
-				RecvTable();
-				RecvTable( RecvProp *pProps, int nProps, const char *pNetTableName );
-				~RecvTable();
+	RecvTable();
+	RecvTable( RecvProp *pProps, int nProps, const char *pNetTableName );
+	~RecvTable();
+
+	RecvTable(const RecvTable &) = delete;
+	RecvTable &operator=(const RecvTable &) = delete;
+	RecvTable(RecvTable &&) = delete;
+	RecvTable &operator=(RecvTable &&) = delete;
 
 	void		Construct( RecvProp *pProps, int nProps, const char *pNetTableName );
 
@@ -373,12 +400,11 @@ void DataTableRecvProxy_StaticDataTable(const RecvProp *pProp, void **pOut, void
 // PointerDataTable does *pOut = *((void**)pData)   (ie: pData is a pointer to the object to decode into).
 void DataTableRecvProxy_PointerDataTable(const RecvProp *pProp, void **pOut, void *pData, int objectID);
 
-	
 RecvProp RecvPropFloat(
 	const char *pVarName, 
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
-	int flags=0, 
+	DTFlags_t flags=SPROP_NONE, 
 	RecvVarProxyFn varProxy=RecvProxy_Float
 	);
 
@@ -386,7 +412,7 @@ RecvProp RecvPropVector(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
-	int flags=0, 
+	DTFlags_t flags=SPROP_NONE, 
 	RecvVarProxyFn varProxy=RecvProxy_Vector
 	);
 
@@ -394,7 +420,7 @@ RecvProp RecvPropVectorXY(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
-	int flags=0, 
+	DTFlags_t flags=SPROP_NONE, 
 	RecvVarProxyFn varProxy=RecvProxy_VectorXY
 	);
 
@@ -403,7 +429,7 @@ RecvProp RecvPropQAngles(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
-	int flags=0, 
+	DTFlags_t flags=SPROP_NONE, 
 	RecvVarProxyFn varProxy=RecvProxy_QAngles
 	);
 
@@ -411,7 +437,7 @@ RecvProp RecvPropQuaternion(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
-	int flags=0, 
+	DTFlags_t flags=SPROP_NONE, 
 	RecvVarProxyFn varProxy=RecvProxy_Quaternion
 	);
 
@@ -419,7 +445,7 @@ RecvProp RecvPropInt(
 	const char *pVarName, 
 	int offset, 
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
-	int flags=0, 
+	DTFlags_t flags=SPROP_NONE, 
 	RecvVarProxyFn varProxy=0
 	);
 
@@ -469,14 +495,14 @@ RecvProp RecvPropString(
 	const char *pVarName,
 	int offset,
 	int bufferSize,
-	int flags=0,
+	DTFlags_t flags=SPROP_NONE,
 	RecvVarProxyFn varProxy=RecvProxy_String
 	);
 
 RecvProp RecvPropDataTable(
 	const char *pVarName,
 	int offset,
-	int flags,
+	unsigned int flags,
 	RecvTable *pTable,
 	DataTableRecvVarProxyFn varProxy=DataTableRecvProxy_StaticDataTable
 	);
@@ -580,7 +606,7 @@ inline void RecvProp::SetElementStride( int stride )
 	m_ElementStride = stride;
 }
 
-inline int RecvProp::GetFlags() const
+inline DTFlags_t RecvProp::GetFlags() const
 {
 	return m_Flags;
 }
@@ -672,6 +698,12 @@ inline const void* RecvProp::GetExtraData() const
 
 inline void RecvProp::SetExtraData( const void *pData )
 {
+	if((m_Flags & SPROP_UTLVECTOR_EXTRADATA) != 0) {
+		if(m_pExtraData) {
+			delete reinterpret_cast<CRecvPropExtra_UtlVector *>(const_cast<void *>(m_pExtraData));
+		}
+	}
+
 	m_pExtraData = pData;
 }
 

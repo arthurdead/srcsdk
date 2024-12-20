@@ -33,16 +33,16 @@ LINK_ENTITY_TO_CLASS( point_posecontroller, CPoseController );
 BEGIN_MAPENTITY( CPoseController )
 
 	// Keys
-	DEFINE_KEYFIELD( m_iszPropName, FIELD_STRING, "PropName" ),
-	DEFINE_KEYFIELD( m_iszPoseParameterName, FIELD_STRING, "PoseParameterName" ),
-	DEFINE_KEYFIELD( m_fPoseValue, FIELD_FLOAT, "PoseValue" ),
-	DEFINE_KEYFIELD( m_fInterpolationTime, FIELD_FLOAT, "InterpolationTime" ),
-	DEFINE_KEYFIELD( m_bInterpolationWrap, FIELD_BOOLEAN, "InterpolationWrap" ),
-	DEFINE_KEYFIELD( m_fCycleFrequency, FIELD_FLOAT, "CycleFrequency" ),
-	DEFINE_KEYFIELD( m_nFModType, FIELD_INTEGER, "FModType" ),
-	DEFINE_KEYFIELD( m_fFModTimeOffset, FIELD_FLOAT, "FModTimeOffset" ),
-	DEFINE_KEYFIELD( m_fFModRate, FIELD_FLOAT, "FModRate" ),
-	DEFINE_KEYFIELD( m_fFModAmplitude, FIELD_FLOAT, "FModAmplitude" ),
+	DEFINE_KEYFIELD_AUTO( m_iszPropName, "PropName" ),
+	DEFINE_KEYFIELD_AUTO( m_iszPoseParameterName, "PoseParameterName" ),
+	DEFINE_KEYFIELD_AUTO( m_fPoseValue, "PoseValue" ),
+	DEFINE_KEYFIELD_AUTO( m_fInterpolationTime, "InterpolationTime" ),
+	DEFINE_KEYFIELD_AUTO( m_bInterpolationWrap, "InterpolationWrap" ),
+	DEFINE_KEYFIELD_AUTO( m_fCycleFrequency, "CycleFrequency" ),
+	DEFINE_KEYFIELD_AUTO( m_nFModType, "FModType" ),
+	DEFINE_KEYFIELD_AUTO( m_fFModTimeOffset, "FModTimeOffset" ),
+	DEFINE_KEYFIELD_AUTO( m_fFModRate, "FModRate" ),
+	DEFINE_KEYFIELD_AUTO( m_fFModAmplitude, "FModAmplitude" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING,	"SetPoseParameterName", InputSetPoseParameterName ),
@@ -271,52 +271,52 @@ void CPoseController::RandomizeFMod( float fExtremeness )
 	SetFModAmplitude( RandomFloat( 0.0f, fExtremeness * MAX_POSE_FMOD_AMPLITUDE ) );
 }
 
-void CPoseController::InputSetPoseParameterName( inputdata_t &inputdata )
+void CPoseController::InputSetPoseParameterName( inputdata_t &&inputdata )
 {
 	SetPoseParameterName( inputdata.value.String() );
 }
 
-void CPoseController::InputSetPoseValue( inputdata_t &inputdata )
+void CPoseController::InputSetPoseValue( inputdata_t &&inputdata )
 {
 	SetPoseValue( inputdata.value.Float() );
 }
 
-void CPoseController::InputSetInterpolationTime( inputdata_t &inputdata )
+void CPoseController::InputSetInterpolationTime( inputdata_t &&inputdata )
 {
 	SetInterpolationTime( inputdata.value.Float() );
 }
 
-void CPoseController::InputSetCycleFrequency( inputdata_t &inputdata )
+void CPoseController::InputSetCycleFrequency( inputdata_t &&inputdata )
 {
 	SetCycleFrequency( inputdata.value.Float() );
 }
 
-void CPoseController::InputSetFModType( inputdata_t &inputdata )
+void CPoseController::InputSetFModType( inputdata_t &&inputdata )
 {
 	SetFModType( inputdata.value.Int() );
 }
 
-void CPoseController::InputSetFModTimeOffset( inputdata_t &inputdata )
+void CPoseController::InputSetFModTimeOffset( inputdata_t &&inputdata )
 {
 	SetFModTimeOffset( inputdata.value.Float() );
 }
 
-void CPoseController::InputSetFModRate( inputdata_t &inputdata )
+void CPoseController::InputSetFModRate( inputdata_t &&inputdata )
 {
 	SetFModRate( inputdata.value.Float() );
 }
 
-void CPoseController::InputSetFModAmplitude( inputdata_t &inputdata )
+void CPoseController::InputSetFModAmplitude( inputdata_t &&inputdata )
 {
 	SetFModAmplitude( inputdata.value.Float() );
 }
 
-void CPoseController::InputRandomizeFMod( inputdata_t &inputdata )
+void CPoseController::InputRandomizeFMod( inputdata_t &&inputdata )
 {
 	RandomizeFMod( inputdata.value.Float() );
 }
 
-void CPoseController::InputGetFMod( inputdata_t &inputdata )
+void CPoseController::InputGetFMod( inputdata_t &&inputdata )
 {
 	DevMsg( "FMod values for pose controller %s\nTYPE: %i\nTIME OFFSET: %f\nRATE: %f\nAMPLITUDE: %f\n", 
 			STRING( GetEntityName() ), 
@@ -326,7 +326,7 @@ void CPoseController::InputGetFMod( inputdata_t &inputdata )
 			m_fFModAmplitude.Get() );
 }
 
-void CPoseController::InputSetTarget( inputdata_t &inputdata )
+void CPoseController::InputSetTarget( inputdata_t &&inputdata )
 {
 	SetPropName( inputdata.value.String() );
 }

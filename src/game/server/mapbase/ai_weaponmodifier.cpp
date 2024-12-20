@@ -54,20 +54,20 @@ public:
 	void DisableOnNPC(CAI_BaseNPC *pNPC);
 
 	// Inputs
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
-	void InputEnableOnNPC( inputdata_t &inputdata );
-	void InputDisableOnNPC( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputEnableOnNPC( inputdata_t &&inputdata );
+	void InputDisableOnNPC( inputdata_t &&inputdata );
 
-	void InputSetBurstInterval( inputdata_t &inputdata ) { WeaponModifierSetRange(inputdata.value.String(), m_ModdedRegulator.SetBurstInterval); }
-	void InputSetRestInterval( inputdata_t &inputdata ) { WeaponModifierSetRange(inputdata.value.String(), m_ModdedRegulator.SetRestInterval); }
-	void InputSetBurstShotCountRange( inputdata_t &inputdata ) { WeaponModifierSetRange(inputdata.value.String(), m_ModdedRegulator.SetBurstShotCountRange); }
-	void InputSetBurstShotsRemaining( inputdata_t &inputdata ) { m_ModdedRegulator.SetBurstShotsRemaining(inputdata.value.Int()); }
+	void InputSetBurstInterval( inputdata_t &&inputdata ) { WeaponModifierSetRange(inputdata.value.String(), m_ModdedRegulator.SetBurstInterval); }
+	void InputSetRestInterval( inputdata_t &&inputdata ) { WeaponModifierSetRange(inputdata.value.String(), m_ModdedRegulator.SetRestInterval); }
+	void InputSetBurstShotCountRange( inputdata_t &&inputdata ) { WeaponModifierSetRange(inputdata.value.String(), m_ModdedRegulator.SetBurstShotCountRange); }
+	void InputSetBurstShotsRemaining( inputdata_t &&inputdata ) { m_ModdedRegulator.SetBurstShotsRemaining(inputdata.value.Int()); }
 
-	void InputEnableShooting( inputdata_t &inputdata ) { m_ModdedRegulator.EnableShooting(); }
-	void InputDisableShooting( inputdata_t &inputdata ) { m_ModdedRegulator.DisableShooting(); }
-	void InputFireNoEarlierThan( inputdata_t &inputdata ) { m_ModdedRegulator.FireNoEarlierThan(gpGlobals->curtime + inputdata.value.Float()); }
-	void InputReset( inputdata_t &inputdata ) { m_ModdedRegulator.Reset(inputdata.value.Bool()); }
+	void InputEnableShooting( inputdata_t &&inputdata ) { m_ModdedRegulator.EnableShooting(); }
+	void InputDisableShooting( inputdata_t &&inputdata ) { m_ModdedRegulator.DisableShooting(); }
+	void InputFireNoEarlierThan( inputdata_t &&inputdata ) { m_ModdedRegulator.FireNoEarlierThan(gpGlobals->curtime + inputdata.value.Float()); }
+	void InputReset( inputdata_t &&inputdata ) { m_ModdedRegulator.Reset(inputdata.value.Bool()); }
 
 	// The NPCs and their original regulators.
 	AIHANDLE m_hNPCs[WEAPONMODIFIER_MAX_NPCS];
@@ -87,7 +87,7 @@ BEGIN_DATADESC( CAI_WeaponModifier )
 	DEFINE_ARRAY( m_hNPCs, FIELD_EHANDLE, WEAPONMODIFIER_MAX_NPCS ),
 	DEFINE_EMBEDDED_ARRAY( m_StoredRegulators, WEAPONMODIFIER_MAX_NPCS ),
 
-	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -204,7 +204,7 @@ void CAI_WeaponModifier::DisableOnNPC( CAI_BaseNPC *pNPC )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CAI_WeaponModifier::InputEnable( inputdata_t &inputdata )
+void CAI_WeaponModifier::InputEnable( inputdata_t &&inputdata )
 {
 	CBaseEntity *pEntity = gEntList.FindEntityByName(NULL, STRING(m_target), this, inputdata.pActivator, inputdata.pCaller);
 	while (pEntity)
@@ -218,7 +218,7 @@ void CAI_WeaponModifier::InputEnable( inputdata_t &inputdata )
 	}
 }
 
-void CAI_WeaponModifier::InputDisable( inputdata_t &inputdata )
+void CAI_WeaponModifier::InputDisable( inputdata_t &&inputdata )
 {
 	for (int i = 0; i < WEAPONMODIFIER_MAX_NPCS; i++)
 	{
@@ -233,7 +233,7 @@ void CAI_WeaponModifier::InputDisable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CAI_WeaponModifier::InputEnableOnNPC( inputdata_t &inputdata )
+void CAI_WeaponModifier::InputEnableOnNPC( inputdata_t &&inputdata )
 {
 	if (inputdata.value.Entity() && inputdata.value.Entity()->IsNPC())
 	{
@@ -241,7 +241,7 @@ void CAI_WeaponModifier::InputEnableOnNPC( inputdata_t &inputdata )
 	}
 }
 
-void CAI_WeaponModifier::InputDisableOnNPC( inputdata_t &inputdata )
+void CAI_WeaponModifier::InputDisableOnNPC( inputdata_t &&inputdata )
 {
 	if (inputdata.value.Entity() && inputdata.value.Entity()->IsNPC())
 	{

@@ -32,13 +32,13 @@ LINK_ENTITY_TO_CLASS( func_water_analog, CFuncMoveLinear );
 
 BEGIN_MAPENTITY( CFuncMoveLinear )
 
-	DEFINE_KEYFIELD( m_vecMoveDir,		 FIELD_VECTOR, "movedir" ),
-	DEFINE_KEYFIELD( m_soundStart,		 FIELD_SOUNDNAME, "StartSound" ),
-	DEFINE_KEYFIELD( m_soundStop,		 FIELD_SOUNDNAME, "StopSound" ),
+	DEFINE_KEYFIELD_AUTO( m_vecMoveDir, "movedir" ),
+	DEFINE_KEYFIELD_AUTO( m_soundStart, "StartSound" ),
+	DEFINE_KEYFIELD_AUTO( m_soundStop, "StopSound" ),
 
-	DEFINE_KEYFIELD( m_flBlockDamage,	 FIELD_FLOAT,	"BlockDamage"),
-	DEFINE_KEYFIELD( m_flStartPosition, FIELD_FLOAT,	"StartPosition"),
-	DEFINE_KEYFIELD( m_flMoveDistance,  FIELD_FLOAT,	"MoveDistance"),
+	DEFINE_KEYFIELD_AUTO( m_flBlockDamage, "BlockDamage" ),
+	DEFINE_KEYFIELD_AUTO( m_flStartPosition, "StartPosition" ),
+	DEFINE_KEYFIELD_AUTO( m_flMoveDistance, "MoveDistance" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID,  "Open", InputOpen ),
@@ -327,7 +327,7 @@ void CFuncMoveLinear::SetPosition( float flPosition )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CFuncMoveLinear::InputOpen( inputdata_t &inputdata )
+void CFuncMoveLinear::InputOpen( inputdata_t &&inputdata )
 {
 	if (GetLocalOrigin() != m_vecPosition2)
 	{
@@ -339,7 +339,7 @@ void CFuncMoveLinear::InputOpen( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CFuncMoveLinear::InputClose( inputdata_t &inputdata )
+void CFuncMoveLinear::InputClose( inputdata_t &&inputdata )
 {
 	if (GetLocalOrigin() != m_vecPosition1)
 	{
@@ -352,7 +352,7 @@ void CFuncMoveLinear::InputClose( inputdata_t &inputdata )
 // Purpose: Input handler for setting the position from [0..1].
 // Input  : Float position.
 //-----------------------------------------------------------------------------
-void CFuncMoveLinear::InputSetPosition( inputdata_t &inputdata )
+void CFuncMoveLinear::InputSetPosition( inputdata_t &&inputdata )
 {
 	SetPosition( inputdata.value.Float() );
 }
@@ -381,7 +381,7 @@ void CFuncMoveLinear::Blocked( CBaseEntity *pOther )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CFuncMoveLinear::InputSetSpeed( inputdata_t &inputdata )
+void CFuncMoveLinear::InputSetSpeed( inputdata_t &&inputdata )
 {
 	// Set the new speed
 	m_flSpeed = inputdata.value.Float();

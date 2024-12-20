@@ -48,7 +48,7 @@ BEGIN_MAPENTITY( CFogController )
 	DEFINE_INPUTFUNC( FIELD_FLOAT,		"SetMaxDensityLerpTo",	InputSetMaxDensityLerpTo ),
 	DEFINE_INPUTFUNC( FIELD_VOID,		"StartFogTransition", InputStartFogTransition ),
 
-	DEFINE_KEYFIELD( m_bUseAngles,			FIELD_BOOLEAN,	"use_angles" ),
+	DEFINE_KEYFIELD_AUTO( m_bUseAngles, "use_angles" ),
 	DEFINE_KEYFIELD( m_fog.colorPrimary,	FIELD_COLOR32,	"fogcolor" ),
 	DEFINE_KEYFIELD( m_fog.colorSecondary,	FIELD_COLOR32,	"fogcolor2" ),
 	DEFINE_KEYFIELD( m_fog.dirPrimary,		FIELD_VECTOR,	"fogdir" ),
@@ -123,7 +123,7 @@ void CFogController::Activate( )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CFogController::UpdateTransmitState()
+EdictStateFlags_t CFogController::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
@@ -131,7 +131,7 @@ int CFogController::UpdateTransmitState()
 //------------------------------------------------------------------------------
 // Purpose: Input handler for setting the fog start distance.
 //------------------------------------------------------------------------------
-void CFogController::InputSetStartDist(inputdata_t &inputdata)
+void CFogController::InputSetStartDist( inputdata_t &&inputdata )
 {
 	// Get the world entity.
 	m_fog.start = inputdata.value.Float();
@@ -140,7 +140,7 @@ void CFogController::InputSetStartDist(inputdata_t &inputdata)
 //------------------------------------------------------------------------------
 // Purpose: Input handler for setting the fog end distance.
 //------------------------------------------------------------------------------
-void CFogController::InputSetEndDist(inputdata_t &inputdata)
+void CFogController::InputSetEndDist( inputdata_t &&inputdata )
 {
 	// Get the world entity.
 	m_fog.end = inputdata.value.Float();
@@ -150,7 +150,7 @@ void CFogController::InputSetEndDist(inputdata_t &inputdata)
 // Input handler for setting the maximum density of the fog. This lets us bring
 // the start distance in without the scene fogging too much.
 //------------------------------------------------------------------------------
-void CFogController::InputSetMaxDensity( inputdata_t &inputdata )
+void CFogController::InputSetMaxDensity( inputdata_t &&inputdata )
 {
 	m_fog.maxdensity = inputdata.value.Float();
 }
@@ -158,7 +158,7 @@ void CFogController::InputSetMaxDensity( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Input handler for turning on the fog.
 //------------------------------------------------------------------------------
-void CFogController::InputTurnOn(inputdata_t &inputdata)
+void CFogController::InputTurnOn( inputdata_t &&inputdata )
 {
 	// Get the world entity.
 	m_fog.enable = true;
@@ -167,7 +167,7 @@ void CFogController::InputTurnOn(inputdata_t &inputdata)
 //------------------------------------------------------------------------------
 // Purpose: Input handler for turning off the fog.
 //------------------------------------------------------------------------------
-void CFogController::InputTurnOff(inputdata_t &inputdata)
+void CFogController::InputTurnOff( inputdata_t &&inputdata )
 {
 	// Get the world entity.
 	m_fog.enable = false;
@@ -176,7 +176,7 @@ void CFogController::InputTurnOff(inputdata_t &inputdata)
 //------------------------------------------------------------------------------
 // Purpose: Input handler for setting the primary fog color.
 //------------------------------------------------------------------------------
-void CFogController::InputSetColor(inputdata_t &inputdata)
+void CFogController::InputSetColor( inputdata_t &&inputdata )
 {
 	// Get the world entity.
 	m_fog.colorPrimary = inputdata.value.Color32();
@@ -186,13 +186,13 @@ void CFogController::InputSetColor(inputdata_t &inputdata)
 //------------------------------------------------------------------------------
 // Purpose: Input handler for setting the secondary fog color.
 //------------------------------------------------------------------------------
-void CFogController::InputSetColorSecondary(inputdata_t &inputdata)
+void CFogController::InputSetColorSecondary( inputdata_t &&inputdata )
 {
 	// Get the world entity.
 	m_fog.colorSecondary = inputdata.value.Color32();
 }
 
-void CFogController::InputSetFarZ(inputdata_t &inputdata)
+void CFogController::InputSetFarZ( inputdata_t &&inputdata )
 {
 	m_fog.farz = inputdata.value.Int();
 }
@@ -201,7 +201,7 @@ void CFogController::InputSetFarZ(inputdata_t &inputdata)
 //------------------------------------------------------------------------------
 // Purpose: Sets the angles to use for the secondary fog direction.
 //------------------------------------------------------------------------------
-void CFogController::InputSetAngles( inputdata_t &inputdata )
+void CFogController::InputSetAngles( inputdata_t &&inputdata )
 {
 	const char *pAngles = inputdata.value.String();
 
@@ -280,37 +280,37 @@ int CFogController::DrawDebugTextOverlays(void)
 #define FOG_CONTROLLER_END_LERP					(1 << 3)
 #define FOG_CONTROLLER_MAXDENSITY_LERP			(1 << 4)
 
-void CFogController::InputSetColorLerpTo(inputdata_t &data)
+void CFogController::InputSetColorLerpTo( inputdata_t &&inputdata )
 {
 	m_iChangedVariables |= FOG_CONTROLLER_COLORPRIMARY_LERP;
 	m_fog.colorPrimaryLerpTo = data.value.Color32();
 }
 
-void CFogController::InputSetColorSecondaryLerpTo(inputdata_t &data)
+void CFogController::InputSetColorSecondaryLerpTo( inputdata_t &&inputdata )
 {
 	m_iChangedVariables |= FOG_CONTROLLER_COLORSECONDARY_LERP;
 	m_fog.colorSecondaryLerpTo = data.value.Color32();
 }
 
-void CFogController::InputSetStartDistLerpTo(inputdata_t &data)
+void CFogController::InputSetStartDistLerpTo( inputdata_t &&inputdata )
 {
 	m_iChangedVariables |= FOG_CONTROLLER_START_LERP;
 	m_fog.startLerpTo = data.value.Float();
 }
 
-void CFogController::InputSetEndDistLerpTo(inputdata_t &data)
+void CFogController::InputSetEndDistLerpTo( inputdata_t &&inputdata )
 {
 	m_iChangedVariables |= FOG_CONTROLLER_END_LERP;
 	m_fog.endLerpTo = data.value.Float();
 }
 
-void CFogController::InputSetMaxDensityLerpTo(inputdata_t &data)
+void CFogController::InputSetMaxDensityLerpTo( inputdata_t &&inputdata )
 {
 	m_iChangedVariables |= FOG_CONTROLLER_MAXDENSITY_LERP;
 	m_fog.maxdensityLerpTo = data.value.Float();
 }
 
-void CFogController::InputStartFogTransition(inputdata_t &data)
+void CFogController::InputStartFogTransition( inputdata_t &&inputdata )
 {
 	SetThink( &CFogController::SetLerpValues );
 

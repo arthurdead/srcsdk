@@ -69,7 +69,7 @@ public:
 		return STRING(m_iszChapterTitle.Get());
 	}
 
-	void InputSetChapterTitle( inputdata_t &inputdata );
+	void InputSetChapterTitle( inputdata_t &&inputdata );
 
 private:
 	DECLARE_MAPENTITY();

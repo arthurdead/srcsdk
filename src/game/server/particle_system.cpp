@@ -17,11 +17,11 @@ extern void SendProxy_Angles( const SendProp *pProp, const void *pStruct, const 
 
 // Stripped down CBaseEntity send table
 IMPLEMENT_SERVERCLASS_ST_NOBASE(CParticleSystem, DT_ParticleSystem)
-	SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_COORD|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin ),
+	SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_COORD|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 	SendPropEHandle (SENDINFO(m_hOwnerEntity)),
 	SendPropEHandle (SENDINFO_NAME(m_hMoveParent, moveparent)),
 	SendPropInt		(SENDINFO(m_iParentAttachment), NUM_PARENTATTACHMENT_BITS, SPROP_UNSIGNED),
-	SendPropQAngles	(SENDINFO(m_angRotation), 13, SPROP_CHANGES_OFTEN, SendProxy_Angles ),
+	SendPropQAngles	(SENDINFO(m_angRotation), 13, SPROP_CHANGES_OFTEN, SendProxy_Angles, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 
 	SendPropInt( SENDINFO(m_iEffectIndex), MAX_PARTICLESYSTEMS_STRING_BITS, SPROP_UNSIGNED ),
 	SendPropBool( SENDINFO(m_bActive) ),
@@ -38,10 +38,10 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE(CParticleSystem, DT_ParticleSystem)
 END_SEND_TABLE()
 
 BEGIN_MAPENTITY( CParticleSystem )
-	DEFINE_KEYFIELD( m_bStartActive,	FIELD_BOOLEAN, "start_active" ),
-	DEFINE_KEYFIELD( m_bWeatherEffect,	FIELD_BOOLEAN, "flag_as_weather" ),
+	DEFINE_KEYFIELD_AUTO( m_bStartActive, "start_active" ),
+	DEFINE_KEYFIELD_AUTO( m_bWeatherEffect, "flag_as_weather" ),
 
-	DEFINE_KEYFIELD( m_iszEffectName,	FIELD_STRING, "effect_name" ),
+	DEFINE_KEYFIELD_AUTO( m_iszEffectName, "effect_name" ),
 
 	DEFINE_KEYFIELD( m_iszControlPointNames[0], FIELD_STRING, "cpoint1" ),
 	DEFINE_KEYFIELD( m_iszControlPointNames[1], FIELD_STRING, "cpoint2" ),
@@ -207,7 +207,7 @@ void CParticleSystem::StartParticleSystemThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: Always transmitted to clients
 //-----------------------------------------------------------------------------
-int CParticleSystem::UpdateTransmitState()
+EdictStateFlags_t CParticleSystem::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
@@ -240,7 +240,7 @@ void CParticleSystem::StopParticleSystem( int nStopType )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CParticleSystem::InputStart( inputdata_t &inputdata )
+void CParticleSystem::InputStart( inputdata_t &&inputdata )
 {
 	StartParticleSystem();
 }
@@ -248,7 +248,7 @@ void CParticleSystem::InputStart( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CParticleSystem::InputStop( inputdata_t &inputdata )
+void CParticleSystem::InputStop( inputdata_t &&inputdata )
 {
 	StopParticleSystem( STOP_NORMAL );
 }
@@ -256,13 +256,13 @@ void CParticleSystem::InputStop( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CParticleSystem::InputDestroyImmediately( inputdata_t &inputdata )
+void CParticleSystem::InputDestroyImmediately( inputdata_t &&inputdata )
 {
 	m_bDestroyImmediately = true;
 	StopParticleSystem( STOP_DESTROY_IMMEDIATELY );
 }
 
-void CParticleSystem::InputStopEndCap( inputdata_t &inputdata )
+void CParticleSystem::InputStopEndCap( inputdata_t &&inputdata )
 {
 	StopParticleSystem( STOP_PLAY_ENDCAP );
 }

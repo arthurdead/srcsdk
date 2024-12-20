@@ -121,7 +121,7 @@ public:
 
 	float	GetHeatLevel()	{ return m_flHeatLevel; }
 
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 
 	void DrawDebugGeometryOverlays(void) 
 	{
@@ -156,11 +156,11 @@ public:
 	void Disable();
 
 	//Inputs
-	void	InputStartFire( inputdata_t &inputdata );
-	void	InputExtinguish( inputdata_t &inputdata );
-	void	InputExtinguishTemporary( inputdata_t &inputdata );
-	void	InputEnable( inputdata_t &inputdata );
-	void	InputDisable( inputdata_t &inputdata );
+	void	InputStartFire( inputdata_t &&inputdata );
+	void	InputExtinguish( inputdata_t &&inputdata );
+	void	InputExtinguishTemporary( inputdata_t &&inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
 
 protected:
 	
@@ -531,15 +531,15 @@ bool FireSystem_GetFireDamageDimensions( CBaseEntity *pEntity, Vector *pFireMins
 //==================================================
 BEGIN_MAPENTITY( CFire )
 
-	DEFINE_KEYFIELD( m_nFireType,	FIELD_INTEGER, "firetype" ),
+	DEFINE_KEYFIELD_AUTO( m_nFireType, "firetype" ),
 
-	DEFINE_KEYFIELD( m_flFireSize,	FIELD_FLOAT, "firesize" ),
+	DEFINE_KEYFIELD_AUTO( m_flFireSize, "firesize" ),
 
-	DEFINE_KEYFIELD( m_flHeatLevel,	FIELD_FLOAT,	"ignitionpoint" ),
- 	DEFINE_KEYFIELD( m_flDamageScale,FIELD_FLOAT,	"damagescale" ),
+	DEFINE_KEYFIELD_AUTO( m_flHeatLevel, "ignitionpoint" ),
+ 	DEFINE_KEYFIELD_AUTO( m_flDamageScale, "damagescale" ),
 
-	DEFINE_KEYFIELD( m_flAttackTime, FIELD_FLOAT, "fireattack" ),
-	DEFINE_KEYFIELD( m_bStartDisabled, FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_flAttackTime, "fireattack" ),
+	DEFINE_KEYFIELD_AUTO( m_bStartDisabled, "StartDisabled" ),
 
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartFire", InputStartFire ),
@@ -627,7 +627,7 @@ void CFire::Precache( void )
 //------------------------------------------------------------------------------
 // Purpose : Input handler for starting the fire.
 //------------------------------------------------------------------------------
-void CFire::InputStartFire( inputdata_t &inputdata )
+void CFire::InputStartFire( inputdata_t &&inputdata )
 {
 	if ( !m_bEnabled )
 		return;
@@ -635,12 +635,12 @@ void CFire::InputStartFire( inputdata_t &inputdata )
 	StartFire();
 }
 
-void CFire::InputEnable( inputdata_t &inputdata )
+void CFire::InputEnable( inputdata_t &&inputdata )
 {
 	m_bEnabled = true;
 }
 
-void CFire::InputDisable( inputdata_t &inputdata )
+void CFire::InputDisable( inputdata_t &&inputdata )
 {
 	Disable();
 }
@@ -658,7 +658,7 @@ void CFire::Disable()
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CFire::InputExtinguish( inputdata_t &inputdata )
+void CFire::InputExtinguish( inputdata_t &&inputdata )
 {
 	m_spawnflags &= ~SF_FIRE_INFINITE;
 	GoOutInSeconds( inputdata.value.Float() );
@@ -668,7 +668,7 @@ void CFire::InputExtinguish( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CFire::InputExtinguishTemporary( inputdata_t &inputdata )
+void CFire::InputExtinguishTemporary( inputdata_t &&inputdata )
 {
 	GoOutInSeconds( inputdata.value.Float() );
 }
@@ -731,7 +731,7 @@ void CFire::Spawn( void )
 	}
 }
 
-int CFire::UpdateTransmitState()
+EdictStateFlags_t CFire::UpdateTransmitState()
 {
 	// Don't want to be FL_EDICT_DONTSEND because our fire entity may make us transmit.
 	return SetTransmitState( FL_EDICT_ALWAYS );
@@ -1211,8 +1211,8 @@ public:
 	void Think();
 	void TurnOn();
 	void TurnOff();
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -1224,8 +1224,8 @@ private:
 
 BEGIN_MAPENTITY( CEnvFireSource )
 
-	DEFINE_KEYFIELD( m_radius,	FIELD_FLOAT, "fireradius" ),
-	DEFINE_KEYFIELD( m_damage,FIELD_FLOAT, "firedamage" ),
+	DEFINE_KEYFIELD_AUTO( m_radius, "fireradius" ),
+	DEFINE_KEYFIELD_AUTO( m_damage, "firedamage" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -1279,11 +1279,11 @@ void CEnvFireSource::TurnOff()
 	m_bEnabled = false;
 	SetNextThink( TICK_NEVER_THINK );
 }
-void CEnvFireSource::InputEnable( inputdata_t &inputdata )
+void CEnvFireSource::InputEnable( inputdata_t &&inputdata )
 {
 	TurnOn();
 }
-void CEnvFireSource::InputDisable( inputdata_t &inputdata )
+void CEnvFireSource::InputDisable( inputdata_t &&inputdata )
 {
 	TurnOff();
 }
@@ -1302,8 +1302,8 @@ public:
 	void Think();
 	void TurnOn();
 	void TurnOff();
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
 	int DrawDebugTextOverlays(void);
 
@@ -1326,9 +1326,9 @@ private:
 
 BEGIN_MAPENTITY( CEnvFireSensor )
 
-	DEFINE_KEYFIELD( m_radius,	FIELD_FLOAT, "fireradius" ),
-	DEFINE_KEYFIELD( m_targetLevel, FIELD_FLOAT, "heatlevel" ),
-	DEFINE_KEYFIELD( m_targetTime, FIELD_FLOAT, "heattime" ),
+	DEFINE_KEYFIELD_AUTO( m_radius, "fireradius" ),
+	DEFINE_KEYFIELD_AUTO( m_targetLevel, "heatlevel" ),
+	DEFINE_KEYFIELD_AUTO( m_targetTime, "heattime" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -1440,11 +1440,11 @@ void CEnvFireSensor::TurnOff()
 	}
 
 }
-void CEnvFireSensor::InputEnable( inputdata_t &inputdata )
+void CEnvFireSensor::InputEnable( inputdata_t &&inputdata )
 {
 	TurnOn();
 }
-void CEnvFireSensor::InputDisable( inputdata_t &inputdata )
+void CEnvFireSensor::InputDisable( inputdata_t &&inputdata )
 {
 	TurnOff();
 }

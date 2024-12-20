@@ -25,7 +25,7 @@ public:
 #ifdef GAME_DLL
 	virtual void Activate();
 
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 #else
 	virtual void PostDataUpdate( DataUpdateType_t t );
 

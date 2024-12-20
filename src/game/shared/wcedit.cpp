@@ -217,7 +217,7 @@ public:
 
 	enum { MAX_IGNORELIST_NAMES = 16 }; ///< the number of names in the array below
 
-	inline const string_t &GetName( int x ) const { return m_nIgnoredEntityNames[x]; } 
+	inline string_t GetName( int x ) const { return m_nIgnoredEntityNames[x]; } 
 
 protected:
 	// the list of names to ignore
@@ -232,22 +232,22 @@ LINK_ENTITY_TO_CLASS_ALIASED( hammer_updateignorelist, WCUpdateIgnoreList );
 
 BEGIN_MAPENTITY_ALIASED( WCUpdateIgnoreList )
 
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[0], FIELD_STRING, "IgnoredName01" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[1], FIELD_STRING, "IgnoredName02" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[2], FIELD_STRING, "IgnoredName03" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[3], FIELD_STRING, "IgnoredName04" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[4], FIELD_STRING, "IgnoredName05" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[5], FIELD_STRING, "IgnoredName06" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[6], FIELD_STRING, "IgnoredName07" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[7], FIELD_STRING, "IgnoredName08" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[8], FIELD_STRING, "IgnoredName09" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[9], FIELD_STRING, "IgnoredName10" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[10], FIELD_STRING, "IgnoredName11" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[11], FIELD_STRING, "IgnoredName12" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[12], FIELD_STRING, "IgnoredName13" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[13], FIELD_STRING, "IgnoredName14" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[14], FIELD_STRING, "IgnoredName15" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[15], FIELD_STRING, "IgnoredName16" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[0], FIELD_POOLED_STRING, "IgnoredName01" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[1], FIELD_POOLED_STRING, "IgnoredName02" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[2], FIELD_POOLED_STRING, "IgnoredName03" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[3], FIELD_POOLED_STRING, "IgnoredName04" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[4], FIELD_POOLED_STRING, "IgnoredName05" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[5], FIELD_POOLED_STRING, "IgnoredName06" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[6], FIELD_POOLED_STRING, "IgnoredName07" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[7], FIELD_POOLED_STRING, "IgnoredName08" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[8], FIELD_POOLED_STRING, "IgnoredName09" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[9], FIELD_POOLED_STRING, "IgnoredName10" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[10], FIELD_POOLED_STRING, "IgnoredName11" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[11], FIELD_POOLED_STRING, "IgnoredName12" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[12], FIELD_POOLED_STRING, "IgnoredName13" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[13], FIELD_POOLED_STRING, "IgnoredName14" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[14], FIELD_POOLED_STRING, "IgnoredName15" ),
+	DEFINE_KEYFIELD( m_nIgnoredEntityNames[15], FIELD_POOLED_STRING, "IgnoredName16" ),
 
 END_MAPENTITY()
 
@@ -301,7 +301,7 @@ CON_COMMAND_SHARED( hammer_update_safe_entities, "Updates entities in the map th
 	// CUtlSymbolTable)
 
 	CUtlSymbolTable ignoredNames(16,32,true); // grow 16 strings at a time. Case insensitive.
-	while ( (pEnt = g_pEntityList->FindEntityByClassname( pEnt, "hammer_updateignorelist" )) != NULL )
+	while ( (pEnt = g_pEntityList->FindEntityByClassname( pEnt, "hammer_updateignorelist*" )) != NULL )
 	{
 		// for each name in each of those strings, add it to the symbol table.
 		CSharedWCUpdateIgnoreList *piglist = static_cast<CSharedWCUpdateIgnoreList *>(pEnt);

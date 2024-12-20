@@ -35,7 +35,7 @@ private:
 
 BEGIN_MAPENTITY( CRuleEntity )
 
-	DEFINE_KEYFIELD( m_iszMaster, FIELD_STRING, "master" ),
+	DEFINE_KEYFIELD_AUTO( m_iszMaster, "master" ),
 
 END_MAPENTITY()
 
@@ -126,7 +126,7 @@ public:
 
 	inline	void	SetPoints( int points ) { m_Score = points; }
 
-	void InputApplyScore( inputdata_t &inputdata );
+	void InputApplyScore( inputdata_t &&inputdata );
 
 private:
 };
@@ -158,7 +158,7 @@ bool CGameScore::KeyValue( const char *szKeyName, const char *szValue )
 	return true;
 }
 
-void CGameScore::InputApplyScore( inputdata_t &inputdata )
+void CGameScore::InputApplyScore( inputdata_t &&inputdata )
 {
 	CBaseEntity *pActivator = inputdata.pActivator;
 
@@ -211,7 +211,7 @@ class CGameEnd : public CRulePointEntity
 public:
 	DECLARE_MAPENTITY();
 
-	void	InputGameEnd( inputdata_t &inputdata );
+	void	InputGameEnd( inputdata_t &&inputdata );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 private:
 };
@@ -226,7 +226,7 @@ END_MAPENTITY()
 LINK_ENTITY_TO_CLASS( game_end, CGameEnd );
 
 
-void CGameEnd::InputGameEnd( inputdata_t &inputdata )
+void CGameEnd::InputGameEnd( inputdata_t &&inputdata )
 {
 	GameRules()->EndMultiplayerGame();
 }
@@ -260,16 +260,16 @@ public:
 	inline	void	MessageSet( const char *pMessage ) { m_iszMessage = AllocPooledString(pMessage); }
 	inline	const char *MessageGet( void )	{ return STRING( m_iszMessage ); }
 
-	void InputDisplay( inputdata_t &inputdata );
+	void InputDisplay( inputdata_t &&inputdata );
 	void Display( CBaseEntity *pActivator );
-	void InputSetText ( inputdata_t &inputdata );
+	void InputSetText ( inputdata_t &&inputdata );
 	void SetText( const char* pszStr );
-	void InputSetPosX( inputdata_t &inputdata );
-	void InputSetPosY( inputdata_t &inputdata );
-	void InputSetTextColor( inputdata_t &inputdata );
-	void InputSetTextColor2( inputdata_t &inputdata );
+	void InputSetPosX( inputdata_t &&inputdata );
+	void InputSetPosY( inputdata_t &&inputdata );
+	void InputSetTextColor( inputdata_t &&inputdata );
+	void InputSetTextColor2( inputdata_t &&inputdata );
 
-	void InputSetFont( inputdata_t &inputdata ) { m_strFont = inputdata.value.StringID(); }
+	void InputSetFont( inputdata_t &&inputdata ) { m_strFont = inputdata.value.StringID(); }
 
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 	{
@@ -291,7 +291,7 @@ LINK_ENTITY_TO_CLASS( game_text, CGameText );
 // it can't impact saved Half-Life games.
 BEGIN_MAPENTITY( CGameText )
 
-	DEFINE_KEYFIELD( m_iszMessage, FIELD_STRING, "message" ),
+	DEFINE_KEYFIELD_AUTO( m_iszMessage, "message" ),
 
 	DEFINE_KEYFIELD( m_textParms.channel, FIELD_INTEGER, "channel" ),
 	DEFINE_KEYFIELD( m_textParms.x, FIELD_FLOAT, "x" ),
@@ -310,8 +310,8 @@ BEGIN_MAPENTITY( CGameText )
 	DEFINE_INPUTFUNC( FIELD_COLOR32, "SetTextColor", InputSetTextColor ),
 	DEFINE_INPUTFUNC( FIELD_COLOR32, "SetTextColor2", InputSetTextColor2 ),
 
-	DEFINE_KEYFIELD( m_strFont, FIELD_STRING, "font" ),
-	DEFINE_KEYFIELD( m_bAutobreak, FIELD_BOOLEAN, "autobreak" ),
+	DEFINE_KEYFIELD_AUTO( m_strFont, "font" ),
+	DEFINE_KEYFIELD_AUTO( m_bAutobreak, "autobreak" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetFont", InputSetFont ),
 
@@ -345,7 +345,7 @@ bool CGameText::KeyValue( const char *szKeyName, const char *szValue )
 }
 
 
-void CGameText::InputDisplay( inputdata_t &inputdata )
+void CGameText::InputDisplay( inputdata_t &&inputdata )
 {
 	Display( inputdata.pActivator );
 }
@@ -370,28 +370,28 @@ void CGameText::Display( CBaseEntity *pActivator )
 	}
 }
 
-void CGameText::InputSetText( inputdata_t &inputdata )
+void CGameText::InputSetText( inputdata_t &&inputdata )
 {
 	SetText( inputdata.value.String() );
 }
 
-void CGameText::InputSetPosX(inputdata_t &inputdata)
+void CGameText::InputSetPosX( inputdata_t &&inputdata )
 {
 	m_textParms.x = inputdata.value.Float();
 }
 
-void CGameText::InputSetPosY(inputdata_t &inputdata)
+void CGameText::InputSetPosY( inputdata_t &&inputdata )
 {
 	m_textParms.y = inputdata.value.Float();
 }
 
-void CGameText::InputSetTextColor(inputdata_t &inputdata)
+void CGameText::InputSetTextColor( inputdata_t &&inputdata )
 {
 	color32 clr = inputdata.value.Color32();
 	m_textParms.clr1 = clr;
 }
 
-void CGameText::InputSetTextColor2(inputdata_t &inputdata)
+void CGameText::InputSetTextColor2( inputdata_t &&inputdata )
 {
 	color32 clr2 = inputdata.value.Color32();
 	m_textParms.clr2 = clr2;
@@ -438,7 +438,7 @@ public:
 
 	inline bool RemoveOnFire( void ) { return HasSpawnFlags( SF_TEAMSET_FIREONCE) ? true : false; }
 	inline bool ShouldClearTeam( void ) { return HasSpawnFlags( SF_TEAMSET_CLEARTEAM) ? true : false; }
-	void InputTrigger( inputdata_t &inputdata );
+	void InputTrigger( inputdata_t &&inputdata );
 
 private:
 	COutputEvent m_OnTrigger;
@@ -447,7 +447,7 @@ private:
 LINK_ENTITY_TO_CLASS( game_team_set, CGameTeamSet );
 
 
-void CGameTeamSet::InputTrigger( inputdata_t &inputdata )
+void CGameTeamSet::InputTrigger( inputdata_t &&inputdata )
 {
 	if ( !CanFireForActivator( inputdata.pActivator ) )
 		return;
@@ -478,7 +478,7 @@ class CGamePlayerZone : public CRuleBrushEntity
 {
 public:
 	DECLARE_CLASS( CGamePlayerZone, CRuleBrushEntity );
-	void InputCountPlayersInZone( inputdata_t &inputdata );
+	void InputCountPlayersInZone( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -511,7 +511,7 @@ END_MAPENTITY()
 //			in the zone, one output per player out of the zone, and outputs
 //			with the total counts of players in and out of the zone.
 //-----------------------------------------------------------------------------
-void CGamePlayerZone::InputCountPlayersInZone( inputdata_t &inputdata )
+void CGamePlayerZone::InputCountPlayersInZone( inputdata_t &&inputdata )
 {
 	int playersInCount = 0;
 	int playersOutCount = 0;
@@ -584,7 +584,7 @@ LINK_ENTITY_TO_CLASS( game_player_hurt, CGamePlayerHurt );
 
 BEGIN_MAPENTITY( CGamePlayerHurt )
 
-	DEFINE_KEYFIELD( m_flDamage, FIELD_FLOAT, "dmg" ),
+	DEFINE_KEYFIELD_AUTO( m_flDamage, "dmg" ),
 
 END_MAPENTITY()
 

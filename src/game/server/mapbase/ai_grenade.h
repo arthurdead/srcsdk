@@ -34,7 +34,7 @@
 #define	COMBINE_MIN_GRENADE_CLEAR_DIST	250
 
 #define	DEFINE_AIGRENADE_DATADESC() \
-	DEFINE_KEYFIELD( m_iNumGrenades, FIELD_INTEGER, "NumGrenades" ),	\
+	DEFINE_KEYFIELD_AUTO( m_iNumGrenades, "NumGrenades" )	\
 	DEFINE_FIELD( m_flNextGrenadeCheck, FIELD_TIME ),	\
 	DEFINE_FIELD( m_hForcedGrenadeTarget, FIELD_EHANDLE ),	\
 	DEFINE_FIELD( m_flNextAltFireTime, FIELD_TIME ),	\
@@ -123,10 +123,10 @@ public:
 	virtual bool	IsGrenadeCapable() { return true; }
 	inline bool		HasGrenades() { return m_iNumGrenades > 0; }
 
-	void InputSetGrenades( inputdata_t &inputdata ) { AddGrenades( inputdata.value.Int() - m_iNumGrenades ); }
-	void InputAddGrenades( inputdata_t &inputdata ) { AddGrenades( inputdata.value.Int() ); }
-	void InputThrowGrenadeAtTarget( inputdata_t &inputdata );
-	void InputThrowGrenadeGestureAtTarget( inputdata_t &inputdata );
+	void InputSetGrenades( inputdata_t &&inputdata ) { AddGrenades( inputdata.value.Int() - m_iNumGrenades ); }
+	void InputAddGrenades( inputdata_t &&inputdata ) { AddGrenades( inputdata.value.Int() ); }
+	void InputThrowGrenadeAtTarget( inputdata_t &&inputdata );
+	void InputThrowGrenadeGestureAtTarget( inputdata_t &&inputdata );
 
 	virtual void DelayGrenadeCheck( float delay ) { m_flNextGrenadeCheck = gpGlobals->curtime + delay; }
 
@@ -280,7 +280,7 @@ void CAI_GrenadeUser<BASE_NPC>::SetActivity( Activity NewActivity )
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
 template <class BASE_NPC>
-void CAI_GrenadeUser<BASE_NPC>::InputThrowGrenadeAtTarget( inputdata_t &inputdata )
+void CAI_GrenadeUser<BASE_NPC>::InputThrowGrenadeAtTarget( inputdata_t &&inputdata )
 {
 	// Ignore if we're inside a scripted sequence
 	if ( this->GetState() == NPC_STATE_SCRIPT && this->m_hCine )
@@ -305,7 +305,7 @@ void CAI_GrenadeUser<BASE_NPC>::InputThrowGrenadeAtTarget( inputdata_t &inputdat
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
 template <class BASE_NPC>
-void CAI_GrenadeUser<BASE_NPC>::InputThrowGrenadeGestureAtTarget( inputdata_t &inputdata )
+void CAI_GrenadeUser<BASE_NPC>::InputThrowGrenadeGestureAtTarget( inputdata_t &&inputdata )
 {
 	// Ignore if we're inside a scripted sequence
 	//if ( this->GetState() == NPC_STATE_SCRIPT && this->m_hCine )

@@ -38,8 +38,8 @@ public:
 	void				RemoveGlowEffect( void );
 	bool				IsGlowEffectActive( void );
 
-	void InputStartGlow( inputdata_t &inputData );
-	void InputEndGlow( inputdata_t &inputData );
+	void InputStartGlow( inputdata_t &&inputdata );
+	void InputEndGlow( inputdata_t &&inputdata );
 
 protected:
 	void SetGlowVector(float r, float g, float b );

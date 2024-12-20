@@ -32,9 +32,9 @@ public:
 	virtual void Spawn( void );
 	virtual void Activate();
 
-	bool AcceptInput( const char *szInputName, CBaseEntity *pActivator, CBaseEntity *pCaller, variant_t Value, int outputID );
+	bool AcceptInput( const char *szInputName, CBaseEntity *pActivator, CBaseEntity *pCaller, variant_t &&Value, int outputID );
 
-	int UpdateTransmitState() { return HasSpawnFlags( SF_SKY_START_UPDATING ) ? SetTransmitState( FL_EDICT_ALWAYS ) : BaseClass::UpdateTransmitState(); }
+	EdictStateFlags_t UpdateTransmitState() { return HasSpawnFlags( SF_SKY_START_UPDATING ) ? SetTransmitState( FL_EDICT_ALWAYS ) : BaseClass::UpdateTransmitState(); }
 
 	void SetCameraEntityMode();
 	void SetCameraPositionMode();
@@ -42,28 +42,28 @@ public:
 	bool DoUpdate( bool bUpdateData = false );
 	void UpdateThink();
 
-	void InputForceUpdate( inputdata_t &inputdata );
-	void InputStartUpdating( inputdata_t &inputdata );
-	void InputStopUpdating( inputdata_t &inputdata );
+	void InputForceUpdate( inputdata_t &&inputdata );
+	void InputStartUpdating( inputdata_t &&inputdata );
+	void InputStopUpdating( inputdata_t &&inputdata );
 
-	void InputActivateSkybox( inputdata_t &inputdata );
-	void InputDeactivateSkybox( inputdata_t &inputdata );
+	void InputActivateSkybox( inputdata_t &&inputdata );
+	void InputDeactivateSkybox( inputdata_t &&inputdata );
 
-	void InputSetFogStartDist( inputdata_t &data );
-	void InputSetFogEndDist( inputdata_t &data );
-	void InputTurnOnFog( inputdata_t &data );
-	void InputTurnOffFog( inputdata_t &data );
-	void InputSetFogColor( inputdata_t &data );
-	void InputSetFogColorSecondary( inputdata_t &data );
-	void InputSetFogMaxDensity( inputdata_t &inputdata );
-	void InputCopyFogController( inputdata_t &inputdata );
-	void InputCopyFogControllerWithScale( inputdata_t &inputdata );
+	void InputSetFogStartDist( inputdata_t &&inputdata );
+	void InputSetFogEndDist( inputdata_t &&inputdata );
+	void InputTurnOnFog( inputdata_t &&inputdata );
+	void InputTurnOffFog( inputdata_t &&inputdata );
+	void InputSetFogColor( inputdata_t &&inputdata );
+	void InputSetFogColorSecondary( inputdata_t &&inputdata );
+	void InputSetFogMaxDensity( inputdata_t &&inputdata );
+	void InputCopyFogController( inputdata_t &&inputdata );
+	void InputCopyFogControllerWithScale( inputdata_t &&inputdata );
 
-	void InputSetFarZ( inputdata_t &data );
+	void InputSetFarZ( inputdata_t &&inputdata );
 
-	void InputSetSkyColor( inputdata_t &inputdata ) { m_skyboxData.skycolor = inputdata.value.Color32(); }
+	void InputSetSkyColor( inputdata_t &&inputdata ) { m_skyboxData.skycolor = inputdata.value.Color32(); }
 
-	void InputSetScale( inputdata_t &inputdata ) { m_skyboxData.scale = inputdata.value.Int(); }
+	void InputSetScale( inputdata_t &&inputdata ) { m_skyboxData.scale = inputdata.value.Int(); }
 
 
 public:

@@ -40,7 +40,7 @@ public:
 	// Player is running a command
 	virtual void			PostClientMessagesSent( void ) OVERRIDE;
 	virtual void			SetCommandClient( int index ) OVERRIDE;
-	virtual CPlayerState	*GetPlayerState( edict_t *player ) OVERRIDE;
+	virtual CPlayerStateEngine	*GetPlayerState( edict_t *player ) OVERRIDE;
 	virtual void			ClientEarPosition( edict_t *pEntity, Vector *pEarOrigin ) OVERRIDE;
 
 	virtual void			GetPlayerLimits( int& minplayers, int& maxplayers, int &defaultMaxPlayers ) const OVERRIDE;

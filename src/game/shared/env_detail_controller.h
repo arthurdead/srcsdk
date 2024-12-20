@@ -53,7 +53,7 @@ public:
 	CNetworkVar( float, m_flFadeEndDist );
 
 	// ALWAYS transmit to all clients.
-	virtual int UpdateTransmitState( void );
+	virtual EdictStateFlags_t UpdateTransmitState( void );
 
 private:
 #ifdef CLIENT_DLL

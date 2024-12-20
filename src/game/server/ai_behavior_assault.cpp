@@ -19,14 +19,14 @@ CGameString g_AssaultPointString( "assault_assaultpoint" );
 CGameString g_RallyPointString( "assault_rallypoint" );
 
 BEGIN_MAPENTITY( CRallyPoint, MAPENT_POINTCLASS )
-	DEFINE_KEYFIELD( m_AssaultPointName, FIELD_STRING, "assaultpoint" ),
-	DEFINE_KEYFIELD( m_RallySequenceName, FIELD_STRING, "rallysequence" ),
-	DEFINE_KEYFIELD( m_flAssaultDelay, FIELD_FLOAT, "assaultdelay" ),
-	DEFINE_KEYFIELD( m_iPriority, FIELD_INTEGER, "priority" ),
-	DEFINE_KEYFIELD( m_iStrictness, FIELD_INTEGER, "strict" ),
-	DEFINE_KEYFIELD( m_bForceCrouch, FIELD_BOOLEAN, "forcecrouch" ),
-	DEFINE_KEYFIELD( m_bIsUrgent, FIELD_BOOLEAN, "urgent" ),
-	DEFINE_KEYFIELD( m_bShouldLock, FIELD_BOOLEAN, "lockpoint" ),
+	DEFINE_KEYFIELD_AUTO( m_AssaultPointName, "assaultpoint" ),
+	DEFINE_KEYFIELD_AUTO( m_RallySequenceName, "rallysequence" ),
+	DEFINE_KEYFIELD_AUTO( m_flAssaultDelay, "assaultdelay" ),
+	DEFINE_KEYFIELD_AUTO( m_iPriority, "priority" ),
+	DEFINE_KEYFIELD_AUTO( m_iStrictness, "strict" ),
+	DEFINE_KEYFIELD_AUTO( m_bForceCrouch, "forcecrouch" ),
+	DEFINE_KEYFIELD_AUTO( m_bIsUrgent, "urgent" ),
+	DEFINE_KEYFIELD_AUTO( m_bShouldLock, "lockpoint" ),
 
 	DEFINE_OUTPUT( m_OnArrival, "OnArrival" ),
 END_MAPENTITY();
@@ -131,17 +131,17 @@ bool CRallyPoint::IsExclusive()
 
 BEGIN_MAPENTITY( CAssaultPoint, MAPENT_POINTCLASS )
 
-	DEFINE_KEYFIELD( m_NextAssaultPointName, FIELD_STRING, "nextassaultpoint" ),
-	DEFINE_KEYFIELD( m_flAssaultTimeout, FIELD_FLOAT, "assaulttimeout" ),
-	DEFINE_KEYFIELD( m_bClearOnContact, FIELD_BOOLEAN, "clearoncontact" ),
-	DEFINE_KEYFIELD( m_bAllowDiversion, FIELD_BOOLEAN, "allowdiversion" ),
-	DEFINE_KEYFIELD( m_flAllowDiversionRadius, FIELD_FLOAT, "allowdiversionradius" ),
-	DEFINE_KEYFIELD( m_bNeverTimeout, FIELD_BOOLEAN, "nevertimeout" ),
-	DEFINE_KEYFIELD( m_iStrictness, FIELD_INTEGER, "strict" ),
-	DEFINE_KEYFIELD( m_bForceCrouch, FIELD_BOOLEAN, "forcecrouch" ),
-	DEFINE_KEYFIELD( m_bIsUrgent, FIELD_BOOLEAN, "urgent" ),
+	DEFINE_KEYFIELD_AUTO( m_NextAssaultPointName, "nextassaultpoint" ),
+	DEFINE_KEYFIELD_AUTO( m_flAssaultTimeout, "assaulttimeout" ),
+	DEFINE_KEYFIELD_AUTO( m_bClearOnContact, "clearoncontact" ),
+	DEFINE_KEYFIELD_AUTO( m_bAllowDiversion, "allowdiversion" ),
+	DEFINE_KEYFIELD_AUTO( m_flAllowDiversionRadius, "allowdiversionradius" ),
+	DEFINE_KEYFIELD_AUTO( m_bNeverTimeout, "nevertimeout" ),
+	DEFINE_KEYFIELD_AUTO( m_iStrictness, "strict" ),
+	DEFINE_KEYFIELD_AUTO( m_bForceCrouch, "forcecrouch" ),
+	DEFINE_KEYFIELD_AUTO( m_bIsUrgent, "urgent" ),
 
-	DEFINE_KEYFIELD( m_flAssaultPointTolerance, FIELD_FLOAT, "assaulttolerance" ),
+	DEFINE_KEYFIELD_AUTO( m_flAssaultPointTolerance, "assaulttolerance" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "SetClearOnContact", InputSetClearOnContact ),
@@ -1565,10 +1565,10 @@ int CAI_AssaultBehavior::SelectSchedule()
 //
 //-----------------------------------------------------------------------------
 BEGIN_MAPENTITY( CAI_AssaultGoal, MAPENT_POINTCLASS )
-	DEFINE_KEYFIELD( m_RallyPoint, FIELD_STRING, "rallypoint" ),
-	DEFINE_KEYFIELD( m_AssaultCue, FIELD_INTEGER, "AssaultCue" ),
-	DEFINE_KEYFIELD( m_RallySelectMethod, FIELD_INTEGER, "RallySelectMethod" ),
-	DEFINE_KEYFIELD( m_BranchMethod, FIELD_INTEGER, "BranchMethod" ),
+	DEFINE_KEYFIELD_AUTO( m_RallyPoint, "rallypoint" ),
+	DEFINE_KEYFIELD_AUTO( m_AssaultCue, "AssaultCue" ),
+	DEFINE_KEYFIELD_AUTO( m_RallySelectMethod, "RallySelectMethod" ),
+	DEFINE_KEYFIELD_AUTO( m_BranchMethod, "BranchMethod" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "BeginAssault", InputBeginAssault ),
 END_MAPENTITY();
@@ -1617,7 +1617,7 @@ void CAI_AssaultGoal::DisableGoal( CAI_BaseNPC *pAI )
 // Purpose: ENTITY I/O method for telling the assault behavior to cue assault
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CAI_AssaultGoal::InputBeginAssault( inputdata_t &inputdata )
+void CAI_AssaultGoal::InputBeginAssault( inputdata_t &&inputdata )
 {
 	int i;
 

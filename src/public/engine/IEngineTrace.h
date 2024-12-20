@@ -34,7 +34,7 @@ struct virtualmeshlist_t;
 //-----------------------------------------------------------------------------
 // The standard trace filter... NOTE: Most normal traces inherit from CTraceFilter!!!
 //-----------------------------------------------------------------------------
-enum TraceType_t
+enum TraceType_t : unsigned int
 {
 	TRACE_EVERYTHING = 0,
 	TRACE_WORLD_ONLY,				// NOTE: This does *not* test static props!!!
@@ -45,7 +45,7 @@ enum TraceType_t
 abstract_class ITraceFilter
 {
 public:
-	virtual bool ShouldHitEntity( IHandleEntity *pEntity, int contentsMask ) = 0;
+	virtual bool ShouldHitEntity( IHandleEntity *pEntity, ContentsFlags_t contentsMask ) = 0;
 	virtual TraceType_t	GetTraceType() const = 0;
 };
 
@@ -80,7 +80,7 @@ public:
 class CTraceFilterWorldOnly : public ITraceFilter
 {
 public:
-	bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pServerEntity, ContentsFlags_t contentsMask )
 	{
 		return false;
 	}
@@ -93,7 +93,7 @@ public:
 class CTraceFilterWorldAndPropsOnly : public ITraceFilter
 {
 public:
-	bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pServerEntity, ContentsFlags_t contentsMask )
 	{
 		return false;
 	}
@@ -106,7 +106,7 @@ public:
 class CTraceFilterHitAll : public CTraceFilter
 {
 public:
-	virtual bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
+	virtual bool ShouldHitEntity( IHandleEntity *pServerEntity, ContentsFlags_t contentsMask )
 	{ 
 		return true; 
 	}
@@ -144,41 +144,41 @@ abstract_class IEngineTrace
 {
 private:
 	// Returns the contents mask + entity at a particular world-space position
-	virtual int		DO_NOT_USE_GetPointContents( const Vector &vecAbsPosition, IHandleEntity** ppEntity ) = 0;
+	virtual ContentsFlags_t		DO_NOT_USE_GetPointContents( const Vector &vecAbsPosition, IHandleEntity** ppEntity ) = 0;
 
 public:
 	// Returns the contents mask + entity at a particular world-space position
-	HACKMGR_CLASS_API int		GetPointContents( const Vector &vecAbsPosition, int contentsMask = MASK_ALL, IHandleEntity** ppEntity = NULL );
+	HACKMGR_CLASS_API ContentsFlags_t		GetPointContents( const Vector &vecAbsPosition, ContentsFlags_t contentsMask = MASK_ALL, IHandleEntity** ppEntity = NULL );
 	
 	// Returns the contents mask of the world only @ the world-space position (static props are ignored)
-	HACKMGR_CLASS_API int		GetPointContents_WorldOnly( const Vector &vecAbsPosition, int contentsMask = MASK_ALL );
+	HACKMGR_CLASS_API ContentsFlags_t		GetPointContents_WorldOnly( const Vector &vecAbsPosition, ContentsFlags_t contentsMask = MASK_ALL );
 
 	// Get the point contents, but only test the specific entity. This works
 	// on static props and brush models.
 	//
 	// If the entity isn't a static prop or a brush model, it returns CONTENTS_EMPTY and sets
 	// bFailed to true if bFailed is non-null.
-	virtual int		GetPointContents_Collideable( ICollideable *pCollide, const Vector &vecAbsPosition ) = 0;
+	virtual ContentsFlags_t		GetPointContents_Collideable( ICollideable *pCollide, const Vector &vecAbsPosition ) = 0;
 
 	// Traces a ray against a particular entity
-	virtual void	ClipRayToEntity( const Ray_t &ray, unsigned int fMask, IHandleEntity *pEnt, trace_t *pTrace ) = 0;
+	virtual void	ClipRayToEntity( const Ray_t &ray, ContentsFlags_t fMask, IHandleEntity *pEnt, trace_t *pTrace ) = 0;
 
 	// Traces a ray against a particular entity
-	virtual void	ClipRayToCollideable( const Ray_t &ray, unsigned int fMask, ICollideable *pCollide, trace_t *pTrace ) = 0;
+	virtual void	ClipRayToCollideable( const Ray_t &ray, ContentsFlags_t fMask, ICollideable *pCollide, trace_t *pTrace ) = 0;
 
 	// A version that simply accepts a ray (can work as a traceline or tracehull)
-	virtual void	TraceRay( const Ray_t &ray, unsigned int fMask, ITraceFilter *pTraceFilter, trace_t *pTrace ) = 0;
+	virtual void	TraceRay( const Ray_t &ray, ContentsFlags_t fMask, ITraceFilter *pTraceFilter, trace_t *pTrace ) = 0;
 
 	// A version that sets up the leaf and entity lists and allows you to pass those in for collision.
 	virtual void	SetupLeafAndEntityListRay( const Ray_t &ray, CTraceListData &traceData ) = 0;
 	virtual void    SetupLeafAndEntityListBox( const Vector &vecBoxMin, const Vector &vecBoxMax, CTraceListData &traceData ) = 0;
-	virtual void	TraceRayAgainstLeafAndEntityList( const Ray_t &ray, CTraceListData &traceData, unsigned int fMask, ITraceFilter *pTraceFilter, trace_t *pTrace ) = 0;
+	virtual void	TraceRayAgainstLeafAndEntityList( const Ray_t &ray, CTraceListData &traceData, ContentsFlags_t fMask, ITraceFilter *pTraceFilter, trace_t *pTrace ) = 0;
 
 	// A version that sweeps a collideable through the world
 	// abs start + abs end represents the collision origins you want to sweep the collideable through
 	// vecAngles represents the collision angles of the collideable during the sweep
 	virtual void	SweepCollideable( ICollideable *pCollide, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
-		const QAngle &vecAngles, unsigned int fMask, ITraceFilter *pTraceFilter, trace_t *pTrace ) = 0;
+		const QAngle &vecAngles, ContentsFlags_t fMask, ITraceFilter *pTraceFilter, trace_t *pTrace ) = 0;
 
 	// Enumerates over all entities along a ray
 	// If triggers == true, it enumerates all triggers along a ray
@@ -201,7 +201,7 @@ public:
 	virtual CPhysCollide* GetCollidableFromDisplacementsInAABB( const Vector& vMins, const Vector& vMaxs ) = 0;
 
 	//retrieve brush planes and contents, returns true if data is being returned in the output pointers, false if the brush doesn't exist
-	virtual bool GetBrushInfo( int iBrush, CUtlVector<Vector4D> *pPlanesOut, int *pContentsOut ) = 0;
+	virtual bool GetBrushInfo( int iBrush, CUtlVector<Vector4D> *pPlanesOut, ContentsFlags_t *pContentsOut ) = 0;
 
 	// gets the number of displacements in the world
 	HACKMGR_CLASS_API int GetNumDisplacements( );
@@ -210,7 +210,7 @@ public:
 	HACKMGR_CLASS_API void GetDisplacementMesh( int nIndex, virtualmeshlist_t *pMeshTriList );
 	
 	//retrieve brush planes and contents, returns true if data is being returned in the output pointers, false if the brush doesn't exist
-	HACKMGR_CLASS_API bool GetBrushInfo( int iBrush, CUtlVector<BrushSideInfo_t> *pBrushSideInfoOut, int *pContentsOut );
+	HACKMGR_CLASS_API bool GetBrushInfo( int iBrush, CUtlVector<BrushSideInfo_t> *pBrushSideInfoOut, ContentsFlags_t *pContentsOut );
 
 	virtual bool PointOutsideWorld( const Vector &ptTest ) = 0; //Tests a point to see if it's outside any playable area
 

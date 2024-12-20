@@ -27,9 +27,9 @@ public:
 
 	void Spawn( void );
 	bool KeyValue( const char *szKeyName, const char *szValue );
-	int  UpdateTransmitState();
-	void SetCheapWaterStartDistance( inputdata_t &inputdata );
-	void SetCheapWaterEndDistance( inputdata_t &inputdata );
+	EdictStateFlags_t UpdateTransmitState();
+	void SetCheapWaterStartDistance( inputdata_t &&inputdata );
+	void SetCheapWaterEndDistance( inputdata_t &&inputdata );
 
 	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
@@ -45,8 +45,8 @@ LINK_ENTITY_TO_CLASS(water_lod_control, CWaterLODControl);
 
 BEGIN_MAPENTITY( CWaterLODControl )
 
-	DEFINE_KEYFIELD( m_flCheapWaterStartDistance, FIELD_FLOAT, "cheapwaterstartdistance" ),
-	DEFINE_KEYFIELD( m_flCheapWaterEndDistance, FIELD_FLOAT, "cheapwaterenddistance" ),
+	DEFINE_KEYFIELD_AUTO( m_flCheapWaterStartDistance, "cheapwaterstartdistance" ),
+	DEFINE_KEYFIELD_AUTO( m_flCheapWaterEndDistance, "cheapwaterenddistance" ),
 
 	// Inputs
 	DEFINE_INPUT( m_flCheapWaterStartDistance,	FIELD_FLOAT, "SetCheapWaterStartDistance" ),
@@ -71,7 +71,7 @@ CWaterLODControl::CWaterLODControl()
 //------------------------------------------------------------------------------
 // Purpose : Send even though we don't have a model
 //------------------------------------------------------------------------------
-int CWaterLODControl::UpdateTransmitState()
+EdictStateFlags_t CWaterLODControl::UpdateTransmitState()
 {
 	// ALWAYS transmit to all clients.
 	return SetTransmitState( FL_EDICT_ALWAYS );
@@ -107,12 +107,12 @@ void CWaterLODControl::Spawn( void )
 //------------------------------------------------------------------------------
 // Input values
 //------------------------------------------------------------------------------
-void CWaterLODControl::SetCheapWaterStartDistance( inputdata_t &inputdata )
+void CWaterLODControl::SetCheapWaterStartDistance( inputdata_t &&inputdata )
 {
 	m_flCheapWaterStartDistance = atof( inputdata.value.String() );
 }
 
-void CWaterLODControl::SetCheapWaterEndDistance( inputdata_t &inputdata )
+void CWaterLODControl::SetCheapWaterEndDistance( inputdata_t &&inputdata )
 {
 	m_flCheapWaterEndDistance = atof( inputdata.value.String() );
 }

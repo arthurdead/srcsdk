@@ -33,8 +33,8 @@ public:
 	void Enable( bool bEnable ) { m_bDisabled = !bEnable; }
 
 	// Inputs
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
 	const char	*BoneTarget() { return STRING(m_BoneTarget); }
 

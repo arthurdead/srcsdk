@@ -20,8 +20,8 @@ LINK_ENTITY_TO_CLASS(filter_base, CBaseFilter);
 
 BEGIN_MAPENTITY( CBaseFilter, MAPENT_FILTERCLASS )
 
-	DEFINE_KEYFIELD(m_bNegated, FIELD_BOOLEAN, "Negated"),
-	DEFINE_KEYFIELD(m_bPassCallerWhenTested, FIELD_BOOLEAN, "PassCallerWhenTested"),
+	DEFINE_KEYFIELD_AUTO( m_bNegated, "Negated" ),
+	DEFINE_KEYFIELD_AUTO( m_bPassCallerWhenTested, "PassCallerWhenTested" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_INPUT, "TestActivator", InputTestActivator ),
@@ -70,7 +70,7 @@ bool CBaseFilter::PassesDamageFilterImpl( CBaseEntity *pCaller, const CTakeDamag
 // Purpose: Input handler for testing the activator. If the activator passes the
 //			filter test, the OnPass output is fired. If not, the OnFail output is fired.
 //-----------------------------------------------------------------------------
-void CBaseFilter::InputTestActivator( inputdata_t &inputdata )
+void CBaseFilter::InputTestActivator( inputdata_t &&inputdata )
 {
 	if ( PassesFilter( inputdata.pCaller, inputdata.pActivator ) )
 	{
@@ -86,7 +86,7 @@ void CBaseFilter::InputTestActivator( inputdata_t &inputdata )
 // Purpose: Input handler for testing the activator. If the activator passes the
 //			filter test, the OnPass output is fired. If not, the OnFail output is fired.
 //-----------------------------------------------------------------------------
-void CBaseFilter::InputTestEntity( inputdata_t &inputdata )
+void CBaseFilter::InputTestEntity( inputdata_t &&inputdata )
 {
 	if ( !inputdata.value.Entity() )
 	{
@@ -107,7 +107,7 @@ void CBaseFilter::InputTestEntity( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Tries to set the filter's target since most filters use "filtername" anyway
 //-----------------------------------------------------------------------------
-void CBaseFilter::InputSetField( inputdata_t& inputdata )
+void CBaseFilter::InputSetField( inputdata_t &&inputdata )
 {
 	KeyValue("filtername", inputdata.value.String());
 	Activate();
@@ -151,7 +151,7 @@ LINK_ENTITY_TO_CLASS(filter_multi, CFilterMultiple);
 BEGIN_MAPENTITY( CFilterMultiple, MAPENT_FILTERCLASS )
 
 	// Keys
-	DEFINE_KEYFIELD(m_nFilterType, FIELD_INTEGER, "FilterType"),
+	DEFINE_KEYFIELD_AUTO( m_nFilterType, "FilterType" ),
 
 	DEFINE_KEYFIELD(m_iFilterName[0], FIELD_STRING, "Filter01"),
 	DEFINE_KEYFIELD(m_iFilterName[1], FIELD_STRING, "Filter02"),
@@ -427,7 +427,7 @@ public:
 		}
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_STRING);
 		m_iFilterName = inputdata.value.StringID();
@@ -439,7 +439,7 @@ LINK_ENTITY_TO_CLASS( filter_activator_name, CFilterName );
 BEGIN_MAPENTITY( CFilterName, MAPENT_FILTERCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iFilterName,	FIELD_STRING,	"filtername" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterName, "filtername" ),
 
 END_MAPENTITY()
 
@@ -467,7 +467,7 @@ public:
 		return false;
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_STRING);
 		m_iFilterModel = inputdata.value.StringID();
@@ -479,10 +479,10 @@ LINK_ENTITY_TO_CLASS( filter_activator_model, CFilterModel );
 BEGIN_MAPENTITY( CFilterModel, MAPENT_FILTERCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iFilterModel,	FIELD_STRING,	"model" ),
-	DEFINE_KEYFIELD( m_iFilterModel,	FIELD_STRING,	"filtermodel" ),
-	DEFINE_KEYFIELD( m_iFilterModel,	FIELD_STRING,	"filtername" ),
-	DEFINE_KEYFIELD( m_strFilterSkin,	FIELD_STRING,	"skin" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterModel, "model" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterModel, "filtermodel" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterModel, "filtername" ),
+	DEFINE_KEYFIELD_AUTO( m_strFilterSkin, "skin" ),
 
 END_MAPENTITY()
 
@@ -529,7 +529,7 @@ public:
 		return passes;
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		m_ResponseContexts.RemoveAll();
 		AddContext(inputdata.value.String());
@@ -541,7 +541,7 @@ LINK_ENTITY_TO_CLASS( filter_activator_context, CFilterContext );
 BEGIN_MAPENTITY( CFilterContext, MAPENT_FILTERCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_bAny,	FIELD_BOOLEAN,	"any" ),
+	DEFINE_KEYFIELD_AUTO( m_bAny, "any" ),
 
 END_MAPENTITY()
 
@@ -561,7 +561,7 @@ public:
 		return pEntity->ClassMatches( STRING(m_iFilterClass) );
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_STRING);
 		m_iFilterClass = inputdata.value.StringID();
@@ -573,7 +573,7 @@ LINK_ENTITY_TO_CLASS( filter_activator_class, CFilterClass );
 BEGIN_MAPENTITY( CFilterClass, MAPENT_FILTERCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iFilterClass,	FIELD_STRING,	"filterclass" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterClass, "filterclass" ),
 
 END_MAPENTITY()
 
@@ -594,7 +594,7 @@ public:
 	 	return ( pEntity != NULL && pEntity->GetTeamNumber() == m_iFilterTeam );
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_INTEGER);
 		m_iFilterTeam = inputdata.value.Int();
@@ -606,7 +606,7 @@ LINK_ENTITY_TO_CLASS( filter_activator_team, CFilterTeam );
 BEGIN_MAPENTITY( CFilterTeam, MAPENT_FILTERCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iFilterTeam,	FIELD_INTEGER,	"filterteam" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterTeam, "filterteam" ),
 
 END_MAPENTITY()
 
@@ -630,7 +630,7 @@ public:
 		return ( pEntity->VPhysicsGetObject()->GetMass() > m_fFilterMass );
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_FLOAT);
 		m_fFilterMass = inputdata.value.Float();
@@ -642,7 +642,7 @@ LINK_ENTITY_TO_CLASS( filter_activator_mass_greater, CFilterMassGreater );
 BEGIN_MAPENTITY( CFilterMassGreater, MAPENT_FILTERCLASS )
 
 // Keyfields
-DEFINE_KEYFIELD( m_fFilterMass,	FIELD_FLOAT,	"filtermass" ),
+DEFINE_KEYFIELD_AUTO( m_fFilterMass, "filtermass" ),
 
 END_MAPENTITY()
 
@@ -686,7 +686,7 @@ protected:
 		return (((info.GetDamageType() & ~DMG_DIRECT) & m_iDamageType) == m_iDamageType);
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_INTEGER);
 		m_iDamageType = inputdata.value.Int();
@@ -713,8 +713,8 @@ LINK_ENTITY_TO_CLASS( filter_damage_type, CFilterDamageType );
 BEGIN_MAPENTITY( CFilterDamageType, MAPENT_FILTERCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iDamageType,	FIELD_INTEGER,	"damagetype" ),
-	DEFINE_KEYFIELD( m_iFilterType, FIELD_INTEGER, "FilterType" ),
+	DEFINE_KEYFIELD_AUTO( m_iDamageType, "damagetype" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterType, "FilterType" ),
 
 END_MAPENTITY()
 
@@ -736,7 +736,7 @@ public:
 	virtual bool PassesFilterImpl( CBaseEntity *pCaller, CBaseEntity *pEntity );
 	virtual bool PassesDamageFilterImpl( CBaseEntity *pCaller, const CTakeDamageInfo &info );
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_STRING);
 		m_iszEnemyName = inputdata.value.StringID();
@@ -952,10 +952,10 @@ LINK_ENTITY_TO_CLASS( filter_enemy, CFilterEnemy );
 
 BEGIN_MAPENTITY( CFilterEnemy, MAPENT_FILTERCLASS )
 	
-	DEFINE_KEYFIELD( m_iszEnemyName, FIELD_STRING, "filtername" ),
-	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "filter_radius" ),
-	DEFINE_KEYFIELD( m_flOuterRadius, FIELD_FLOAT, "filter_outer_radius" ),
-	DEFINE_KEYFIELD( m_nMaxSquadmatesPerEnemy, FIELD_INTEGER, "filter_max_per_enemy" ),
+	DEFINE_KEYFIELD_AUTO( m_iszEnemyName, "filtername" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "filter_radius" ),
+	DEFINE_KEYFIELD_AUTO( m_flOuterRadius, "filter_outer_radius" ),
+	DEFINE_KEYFIELD_AUTO( m_nMaxSquadmatesPerEnemy, "filter_max_per_enemy" ),
 
 END_MAPENTITY()
 
@@ -992,7 +992,7 @@ public:
 		return false;
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_STRING);
 		m_iFilterName = inputdata.value.StringID();
@@ -1004,8 +1004,8 @@ LINK_ENTITY_TO_CLASS( filter_activator_squad, CFilterSquad );
 BEGIN_MAPENTITY( CFilterSquad, MAPENT_FILTERCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iFilterName,	FIELD_STRING,	"filtername" ),
-	DEFINE_KEYFIELD( m_bAllowSilentSquadMembers,	FIELD_BOOLEAN,	"allowsilentmembers" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterName, "filtername" ),
+	DEFINE_KEYFIELD_AUTO( m_bAllowSilentSquadMembers, "allowsilentmembers" ),
 
 END_MAPENTITY()
 
@@ -1030,7 +1030,7 @@ public:
 		return m_iFilterValue != NULL_STRING ? Matcher_Match(STRING(m_iFilterValue), var.String()) : found;
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_STRING);
 		m_iFilterKey = inputdata.value.StringID();
@@ -1042,8 +1042,8 @@ LINK_ENTITY_TO_CLASS( filter_activator_keyfield, CFilterKeyfield );
 BEGIN_MAPENTITY( CFilterKeyfield , MAPENT_FILTERCLASS)
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iFilterKey,	FIELD_STRING,	"keyname" ),
-	DEFINE_KEYFIELD( m_iFilterValue,	FIELD_STRING,	"value" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterKey, "keyname" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterValue, "value" ),
 
 END_MAPENTITY()
 
@@ -1116,7 +1116,7 @@ public:
 		return passes;
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_STRING);
 		m_target = inputdata.value.StringID();
@@ -1128,10 +1128,10 @@ LINK_ENTITY_TO_CLASS( filter_activator_relationship, CFilterRelationship );
 BEGIN_MAPENTITY( CFilterRelationship, MAPENT_FILTERCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iDisposition,	FIELD_INTEGER,	"disposition" ),
-	DEFINE_KEYFIELD( m_iszPriority,		FIELD_STRING,	"rank" ),
-	DEFINE_KEYFIELD( m_bInvertTarget,	FIELD_BOOLEAN,	"inverttarget" ),
-	DEFINE_KEYFIELD( m_bReciprocal,		FIELD_BOOLEAN,	"Reciprocal" ),
+	DEFINE_KEYFIELD_AUTO( m_iDisposition, "disposition" ),
+	DEFINE_KEYFIELD_AUTO( m_iszPriority, "rank" ),
+	DEFINE_KEYFIELD_AUTO( m_bInvertTarget, "inverttarget" ),
+	DEFINE_KEYFIELD_AUTO( m_bReciprocal, "Reciprocal" ),
 	DEFINE_FIELD( m_hTarget,			FIELD_EHANDLE ),
 
 END_MAPENTITY()
@@ -1152,7 +1152,7 @@ public:
 		return pEntity->Classify() == m_iFilterClassify;
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_INTEGER);
 		m_iFilterClassify = (Class_T)inputdata.value.Int();
@@ -1164,7 +1164,7 @@ LINK_ENTITY_TO_CLASS( filter_activator_classify, CFilterClassify );
 BEGIN_MAPENTITY( CFilterClassify, MAPENT_FILTERCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iFilterClassify,	FIELD_INTEGER,	"filterclassify" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterClassify, "filterclassify" ),
 
 END_MAPENTITY()
 
@@ -1232,7 +1232,7 @@ public:
 		return passes;
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		m_ResponseContexts.RemoveAll();
 		AddContext(inputdata.value.String());
@@ -1244,8 +1244,8 @@ LINK_ENTITY_TO_CLASS( filter_activator_criteria, CFilterCriteria );
 BEGIN_MAPENTITY( CFilterCriteria, MAPENT_FILTERCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_bAny,	FIELD_BOOLEAN,	"any" ),
-	DEFINE_KEYFIELD( m_bFull,	FIELD_BOOLEAN,	"full" ),
+	DEFINE_KEYFIELD_AUTO( m_bAny, "any" ),
+	DEFINE_KEYFIELD_AUTO( m_bFull, "full" ),
 
 END_MAPENTITY()
 
@@ -1291,7 +1291,7 @@ public:
 		}
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_STRING);
 		m_iszVolumeTester = inputdata.value.StringID();
@@ -1303,7 +1303,7 @@ LINK_ENTITY_TO_CLASS( filter_activator_involume, CFilterInVolume );
 BEGIN_MAPENTITY( CFilterInVolume, MAPENT_FILTERCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iszVolumeTester,	FIELD_STRING,	"tester" ),
+	DEFINE_KEYFIELD_AUTO( m_iszVolumeTester, "tester" ),
 
 END_MAPENTITY()
 
@@ -1372,7 +1372,7 @@ public:
 		return false;
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_STRING);
 		m_iFilterSurface = inputdata.value.StringID();
@@ -1385,8 +1385,8 @@ LINK_ENTITY_TO_CLASS( filter_activator_surfacedata, CFilterSurfaceData );
 BEGIN_MAPENTITY( CFilterSurfaceData, MAPENT_FILTERCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iFilterSurface,	FIELD_STRING,	"filterstring" ),
-	DEFINE_KEYFIELD( m_iSurfaceType, FIELD_INTEGER, "SurfaceType" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterSurface, "filterstring" ),
+	DEFINE_KEYFIELD_AUTO( m_iSurfaceType, "SurfaceType" ),
 
 END_MAPENTITY()
 
@@ -1461,7 +1461,7 @@ public:
 		return true;
 	}
 
-	void InputSetField( inputdata_t& inputdata )
+	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_STRING);
 		InputSetDamageFilter(inputdata);
@@ -1652,7 +1652,7 @@ public:
 	}
 
 	/*
-	void InputSetTarget( inputdata_t& inputdata )
+	void InputSetTarget( inputdata_t &&inputdata )
 	{
 		m_target = inputdata.value.StringID();
 		m_hTarget = NULL;
@@ -1682,10 +1682,10 @@ LINK_ENTITY_TO_CLASS( filter_damage_transfer, CFilterDamageTransfer );
 BEGIN_MAPENTITY( CFilterDamageTransfer, MAPENT_FILTERCLASS )
 
 	//DEFINE_FIELD( m_hTarget,	FIELD_EHANDLE ),
-	DEFINE_KEYFIELD( m_bAdjustDamagePosition,	FIELD_BOOLEAN, "AdjustDamagePosition" ),
-	DEFINE_KEYFIELD( m_iMaxEntities,			FIELD_INTEGER, "MaxEntities" ),
-	DEFINE_KEYFIELD( m_iSecondaryFilterMode,	FIELD_INTEGER, "SecondaryFilterMode" ),
-	DEFINE_KEYFIELD( m_bCallerDamageAllowed,	FIELD_BOOLEAN, "CallerDamageAllowed" ),
+	DEFINE_KEYFIELD_AUTO( m_bAdjustDamagePosition, "AdjustDamagePosition" ),
+	DEFINE_KEYFIELD_AUTO( m_iMaxEntities, "MaxEntities" ),
+	DEFINE_KEYFIELD_AUTO( m_iSecondaryFilterMode, "SecondaryFilterMode" ),
+	DEFINE_KEYFIELD_AUTO( m_bCallerDamageAllowed, "CallerDamageAllowed" ),
 
 END_MAPENTITY()
 
@@ -1714,8 +1714,8 @@ public:
 		return GetTargetFilter() ? RedirectToDamageFilter(pCaller, info) : true;
 	}
 
-	void InputDisableBlood( inputdata_t &inputdata ) { m_bBloodDisabled = true; }
-	void InputEnableBlood( inputdata_t &inputdata ) { m_bBloodDisabled = false; }
+	void InputDisableBlood( inputdata_t &&inputdata ) { m_bBloodDisabled = true; }
+	void InputEnableBlood( inputdata_t &&inputdata ) { m_bBloodDisabled = false; }
 
 	bool m_bBloodDisabled;
 
@@ -1727,8 +1727,8 @@ LINK_ENTITY_TO_CLASS( filter_blood_control, CFilterBloodControl );
 
 BEGIN_MAPENTITY( CFilterBloodControl, MAPENT_FILTERCLASS )
 
-	DEFINE_KEYFIELD( m_bBloodDisabled,	FIELD_BOOLEAN, "BloodDisabled" ),
-	DEFINE_KEYFIELD( m_bSecondaryFilterIsDamageFilter,	FIELD_BOOLEAN, "SecondaryFilterMode" ),
+	DEFINE_KEYFIELD_AUTO( m_bBloodDisabled, "BloodDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bSecondaryFilterIsDamageFilter, "SecondaryFilterMode" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableBlood", InputDisableBlood ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableBlood", InputEnableBlood ),
@@ -1810,9 +1810,9 @@ public:
 		return true;
 	}
 
-	void InputSetNewAttacker( inputdata_t &inputdata ) { m_iszNewAttacker = inputdata.value.StringID(); m_hNewAttacker = NULL; }
-	void InputSetNewInflictor( inputdata_t &inputdata ) { m_iszNewInflictor = inputdata.value.StringID(); m_hNewInflictor = NULL; }
-	void InputSetNewWeapon( inputdata_t &inputdata ) { m_iszNewWeapon = inputdata.value.StringID(); m_hNewWeapon = NULL; }
+	void InputSetNewAttacker( inputdata_t &&inputdata ) { m_iszNewAttacker = inputdata.value.StringID(); m_hNewAttacker = NULL; }
+	void InputSetNewInflictor( inputdata_t &&inputdata ) { m_iszNewInflictor = inputdata.value.StringID(); m_hNewInflictor = NULL; }
+	void InputSetNewWeapon( inputdata_t &&inputdata ) { m_iszNewWeapon = inputdata.value.StringID(); m_hNewWeapon = NULL; }
 
 	float m_flDamageMultiplier	= 1.0f;
 	float m_flDamageAddend;
@@ -1831,9 +1831,9 @@ LINK_ENTITY_TO_CLASS( filter_damage_mod, CFilterDamageMod );
 
 BEGIN_MAPENTITY( CFilterDamageMod, MAPENT_FILTERCLASS )
 
-	DEFINE_KEYFIELD( m_iszNewAttacker, FIELD_STRING, "NewAttacker" ),
-	DEFINE_KEYFIELD( m_iszNewInflictor, FIELD_STRING, "NewInflictor" ),
-	DEFINE_KEYFIELD( m_iszNewWeapon, FIELD_STRING, "NewWeapon" ),
+	DEFINE_KEYFIELD_AUTO( m_iszNewAttacker, "NewAttacker" ),
+	DEFINE_KEYFIELD_AUTO( m_iszNewInflictor, "NewInflictor" ),
+	DEFINE_KEYFIELD_AUTO( m_iszNewWeapon, "NewWeapon" ),
 	DEFINE_FIELD( m_hNewAttacker, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_hNewInflictor, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_hNewWeapon, FIELD_EHANDLE ),
@@ -1843,7 +1843,7 @@ BEGIN_MAPENTITY( CFilterDamageMod, MAPENT_FILTERCLASS )
 	DEFINE_INPUT( m_iDamageBitsAdded,	FIELD_INTEGER64, "SetDamageBitsAdded" ),
 	DEFINE_INPUT( m_iDamageBitsRemoved,	FIELD_INTEGER64, "SetDamageBitsRemoved" ),
 
-	DEFINE_KEYFIELD( m_iSecondaryFilterMode,	FIELD_INTEGER, "SecondaryFilterMode" ),
+	DEFINE_KEYFIELD_AUTO( m_iSecondaryFilterMode, "SecondaryFilterMode" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetNewAttacker", InputSetNewAttacker ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetNewInflictor", InputSetNewInflictor ),
@@ -1939,7 +1939,7 @@ LINK_ENTITY_TO_CLASS( filter_damage_logic, CFilterDamageLogic );
 
 BEGIN_MAPENTITY( CFilterDamageLogic, MAPENT_FILTERCLASS )
 
-	DEFINE_KEYFIELD( m_iSecondaryFilterMode, FIELD_INTEGER, "SecondaryFilterMode" ),
+	DEFINE_KEYFIELD_AUTO( m_iSecondaryFilterMode, "SecondaryFilterMode" ),
 
 	// Outputs
 	DEFINE_OUTPUT( m_OutInflictor, "OutInflictor" ),

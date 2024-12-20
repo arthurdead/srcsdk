@@ -185,7 +185,7 @@ void CDeferredLight::Activate()
 	}
 }
 
-int CDeferredLight::UpdateTransmitState()
+EdictStateFlags_t CDeferredLight::UpdateTransmitState()
 {
 	return SetTransmitState( m_bShouldTransmit ? FL_EDICT_PVSCHECK : FL_EDICT_DONTSEND );
 }

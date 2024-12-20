@@ -87,13 +87,13 @@ public:
 	}
 
 	// inputs
-	void InputWake( inputdata_t &inputdata );
-	void InputSleep( inputdata_t &inputdata );
-	void InputEnableMotion( inputdata_t &inputdata );
-	void InputDisableMotion( inputdata_t &inputdata );
-	void InputForceDrop( inputdata_t &inputdata );
-	void InputDisableFloating( inputdata_t &inputdata );
-	void InputSetDebris( inputdata_t &inputdata );
+	void InputWake( inputdata_t &&inputdata );
+	void InputSleep( inputdata_t &&inputdata );
+	void InputEnableMotion( inputdata_t &&inputdata );
+	void InputDisableMotion( inputdata_t &&inputdata );
+	void InputForceDrop( inputdata_t &&inputdata );
+	void InputDisableFloating( inputdata_t &&inputdata );
+	void InputSetDebris( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 	
@@ -143,8 +143,8 @@ public:
 	int DrawDebugTextOverlays(void);
 
 	// Input handlers
-	void InputExplode( inputdata_t &inputdata );
-	void InputExplodeAndRemove( inputdata_t &inputdata );
+	void InputExplode( inputdata_t &&inputdata );
+	void InputExplodeAndRemove( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 private:
@@ -173,7 +173,7 @@ public:
 	//void		Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	void		Activate( void );
 
-	void		InputImpact( inputdata_t &inputdata );
+	void		InputImpact( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -224,11 +224,11 @@ public:
 	bool	HasHitSomething( void ) { return m_bHasHitSomething; }
 
 	// Inputs
-	void	InputToggle( inputdata_t &inputdata );
-	void	InputTurnOn( inputdata_t &inputdata );
-	void	InputTurnOff( inputdata_t &inputdata );
+	void	InputToggle( inputdata_t &&inputdata );
+	void	InputTurnOn( inputdata_t &&inputdata );
+	void	InputTurnOff( inputdata_t &&inputdata );
 
-	void	InputConstraintBroken( inputdata_t &inputdata );
+	void	InputConstraintBroken( inputdata_t &&inputdata );
 
 	void	DetachAll( void );
 

@@ -400,7 +400,7 @@ void CAI_FearBehavior::SetParameters( CAI_FearGoal *pGoal, string_t target )
 LINK_ENTITY_TO_CLASS( ai_goal_fear, CAI_FearGoal );
 
 BEGIN_MAPENTITY( CAI_FearGoal, MAPENT_POINTCLASS )
-	//DEFINE_KEYFIELD( m_iSomething, FIELD_INTEGER, "something" ),
+	//DEFINE_KEYFIELD_AUTO( m_iSomething, "something" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
@@ -442,7 +442,7 @@ void CAI_FearGoal::DisableGoal( CAI_BaseNPC *pAI )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CAI_FearGoal::InputActivate( inputdata_t &inputdata )
+void CAI_FearGoal::InputActivate( inputdata_t &&inputdata )
 {
 	BaseClass::InputActivate( inputdata );
 }
@@ -451,7 +451,7 @@ void CAI_FearGoal::InputActivate( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CAI_FearGoal::InputDeactivate( inputdata_t &inputdata )
+void CAI_FearGoal::InputDeactivate( inputdata_t &&inputdata )
 {
 	BaseClass::InputDeactivate( inputdata );
 }

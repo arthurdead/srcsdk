@@ -25,9 +25,9 @@ public:
 	virtual void Activate();
 	virtual void Precache();
 
-	void InputTurnOn( inputdata_t &inputdata );
-	void InputTurnOff( inputdata_t &inputdata );
-	void InputDoSpark( inputdata_t &inputdata );
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
+	void InputDoSpark( inputdata_t &&inputdata );
 
 	void DoSpark();
 	void ShootArcThink();

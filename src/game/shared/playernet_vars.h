@@ -18,33 +18,57 @@
 #define NUM_AUDIO_LOCAL_SOUNDS	8
 
 // These structs are contained in each player's local data and shared by the client & server
-
 struct fogparams_t
 {
 	DECLARE_CLASS_NOBASE( fogparams_t );
-	DECLARE_EMBEDDED_NETWORKVAR();
 
 	bool operator !=( const fogparams_t& other ) const;
 
-	CNetworkVector( dirPrimary );
-	CNetworkColor32( colorPrimary );
-	CNetworkColor32( colorSecondary );
-	CNetworkColor32( colorPrimaryLerpTo );
-	CNetworkColor32( colorSecondaryLerpTo );
-	CNetworkVar( float, start );
-	CNetworkVar( float, end );
-	CNetworkVar( float, farz );
-	CNetworkVar( float, maxdensity );
+	CNetworkVectorForDerived( dirPrimary );
+	CNetworkColor32ForDerived( colorPrimary );
+	CNetworkColor32ForDerived( colorSecondary );
+	CNetworkColor32ForDerived( colorPrimaryLerpTo );
+	CNetworkColor32ForDerived( colorSecondaryLerpTo );
+	CNetworkVarForDerived( float, start );
+	CNetworkVarForDerived( float, end );
+	CNetworkVarForDerived( float, farz );
+	CNetworkVarForDerived( float, maxdensity );
 
-	CNetworkVar( float, startLerpTo );
-	CNetworkVar( float, endLerpTo );
-	CNetworkVar( float, maxdensityLerpTo );
-	CNetworkVar( float, lerptime );
-	CNetworkVar( float, duration );
-	CNetworkVar( bool, enable );
-	CNetworkVar( bool, blend );
+	CNetworkVarForDerived( float, startLerpTo );
+	CNetworkVarForDerived( float, endLerpTo );
+	CNetworkVarForDerived( float, maxdensityLerpTo );
+	CNetworkVarForDerived( float, lerptime );
+	CNetworkVarForDerived( float, duration );
+	CNetworkVarForDerived( bool, enable );
+	CNetworkVarForDerived( bool, blend );
 
-	CNetworkVar( float, HDRColorScale );
+	CNetworkVarForDerived( float, HDRColorScale );
+};
+
+struct networked_fogparams_t : public fogparams_t, public INetworkableObject
+{
+	DECLARE_CLASS( networked_fogparams_t, fogparams_t );
+	DECLARE_EMBEDDED_NETWORKVAR();
+
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( dirPrimary );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( colorPrimary );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( colorSecondary );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( colorPrimaryLerpTo );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( colorSecondaryLerpTo );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( start );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( end );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( farz );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( maxdensity );
+
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( startLerpTo );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( endLerpTo );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( maxdensityLerpTo );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( lerptime );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( duration );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( enable );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( blend );
+
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( HDRColorScale );
 };
 
 // Crappy. Needs to be here because it wants to use 
@@ -56,7 +80,7 @@ class CFogController;
 typedef CFogController CSharedFogController;
 #endif
 
-struct fogplayerparams_t
+struct fogplayerparams_t : public INetworkableObject
 {
 	DECLARE_CLASS_NOBASE( fogplayerparams_t );
 	DECLARE_EMBEDDED_NETWORKVAR();
@@ -100,27 +124,49 @@ struct fogplayerparams_t
 struct sky3dparams_t
 {
 	DECLARE_CLASS_NOBASE( sky3dparams_t );
+
+	// 3d skybox camera data
+	CNetworkVarForDerived( int, scale );
+	CNetworkVectorForDerived( origin );
+	CNetworkVarForDerived( int, area );
+
+	// Skybox angle support
+	CNetworkQAngleForDerived( angles );
+
+	// Skybox entity-based option
+	CNetworkHandleForDerived( CSharedBaseEntity, skycamera );
+
+	// Sky clearcolor
+	CNetworkColor32ForDerived( skycolor );
+
+	// 3d skybox fog data
+	CNetworkVarEmbeddedCopyableForDerived( networked_fogparams_t, fog );
+};
+
+struct networked_sky3dparams_t : public sky3dparams_t, public INetworkableObject
+{
+	DECLARE_CLASS( networked_sky3dparams_t, sky3dparams_t );
 	DECLARE_EMBEDDED_NETWORKVAR();
 
 	// 3d skybox camera data
-	CNetworkVar( int, scale );
-	CNetworkVector( origin );
-	CNetworkVar( int, area );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( scale );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( origin );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( area );
 
 	// Skybox angle support
-	CNetworkQAngle( angles );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( angles );
 
 	// Skybox entity-based option
-	CNetworkHandle( CSharedBaseEntity, skycamera );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( skycamera );
 
 	// Sky clearcolor
-	CNetworkColor32( skycolor );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( skycolor );
 
 	// 3d skybox fog data
-	CNetworkVarEmbeddedCopyable( fogparams_t, fog );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( fog );
 };
 
-struct audioparams_t
+struct audioparams_t : public INetworkableObject
 {
 	DECLARE_CLASS_NOBASE( audioparams_t );
 	DECLARE_EMBEDDED_NETWORKVAR();
@@ -143,7 +189,7 @@ struct audioparams_t
 // unless the option to update on inputs is set. ( otherwise the values are simply cached
 // and changes only take effect when the players controller target is changed )
 //
-struct tonemap_params_t
+struct tonemap_params_t : public INetworkableObject
 {
 	DECLARE_CLASS_NOBASE( tonemap_params_t );
 	DECLARE_EMBEDDED_NETWORKVAR();
@@ -156,6 +202,7 @@ struct tonemap_params_t
 		m_flBloomScale = -1.0f;
 		m_flTonemapRate = -1.0f;
 	}
+
 	//Tony; all of these are initialized to -1!
 	CNetworkVar( float, m_flTonemapScale );
 	CNetworkVar( float, m_flTonemapRate );

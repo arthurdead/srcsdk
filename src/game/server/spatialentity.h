@@ -25,15 +25,15 @@ public:
 	CSpatialEntity();
 
 	void Spawn( void );
-	int  UpdateTransmitState();
+	EdictStateFlags_t UpdateTransmitState();
 
 	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
 	// Inputs
-	void	InputEnable( inputdata_t &inputdata );
-	void	InputDisable( inputdata_t &inputdata );
-	void	InputSetFadeInDuration ( inputdata_t &inputdata );
-	void	InputSetFadeOutDuration ( inputdata_t &inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
+	void	InputSetFadeInDuration ( inputdata_t &&inputdata );
+	void	InputSetFadeOutDuration ( inputdata_t &&inputdata );
 
 private:
 	void	FadeIn ( void );

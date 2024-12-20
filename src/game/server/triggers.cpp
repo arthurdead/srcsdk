@@ -97,12 +97,12 @@ static ConCommand showtriggers_toggle( "showtriggers_toggle", Cmd_ShowtriggersTo
 BEGIN_MAPENTITY( CBaseTrigger )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iFilterName,	FIELD_STRING,	"filtername" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterName, "filtername" ),
 
-	DEFINE_KEYFIELD( m_bDisabled,		FIELD_BOOLEAN,	"StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
-	DEFINE_KEYFIELD( m_flWait, FIELD_FLOAT, "wait" ),
-	DEFINE_KEYFIELD( m_sMaster, FIELD_STRING, "master" ),
+	DEFINE_KEYFIELD_AUTO( m_flWait, "wait" ),
+	DEFINE_KEYFIELD_AUTO( m_sMaster, "master" ),
 
 	// Inputs	
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -140,7 +140,7 @@ CBaseTrigger::CBaseTrigger()
 //------------------------------------------------------------------------------
 // Purpose: Input handler to turn on this trigger.
 //------------------------------------------------------------------------------
-void CBaseTrigger::InputEnable( inputdata_t &inputdata )
+void CBaseTrigger::InputEnable( inputdata_t &&inputdata )
 { 
 	Enable();
 }
@@ -149,12 +149,12 @@ void CBaseTrigger::InputEnable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Input handler to turn off this trigger.
 //------------------------------------------------------------------------------
-void CBaseTrigger::InputDisable( inputdata_t &inputdata )
+void CBaseTrigger::InputDisable( inputdata_t &&inputdata )
 { 
 	Disable();
 }
 
-void CBaseTrigger::InputTouchTest( inputdata_t &inputdata )
+void CBaseTrigger::InputTouchTest( inputdata_t &&inputdata )
 {
 	TouchTest();
 }
@@ -445,7 +445,7 @@ bool CBaseTrigger::PassesTriggerFilters(CBaseEntity *pOther)
 // Purpose: Called to simulate what happens when an entity touches the trigger.
 // Input  : pOther - The entity that is touching us.
 //-----------------------------------------------------------------------------
-void CBaseTrigger::InputStartTouch( inputdata_t &inputdata )
+void CBaseTrigger::InputStartTouch( inputdata_t &&inputdata )
 {
 	//Pretend we just touched the trigger.
 	StartTouch( inputdata.pCaller );
@@ -454,7 +454,7 @@ void CBaseTrigger::InputStartTouch( inputdata_t &inputdata )
 // Purpose: Called to simulate what happens when an entity leaves the trigger.
 // Input  : pOther - The entity that is touching us.
 //-----------------------------------------------------------------------------
-void CBaseTrigger::InputEndTouch( inputdata_t &inputdata )
+void CBaseTrigger::InputEndTouch( inputdata_t &&inputdata )
 {
 	//And... pretend we left the trigger.
 	EndTouch( inputdata.pCaller );	
@@ -593,7 +593,7 @@ CBaseEntity *CBaseTrigger::GetTouchedEntityOfType( const char *sClassName )
 //-----------------------------------------------------------------------------
 // Purpose: Toggles this trigger between enabled and disabled.
 //-----------------------------------------------------------------------------
-void CBaseTrigger::InputToggle( inputdata_t &inputdata )
+void CBaseTrigger::InputToggle( inputdata_t &&inputdata )
 {
 	if (IsSolidFlagSet( FSOLID_TRIGGER ))
 	{
@@ -663,13 +663,13 @@ void CTriggerRemove::Touch( CBaseEntity *pOther )
 
 BEGIN_MAPENTITY( CTriggerHurt )
 
-	DEFINE_KEYFIELD( m_flDamage, FIELD_FLOAT, "damage" ),
-	DEFINE_KEYFIELD( m_flDamageCap, FIELD_FLOAT, "damagecap" ),
-	DEFINE_KEYFIELD( m_bitsDamageInflict, FIELD_INTEGER, "damagetype" ),
-	DEFINE_KEYFIELD( m_damageModel, FIELD_INTEGER, "damagemodel" ),
-	DEFINE_KEYFIELD( m_bNoDmgForce, FIELD_BOOLEAN, "nodmgforce" ),
+	DEFINE_KEYFIELD_AUTO( m_flDamage, "damage" ),
+	DEFINE_KEYFIELD_AUTO( m_flDamageCap, "damagecap" ),
+	DEFINE_KEYFIELD_AUTO( m_bitsDamageInflict, "damagetype" ),
+	DEFINE_KEYFIELD_AUTO( m_damageModel, "damagemodel" ),
+	DEFINE_KEYFIELD_AUTO( m_bNoDmgForce, "nodmgforce" ),
 
-	DEFINE_KEYFIELD( m_flHurtRate, FIELD_FLOAT, "hurtrate" ),
+	DEFINE_KEYFIELD_AUTO( m_flHurtRate, "hurtrate" ),
 
 	// Inputs
 	DEFINE_INPUT( m_flDamage, FIELD_FLOAT, "SetDamage" ),
@@ -1083,7 +1083,7 @@ private:
 LINK_ENTITY_TO_CLASS( trigger_look, CTriggerLook );
 BEGIN_MAPENTITY( CTriggerLook )
 
-	DEFINE_KEYFIELD( m_flTimeoutDuration, FIELD_FLOAT, "timeout" ),
+	DEFINE_KEYFIELD_AUTO( m_flTimeoutDuration, "timeout" ),
 
 	DEFINE_OUTPUT( m_OnTimeout, "OnTimeout" ),
 
@@ -1091,8 +1091,8 @@ BEGIN_MAPENTITY( CTriggerLook )
 	DEFINE_INPUT( m_flFieldOfView,		FIELD_FLOAT,	"FieldOfView" ),
 	DEFINE_INPUT( m_flLookTime,			FIELD_FLOAT,	"LookTime" ),
 
-	DEFINE_KEYFIELD( m_bUseLOS, FIELD_BOOLEAN, "UseLOS" ),
-	DEFINE_KEYFIELD( m_bUseLookEntityAsCaller, FIELD_BOOLEAN, "LookEntityCaller" ),
+	DEFINE_KEYFIELD_AUTO( m_bUseLOS, "UseLOS" ),
+	DEFINE_KEYFIELD_AUTO( m_bUseLookEntityAsCaller, "LookEntityCaller" ),
 
 END_MAPENTITY()
 
@@ -1371,7 +1371,7 @@ private:
 	void TouchChangeLevel( CBaseEntity *pOther );
 	void ChangeLevelNow( CBaseEntity *pActivator );
 
-	void InputChangeLevel( inputdata_t &inputdata );
+	void InputChangeLevel( inputdata_t &&inputdata );
 
 	bool IsEntityInTransition( CBaseEntity *pEntity );
 	void NotifyEntitiesOutOfTransition();
@@ -1538,7 +1538,7 @@ CBaseEntity *CChangeLevel::FindLandmark( const char *pLandmarkName )
 //-----------------------------------------------------------------------------
 // Purpose: Allows level transitions to be triggered by buttons, etc.
 //-----------------------------------------------------------------------------
-void CChangeLevel::InputChangeLevel( inputdata_t &inputdata )
+void CChangeLevel::InputChangeLevel( inputdata_t &&inputdata )
 {
 	ChangeLevelNow( inputdata.pActivator );
 }
@@ -1583,11 +1583,11 @@ void CChangeLevel::NotifyEntitiesOutOfTransition()
 			variant_t emptyVariant;
 			if ( !(pEnt->ObjectCaps() & (FCAP_ACROSS_TRANSITION|FCAP_FORCE_TRANSITION)) || !IsEntityInTransition( pEnt ) )
 			{
-				pEnt->AcceptInput( "OutsideTransition", this, this, emptyVariant, 0 );
+				pEnt->AcceptInput( "OutsideTransition", this, this, Move(emptyVariant), 0 );
 			}
 			else
 			{
-				pEnt->AcceptInput( "InsideTransition", this, this, emptyVariant, 0 );
+				pEnt->AcceptInput( "InsideTransition", this, this, Move(emptyVariant), 0 );
 			}
 		}
 		pEnt = gEntList.NextEnt( pEnt );
@@ -2067,10 +2067,10 @@ public:
 	void Untouch( CBaseEntity *pOther );
 	void DrawDebugGeometryOverlays();
 
-	void InputSetSpeed( inputdata_t &inputdata );
-	void InputSetPushDir( inputdata_t &inputdata );
+	void InputSetSpeed( inputdata_t &&inputdata );
+	void InputSetPushDir( inputdata_t &&inputdata );
 
-	void InputSetPushDirection( inputdata_t &inputdata );
+	void InputSetPushDirection( inputdata_t &&inputdata );
 
 	Vector m_vecPushDir;
 
@@ -2081,8 +2081,8 @@ public:
 };
 
 BEGIN_MAPENTITY( CTriggerPush )
-	DEFINE_KEYFIELD( m_vecPushDir, FIELD_VECTOR, "pushdir" ),
-	DEFINE_KEYFIELD( m_flAlternateTicksFix, FIELD_FLOAT, "alternateticksfix" ),
+	DEFINE_KEYFIELD_AUTO( m_vecPushDir, "pushdir" ),
+	DEFINE_KEYFIELD_AUTO( m_flAlternateTicksFix, "alternateticksfix" ),
 	DEFINE_INPUTFUNC( FIELD_VECTOR, "SetPushDirection", InputSetPushDirection ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpeed", InputSetSpeed ),
 	DEFINE_INPUTFUNC( FIELD_VECTOR, "SetPushDir", InputSetPushDir ),
@@ -2117,7 +2117,7 @@ void CTriggerPush::Spawn()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTriggerPush::InputSetSpeed( inputdata_t &inputdata )
+void CTriggerPush::InputSetSpeed( inputdata_t &&inputdata )
 {
 	m_flSpeed = inputdata.value.Float();
 
@@ -2128,7 +2128,7 @@ void CTriggerPush::InputSetSpeed( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTriggerPush::InputSetPushDir( inputdata_t &inputdata )
+void CTriggerPush::InputSetPushDir( inputdata_t &&inputdata )
 {
 	inputdata.value.Vector3D( m_vecPushDir );
 
@@ -2271,7 +2271,7 @@ void CTriggerPush::Touch( CBaseEntity *pOther )
 	}
 }
 
-void CTriggerPush::InputSetPushDirection( inputdata_t &inputdata )
+void CTriggerPush::InputSetPushDirection( inputdata_t &&inputdata )
 {
 	inputdata.value.Vector3D( m_vecPushDir );
 
@@ -2323,8 +2323,8 @@ LINK_ENTITY_TO_CLASS( trigger_teleport, CTriggerTeleport );
 
 BEGIN_MAPENTITY( CTriggerTeleport )
 
-	DEFINE_KEYFIELD( m_iLandmark, FIELD_STRING, "landmark" ),
-	DEFINE_KEYFIELD( m_bUseLandmarkAngles, FIELD_BOOLEAN, "UseLandmarkAngles" ),
+	DEFINE_KEYFIELD_AUTO( m_iLandmark, "landmark" ),
+	DEFINE_KEYFIELD_AUTO( m_bUseLandmarkAngles, "UseLandmarkAngles" ),
 
 END_MAPENTITY()
 
@@ -2517,7 +2517,7 @@ public:
 	DECLARE_CLASS( CAI_ChangeTarget, CBaseEntity );
 
 	// Input handlers.
-	void InputActivate( inputdata_t &inputdata );
+	void InputActivate( inputdata_t &&inputdata );
 
 	int ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
@@ -2530,7 +2530,7 @@ LINK_ENTITY_TO_CLASS( ai_changetarget, CAI_ChangeTarget );
 
 BEGIN_MAPENTITY( CAI_ChangeTarget )
 
-	DEFINE_KEYFIELD( m_iszNewTarget, FIELD_STRING, "m_iszNewTarget" ),
+	DEFINE_KEYFIELD_AUTO( m_iszNewTarget, "m_iszNewTarget" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
@@ -2538,7 +2538,7 @@ BEGIN_MAPENTITY( CAI_ChangeTarget )
 END_MAPENTITY()
 
 
-void CAI_ChangeTarget::InputActivate( inputdata_t &inputdata )
+void CAI_ChangeTarget::InputActivate( inputdata_t &&inputdata )
 {
 	CBaseEntity *pTarget = NULL;
 
@@ -2559,12 +2559,12 @@ LINK_ENTITY_TO_CLASS( point_viewcontrol, CTriggerCamera );
 
 BEGIN_MAPENTITY( CTriggerCamera )
 
-	DEFINE_KEYFIELD( m_iszTargetAttachment, FIELD_STRING, "targetattachment" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTargetAttachment, "targetattachment" ),
 
-	DEFINE_KEYFIELD( m_bInterpolatePosition, FIELD_BOOLEAN, "interpolatepositiontoplayer" ),
+	DEFINE_KEYFIELD_AUTO( m_bInterpolatePosition, "interpolatepositiontoplayer" ),
 
-	DEFINE_KEYFIELD( m_fov, FIELD_FLOAT, "fov" ),
-	DEFINE_KEYFIELD( m_fovSpeed, FIELD_FLOAT, "fov_rate" ),
+	DEFINE_KEYFIELD_AUTO( m_fov, "fov" ),
+	DEFINE_KEYFIELD_AUTO( m_fovSpeed, "fov_rate" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -2579,9 +2579,9 @@ BEGIN_MAPENTITY( CTriggerCamera )
 	// Function Pointers
 	DEFINE_OUTPUT( m_OnEndFollow, "OnEndFollow" ),
 	DEFINE_OUTPUT( m_OnStartFollow, "OnStartFollow" ),
-	DEFINE_KEYFIELD( m_flTrackSpeed, FIELD_FLOAT, "trackspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_flTrackSpeed, "trackspeed" ),
 
-	DEFINE_KEYFIELD( m_bDontSetPlayerView, FIELD_BOOLEAN, "DontSetPlayerView" ),
+	DEFINE_KEYFIELD_AUTO( m_bDontSetPlayerView, "DontSetPlayerView" ),
 
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFOV", InputSetFOV ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFOVRate", InputSetFOVRate ),
@@ -2637,7 +2637,7 @@ void CTriggerCamera::Spawn( void )
 	DispatchUpdateTransmitState();
 }
 
-int CTriggerCamera::UpdateTransmitState()
+EdictStateFlags_t CTriggerCamera::UpdateTransmitState()
 {
 	// always tranmit if currently used by a monitor
 	if ( m_state == USE_ON )
@@ -2658,7 +2658,7 @@ void CTriggerCamera::StartCameraShot( const char *pszShotType, CBaseEntity *pSce
 //------------------------------------------------------------------------------
 // Purpose: Input handler to set FOV.
 //------------------------------------------------------------------------------
-void CTriggerCamera::InputSetFOV( inputdata_t &inputdata )
+void CTriggerCamera::InputSetFOV( inputdata_t &&inputdata )
 {
 	m_fov = inputdata.value.Float();
 
@@ -2671,7 +2671,7 @@ void CTriggerCamera::InputSetFOV( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Input handler to set FOV rate.
 //------------------------------------------------------------------------------
-void CTriggerCamera::InputSetFOVRate( inputdata_t &inputdata )
+void CTriggerCamera::InputSetFOVRate( inputdata_t &&inputdata )
 { 
 	m_fovSpeed = inputdata.value.Float();
 }
@@ -2710,7 +2710,7 @@ bool CTriggerCamera::KeyValue( const char *szKeyName, const char *szValue )
 //------------------------------------------------------------------------------
 // Purpose: 
 //------------------------------------------------------------------------------
-void CTriggerCamera::InputSetTargetAttachment( inputdata_t &inputdata )
+void CTriggerCamera::InputSetTargetAttachment( inputdata_t &&inputdata )
 {
 	m_iszTargetAttachment = inputdata.value.StringID();
 	m_iAttachmentIndex = 0;
@@ -2738,7 +2738,7 @@ void CTriggerCamera::InputSetTargetAttachment( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: 
 //------------------------------------------------------------------------------
-void CTriggerCamera::InputSetTrackSpeed( inputdata_t &inputdata )
+void CTriggerCamera::InputSetTrackSpeed( inputdata_t &&inputdata )
 {
 	m_flTrackSpeed = inputdata.value.Float();
 }
@@ -2746,7 +2746,7 @@ void CTriggerCamera::InputSetTrackSpeed( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Input handler to turn on this trigger.
 //------------------------------------------------------------------------------
-void CTriggerCamera::InputEnable( inputdata_t &inputdata )
+void CTriggerCamera::InputEnable( inputdata_t &&inputdata )
 { 
 	m_hPlayer = inputdata.pActivator;
 	Enable();
@@ -2756,7 +2756,7 @@ void CTriggerCamera::InputEnable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Input handler to turn off this trigger.
 //------------------------------------------------------------------------------
-void CTriggerCamera::InputDisable( inputdata_t &inputdata )
+void CTriggerCamera::InputDisable( inputdata_t &&inputdata )
 { 
 	Disable();
 }
@@ -2764,7 +2764,7 @@ void CTriggerCamera::InputDisable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Set a new target for the camera to point at.
 //------------------------------------------------------------------------------
-void CTriggerCamera::InputSetTarget(inputdata_t &inputdata)
+void CTriggerCamera::InputSetTarget( inputdata_t &&inputdata )
 {
 	BaseClass::InputSetTarget( inputdata );
 
@@ -2783,7 +2783,7 @@ void CTriggerCamera::InputSetTarget(inputdata_t &inputdata)
 //------------------------------------------------------------------------------
 // Purpose: Return the camera view to the player's eyes.
 //------------------------------------------------------------------------------
-void CTriggerCamera::InputReturnToEyes(inputdata_t &inputdata)
+void CTriggerCamera::InputReturnToEyes( inputdata_t &&inputdata )
 {
 	if (m_hPlayer)
 	{
@@ -2799,7 +2799,7 @@ void CTriggerCamera::InputReturnToEyes(inputdata_t &inputdata)
 //------------------------------------------------------------------------------
 // Purpose: Teleport the player to the current position of the camera.
 //------------------------------------------------------------------------------
-void CTriggerCamera::InputTeleportToView(inputdata_t &inputdata)
+void CTriggerCamera::InputTeleportToView( inputdata_t &&inputdata )
 {
 	if (m_hPlayer)
 	{
@@ -2825,7 +2825,7 @@ void CTriggerCamera::InputTeleportToView(inputdata_t &inputdata)
 //------------------------------------------------------------------------------
 // Purpose: Have the camera start following a new path.
 //------------------------------------------------------------------------------
-void CTriggerCamera::InputSetPath(inputdata_t &inputdata)
+void CTriggerCamera::InputSetPath( inputdata_t &&inputdata )
 {
 	m_sPath = inputdata.value.StringID();
 	m_pPath = gEntList.FindEntityGeneric(NULL, STRING(m_sPath), this, inputdata.pActivator);
@@ -3246,7 +3246,7 @@ void CTriggerCamera::Move()
 		if ( m_moveDistance <= 0 )
 		{
 			variant_t emptyVariant;
-			m_pPath->AcceptInput( "InPass", this, this, emptyVariant, 0 );
+			m_pPath->AcceptInput( "InPass", this, this, ::Move(emptyVariant), 0 );
 			// Time to go to the next target
 			m_pPath = m_pPath->GetNextTarget();
 
@@ -3335,9 +3335,9 @@ protected:
 BEGIN_MAPENTITY( CTriggerProximity )
 
 	// Keys
-	DEFINE_KEYFIELD(m_iszMeasureTarget, FIELD_STRING, "measuretarget"),
+	DEFINE_KEYFIELD_AUTO( m_iszMeasureTarget, "measuretarget" ),
 
-	DEFINE_KEYFIELD(m_fRadius, FIELD_FLOAT, "radius"),
+	DEFINE_KEYFIELD_AUTO( m_fRadius, "radius" ),
 
 	// Outputs
 	DEFINE_OUTPUT(m_NearestEntityDistance, "NearestEntityDistance"),
@@ -3551,8 +3551,8 @@ public:
 	int		DrawDebugTextOverlays( void );
 
 	// Input handlers
-	void	InputEnable( inputdata_t &inputdata );
-	void	InputSetSpeed( inputdata_t &inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
+	void	InputSetSpeed( inputdata_t &&inputdata );
 
 private:
 	int 	m_nSpeedBase;	// base line for how hard the wind blows
@@ -3579,10 +3579,10 @@ LINK_ENTITY_TO_CLASS( trigger_wind, CTriggerWind );
 
 BEGIN_MAPENTITY( CTriggerWind )
 
-	DEFINE_KEYFIELD( m_nSpeedNoise,	FIELD_INTEGER, "SpeedNoise"),
-	DEFINE_KEYFIELD( m_nDirNoise,	FIELD_INTEGER, "DirectionNoise"),
-	DEFINE_KEYFIELD( m_nHoldBase,	FIELD_INTEGER, "HoldTime"),
-	DEFINE_KEYFIELD( m_nHoldNoise,	FIELD_INTEGER, "HoldNoise"),
+	DEFINE_KEYFIELD_AUTO( m_nSpeedNoise, "SpeedNoise" ),
+	DEFINE_KEYFIELD_AUTO( m_nDirNoise, "DirectionNoise" ),
+	DEFINE_KEYFIELD_AUTO( m_nHoldBase, "HoldTime" ),
+	DEFINE_KEYFIELD_AUTO( m_nHoldNoise, "HoldNoise" ),
 
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetSpeed", InputSetSpeed ),
 
@@ -3684,7 +3684,7 @@ void CTriggerWind::EndTouch(CBaseEntity *pOther)
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CTriggerWind::InputEnable( inputdata_t &inputdata )
+void CTriggerWind::InputEnable( inputdata_t &&inputdata )
 {
 	BaseClass::InputEnable( inputdata );
 	SetContextThink( &CTriggerWind::WindThink, gpGlobals->curtime + 0.1f, WIND_THINK_CONTEXT );
@@ -3754,7 +3754,7 @@ void CTriggerWind::WindThink( void )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CTriggerWind::InputSetSpeed( inputdata_t &inputdata )
+void CTriggerWind::InputSetSpeed( inputdata_t &&inputdata )
 {
 	// Set new speed and mark to switch
 	m_nSpeedBase = inputdata.value.Int();
@@ -3812,7 +3812,7 @@ public:
 LINK_ENTITY_TO_CLASS( trigger_hierarchy, CTriggerHierarchy );
 
 BEGIN_MAPENTITY( CTriggerHierarchy )
-	DEFINE_KEYFIELD( m_iChildFilterName,	FIELD_STRING,	"childfiltername" ),
+	DEFINE_KEYFIELD_AUTO( m_iChildFilterName, "childfiltername" ),
 END_MAPENTITY()
 
 
@@ -3885,8 +3885,8 @@ public:
 	void	StartTouch( CBaseEntity *pOther );
 
 	// Inputs
-	void InputSetMagnitude( inputdata_t &inputdata );
-	void InputImpact( inputdata_t &inputdata );
+	void InputSetMagnitude( inputdata_t &&inputdata );
+	void InputImpact( inputdata_t &&inputdata );
 
 	// Outputs
 	COutputVector	m_pOutputForce;		// Output force in case anyone else wants to use it
@@ -3899,9 +3899,9 @@ LINK_ENTITY_TO_CLASS( trigger_impact, CTriggerImpact );
 
 BEGIN_MAPENTITY( CTriggerImpact )
 
-	DEFINE_KEYFIELD( m_flMagnitude,	FIELD_FLOAT, "Magnitude"),
-	DEFINE_KEYFIELD( m_flNoise,		FIELD_FLOAT, "Noise"),
-	DEFINE_KEYFIELD( m_flViewkick,	FIELD_FLOAT, "Viewkick"),
+	DEFINE_KEYFIELD_AUTO( m_flMagnitude, "Magnitude" ),
+	DEFINE_KEYFIELD_AUTO( m_flNoise, "Noise" ),
+	DEFINE_KEYFIELD_AUTO( m_flViewkick, "Viewkick" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID,  "Impact", InputImpact ),
@@ -3931,7 +3931,7 @@ void CTriggerImpact::Spawn( void )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CTriggerImpact::InputImpact( inputdata_t &inputdata )
+void CTriggerImpact::InputImpact( inputdata_t &&inputdata )
 {
 	// Output the force vector in case anyone else wants to use it
 	Vector vDir;
@@ -3974,7 +3974,7 @@ void CTriggerImpact::StartTouch(CBaseEntity *pOther)
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CTriggerImpact::InputSetMagnitude( inputdata_t &inputdata )
+void CTriggerImpact::InputSetMagnitude( inputdata_t &&inputdata )
 {
 	m_flMagnitude = inputdata.value.Float();
 }
@@ -4117,8 +4117,8 @@ void CTriggerPlayerMovement::EndTouch( CBaseEntity *pOther )
 // Save/load
 //------------------------------------------------------------------------------
 BEGIN_MAPENTITY( CBaseVPhysicsTrigger )
-	DEFINE_KEYFIELD( m_bDisabled,		FIELD_BOOLEAN,	"StartDisabled" ),
-	DEFINE_KEYFIELD( m_iFilterName,	FIELD_STRING,	"filtername" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterName, "filtername" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -4198,7 +4198,7 @@ void CBaseVPhysicsTrigger::Activate( void )
 //------------------------------------------------------------------------------
 // Inputs
 //------------------------------------------------------------------------------
-void CBaseVPhysicsTrigger::InputToggle( inputdata_t &inputdata )
+void CBaseVPhysicsTrigger::InputToggle( inputdata_t &&inputdata )
 {
 	if ( m_bDisabled )
 	{
@@ -4213,7 +4213,7 @@ void CBaseVPhysicsTrigger::InputToggle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseVPhysicsTrigger::InputEnable( inputdata_t &inputdata )
+void CBaseVPhysicsTrigger::InputEnable( inputdata_t &&inputdata )
 {
 	if ( m_bDisabled )
 	{
@@ -4228,7 +4228,7 @@ void CBaseVPhysicsTrigger::InputEnable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseVPhysicsTrigger::InputDisable( inputdata_t &inputdata )
+void CBaseVPhysicsTrigger::InputDisable( inputdata_t &&inputdata )
 {
 	if ( !m_bDisabled )
 	{
@@ -4358,7 +4358,7 @@ public:
 	void StartTouch( CBaseEntity *pOther );
 	void EndTouch( CBaseEntity *pOther );
 
-	void InputSetVelocityLimitTime( inputdata_t &inputdata );
+	void InputSetVelocityLimitTime( inputdata_t &&inputdata );
 
 	float LinearLimit();
 
@@ -4563,7 +4563,7 @@ void CTriggerVPhysicsMotion::EndTouch( CBaseEntity *pOther )
 //------------------------------------------------------------------------------
 // Inputs
 //------------------------------------------------------------------------------
-void CTriggerVPhysicsMotion::InputSetVelocityLimitTime( inputdata_t &inputdata )
+void CTriggerVPhysicsMotion::InputSetVelocityLimitTime( inputdata_t &&inputdata )
 {
 	m_linearLimitStart = LinearLimit();
 	m_linearLimitStartTime = gpGlobals->curtime;
@@ -4753,8 +4753,8 @@ private:
 
 
 BEGIN_MAPENTITY( CTriggerApplyImpulse )
-	DEFINE_KEYFIELD( m_vecImpulseDir, FIELD_VECTOR, "impulse_dir" ),
-	DEFINE_KEYFIELD( m_flForce, FIELD_FLOAT, "force" ),
+	DEFINE_KEYFIELD_AUTO( m_vecImpulseDir, "impulse_dir" ),
+	DEFINE_KEYFIELD_AUTO( m_flForce, "force" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "ApplyImpulse", InputApplyImpulse ),
 END_MAPENTITY()
 
@@ -4821,7 +4821,7 @@ LINK_ENTITY_TO_CLASS( trigger_fall, CTriggerFall );
 
 BEGIN_MAPENTITY( CTriggerFall )
 
-	DEFINE_KEYFIELD( m_bStayLethal, FIELD_BOOLEAN, "StayLethal" ),
+	DEFINE_KEYFIELD_AUTO( m_bStayLethal, "StayLethal" ),
 
 END_MAPENTITY()
 

@@ -33,11 +33,11 @@ LINK_ENTITY_TO_CLASS( env_steamjet, CSteamJet ); // For support of legacy env_st
 BEGIN_MAPENTITY( CSteamJet )
 
 	//Keyvalue fields
-	DEFINE_KEYFIELD( m_StartSize,	FIELD_FLOAT,	"StartSize" ),
-	DEFINE_KEYFIELD( m_EndSize,		FIELD_FLOAT,	"EndSize" ),
-	DEFINE_KEYFIELD( m_InitialState,	FIELD_BOOLEAN,	"InitialState" ),
-	DEFINE_KEYFIELD( m_nType,		FIELD_INTEGER,	"Type" ),
-	DEFINE_KEYFIELD( m_flRollSpeed, FIELD_FLOAT, "RollSpeed" ),
+	DEFINE_KEYFIELD_AUTO( m_StartSize, "StartSize" ),
+	DEFINE_KEYFIELD_AUTO( m_EndSize, "EndSize" ),
+	DEFINE_KEYFIELD_AUTO( m_InitialState, "InitialState" ),
+	DEFINE_KEYFIELD_AUTO( m_nType, "Type" ),
+	DEFINE_KEYFIELD_AUTO( m_flRollSpeed, "RollSpeed" ),
 
 	// Inputs
 	DEFINE_INPUT( m_JetLength, FIELD_FLOAT, "JetLength" ),
@@ -102,7 +102,7 @@ void CSteamJet::Precache( void )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for toggling the steam jet on/off.
 //-----------------------------------------------------------------------------
-void CSteamJet::InputToggle(inputdata_t &data)
+void CSteamJet::InputToggle( inputdata_t &&inputdata )
 {
 	m_bEmit = !m_bEmit;
 }
@@ -111,7 +111,7 @@ void CSteamJet::InputToggle(inputdata_t &data)
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for turning on the steam jet.
 //-----------------------------------------------------------------------------
-void CSteamJet::InputTurnOn(inputdata_t &data)
+void CSteamJet::InputTurnOn( inputdata_t &&inputdata )
 {
 	m_bEmit = true;
 }
@@ -120,7 +120,7 @@ void CSteamJet::InputTurnOn(inputdata_t &data)
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for turning off the steam jet.
 //-----------------------------------------------------------------------------
-void CSteamJet::InputTurnOff(inputdata_t &data)
+void CSteamJet::InputTurnOff( inputdata_t &&inputdata )
 {
 	m_bEmit = false;
 }

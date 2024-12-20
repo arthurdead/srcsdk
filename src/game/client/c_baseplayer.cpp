@@ -397,8 +397,8 @@ BEGIN_PREDICTION_DATA( C_BasePlayer )
 
 	DEFINE_FIELD_FLAGS( m_iFOV, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD_FLAGS( m_hZoomOwner, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
-	DEFINE_FIELD_FLAGS( m_flFOVTime, FIELD_FLOAT, 0 ),
-	DEFINE_FIELD_FLAGS( m_iFOVStart, FIELD_INTEGER, 0 ),
+	DEFINE_FIELD_FLAGS( m_flFOVTime, FIELD_FLOAT, FTYPEDESC_NONE ),
+	DEFINE_FIELD_FLAGS( m_iFOVStart, FIELD_INTEGER, FTYPEDESC_NONE ),
 
 	DEFINE_FIELD_FLAGS( m_hVehicle, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD_FLAGS_TOL( m_flMaxspeed, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, 0.5f ),
@@ -499,8 +499,8 @@ C_BasePlayer::C_BasePlayer() :
 
 	m_bFiredWeapon = false;
 
-	m_nForceVisionFilterFlags = 0;
-	m_nLocalPlayerVisionFlags = 0;
+	m_nForceVisionFilterFlags = VISION_FILTER_NONE;
+	m_nLocalPlayerVisionFlags = VISION_FILTER_NONE;
 
 	m_bIsLocalPlayer = false;
 	m_afButtonForced = 0;
@@ -594,7 +594,7 @@ void C_BasePlayer::Spawn( void )
 	ClearFlags();
 	AddFlag( FL_CLIENT );
 
-	int effects = GetEffects() & EF_NOSHADOW;
+	Effects_t effects = GetEffects() & EF_NOSHADOW;
 	SetEffects( effects );
 
 	m_iFOV	= 0;	// init field of view.
@@ -941,7 +941,7 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 			m_flFreezeFrameDistance = RandomFloat( spec_freeze_distance_min.GetFloat(), spec_freeze_distance_max.GetFloat() );
 			m_flFreezeZOffset = RandomFloat( -30, 20 );
 			m_bSentFreezeFrame = false;
-			m_nForceVisionFilterFlags = 0;
+			m_nForceVisionFilterFlags = VISION_FILTER_NONE;
 
 			C_BaseEntity *target = GetObserverTarget();
 			if ( target && target->IsPlayer() )
@@ -981,12 +981,12 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 
 			snd_soundmixer->Revert();
 
-			m_nForceVisionFilterFlags = 0;
+			m_nForceVisionFilterFlags = VISION_FILTER_NONE;
 			CalculateVisionUsingCurrentFlags();
 		}
 		
 		// force calculate vision when the local vision flags changed
-		int nCurrentLocalPlayerVisionFlags = GetLocalPlayerVisionFilterFlags();
+		vision_filter_t nCurrentLocalPlayerVisionFlags = GetLocalPlayerVisionFilterFlags();
 		if ( m_nLocalPlayerVisionFlags != nCurrentLocalPlayerVisionFlags )
 		{
 			localplayer_visionflags.SetValue( nCurrentLocalPlayerVisionFlags );
@@ -1095,15 +1095,15 @@ void C_BasePlayer::UpdateClientSideAnimation()
 	BaseClass::UpdateClientSideAnimation();
 }
 
-int C_BasePlayer::GetVisionFilterFlags()
+vision_filter_t C_BasePlayer::GetVisionFilterFlags()
 {
 	// Force our vision filter to a specific setting
-	if ( m_nForceVisionFilterFlags != 0 )
+	if ( m_nForceVisionFilterFlags != VISION_FILTER_NONE )
 	{
 		return m_nForceVisionFilterFlags;
 	}
 
-	int nVisionOptInFlags = UTIL_GetActiveHolidaysVisionFilter();
+	vision_filter_t nVisionOptInFlags = UTIL_GetActiveHolidaysVisionFilter();
 
 	return nVisionOptInFlags;
 }

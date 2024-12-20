@@ -24,10 +24,10 @@ public:
 	CRagdollManager();
 
 	virtual void	Activate();
-	virtual int		UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 
-	void InputSetMaxRagdollCount(inputdata_t &data);
-	void InputSetMaxRagdollCountDX8(inputdata_t &data);
+	void InputSetMaxRagdollCount( inputdata_t &&inputdata );
+	void InputSetMaxRagdollCountDX8( inputdata_t &&inputdata );
 
 	int DrawDebugTextOverlays(void);
 
@@ -53,10 +53,10 @@ LINK_ENTITY_TO_CLASS( game_ragdoll_manager, CRagdollManager );
 
 BEGIN_MAPENTITY( CRagdollManager )
 
-	DEFINE_KEYFIELD( m_iMaxRagdollCount, FIELD_INTEGER,	"MaxRagdollCount" ),
-	DEFINE_KEYFIELD( m_iMaxRagdollCountDX8, FIELD_INTEGER,	"MaxRagdollCountDX8" ),
+	DEFINE_KEYFIELD_AUTO( m_iMaxRagdollCount, "MaxRagdollCount" ),
+	DEFINE_KEYFIELD_AUTO( m_iMaxRagdollCountDX8, "MaxRagdollCountDX8" ),
 
-	DEFINE_KEYFIELD( m_bSaveImportant, FIELD_BOOLEAN, "SaveImportant" ),
+	DEFINE_KEYFIELD_AUTO( m_bSaveImportant, "SaveImportant" ),
 
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMaxRagdollCount",  InputSetMaxRagdollCount ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMaxRagdollCountDX8",  InputSetMaxRagdollCountDX8 ),
@@ -78,7 +78,7 @@ CRagdollManager::CRagdollManager( void )
 // Input  : *pInfo - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CRagdollManager::UpdateTransmitState()
+EdictStateFlags_t CRagdollManager::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
@@ -125,7 +125,7 @@ void CRagdollManager::UpdateCurrentMaxRagDollCount()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CRagdollManager::InputSetMaxRagdollCount(inputdata_t &inputdata)
+void CRagdollManager::InputSetMaxRagdollCount( inputdata_t &&inputdata )
 {
 	m_iMaxRagdollCount = inputdata.value.Int();
 	UpdateCurrentMaxRagDollCount();
@@ -133,7 +133,7 @@ void CRagdollManager::InputSetMaxRagdollCount(inputdata_t &inputdata)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CRagdollManager::InputSetMaxRagdollCountDX8(inputdata_t &inputdata)
+void CRagdollManager::InputSetMaxRagdollCountDX8( inputdata_t &&inputdata )
 {
 	m_iMaxRagdollCountDX8 = inputdata.value.Int();
 	UpdateCurrentMaxRagDollCount();

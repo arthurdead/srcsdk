@@ -72,10 +72,10 @@ public:
 	int DrawDebugTextOverlays(void);
 
 	// Input handlers
-	void InputStartShake( inputdata_t &inputdata );
-	void InputStopShake( inputdata_t &inputdata );
-	void InputAmplitude( inputdata_t &inputdata );
-	void InputFrequency( inputdata_t &inputdata );
+	void InputStartShake( inputdata_t &&inputdata );
+	void InputStopShake( inputdata_t &&inputdata );
+	void InputAmplitude( inputdata_t &&inputdata );
+	void InputFrequency( inputdata_t &&inputdata );
 
 	// Causes the camera/physics shakes to happen:
 	void ApplyShake( ShakeCommand_t command ); 
@@ -86,10 +86,10 @@ LINK_ENTITY_TO_CLASS( env_shake, CEnvShake );
 
 BEGIN_MAPENTITY( CEnvShake )
 
-	DEFINE_KEYFIELD( m_Amplitude,	FIELD_FLOAT, "amplitude" ),
-	DEFINE_KEYFIELD( m_Frequency,	FIELD_FLOAT, "frequency" ),
-	DEFINE_KEYFIELD( m_Duration,		FIELD_FLOAT, "duration" ),
-	DEFINE_KEYFIELD( m_Radius,		FIELD_FLOAT, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_Amplitude, "amplitude" ),
+	DEFINE_KEYFIELD_AUTO( m_Frequency, "frequency" ),
+	DEFINE_KEYFIELD_AUTO( m_Duration, "duration" ),
+	DEFINE_KEYFIELD_AUTO( m_Radius, "radius" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartShake", InputStartShake ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopShake", InputStopShake ),
@@ -238,7 +238,7 @@ void CEnvShake::ApplyShake( ShakeCommand_t command )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that starts the screen shake.
 //-----------------------------------------------------------------------------
-void CEnvShake::InputStartShake( inputdata_t &inputdata )
+void CEnvShake::InputStartShake( inputdata_t &&inputdata )
 {
 	if ( HasSpawnFlags( SF_SHAKE_NO_RUMBLE ) )
 	{
@@ -258,7 +258,7 @@ void CEnvShake::InputStartShake( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that stops the screen shake.
 //-----------------------------------------------------------------------------
-void CEnvShake::InputStopShake( inputdata_t &inputdata )
+void CEnvShake::InputStopShake( inputdata_t &&inputdata )
 {
 	ApplyShake( SHAKE_STOP );
 }
@@ -267,7 +267,7 @@ void CEnvShake::InputStopShake( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Handles changes to the shake amplitude from an external source.
 //-----------------------------------------------------------------------------
-void CEnvShake::InputAmplitude( inputdata_t &inputdata )
+void CEnvShake::InputAmplitude( inputdata_t &&inputdata )
 {
 	SetAmplitude( inputdata.value.Float() );
 	ApplyShake( SHAKE_AMPLITUDE );
@@ -277,7 +277,7 @@ void CEnvShake::InputAmplitude( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Handles changes to the shake frequency from an external source.
 //-----------------------------------------------------------------------------
-void CEnvShake::InputFrequency( inputdata_t &inputdata )
+void CEnvShake::InputFrequency( inputdata_t &&inputdata )
 {
 	SetFrequency( inputdata.value.Float() );
 	ApplyShake( SHAKE_FREQUENCY );
@@ -421,8 +421,8 @@ public:
 	int DrawDebugTextOverlays(void);
 
 	// Input handlers
-	void InputStartTilt( inputdata_t &inputdata );
-	void InputStopTilt( inputdata_t &inputdata );
+	void InputStartTilt( inputdata_t &&inputdata );
+	void InputStopTilt( inputdata_t &&inputdata );
 
 	// Causes the camera/physics shakes to happen:
 	void ApplyTilt( ShakeCommand_t command ); 
@@ -432,9 +432,9 @@ LINK_ENTITY_TO_CLASS( env_tilt, CEnvTilt );
 
 BEGIN_MAPENTITY( CEnvTilt )
 
-	DEFINE_KEYFIELD( m_Duration,	FIELD_FLOAT, "duration" ),
-	DEFINE_KEYFIELD( m_Radius,		FIELD_FLOAT, "radius" ),
-	DEFINE_KEYFIELD( m_TiltTime,	FIELD_TIME, "tilttime" ),
+	DEFINE_KEYFIELD_AUTO( m_Duration, "duration" ),
+	DEFINE_KEYFIELD_AUTO( m_Radius, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_TiltTime, "tilttime" ),
 	DEFINE_FIELD( m_stopTime,		FIELD_TIME ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartTilt", InputStartTilt ),
@@ -502,7 +502,7 @@ void CEnvTilt::ApplyTilt( ShakeCommand_t command )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that starts the screen shake.
 //-----------------------------------------------------------------------------
-void CEnvTilt::InputStartTilt( inputdata_t &inputdata )
+void CEnvTilt::InputStartTilt( inputdata_t &&inputdata )
 {
 	if ( HasSpawnFlags( SF_SHAKE_NO_RUMBLE ) )
 	{
@@ -522,7 +522,7 @@ void CEnvTilt::InputStartTilt( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that stops the screen shake.
 //-----------------------------------------------------------------------------
-void CEnvTilt::InputStopTilt( inputdata_t &inputdata )
+void CEnvTilt::InputStopTilt( inputdata_t &&inputdata )
 {
 	ApplyTilt( SHAKE_STOP );
 }

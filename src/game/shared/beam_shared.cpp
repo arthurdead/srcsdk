@@ -42,7 +42,7 @@ public:
 	DECLARE_CLASS( CInfoTarget, CPointEntity );
 
 	void	Spawn( void );
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 };
 
 //info targets are like point entities except you can force them to spawn on the client
@@ -59,7 +59,7 @@ void CInfoTarget::Spawn( void )
 //-----------------------------------------------------------------------------
 // Purpose: Always transmitted to clients
 //-----------------------------------------------------------------------------
-int CInfoTarget::UpdateTransmitState()
+EdictStateFlags_t CInfoTarget::UpdateTransmitState()
 {
 	// Spawn flags 2 means we always transmit
 	if ( HasSpawnFlags(0x02) )
@@ -177,7 +177,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CSharedBeam, DT_Beam )
 	SendPropFloat	(SENDINFO(m_fSpeed),		8,	SPROP_NOSCALE,	0.0f,	MAX_BEAM_SCROLLSPEED),
 	SendPropFloat	(SENDINFO(m_flFrameRate),	10, SPROP_ROUNDUP, -25.0f, 25.0f ),
 	SendPropFloat	(SENDINFO(m_flHDRColorScale),	0, SPROP_NOSCALE, 0.0f, 100.0f ),
-	SendPropFloat	(SENDINFO(m_flFrame),		20, SPROP_ROUNDDOWN | SPROP_CHANGES_OFTEN,	0.0f,   256.0f),
+	SendPropFloat	(SENDINFO(m_flFrame),		20, SPROP_ROUNDDOWN | SPROP_CHANGES_OFTEN,	0.0f,   256.0f, SendProxy_Float, SENDPROP_CHANGES_OFTEN_PRIORITY),
 	SendPropInt		(SENDINFO(m_nClipStyle), CSharedBeam::kBEAMCLIPSTYLE_NUMBITS+1, SPROP_UNSIGNED ),
 	SendPropVector	(SENDINFO(m_vecEndPos),		-1,	SPROP_COORD ),
 #ifdef PORTAL
@@ -185,7 +185,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CSharedBeam, DT_Beam )
 	SendPropBool	(SENDINFO(m_bDrawInPortalRender) ),
 #endif
 	SendPropModelIndex(SENDINFO(m_nModelIndex) ),
-	SendPropVector (SENDINFO(m_vecOrigin), 19, SPROP_CHANGES_OFTEN,	MIN_COORD_INTEGER, MAX_COORD_INTEGER),
+	SendPropVector (SENDINFO(m_vecOrigin), 19, SPROP_CHANGES_OFTEN,	MIN_COORD_INTEGER, MAX_COORD_INTEGER, SendProxy_Vector, SENDPROP_CHANGES_OFTEN_PRIORITY),
 	SendPropEHandle(SENDINFO_NAME(m_hMoveParent, moveparent) ),
 	SendPropInt		(SENDINFO(m_nMinDXLevel),	8,	SPROP_UNSIGNED ),
 
@@ -236,11 +236,11 @@ END_NETWORK_TABLE()
 #if !defined( CLIENT_DLL )
 BEGIN_MAPENTITY( CBeam )
 	
-	DEFINE_KEYFIELD( m_flHDRColorScale, FIELD_FLOAT, "HDRColorScale" ),
+	DEFINE_KEYFIELD_AUTO( m_flHDRColorScale, "HDRColorScale" ),
 
-	DEFINE_KEYFIELD( m_flDamage, FIELD_FLOAT, "damage" ),
+	DEFINE_KEYFIELD_AUTO( m_flDamage, "damage" ),
 
-	DEFINE_KEYFIELD( m_nDissolveType, FIELD_INTEGER, "dissolvetype" ),
+	DEFINE_KEYFIELD_AUTO( m_nDissolveType, "dissolvetype" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "Width", InputWidth ),
@@ -810,36 +810,36 @@ void CSharedBeam::TurnOff( void )
 //			beam width.
 // Input  : Beam width in tenths of world units.
 //-----------------------------------------------------------------------------
-void CSharedBeam::InputWidth( inputdata_t &inputdata )
+void CSharedBeam::InputWidth( inputdata_t &&inputdata )
 {
 	SetWidth( inputdata.value.Float() );
 	SetEndWidth( inputdata.value.Float() );
 }
 
-void CSharedBeam::InputColorRedValue( inputdata_t &inputdata )
+void CSharedBeam::InputColorRedValue( inputdata_t &&inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt(inputdata.value.Float()), 0, 255 );
 	SetColor( nNewColor, GetRenderColorG(), GetRenderColorB() );
 }
 
-void CSharedBeam::InputColorGreenValue( inputdata_t &inputdata )
+void CSharedBeam::InputColorGreenValue( inputdata_t &&inputdata )
 {
 	int nNewColor =clamp( FastFloatToSmallInt(inputdata.value.Float()), 0, 255 );
 	SetColor( GetRenderColorR(), nNewColor, GetRenderColorB() );
 }
 
-void CSharedBeam::InputColorBlueValue( inputdata_t &inputdata )
+void CSharedBeam::InputColorBlueValue( inputdata_t &&inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt(inputdata.value.Float()), 0, 255 );
 	SetColor( GetRenderColorR(), GetRenderColorG(), nNewColor );
 }
 
-void CSharedBeam::InputNoise( inputdata_t &inputdata )
+void CSharedBeam::InputNoise( inputdata_t &&inputdata )
 {
 	SetNoise( inputdata.value.Float() );
 }
 
-int CSharedBeam::UpdateTransmitState( void )
+EdictStateFlags_t CSharedBeam::UpdateTransmitState( void )
 {
 	// we must call ShouldTransmit() if we have a move parent
 	if ( GetMoveParent() )

@@ -23,13 +23,13 @@ public:
 	CEnvScreenOverlay();
 
 	// Always transmit to clients
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 	virtual void Spawn( void );
 	virtual void Precache( void );
 
-	void	InputStartOverlay( inputdata_t &inputdata );
-	void	InputStopOverlay( inputdata_t &inputdata );
-	void	InputSwitchOverlay( inputdata_t &inputdata );
+	void	InputStartOverlay( inputdata_t &&inputdata );
+	void	InputStopOverlay( inputdata_t &&inputdata );
+	void	InputSwitchOverlay( inputdata_t &&inputdata );
 
 	void	SetActive( bool bActive ) { m_bIsActive = bActive; }
 	
@@ -72,7 +72,7 @@ BEGIN_MAPENTITY( CEnvScreenOverlay )
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopOverlays", InputStopOverlay ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SwitchOverlay", InputSwitchOverlay ),
 
-	DEFINE_KEYFIELD( m_iOverlayIndex, FIELD_INTEGER, "OverlayIndex" ),
+	DEFINE_KEYFIELD_AUTO( m_iOverlayIndex, "OverlayIndex" ),
 
 END_MAPENTITY()
 
@@ -128,7 +128,7 @@ void CEnvScreenOverlay::Precache( void )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CEnvScreenOverlay::InputStartOverlay( inputdata_t &inputdata )
+void CEnvScreenOverlay::InputStartOverlay( inputdata_t &&inputdata )
 {
 	if ( m_iszOverlayNames[m_iDesiredOverlay] == NULL_STRING )
 	{
@@ -151,13 +151,13 @@ void CEnvScreenOverlay::InputStartOverlay( inputdata_t &inputdata )
 	}
 }
 
-int CEnvScreenOverlay::UpdateTransmitState()
+EdictStateFlags_t CEnvScreenOverlay::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
 
 
-void CEnvScreenOverlay::InputSwitchOverlay( inputdata_t &inputdata )
+void CEnvScreenOverlay::InputSwitchOverlay( inputdata_t &&inputdata )
 {
 	int iNewOverlay = inputdata.value.Int() - 1;
 	iNewOverlay = abs( iNewOverlay );
@@ -172,7 +172,7 @@ void CEnvScreenOverlay::InputSwitchOverlay( inputdata_t &inputdata )
 	m_flStartTime = gpGlobals->curtime;
 }
 
-void CEnvScreenOverlay::InputStopOverlay( inputdata_t &inputdata )
+void CEnvScreenOverlay::InputStopOverlay( inputdata_t &&inputdata )
 {
 	if ( m_iszOverlayNames[m_iDesiredOverlay] == NULL_STRING )
 	{
@@ -199,14 +199,14 @@ public:
 
 	// We always want to be sent to the client
 	CEnvScreenEffect( void ) { 	AddEFlags( EFL_FORCE_CHECK_TRANSMIT ); }
-	virtual int UpdateTransmitState( void )	{ return SetTransmitState( FL_EDICT_ALWAYS ); }
+	virtual EdictStateFlags_t UpdateTransmitState( void )	{ return SetTransmitState( FL_EDICT_ALWAYS ); }
 	virtual void Spawn( void );
 	virtual void Precache( void );
 
 private:
 
-	void InputStartEffect( inputdata_t &inputdata );
-	void InputStopEffect( inputdata_t &inputdata );
+	void InputStartEffect( inputdata_t &&inputdata );
+	void InputStopEffect( inputdata_t &&inputdata );
 
 	CNetworkVar( float, m_flDuration );
 	CNetworkVar( int, m_nType );
@@ -216,7 +216,7 @@ LINK_ENTITY_TO_CLASS( env_screeneffect, CEnvScreenEffect );
 
 // CEnvScreenEffect
 BEGIN_MAPENTITY( CEnvScreenEffect )
-	DEFINE_KEYFIELD( m_nType, FIELD_INTEGER, "type" ),
+	DEFINE_KEYFIELD_AUTO( m_nType, "type" ),
 
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "StartEffect", InputStartEffect ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "StopEffect", InputStopEffect ),
@@ -241,7 +241,7 @@ void CEnvScreenEffect::Precache( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvScreenEffect::InputStartEffect( inputdata_t &inputdata )
+void CEnvScreenEffect::InputStartEffect( inputdata_t &&inputdata )
 {
 	// Take the duration as our value
 	m_flDuration = inputdata.value.Float();
@@ -254,7 +254,7 @@ void CEnvScreenEffect::InputStartEffect( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CEnvScreenEffect::InputStopEffect( inputdata_t &inputdata )
+void CEnvScreenEffect::InputStopEffect( inputdata_t &&inputdata )
 {
 	m_flDuration = inputdata.value.Float();
 

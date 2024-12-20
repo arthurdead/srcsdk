@@ -116,7 +116,7 @@ void CFlexExpresser::Think( void )
 	StudioFrameAdvance ( );
 }
 
-void CFlexExpresser::InputSpeakResponseConcept( inputdata_t &inputdata )
+void CFlexExpresser::InputSpeakResponseConcept( inputdata_t &&inputdata )
 {
 	const char *pInputString = STRING(inputdata.value.StringID());
 	// if no params, early out
@@ -242,7 +242,7 @@ CFlexExpresser * CFlexExpresser::AsFlexExpresser( CBaseEntity *pEntity )
 
 BEGIN_MAPENTITY( CFlexExpresser )
 DEFINE_INPUTFUNC( FIELD_STRING,	"SpeakResponseConcept",	InputSpeakResponseConcept ),
-DEFINE_KEYFIELD( m_flThenAnyMaxDist, FIELD_FLOAT, "maxThenAnyDispatchDist" ),
+DEFINE_KEYFIELD_AUTO( m_flThenAnyMaxDist, "maxThenAnyDispatchDist" ),
 END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( prop_talker , CFlexExpresser ); 

@@ -35,13 +35,13 @@ LINK_ENTITY_TO_SERVERCLASS( env_sprite_oriented, CSpriteOriented );
 #if !defined( CLIENT_DLL )
 BEGIN_MAPENTITY( CSprite )
 
-	DEFINE_KEYFIELD( m_flSpriteScale, FIELD_FLOAT, "scale" ),
-	DEFINE_KEYFIELD( m_flSpriteFramerate, FIELD_FLOAT, "framerate" ),
-	DEFINE_KEYFIELD( m_flFrame, FIELD_FLOAT, "frame" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpriteScale, "scale" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpriteFramerate, "framerate" ),
+	DEFINE_KEYFIELD_AUTO( m_flFrame, "frame" ),
 
-	DEFINE_KEYFIELD( m_flHDRColorScale, FIELD_FLOAT, "HDRColorScale" ),
+	DEFINE_KEYFIELD_AUTO( m_flHDRColorScale, "HDRColorScale" ),
 
-	DEFINE_KEYFIELD( m_flGlowProxySize,	FIELD_FLOAT, "GlowProxySize" ),
+	DEFINE_KEYFIELD_AUTO( m_flGlowProxySize, "GlowProxySize" ),
 
 	// Inputs
 	DEFINE_INPUT( m_flSpriteScale, FIELD_FLOAT, "SetScale" ),
@@ -311,7 +311,7 @@ void CSharedSprite::SpriteInit( const char *pSpriteName, const Vector &origin )
 
 #if !defined( CLIENT_DLL )
 
-int CSharedSprite::UpdateTransmitState( void )
+EdictStateFlags_t CSharedSprite::UpdateTransmitState( void )
 {
 	if ( GetMoveParent() )
 	{
@@ -554,7 +554,7 @@ void CSharedSprite::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that hides the sprite.
 //-----------------------------------------------------------------------------
-void CSharedSprite::InputHideSprite( inputdata_t &inputdata )
+void CSharedSprite::InputHideSprite( inputdata_t &&inputdata )
 {
 	TurnOff();
 }
@@ -563,24 +563,24 @@ void CSharedSprite::InputHideSprite( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that hides the sprite.
 //-----------------------------------------------------------------------------
-void CSharedSprite::InputShowSprite( inputdata_t &inputdata )
+void CSharedSprite::InputShowSprite( inputdata_t &&inputdata )
 {
 	TurnOn();
 }
 
-void CSharedSprite::InputColorRedValue( inputdata_t &inputdata )
+void CSharedSprite::InputColorRedValue( inputdata_t &&inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt( inputdata.value.Float() ), 0, 255 );
 	SetColor( nNewColor, GetRenderColorG(), GetRenderColorB() );
 }
 
-void CSharedSprite::InputColorGreenValue( inputdata_t &inputdata )
+void CSharedSprite::InputColorGreenValue( inputdata_t &&inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt( inputdata.value.Float() ), 0, 255 );
 	SetColor( GetRenderColorR(), nNewColor, GetRenderColorB() );
 }
 
-void CSharedSprite::InputColorBlueValue( inputdata_t &inputdata )
+void CSharedSprite::InputColorBlueValue( inputdata_t &&inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt( inputdata.value.Float() ), 0, 255 );
 	SetColor( GetRenderColorR(), GetRenderColorG(), nNewColor );
@@ -589,7 +589,7 @@ void CSharedSprite::InputColorBlueValue( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that toggles the sprite between hidden and shown.
 //-----------------------------------------------------------------------------
-void CSharedSprite::InputToggleSprite( inputdata_t &inputdata )
+void CSharedSprite::InputToggleSprite( inputdata_t &&inputdata )
 {
 	if ( !IsEffectActive( EF_NODRAW ) )
 	{

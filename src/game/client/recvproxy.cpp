@@ -115,8 +115,7 @@ RecvProp RecvPropTime(
 	int offset, 
 	int sizeofVar/*=SIZEOF_IGNORE*/ )
 {
-//	return RecvPropInt( pVarName, offset, sizeofVar, 0, RecvProxy_Time );
-	return RecvPropFloat( pVarName, offset, sizeofVar );
+	return RecvPropInt( pVarName, offset, sizeofVar, 0, RecvProxy_Time );
 };
 
 //-----------------------------------------------------------------------------
@@ -131,7 +130,7 @@ RecvProp RecvPropTime(
 //			*pStruct - 
 //			*pOut - 
 //-----------------------------------------------------------------------------
-static void RecvProxy_IntToPredictableId( const CRecvProxyData *pData, void *pStruct, void *pOut )
+static void RecvProxy_PredictableId( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	CPredictableId *pId = (CPredictableId*)pOut;
 	Assert( pId );
@@ -149,7 +148,7 @@ RecvProp RecvPropPredictableId(
 	int offset, 
 	int sizeofVar/*=SIZEOF_IGNORE*/ )
 {
-	return RecvPropInt( pVarName, offset, sizeofVar, 0, RecvProxy_IntToPredictableId );
+	return RecvPropInt( pVarName, offset, sizeofVar, 0, RecvProxy_PredictableId );
 }
 
 void RecvProxy_StringT( const CRecvProxyData *pData, void *pStruct, void *pOut )

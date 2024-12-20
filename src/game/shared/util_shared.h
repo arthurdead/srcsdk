@@ -81,7 +81,7 @@ QAngle	SharedRandomAngle( const char *sharedname, float minVal, float maxVal, in
 // Standard collision filters...
 //-----------------------------------------------------------------------------
 bool PassServerEntityFilter( const IHandleEntity *pTouch, const IHandleEntity *pPass );
-bool StandardFilterRules( IHandleEntity *pHandleEntity, int fContentsMask );
+bool StandardFilterRules( IHandleEntity *pHandleEntity, ContentsFlags_t fContentsMask );
 
 
 //-----------------------------------------------------------------------------
@@ -117,7 +117,7 @@ inline CSharedBaseEntity *EntityFromEntityHandle( IHandleEntity *pHandleEntity )
 #endif
 }
 
-typedef bool (*ShouldHitFunc_t)( IHandleEntity *pHandleEntity, int contentsMask );
+typedef bool (*ShouldHitFunc_t)( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 
 //-----------------------------------------------------------------------------
 // traceline methods
@@ -128,16 +128,16 @@ public:
 	// It does have a base, but we'll never network anything below here..
 	DECLARE_CLASS_NOBASE( CTraceFilterSimple );
 
-	CTraceFilterSimple( const IHandleEntity *passentity, int collisionGroup, ShouldHitFunc_t pExtraShouldHitCheckFn = NULL );
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	CTraceFilterSimple( const IHandleEntity *passentity, Collision_Group_t collisionGroup, ShouldHitFunc_t pExtraShouldHitCheckFn = NULL );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 	virtual void SetPassEntity( const IHandleEntity *pPassEntity ) { m_pPassEnt = pPassEntity; }
-	virtual void SetCollisionGroup( int iCollisionGroup ) { m_collisionGroup = iCollisionGroup; }
+	virtual void SetCollisionGroup( Collision_Group_t iCollisionGroup ) { m_collisionGroup = iCollisionGroup; }
 
 	const IHandleEntity *GetPassEntity( void ){ return m_pPassEnt;}
 
 private:
 	const IHandleEntity *m_pPassEnt;
-	int m_collisionGroup;
+	Collision_Group_t m_collisionGroup;
 	ShouldHitFunc_t m_pExtraShouldHitCheckFunction;
 
 };
@@ -148,7 +148,7 @@ public:
 	// It does have a base, but we'll never network anything below here..
 	DECLARE_CLASS( CTraceFilterSkipTwoEntities, CTraceFilterSimple );
 	
-	CTraceFilterSkipTwoEntities( const IHandleEntity *passentity = NULL, const IHandleEntity *passentity2 = NULL, int collisionGroup = COLLISION_GROUP_NONE );
+	CTraceFilterSkipTwoEntities( const IHandleEntity *passentity = NULL, const IHandleEntity *passentity2 = NULL, Collision_Group_t collisionGroup = COLLISION_GROUP_NONE );
 	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
 	virtual void SetPassEntity2( const IHandleEntity *pPassEntity2 ) { m_pPassEnt2 = pPassEntity2; }
 
@@ -159,8 +159,8 @@ private:
 class CTraceFilterSimpleList : public CTraceFilterSimple
 {
 public:
-	CTraceFilterSimpleList( int collisionGroup );
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	CTraceFilterSimpleList( Collision_Group_t collisionGroup );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 
 	void	AddEntityToIgnore( IHandleEntity *pEntity );
 	void	AddEntitiesToIgnore( int nCount, IHandleEntity **ppEntities );
@@ -175,7 +175,7 @@ public:
 	DECLARE_CLASS_NOBASE( CTraceFilterOnlyHitThis );
 
 	CTraceFilterOnlyHitThis( const IHandleEntity *hitentity );
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 
 private:
 	const IHandleEntity *m_pHitEnt;
@@ -184,7 +184,7 @@ private:
 class CTraceFilterOnlyNPCsAndPlayer : public CTraceFilterSimple
 {
 public:
-	CTraceFilterOnlyNPCsAndPlayer( const IHandleEntity *passentity, int collisionGroup )
+	CTraceFilterOnlyNPCsAndPlayer( const IHandleEntity *passentity, Collision_Group_t collisionGroup )
 		: CTraceFilterSimple( passentity, collisionGroup )
 	{
 	}
@@ -194,18 +194,18 @@ public:
 		return TRACE_ENTITIES_ONLY;
 	}
 
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 };
 
 class CTraceFilterNoNPCsOrPlayer : public CTraceFilterSimple
 {
 public:
-	CTraceFilterNoNPCsOrPlayer( const IHandleEntity *passentity = NULL, int collisionGroup = COLLISION_GROUP_NONE )
+	CTraceFilterNoNPCsOrPlayer( const IHandleEntity *passentity = NULL, Collision_Group_t collisionGroup = COLLISION_GROUP_NONE )
 		: CTraceFilterSimple( passentity, collisionGroup )
 	{
 	}
 
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 };
 
 //-----------------------------------------------------------------------------
@@ -214,15 +214,15 @@ public:
 class CTraceFilterLOS : public CTraceFilterSkipTwoEntities
 {
 public:
-	CTraceFilterLOS( IHandleEntity *pHandleEntity, int collisionGroup, IHandleEntity *pHandleEntity2 = NULL );
-	bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	CTraceFilterLOS( IHandleEntity *pHandleEntity, Collision_Group_t collisionGroup, IHandleEntity *pHandleEntity2 = NULL );
+	bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 };
 
 class CTraceFilterSkipClassname : public CTraceFilterSimple
 {
 public:
-	CTraceFilterSkipClassname( const IHandleEntity *passentity, const char *pchClassname, int collisionGroup );
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	CTraceFilterSkipClassname( const IHandleEntity *passentity, const char *pchClassname, Collision_Group_t collisionGroup );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 
 private:
 
@@ -235,8 +235,8 @@ public:
 	// It does have a base, but we'll never network anything below here..
 	DECLARE_CLASS( CTraceFilterSkipTwoClassnames, CTraceFilterSkipClassname );
 
-	CTraceFilterSkipTwoClassnames( const IHandleEntity *passentity, const char *pchClassname, const char *pchClassname2, int collisionGroup );
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	CTraceFilterSkipTwoClassnames( const IHandleEntity *passentity, const char *pchClassname, const char *pchClassname2, Collision_Group_t collisionGroup );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 
 private:
 	const char *m_pchClassname2;
@@ -246,7 +246,7 @@ class CTraceFilterSimpleClassnameList : public CTraceFilterSimple
 {
 public:
 	CTraceFilterSimpleClassnameList( const IHandleEntity *passentity, int collisionGroup );
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 
 	void	AddClassnameToIgnore( const char *pchClassname );
 private:
@@ -257,7 +257,7 @@ class CTraceFilterChain : public CTraceFilter
 {
 public:
 	CTraceFilterChain( ITraceFilter *pTraceFilter1, ITraceFilter *pTraceFilter2 );
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 
 private:
 	ITraceFilter	*m_pTraceFilter1;
@@ -287,8 +287,8 @@ inline bool VisualizeTraces()
 #endif
 }
 
-inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, unsigned int mask, 
-					 const IHandleEntity *ignore, int collisionGroup, trace_t *ptr )
+inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, ContentsFlags_t mask, 
+					 const IHandleEntity *ignore, Collision_Group_t collisionGroup, trace_t *ptr )
 {
 	Ray_t ray;
 	ray.Init( vecAbsStart, vecAbsEnd );
@@ -304,7 +304,7 @@ inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, 
 #endif
 }
 
-inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, unsigned int mask, 
+inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, ContentsFlags_t mask, 
 					 ITraceFilter *pFilter, trace_t *ptr )
 {
 	Ray_t ray;
@@ -321,8 +321,8 @@ inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, 
 }
 
 inline void UTIL_TraceHull( const Vector &vecAbsStart, const Vector &vecAbsEnd, const Vector &hullMin, 
-					 const Vector &hullMax,	unsigned int mask, const IHandleEntity *ignore, 
-					 int collisionGroup, trace_t *ptr )
+					 const Vector &hullMax,	ContentsFlags_t mask, const IHandleEntity *ignore, 
+					 Collision_Group_t collisionGroup, trace_t *ptr )
 {
 	Ray_t ray;
 	ray.Init( vecAbsStart, vecAbsEnd, hullMin, hullMax );
@@ -339,7 +339,7 @@ inline void UTIL_TraceHull( const Vector &vecAbsStart, const Vector &vecAbsEnd, 
 }
 
 inline void UTIL_TraceHull( const Vector &vecAbsStart, const Vector &vecAbsEnd, const Vector &hullMin, 
-					 const Vector &hullMax,	unsigned int mask, ITraceFilter *pFilter, trace_t *ptr )
+					 const Vector &hullMax,	ContentsFlags_t mask, ITraceFilter *pFilter, trace_t *ptr )
 {
 	Ray_t ray;
 	ray.Init( vecAbsStart, vecAbsEnd, hullMin, hullMax );
@@ -354,8 +354,8 @@ inline void UTIL_TraceHull( const Vector &vecAbsStart, const Vector &vecAbsEnd, 
 #endif
 }
 
-inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask, 
-						  const IHandleEntity *ignore, int collisionGroup, trace_t *ptr, ShouldHitFunc_t pExtraShouldHitCheckFn = NULL )
+inline void UTIL_TraceRay( const Ray_t &ray, ContentsFlags_t mask, 
+						  const IHandleEntity *ignore, Collision_Group_t collisionGroup, trace_t *ptr, ShouldHitFunc_t pExtraShouldHitCheckFn = NULL )
 {
 	CTraceFilterSimple traceFilter( ignore, collisionGroup, pExtraShouldHitCheckFn );
 
@@ -369,7 +369,7 @@ inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask,
 #endif
 }
 
-inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask, 
+inline void UTIL_TraceRay( const Ray_t &ray, ContentsFlags_t mask, 
 						  ITraceFilter *pFilter, trace_t *ptr )
 {
 	enginetrace->TraceRay( ray, mask, pFilter, ptr );
@@ -387,28 +387,28 @@ inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask,
 //-----------------------------------------------------------------------------
 float GetLongFloorZ(const Vector &origin);
 
-unsigned int UTIL_MaskForEntity( CSharedBaseEntity *pEntity, bool brush_only = false );
-unsigned int UTIL_CollisionGroupForEntity( CSharedBaseEntity *pEntity );
+ContentsFlags_t UTIL_MaskForEntity( CSharedBaseEntity *pEntity, bool brush_only = false );
+Collision_Group_t UTIL_CollisionGroupForEntity( CSharedBaseEntity *pEntity );
 
 // Sweeps a particular entity through the world
-void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, unsigned int mask, trace_t *ptr );
+void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, ContentsFlags_t mask, trace_t *ptr );
 void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
-					  unsigned int mask, ITraceFilter *pFilter, trace_t *ptr );
+					  ContentsFlags_t mask, ITraceFilter *pFilter, trace_t *ptr );
 void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
-					  unsigned int mask, const IHandleEntity *ignore, int collisionGroup, trace_t *ptr );
+					  ContentsFlags_t mask, const IHandleEntity *ignore, Collision_Group_t collisionGroup, trace_t *ptr );
 
 bool UTIL_EntityHasMatchingRootParent( CSharedBaseEntity *pRootParent, CSharedBaseEntity *pEntity );
 
-inline int UTIL_PointContents( const Vector &vec, int contentsMask )
+inline ContentsFlags_t UTIL_PointContents( const Vector &vec, ContentsFlags_t contentsMask )
 {
 	return enginetrace->GetPointContents( vec, contentsMask, NULL );
 }
 
 // Sweeps against a particular model, using collision rules 
 void UTIL_TraceModel( const Vector &vecStart, const Vector &vecEnd, const Vector &hullMin, 
-					  const Vector &hullMax, CSharedBaseEntity *pentModel, int collisionGroup, trace_t *ptr );
+					  const Vector &hullMax, CSharedBaseEntity *pentModel, Collision_Group_t collisionGroup, trace_t *ptr );
 
-void UTIL_ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, unsigned int mask, ITraceFilter *filter, trace_t *tr );
+void UTIL_ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, ContentsFlags_t mask, ITraceFilter *filter, trace_t *tr );
 
 // Particle effect tracer
 void		UTIL_ParticleTracer( const char *pszTracerEffectName, const Vector &vecStart, const Vector &vecEnd, int iEntIndex = 0, int iAttachment = 0, bool bWhiz = false );
@@ -416,11 +416,11 @@ void		UTIL_ParticleTracer( const char *pszTracerEffectName, const Vector &vecSta
 // Old style, non-particle system, tracers
 void		UTIL_Tracer( const Vector &vecStart, const Vector &vecEnd, int iEntIndex = 0, int iAttachment = TRACER_DONT_USE_ATTACHMENT, float flVelocity = 0, bool bWhiz = false, const char *pCustomTracerName = NULL, int iParticleID = 0 );
 
-bool		UTIL_ShouldShowBlood( int bloodColor );
-void		UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color, int amount );
+bool		UTIL_ShouldShowBlood( BloodColor_t bloodColor );
+void		UTIL_BloodDrips( const Vector &origin, const Vector &direction, BloodColor_t color, int amount );
 
-void		UTIL_BloodImpact( const Vector &pos, const Vector &dir, int color, int amount );
-void		UTIL_BloodDecalTrace( trace_t *pTrace, int bloodColor );
+void		UTIL_BloodImpact( const Vector &pos, const Vector &dir, BloodColor_t color, int amount );
+void		UTIL_BloodDecalTrace( trace_t *pTrace, BloodColor_t bloodColor );
 void		UTIL_DecalTrace( trace_t *pTrace, char const *decalName );
 bool		UTIL_IsSpaceEmpty( CSharedBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax );
 bool		UTIL_IsSpaceEmpty( CSharedBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax, unsigned int mask, ITraceFilter *pFilter );
@@ -455,14 +455,20 @@ unsigned short UTIL_GetAchievementEventMask( void );
 #define FL_AXIS_DIRECTION_Z		( 1 << 4 )
 #define FL_AXIS_DIRECTION_NZ	( 1 << 5 )
 
-bool		UTIL_FindClosestPassableSpace( const Vector &vCenter, const Vector &vExtents, const Vector &vIndecisivePush, ITraceFilter *pTraceFilter, unsigned int fMask, unsigned int iIterations, Vector &vCenterOut, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
-bool		UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, unsigned int fMask, unsigned int iIterations, Vector &vOriginOut, Vector *pStartingPosition = NULL, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
-bool		UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, unsigned int fMask, Vector *pStartingPosition = NULL, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
+bool		UTIL_FindClosestPassableSpace( const Vector &vCenter, const Vector &vExtents, const Vector &vIndecisivePush, ITraceFilter *pTraceFilter, ContentsFlags_t fMask, unsigned int iIterations, Vector &vCenterOut, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
+bool		UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, ContentsFlags_t fMask, unsigned int iIterations, Vector &vOriginOut, Vector *pStartingPosition = NULL, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
+bool		UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, ContentsFlags_t fMask, Vector *pStartingPosition = NULL, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
 
 void		UTIL_StringToVector( float *pVector, const char *pString );
+void		UTIL_StringToVector( Vector &pVector, const char *pString );
+void		UTIL_StringToVector( QAngle &pVector, const char *pString );
+void		UTIL_StringToQAngle( QAngle &pVector, const char *pString );
 void		UTIL_StringToIntArray( int *pVector, int count, const char *pString );
 void		UTIL_StringToFloatArray( float *pVector, int count, const char *pString );
 void		UTIL_StringToColor32( color32 *color, const char *pString );
+void		UTIL_StringToColor32( color32 &color, const char *pString );
+void		UTIL_StringToColor32( ColorRGBExp32 &color, const char *pString );
+void		UTIL_StringToColor24( color24 &color, const char *pString );
 
 // Version of UTIL_StringToIntArray that doesn't set all untouched array elements to 0.
 void		UTIL_StringToIntArray_PreserveArray( int *pVector, int count, const char *pString );
@@ -603,12 +609,7 @@ inline float DistanceToRay( const Vector &pos, const Vector &rayStart, const Vec
 class IntervalTimer
 {
 public:
-#ifdef CLIENT_DLL
-	DECLARE_PREDICTABLE();
-#endif
-	DECLARE_DATADESC();
 	DECLARE_CLASS_NOBASE( IntervalTimer );
-	DECLARE_EMBEDDED_NETWORKVAR();
 
 	IntervalTimer( void )
 	{
@@ -662,9 +663,29 @@ public:
 	}
 
 protected:
-	CNetworkVar( float, m_timestamp );
+	CNetworkTimeForDerived( m_timestamp, protected );
 	float Now( void ) const;		// work-around since client header doesn't like inlined gpGlobals->curtime
 };
+
+class NetworkedIntervalTimer : public IntervalTimer, public INetworkableObject
+{
+public:
+#ifdef CLIENT_DLL
+	DECLARE_PREDICTABLE();
+#endif
+	DECLARE_CLASS_NOBASE( NetworkedIntervalTimer );
+	DECLARE_EMBEDDED_NETWORKVAR();
+
+protected:
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_timestamp )
+};
+
+#define CNetworkIntervalTimer( name ) \
+	CNetworkVarEmbeddedCopyable( NetworkedIntervalTimer, name )
+#define CNetworkIntervalTimerForDerived( name ) \
+	CNetworkVarEmbeddedCopyableForDerived( NetworkedIntervalTimer, name )
+#define CNetworkIntervalTimerForDerived_OnByDefault( name ) \
+	CNetworkVarEmbeddedCopyableForDerived_OnByDefault( NetworkedIntervalTimer, name )
 
 #ifdef CLIENT_DLL
 EXTERN_RECV_TABLE(DT_IntervalTimer);
@@ -680,11 +701,7 @@ EXTERN_SEND_TABLE(DT_IntervalTimer);
 class CountdownTimer
 {
 public:
-#ifdef CLIENT_DLL
-	DECLARE_PREDICTABLE();
-#endif
 	DECLARE_CLASS_NOBASE( CountdownTimer );
-	DECLARE_EMBEDDED_NETWORKVAR();
 
 	CountdownTimer( void )
 	{
@@ -756,10 +773,24 @@ public:
 		return 0.0f;
 	}
 
-private:
-	CNetworkVar( float, m_duration );
-	CNetworkVar( float, m_timestamp );
+protected:
+	CNetworkVarForDerived( float, m_duration );
+	CNetworkTimeForDerived( m_timestamp );
 	virtual float Now( void ) const;		// work-around since client header doesn't like inlined gpGlobals->curtime
+};
+
+class NetworkedCountdownTimer : public CountdownTimer, public INetworkableObject
+{
+public:
+#ifdef CLIENT_DLL
+	DECLARE_PREDICTABLE();
+#endif
+	DECLARE_CLASS_NOBASE( NetworkedCountdownTimer );
+	DECLARE_EMBEDDED_NETWORKVAR();
+
+private:
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_duration )
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_timestamp )
 };
 
 #ifdef CLIENT_DLL
@@ -767,6 +798,13 @@ EXTERN_RECV_TABLE(DT_CountdownTimer);
 #else
 EXTERN_SEND_TABLE(DT_CountdownTimer);
 #endif
+
+#define CNetworkCountdownTimer( name ) \
+	CNetworkVarEmbeddedCopyable( NetworkedCountdownTimer, name )
+#define CNetworkCountdownTimerForDerived( name ) \
+	CNetworkVarEmbeddedCopyableForDerived( NetworkedCountdownTimer, name )
+#define CNetworkCountdownTimerForDerived_OnByDefault( name ) \
+	CNetworkVarEmbeddedCopyableForDerived_OnByDefault( NetworkedCountdownTimer, name )
 
 class RealTimeCountdownTimer : public CountdownTimer
 {
@@ -792,14 +830,13 @@ enum TimelineCompression_t
 	TIMELINE_COMPRESSION_TOTAL
 };
 
-class CTimeline : public IntervalTimer
+class CNetworkedTimeline : public NetworkedIntervalTimer
 {
 public:
-	DECLARE_DATADESC();
-	DECLARE_CLASS( CTimeline, IntervalTimer );
+	DECLARE_CLASS( CNetworkedTimeline, NetworkedIntervalTimer );
 	DECLARE_EMBEDDED_NETWORKVAR();
 
-	CTimeline( void )
+	CNetworkedTimeline( void )
 	{
 		ClearValues();
 	}
@@ -863,9 +900,6 @@ EXTERN_RECV_TABLE(DT_Timeline);
 EXTERN_SEND_TABLE(DT_Timeline);
 #endif
 
-int UTIL_CountNumBitsSet( unsigned int nVar );
-int UTIL_CountNumBitsSet( uint64 nVar );
-
 bool UTIL_GetModDir( char *lpszTextOut, unsigned int nSize );
 
 /*UTIL_CalcFrustumThroughPolygon - Given a frustum and a polygon, calculate how the current frustum would clip the polygon, then generate a new frustum that runs along the edge of the clipped polygon.
@@ -884,7 +918,7 @@ int UTIL_StringFieldToInt( const char *szValue, const char **pValueStrings, int 
 class CFlaggedEntitiesEnum : public IPartitionEnumerator
 {
 public:
-	CFlaggedEntitiesEnum( CSharedBaseEntity **pList, int listMax, int flagMask );
+	CFlaggedEntitiesEnum( CSharedBaseEntity **pList, int listMax, ContentsFlags_t flagMask );
 
 	// This gets called	by the enumeration methods with each element
 	// that passes the test.
@@ -920,7 +954,7 @@ private:
 
 int			UTIL_EntitiesAlongRay( const Ray_t &ray, CFlaggedEntitiesEnum *pEnum  );
 
-inline int UTIL_EntitiesAlongRay( CSharedBaseEntity **pList, int listMax, const Ray_t &ray, int flagMask )
+inline int UTIL_EntitiesAlongRay( CSharedBaseEntity **pList, int listMax, const Ray_t &ray, ContentsFlags_t flagMask )
 {
 	CFlaggedEntitiesEnum rayEnum( pList, listMax, flagMask );
 	return UTIL_EntitiesAlongRay( ray, &rayEnum );
@@ -948,9 +982,9 @@ const char		   *UTIL_GetHolidaysString( EHolidayFlags eHolidays );
 const char		   *UTIL_GetActiveHolidaysString();
 
 #ifdef CLIENT_DLL
-unsigned int UTIL_HolidaysToVisionFilters( EHolidayFlags eHolidays );
+vision_filter_t UTIL_HolidaysToVisionFilters( EHolidayFlags eHolidays );
 
-unsigned int UTIL_GetActiveHolidaysVisionFilter();
+vision_filter_t UTIL_GetActiveHolidaysVisionFilter();
 #endif
 
 extern bool FindInList( const char **pStrings, const char *pToFind, int size );

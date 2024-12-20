@@ -115,7 +115,7 @@ struct VarMapping_t
 
 
 // How many data slots to use when in multiplayer.
-#define MULTIPLAYER_BACKUP			150
+#define MULTIPLAYER_BACKUP			450
 
 
 struct serialentity_t;
@@ -196,7 +196,7 @@ DECLARE_LOGGING_CHANNEL( LOG_BASEENTITY );
 //-----------------------------------------------------------------------------
 // Purpose: Base client side entity object
 //-----------------------------------------------------------------------------
-class C_BaseEntity : public IClientEntityEx
+class C_BaseEntity : public IClientEntityEx, public INetworkableObject
 {
 public:
 // Construction
@@ -209,8 +209,8 @@ public:
 	DECLARE_CLIENTCLASS();
 	DECLARE_PREDICTABLE();
 
-	C_BaseEntity() : C_BaseEntity( 0 ) {}
-	C_BaseEntity( uint64 iEFlags );
+	C_BaseEntity() : C_BaseEntity( EFL_NONE ) {}
+	C_BaseEntity( EntityFlags_t iEFlags );
 
 protected:
 	// Use UTIL_Remove to delete!
@@ -274,7 +274,7 @@ public:
 	virtual int						GetTracerAttachment( void );
 	void							ComputeTracerStartPosition( const Vector &vecShotSrc, Vector *pVecTracerStart );
 	void							TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, uint64 bitsDamageType );
-	virtual int						BloodColor();
+	virtual BloodColor_t						BloodColor();
 	virtual const char*				GetTracerType();
 
 	// called when entity is damaged by predicted attacks
@@ -298,7 +298,8 @@ public:
 
 	// handles an input (usually caused by outputs)
 	// returns true if the the value in the pass in should be set, false if the input is to be ignored
-	virtual bool AcceptInput( const char *szInputName, C_BaseEntity *pActivator, C_BaseEntity *pCaller, variant_t Value, int outputID );
+	virtual bool AcceptInput( const char *szInputName, C_BaseEntity *pActivator, C_BaseEntity *pCaller, variant_t &&Value, int outputID );
+	bool AcceptInput( const char *szInputName, C_BaseEntity *pActivator, C_BaseEntity *pCaller, const variant_t &Value, int outputID );
 
 	// Verifies that the data description is valid in debug builds.
 	#ifdef _DEBUG
@@ -483,10 +484,10 @@ public:
 	// an uncompressed update that's caused it to destroy all entities & recreate them.
 	virtual void					SetDestroyedOnRecreateEntities( void );
 
-	virtual uint64				GetEFlags() const;
-	void					AddEFlags( uint64 nEFlagMask );
-	void					RemoveEFlags( uint64 nEFlagMask );
-	bool					IsEFlagSet( uint64 nEFlagMask ) const;
+	virtual EntityFlags_t				GetEFlags() const;
+	void					AddEFlags( EntityFlags_t nEFlagMask );
+	void					RemoveEFlags( EntityFlags_t nEFlagMask );
+	bool					IsEFlagSet( EntityFlags_t nEFlagMask ) const;
 
 	// checks to see if the entity is marked for deletion
 	bool							IsMarkedForDeletion( void );
@@ -671,10 +672,10 @@ public:
 	void							SetAbsOrigin( const Vector& origin );
  	void							SetAbsAngles( const QAngle& angles );
 
-	void							AddFlag( uint64 flags );
-	void							RemoveFlag( uint64 flagsToRemove );
-	void							ToggleFlag( uint64 flagToToggle );
-	uint64								GetFlags( void ) const;
+	void							AddFlag( EntityBehaviorFlags_t flags );
+	void							RemoveFlag( EntityBehaviorFlags_t flagsToRemove );
+	void							ToggleFlag( EntityBehaviorFlags_t flagToToggle );
+	EntityBehaviorFlags_t								GetFlags( void ) const;
 	void							ClearFlags();
 
 	void							SetDistanceFade( float flMinDist, float flMaxDist );
@@ -687,11 +688,11 @@ public:
 	MoveCollide_t					GetMoveCollide( void ) const;
 	virtual SolidType_t				GetSolid( void ) const;
 
-	virtual int			 			GetSolidFlags( void ) const;
-	bool							IsSolidFlagSet( int flagMask ) const;
-	void							SetSolidFlags( int nFlags );
-	void							AddSolidFlags( int nFlags );
-	void							RemoveSolidFlags( int nFlags );
+	virtual SolidFlags_t			 			GetSolidFlags( void ) const;
+	bool							IsSolidFlagSet( SolidFlags_t flagMask ) const;
+	void							SetSolidFlags( SolidFlags_t nFlags );
+	void							AddSolidFlags( SolidFlags_t nFlags );
+	void							RemoveSolidFlags( SolidFlags_t nFlags );
 	bool							IsSolid() const;
 
 	virtual class CMouthInfo		*GetMouth( void );
@@ -1046,13 +1047,13 @@ public:
 	unsigned char			GetParentAttachment() const;
 
 	// Externalized data objects ( see sharreddefs.h for DataObjectType_t )
-	bool					HasDataObjectType( int type ) const;
-	void					AddDataObjectType( int type );
-	void					RemoveDataObjectType( int type );
+	bool					HasDataObjectType( DataObject_t type ) const;
+	void					AddDataObjectType( DataObject_t type );
+	void					RemoveDataObjectType( DataObject_t type );
 
-	void					*GetDataObject( int type );
-	void					*CreateDataObject( int type );
-	void					DestroyDataObject( int type );
+	void					*GetDataObject( DataObject_t type );
+	void					*CreateDataObject( DataObject_t type );
+	void					DestroyDataObject( DataObject_t type );
 	void					DestroyAllDataObjects( void );
 
 	// Determine approximate velocity based on updates from server
@@ -1064,9 +1065,11 @@ public:
 	C_BasePlayer				*GetSimulatingPlayer( void );
 	void					UnsetPlayerSimulated( void );
 
+#ifdef INVASION_DLLL
 	// Sorry folks, here lies TF2-specific stuff that really has no other place to go
 	virtual bool			CanBePoweredUp( void ) { return false; }
 	virtual bool			AttemptToPowerup( int iPowerup, float flTime, float flAmount = 0, C_BaseEntity *pAttacker = NULL, CDamageModifier *pDamageModifier = NULL ) { return false; }
+#endif
 
 	void					SetCheckUntouch( bool check );
 	bool					GetCheckUntouch() const;
@@ -1218,7 +1221,7 @@ public:
 	Vector	EarPosition( void ) const;			// position of ears
 
 	// Called by physics to see if we should avoid a collision test....
-	virtual bool		ShouldCollide( int collisionGroup, int contentsMask ) const;
+	virtual bool		ShouldCollide( Collision_Group_t collisionGroup, ContentsFlags_t contentsMask ) const;
 
 	// Sets physics parameters
 	float				GetFriction( void ) const;
@@ -1287,19 +1290,19 @@ public:
 
 	void				SetRemovalFlag( bool bRemove );
 
-	int					GetSpawnFlags( void ) const;
-	bool				HasSpawnFlags( int nFlags ) const;
-	void				SetSpawnFlags( int nFlags );
-	void				AddSpawnFlags( int nFlags );
-	void				RemoveSpawnFlags( int nFlags );
+	unsigned int					GetSpawnFlags( void ) const;
+	bool				HasSpawnFlags( unsigned int nFlags ) const;
+	void				SetSpawnFlags( unsigned int nFlags );
+	void				AddSpawnFlags( unsigned int nFlags );
+	void				RemoveSpawnFlags( unsigned int nFlags );
 
 	// Effects...
-	bool				IsEffectActive( int nEffectMask ) const;
-	void				AddEffects( int nEffects );
-	void				RemoveEffects( int nEffects );
-	int					GetEffects( void ) const;
+	bool				IsEffectActive( Effects_t nEffectMask ) const;
+	void				AddEffects( Effects_t nEffects );
+	void				RemoveEffects( Effects_t nEffects );
+	Effects_t					GetEffects( void ) const;
 	void				ClearEffects( void );
-	void				SetEffects( int nEffects );
+	void				SetEffects( Effects_t nEffects );
 
 	// Computes the abs position of a point specified in local space
 	void				ComputeAbsPosition( const Vector &vecLocalPosition, Vector *pAbsPosition );
@@ -1316,13 +1319,6 @@ public:
 	// For shadows rendering the correct body + sequence...
 	virtual int GetBody() { return 0; }
 	virtual int GetSkin() { return 0; }
-
-	// Stubs on client
-	void	NetworkStateManualMode( bool activate )		{ }
-	void	NetworkStateChanged()						{ }
-	void	NetworkStateChanged( void *pVar )			{ }
-	void	NetworkStateSetUpdateInterval( float N )	{ }
-	void	NetworkStateForceUpdate()					{ }
 
 	// Think functions with contexts
 	int		RegisterThinkContext( const char *szContext );
@@ -1433,8 +1429,8 @@ public:
 	static void						CheckCLInterpChanged();
 
 	// Collision group accessors
-	int GetCollisionGroup() const;
-	void SetCollisionGroup( int collisionGroup );
+	Collision_Group_t GetCollisionGroup() const;
+	void SetCollisionGroup( Collision_Group_t collisionGroup );
 	void							CollisionRulesChanged();
 
 	static C_BaseEntity				*Instance( int iEnt );
@@ -1578,11 +1574,11 @@ private:
 
 private:
 	// Effects to apply
-	int								m_fEffects;
+	Effects_t								m_fEffects;
 
 	string_t							m_iName;
 
-	int								m_spawnflags;
+	unsigned int								m_spawnflags;
 
 private:
 	// Used to store the state we were added to the BSP as, so it can
@@ -1611,8 +1607,8 @@ private:
 	CUtlVector< VisionModelIndex_t > m_VisionModelIndexOverrides;
 
 public:
-	char							m_takedamage;
-	char							m_lifeState;
+	Takedamage_t							m_takedamage;
+	Lifestate_t							m_lifeState;
 
 public:
 	int								m_iHealth;
@@ -1642,10 +1638,10 @@ public:
 	bool							BecameDormantThisPacket( void ) const;
 	void							SetDormantPredictable( bool dormant );
 
-	int								GetWaterLevel() const;
-	void							SetWaterLevel( int nLevel );
-	int								GetWaterType() const;
-	void							SetWaterType( int nType );
+	WaterLevel_t								GetWaterLevel() const;
+	void							SetWaterLevel( WaterLevel_t nLevel );
+	WaterType_t								GetWaterType() const;
+	void							SetWaterType( WaterType_t nType );
 
 	float							GetElasticity( void ) const;
 
@@ -1835,17 +1831,17 @@ private:
 
 	ClientThinkHandle_t				m_hThink;
 
-	uint64								m_iEFlags;	// entity flags EFL_*
+	EntityFlags_t								m_iEFlags;	// entity flags EFL_*
 
 	// Object movetype
-	unsigned char					m_MoveType;
-	unsigned char					m_MoveCollide;
+	MoveType_t					m_MoveType;
+	MoveCollide_t					m_MoveCollide;
 	friend void RecvProxy_ParentAttachment( const CRecvProxyData *pData, void *pStruct, void *pOut );
 	unsigned char					m_iParentAttachment; // 0 if we're relative to the parent's absorigin and absangles.
 	unsigned char					m_iOldParentAttachment;
 
-	unsigned char					m_nWaterLevel;
-	unsigned char					m_nWaterType;
+	WaterLevel_t					m_nWaterLevel;
+	WaterType_t					m_nWaterType;
 	// For client/server entities, true if the entity goes outside the PVS.
 	// Unused for client only entities.
 	bool							m_bDormant;
@@ -1905,10 +1901,10 @@ private:
 	QAngle							m_angNetworkAngles;
 
 	// Behavior flags
-	uint64								m_fFlags;
+	EntityBehaviorFlags_t								m_fFlags;
 
 	// used to cull collision tests
-	int								m_CollisionGroup;
+	Collision_Group_t								m_CollisionGroup;
 
 	// For storing prediction results and pristine network state
 	byte							*m_pIntermediateData[ MULTIPLAYER_BACKUP ];
@@ -2040,8 +2036,8 @@ class C_PointEntity : public C_BaseEntity
 public:
 	DECLARE_CLASS( C_PointEntity, C_BaseEntity );
 
-	C_PointEntity() : C_PointEntity( 0 ) {}
-	C_PointEntity( uint64 iEFlags );
+	C_PointEntity() : C_PointEntity( EFL_NONE ) {}
+	C_PointEntity( EntityFlags_t iEFlags );
 
 	DECLARE_CLIENTCLASS();
 
@@ -2056,7 +2052,7 @@ public:
 		return hndl;
 	}
 
-	virtual bool		ShouldCollide( int collisionGroup, int contentsMask ) const { return false; }
+	virtual bool		ShouldCollide( Collision_Group_t collisionGroup, int contentsMask ) const { return false; }
 
 	virtual bool			IsCurrentlyTouching( void ) const { return false; }
 
@@ -2078,7 +2074,7 @@ public:
 
 	virtual SolidType_t				GetSolid( void ) const { return SOLID_NONE; }
 
-	virtual int			 			GetSolidFlags( void ) const { return FSOLID_NOT_SOLID; }
+	virtual SolidFlags_t			 			GetSolidFlags( void ) const { return FSOLID_NOT_SOLID; }
 
 	virtual CollideType_t			GetCollideType( void ) { return ENTITY_SHOULD_NOT_COLLIDE; }
 
@@ -2108,8 +2104,8 @@ class C_LogicalEntity : public C_PointEntity
 public:
 	DECLARE_CLASS( C_LogicalEntity, C_PointEntity );
 
-	C_LogicalEntity() : C_LogicalEntity( 0 ) {}
-	C_LogicalEntity( uint64 iEFlags );
+	C_LogicalEntity() : C_LogicalEntity( EFL_NONE ) {}
+	C_LogicalEntity( EntityFlags_t iEFlags );
 
 	DECLARE_CLIENTCLASS();
 
@@ -2122,8 +2118,8 @@ class C_ClientOnlyWrapper : public T
 public:
 	DECLARE_CLASS( C_ClientOnlyWrapper, T );
 
-	C_ClientOnlyWrapper() : C_ClientOnlyWrapper( 0 ) {}
-	C_ClientOnlyWrapper( uint64 iEFlags ) : T( EFL_NOT_NETWORKED|iEFlags ) {}
+	C_ClientOnlyWrapper() : C_ClientOnlyWrapper( EFL_NONE ) {}
+	C_ClientOnlyWrapper( EntityFlags_t iEFlags ) : T( EFL_NOT_NETWORKED|iEFlags ) {}
 
 	virtual bool InitializeAsServerEntity( int entnum, int iSerialNum ) { Assert(0); return false; }
 
@@ -2404,12 +2400,12 @@ inline float C_BaseEntity::GetGravity( void ) const
 	return m_flGravity; 
 }
 
-inline int C_BaseEntity::GetWaterLevel() const
+inline WaterLevel_t C_BaseEntity::GetWaterLevel() const
 {
 	return m_nWaterLevel;
 }
 
-inline void C_BaseEntity::SetWaterLevel( int nLevel )
+inline void C_BaseEntity::SetWaterLevel( WaterLevel_t nLevel )
 {
 	m_nWaterLevel = nLevel;
 }
@@ -2504,12 +2500,12 @@ inline bool C_BaseEntity::IsMarkedForDeletion( void )
 	return (m_iEFlags & EFL_KILLME); 
 }
 
-inline void C_BaseEntity::AddEFlags( uint64 nEFlagMask )
+inline void C_BaseEntity::AddEFlags( EntityFlags_t nEFlagMask )
 {
 	m_iEFlags |= nEFlagMask;
 }
 
-inline void C_BaseEntity::RemoveEFlags( uint64 nEFlagMask )
+inline void C_BaseEntity::RemoveEFlags( EntityFlags_t nEFlagMask )
 {
 	nEFlagMask &= ~(
 		EFL_KILLME|
@@ -2521,7 +2517,7 @@ inline void C_BaseEntity::RemoveEFlags( uint64 nEFlagMask )
 	m_iEFlags &= ~nEFlagMask;
 }
 
-inline bool C_BaseEntity::IsEFlagSet( uint64 nEFlagMask ) const
+inline bool C_BaseEntity::IsEFlagSet( EntityFlags_t nEFlagMask ) const
 {
 	return (m_iEFlags & nEFlagMask) != 0;
 }
@@ -2688,27 +2684,27 @@ inline bool C_BaseEntity::IsVisibleToAnyPlayer() const
 	return IsVisible();
 }
 
-inline int C_BaseEntity::GetSpawnFlags( void ) const
+inline unsigned int C_BaseEntity::GetSpawnFlags( void ) const
 { 
 	return m_spawnflags; 
 }
 
-inline bool C_BaseEntity::HasSpawnFlags( int nFlags ) const
+inline bool C_BaseEntity::HasSpawnFlags( unsigned int nFlags ) const
 { 
 	return (m_spawnflags & nFlags) != 0; 
 }
 
-inline void C_BaseEntity::SetSpawnFlags( int nFlags )
+inline void C_BaseEntity::SetSpawnFlags( unsigned int nFlags )
 { 
 	m_spawnflags = nFlags;
 }
 
-inline void C_BaseEntity::AddSpawnFlags( int nFlags )
+inline void C_BaseEntity::AddSpawnFlags( unsigned int nFlags )
 { 
 	m_spawnflags |= nFlags;
 }
 
-inline void C_BaseEntity::RemoveSpawnFlags( int nFlags )
+inline void C_BaseEntity::RemoveSpawnFlags( unsigned int nFlags )
 { 
 	m_spawnflags &= ~nFlags;
 }
