@@ -530,7 +530,7 @@ void CAI_AddOn::EjectFromHost()
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-void CAI_AddOn::InputInstall( inputdata_t &data )
+void CAI_AddOn::InputInstall( inputdata_t &&inputdata )
 {
 	CAI_BaseNPC *pHost = dynamic_cast<CAI_BaseNPC *>( gEntList.FindEntityByName( NULL, data.value.String() ) );
 
@@ -546,7 +546,7 @@ void CAI_AddOn::InputInstall( inputdata_t &data )
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-void CAI_AddOn::InputRemove( inputdata_t &data )
+void CAI_AddOn::InputRemove( inputdata_t &&inputdata )
 {
 	Remove();
 	m_hNPCHost.Set( NULL );

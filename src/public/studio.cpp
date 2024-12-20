@@ -258,7 +258,7 @@ int studiohdr_t::GetNumSeq( void ) const
 // Purpose:
 //-----------------------------------------------------------------------------
 
-mstudioseqdesc_t &studiohdr_t::pSeqdesc( int i ) const
+mstudioseqdesc_t &studiohdr_t::pSeqdesc( sequence_t i ) const
 {
 	if (numincludemodels == 0)
 	{
@@ -277,14 +277,14 @@ mstudioseqdesc_t &studiohdr_t::pSeqdesc( int i ) const
 	const studiohdr_t *pStudioHdr = pGroup->GetStudioHdr();
 	Assert( pStudioHdr );
 
-	return *pStudioHdr->pLocalSeqdesc( pVModel->m_seq[i].index );
+	return *pStudioHdr->pLocalSeqdesc( (sequence_t)pVModel->m_seq[i].index );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
 
-int studiohdr_t::iRelativeAnim( int baseseq, int relanim ) const
+int studiohdr_t::iRelativeAnim( sequence_t baseseq, int relanim ) const
 {
 	if (numincludemodels == 0)
 	{
@@ -303,7 +303,7 @@ int studiohdr_t::iRelativeAnim( int baseseq, int relanim ) const
 // Purpose:
 //-----------------------------------------------------------------------------
 
-int studiohdr_t::iRelativeSeq( int baseseq, int relseq ) const
+sequence_t studiohdr_t::iRelativeSeq( sequence_t baseseq, sequence_t relseq ) const
 {
 	if (numincludemodels == 0)
 	{
@@ -315,7 +315,7 @@ int studiohdr_t::iRelativeSeq( int baseseq, int relseq ) const
 
 	virtualgroup_t *pGroup = &pVModel->m_group[ pVModel->m_seq[baseseq].group ];
 
-	return pGroup->masterSeq[ relseq ];
+	return (sequence_t)pGroup->masterSeq[ relseq ];
 }
 
 
@@ -368,7 +368,7 @@ const mstudioposeparamdesc_t &studiohdr_t::pPoseParameter( int i )
 // Purpose:
 //-----------------------------------------------------------------------------
 
-int studiohdr_t::GetSharedPoseParameter( int iSequence, int iLocalPose ) const
+int studiohdr_t::GetSharedPoseParameter( sequence_t iSequence, int iLocalPose ) const
 {
 	if (numincludemodels == 0)
 	{
@@ -391,7 +391,7 @@ int studiohdr_t::GetSharedPoseParameter( int iSequence, int iLocalPose ) const
 // Purpose:
 //-----------------------------------------------------------------------------
 
-int studiohdr_t::EntryNode( int iSequence )
+int studiohdr_t::EntryNode( sequence_t iSequence )
 {
 	mstudioseqdesc_t &seqdesc = pSeqdesc( iSequence );
 
@@ -414,7 +414,7 @@ int studiohdr_t::EntryNode( int iSequence )
 //-----------------------------------------------------------------------------
 
 
-int studiohdr_t::ExitNode( int iSequence )
+int studiohdr_t::ExitNode( sequence_t iSequence )
 {
 	mstudioseqdesc_t &seqdesc = pSeqdesc( iSequence );
 
@@ -646,7 +646,7 @@ int	studiohdr_t::CountAutoplaySequences() const
 	int count = 0;
 	for (int i = 0; i < GetNumSeq(); i++)
 	{
-		mstudioseqdesc_t &seqdesc = pSeqdesc( i );
+		mstudioseqdesc_t &seqdesc = pSeqdesc( (sequence_t)i );
 		if (seqdesc.flags & STUDIO_AUTOPLAY)
 		{
 			count++;
@@ -655,15 +655,15 @@ int	studiohdr_t::CountAutoplaySequences() const
 	return count;
 }
 
-int	studiohdr_t::CopyAutoplaySequences( unsigned short *pOut, int outCount ) const
+int	studiohdr_t::CopyAutoplaySequences( sequence_t *pOut, int outCount ) const
 {
 	int outIndex = 0;
 	for (int i = 0; i < GetNumSeq() && outIndex < outCount; i++)
 	{
-		mstudioseqdesc_t &seqdesc = pSeqdesc( i );
+		mstudioseqdesc_t &seqdesc = pSeqdesc( (sequence_t)i );
 		if (seqdesc.flags & STUDIO_AUTOPLAY)
 		{
-			pOut[outIndex] = i;
+			pOut[outIndex] = (sequence_t)i;
 			outIndex++;
 		}
 	}
@@ -674,7 +674,7 @@ int	studiohdr_t::CopyAutoplaySequences( unsigned short *pOut, int outCount ) con
 // Purpose:	maps local sequence bone to global bone
 //-----------------------------------------------------------------------------
 
-int	studiohdr_t::RemapSeqBone( int iSequence, int iLocalBone ) const	
+int	studiohdr_t::RemapSeqBone( sequence_t iSequence, int iLocalBone ) const	
 {
 	// remap bone
 	virtualmodel_t *pVModel = GetVirtualModel();
@@ -808,11 +808,6 @@ const virtualmodel_t * CStudioHdr::ResetVModel( const virtualmodel_t *pVModel ) 
 
 const studiohdr_t *CStudioHdr::GroupStudioHdr( int i )
 {
-	if ( !this )
-	{
-		ExecuteNTimes( 5, Warning( "Call to NULL CStudioHdr::GroupStudioHdr()\n" ) );
-	}
-
 	if ( m_nFrameUnlockCounter != *m_pFrameUnlockCounter )
 	{
 		m_FrameUnlockCounterMutex.Lock();
@@ -847,7 +842,7 @@ const studiohdr_t *CStudioHdr::GroupStudioHdr( int i )
 }
 
 
-const studiohdr_t *CStudioHdr::pSeqStudioHdr( int sequence )
+const studiohdr_t *CStudioHdr::pSeqStudioHdr( sequence_t sequence )
 {
 	if (m_pVModel == NULL)
 	{
@@ -904,23 +899,17 @@ int CStudioHdr::GetNumSeq( void ) const
 // Purpose:
 //-----------------------------------------------------------------------------
 
-mstudioseqdesc_t &CStudioHdr::pSeqdesc( int i )
+mstudioseqdesc_t &CStudioHdr::pSeqdesc( sequence_t i )
 {
-	Assert( ( i >= 0 && i < GetNumSeq() ) || ( i == 1 && GetNumSeq() <= 1 ) );
-	if ( i < 0 || i >= GetNumSeq() )
+	Assert( i < GetNumSeq() );
+	if ( i >= GetNumSeq() )
 	{
-		if ( GetNumSeq() <= 0 )
-		{
-			// Return a zero'd out struct reference if we've got nothing.
-			// C_BaseObject::StopAnimGeneratedSounds was crashing due to this function
-			//	returning a reference to garbage. It should now see numevents is 0,
-			//	and bail.
-			static mstudioseqdesc_t s_nil_seq;
-			return s_nil_seq;
-		}
-
-		// Avoid reading random memory.
-		i = 0;
+		// Return a zero'd out struct reference if we've got nothing.
+		// C_BaseObject::StopAnimGeneratedSounds was crashing due to this function
+		//	returning a reference to garbage. It should now see numevents is 0,
+		//	and bail.
+		static mstudioseqdesc_t s_nil_seq;
+		return s_nil_seq;
 	}
 	
 	if (m_pVModel == NULL)
@@ -930,14 +919,14 @@ mstudioseqdesc_t &CStudioHdr::pSeqdesc( int i )
 
 	const studiohdr_t *pStudioHdr = GroupStudioHdr( m_pVModel->m_seq[i].group );
 
-	return *pStudioHdr->pLocalSeqdesc( m_pVModel->m_seq[i].index );
+	return *pStudioHdr->pLocalSeqdesc( (sequence_t)m_pVModel->m_seq[i].index );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
 
-int CStudioHdr::iRelativeAnim( int baseseq, int relanim ) const
+int CStudioHdr::iRelativeAnim( sequence_t baseseq, int relanim ) const
 {
 	if (m_pVModel == NULL)
 	{
@@ -953,7 +942,7 @@ int CStudioHdr::iRelativeAnim( int baseseq, int relanim ) const
 // Purpose:
 //-----------------------------------------------------------------------------
 
-int CStudioHdr::iRelativeSeq( int baseseq, int relseq ) const
+sequence_t CStudioHdr::iRelativeSeq( sequence_t baseseq, sequence_t relseq ) const
 {
 	if (m_pVModel == NULL)
 	{
@@ -964,7 +953,7 @@ int CStudioHdr::iRelativeSeq( int baseseq, int relseq ) const
 
 	virtualgroup_t *pGroup = &m_pVModel->m_group[ m_pVModel->m_seq[baseseq].group ];
 
-	return pGroup->masterSeq[ relseq ];
+	return (sequence_t)pGroup->masterSeq[ relseq ];
 }
 
 
@@ -1036,7 +1025,7 @@ int CStudioHdr::GetSharedPoseParameter( int iSequence, int iLocalPose ) const
 // Purpose:
 //-----------------------------------------------------------------------------
 
-int CStudioHdr::EntryNode( int iSequence )
+int CStudioHdr::EntryNode( sequence_t iSequence )
 {
 	mstudioseqdesc_t &seqdesc = pSeqdesc( iSequence );
 
@@ -1058,7 +1047,7 @@ int CStudioHdr::EntryNode( int iSequence )
 //-----------------------------------------------------------------------------
 
 
-int CStudioHdr::ExitNode( int iSequence )
+int CStudioHdr::ExitNode( sequence_t iSequence )
 {
 	mstudioseqdesc_t &seqdesc = pSeqdesc( iSequence );
 
@@ -1605,7 +1594,8 @@ void CStudioHdr::RunFlexRules( const float *src, float *dest )
 
 CUtlSymbolTable g_ActivityModifiersTable;
 
-extern void SetActivityForSequence( CStudioHdr *pstudiohdr, int i );
+extern void SetActivityForSequence( CStudioHdr *pstudiohdr, sequence_t i );
+
 void CStudioHdr::CActivityToSequenceMapping::Initialize( CStudioHdr * __restrict pstudiohdr )
 {
 	// Algorithm: walk through every sequence in the model, determine to which activity
@@ -1633,17 +1623,17 @@ void CStudioHdr::CActivityToSequenceMapping::Initialize( CStudioHdr * __restrict
 	const int NumSeq = pstudiohdr->GetNumSeq();
 	for ( int i = 0 ; i < NumSeq ; ++i )
 	{
-		const mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( i );
+		const mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( (sequence_t)i );
 #if defined(SERVER_DLL) || defined(CLIENT_DLL) || defined(GAME_DLL)
 		if (!(seqdesc.flags & STUDIO_ACTIVITY))
 		{
 			// AssertMsg2( false, "Sequence %d on studiohdr %s didn't have its activity initialized!", i, pstudiohdr->pszName() );
-			SetActivityForSequence( pstudiohdr, i );
+			SetActivityForSequence( pstudiohdr, (sequence_t)i );
 		}
 #endif
 
 		// is there an activity associated with this sequence?
-		if (seqdesc.Activity() >= 0)
+		if (seqdesc.Activity() != INVALID_ACTIVITY)
 		{
 			bFoundOne = true;
 
@@ -1686,7 +1676,9 @@ void CStudioHdr::CActivityToSequenceMapping::Initialize( CStudioHdr * __restrict
 		HashValueType &element = m_ActToSeqHash[handle];
 		element.startingIdx = sequenceCount;
 		sequenceCount += element.count;
-		topActivity = max(topActivity, element.activityIdx);
+		if(element.activityIdx != (int)INVALID_ACTIVITY) {
+			topActivity = max(topActivity, element.activityIdx);
+		}
 	}
 	
 
@@ -1714,7 +1706,7 @@ void CStudioHdr::CActivityToSequenceMapping::Initialize( CStudioHdr * __restrict
 	// our little table.
 	for ( int i = 0 ; i < NumSeq ; ++i )
 	{
-		const mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( i );
+		const mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( (sequence_t)i );
 		if (seqdesc.Activity() >= 0)
 		{
 			const HashValueType &element = m_ActToSeqHash[m_ActToSeqHash.Find(HashValueType(seqdesc.Activity(), 0, 0, 0))];
@@ -1786,7 +1778,7 @@ void CStudioHdr::CActivityToSequenceMapping::Reinitialize( CStudioHdr *pstudiohd
 // Look up relevant data for an activity's sequences. This isn't terribly efficient, due to the
 // load-hit-store on the output parameters, so the most common case -- SelectWeightedSequence --
 // is specially implemented.
-const CStudioHdr::CActivityToSequenceMapping::SequenceTuple *CStudioHdr::CActivityToSequenceMapping::GetSequences( int forActivity, int * __restrict outSequenceCount, int * __restrict outTotalWeight )
+const CStudioHdr::CActivityToSequenceMapping::SequenceTuple *CStudioHdr::CActivityToSequenceMapping::GetSequences( Activity forActivity, int * __restrict outSequenceCount, int * __restrict outTotalWeight )
 {
 	// Construct a dummy entry so we can do a hash lookup (the UtlHash does not divorce keys from values)
 
@@ -1810,7 +1802,7 @@ const CStudioHdr::CActivityToSequenceMapping::SequenceTuple *CStudioHdr::CActivi
 	}
 }
 
-int CStudioHdr::CActivityToSequenceMapping::NumSequencesForActivity( int forActivity )
+int CStudioHdr::CActivityToSequenceMapping::NumSequencesForActivity( Activity forActivity )
 {
 	// If this trips, you've called this function on something that doesn't 
 	// have activities.

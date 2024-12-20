@@ -48,33 +48,21 @@ namespace vgui
 {
 // handle to an internal vgui panel
 // this is the only handle to a panel that is valid across dll boundaries
-enum class VPANEL: unsigned int
-{
-};
+enum VPANEL: unsigned int;
 const VPANEL INVALID_VPANEL = (VPANEL)0;
 
 // handles to vgui objects
 // NULL values signify an invalid value
-enum class HScheme : unsigned long
-{
-};
+enum HScheme : unsigned long;
 const HScheme INVALID_SCHEME = (HScheme)0;
 // Both -1 and 0 are used for invalid textures. Be careful.
-enum class HTexture : int
-{
-};
+enum HTexture : int;
 const HTexture INVALID_TEXTURE = (HTexture)-1;
-enum class HCursor: unsigned long
-{
-};
+enum HCursor: unsigned long;
 const HCursor INVALID_CURSOR = (HCursor)0;
-enum class HPanel: unsigned long
-{
-};
+enum HPanel: unsigned long;
 const HPanel INVALID_PANEL = (HPanel)0xffffffff;
-enum class HFont: unsigned long
-{
-};
+enum HFont: unsigned long;
 const HFont INVALID_FONT = (HFont)0; // the value of an invalid font handle
 }
 

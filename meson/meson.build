@@ -50,7 +50,7 @@ else
 		subproject('gameui')
 		subproject('gamepadui_redirect')
 		subproject('serverbrowser_redirect')
-		subproject('client')
+		#subproject('client')
 	endif
 	if build_listen_server
 		subproject('server_listen')

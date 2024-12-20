@@ -41,15 +41,15 @@ public:
 	virtual int  DrawDebugTextOverlays( void );
 
 	//Inputs
-	inline void Enable( inputdata_t &input )	{ SetActive( false ); }
-	inline void Disable( inputdata_t &input )	{ SetActive( true ); }
-	void		InputReset( inputdata_t &input );
-	void		InputSetOwner( inputdata_t &input );
-	void		InputShowModel( inputdata_t &input );
-	void		InputHideModel( inputdata_t &input );
-	void		InputRoundActivate( inputdata_t &inputdata );
-	void		InputSetLocked( inputdata_t &inputdata );
-	void		InputSetUnlockTime( inputdata_t &inputdata );
+	inline void Enable( inputdata_t &&inputdata )	{ SetActive( false ); }
+	inline void Disable( inputdata_t &&inputdata )	{ SetActive( true ); }
+	void		InputReset( inputdata_t &&inputdata );
+	void		InputSetOwner( inputdata_t &&inputdata );
+	void		InputShowModel( inputdata_t &&inputdata );
+	void		InputHideModel( inputdata_t &&inputdata );
+	void		InputRoundActivate( inputdata_t &&inputdata );
+	void		InputSetLocked( inputdata_t &&inputdata );
+	void		InputSetUnlockTime( inputdata_t &&inputdata );
 
 	// Owner handling
 	void		ForceOwner( int iTeam ); // used when selecting a specific round to play

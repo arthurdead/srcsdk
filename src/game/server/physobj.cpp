@@ -50,9 +50,9 @@ public:
 	void	Activate( void );
 
 	// Inputs
-	void InputSetSpringConstant( inputdata_t &inputdata );
-	void InputSetSpringDamping( inputdata_t &inputdata );
-	void InputSetSpringLength( inputdata_t &inputdata );
+	void InputSetSpringConstant( inputdata_t &&inputdata );
+	void InputSetSpringDamping( inputdata_t &&inputdata );
+	void InputSetSpringLength( inputdata_t &&inputdata );
 
 	// Debug
 	int		DrawDebugTextOverlays(void);
@@ -86,15 +86,15 @@ LINK_ENTITY_TO_CLASS( phys_spring, CPhysicsSpring );
 
 BEGIN_MAPENTITY( CPhysicsSpring )
 
-	DEFINE_KEYFIELD( m_tempConstant, FIELD_FLOAT, "constant" ),
-	DEFINE_KEYFIELD( m_tempLength, FIELD_FLOAT, "length" ),
-	DEFINE_KEYFIELD( m_tempDamping, FIELD_FLOAT, "damping" ),
-	DEFINE_KEYFIELD( m_tempRelativeDamping, FIELD_FLOAT, "relativedamping" ),
+	DEFINE_KEYFIELD_AUTO( m_tempConstant, "constant" ),
+	DEFINE_KEYFIELD_AUTO( m_tempLength, "length" ),
+	DEFINE_KEYFIELD_AUTO( m_tempDamping, "damping" ),
+	DEFINE_KEYFIELD_AUTO( m_tempRelativeDamping, "relativedamping" ),
 
-	DEFINE_KEYFIELD( m_nameAttachStart, FIELD_STRING, "attach1" ),
-	DEFINE_KEYFIELD( m_nameAttachEnd, FIELD_STRING, "attach2" ),
+	DEFINE_KEYFIELD_AUTO( m_nameAttachStart, "attach1" ),
+	DEFINE_KEYFIELD_AUTO( m_nameAttachEnd, "attach2" ),
 
-	DEFINE_KEYFIELD( m_end, FIELD_POSITION_VECTOR, "springaxis" ),
+	DEFINE_KEYFIELD_AUTO( m_end, "springaxis" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpringConstant", InputSetSpringConstant ),
@@ -149,7 +149,7 @@ CPhysicsSpring::~CPhysicsSpring( void )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CPhysicsSpring::InputSetSpringConstant( inputdata_t &inputdata )
+void CPhysicsSpring::InputSetSpringConstant( inputdata_t &&inputdata )
 {
 	m_tempConstant = inputdata.value.Float();
 	m_pSpring->SetSpringConstant(inputdata.value.Float());
@@ -159,7 +159,7 @@ void CPhysicsSpring::InputSetSpringConstant( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CPhysicsSpring::InputSetSpringDamping( inputdata_t &inputdata )
+void CPhysicsSpring::InputSetSpringDamping( inputdata_t &&inputdata )
 {
 	m_tempDamping = inputdata.value.Float();
 	m_pSpring->SetSpringDamping(inputdata.value.Float());
@@ -169,7 +169,7 @@ void CPhysicsSpring::InputSetSpringDamping( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CPhysicsSpring::InputSetSpringLength( inputdata_t &inputdata )
+void CPhysicsSpring::InputSetSpringLength( inputdata_t &&inputdata )
 {
 	m_tempLength = inputdata.value.Float();
 	m_pSpring->SetSpringLength(inputdata.value.Float());
@@ -365,14 +365,14 @@ LINK_ENTITY_TO_CLASS( func_physbox_multiplayer, CPhysBox );
 
 BEGIN_MAPENTITY( CPhysBox )
 
-	DEFINE_KEYFIELD( m_massScale, FIELD_FLOAT, "massScale" ),
-	DEFINE_KEYFIELD( m_damageType, FIELD_INTEGER, "Damagetype" ),
-	DEFINE_KEYFIELD( m_iszOverrideScript, FIELD_STRING, "overridescript" ),
-	DEFINE_KEYFIELD( m_damageToEnableMotion, FIELD_INTEGER, "damagetoenablemotion" ),
-	DEFINE_KEYFIELD( m_flForceToEnableMotion, FIELD_FLOAT, "forcetoenablemotion" ), 
-	DEFINE_KEYFIELD( m_angPreferredCarryAngles, FIELD_VECTOR, "preferredcarryangles" ),
-	DEFINE_KEYFIELD( m_bNotSolidToWorld, FIELD_BOOLEAN, "notsolid" ),
-	DEFINE_KEYFIELD( m_iExploitableByPlayer, FIELD_INTEGER, "ExploitableByPlayer" ),
+	DEFINE_KEYFIELD_AUTO( m_massScale, "massScale" ),
+	DEFINE_KEYFIELD_AUTO( m_damageType, "Damagetype" ),
+	DEFINE_KEYFIELD_AUTO( m_iszOverrideScript, "overridescript" ),
+	DEFINE_KEYFIELD_AUTO( m_damageToEnableMotion, "damagetoenablemotion" ),
+	DEFINE_KEYFIELD_AUTO( m_flForceToEnableMotion, "forcetoenablemotion" ) 
+	DEFINE_KEYFIELD_AUTO( m_angPreferredCarryAngles, "preferredcarryangles" ),
+	DEFINE_KEYFIELD_AUTO( m_bNotSolidToWorld, "notsolid" ),
+	DEFINE_KEYFIELD_AUTO( m_iExploitableByPlayer, "ExploitableByPlayer" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Wake", InputWake ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Sleep", InputSleep ),
@@ -641,7 +641,7 @@ int CPhysBox::DrawDebugTextOverlays(void)
 // Purpose: Input handler that breaks the physics object away from its parent
 //			and starts it simulating.
 //-----------------------------------------------------------------------------
-void CPhysBox::InputWake( inputdata_t &inputdata )
+void CPhysBox::InputWake( inputdata_t &&inputdata )
 {
 	VPhysicsGetObject()->Wake();
 }
@@ -650,7 +650,7 @@ void CPhysBox::InputWake( inputdata_t &inputdata )
 // Purpose: Input handler that breaks the physics object away from its parent
 //			and stops it simulating.
 //-----------------------------------------------------------------------------
-void CPhysBox::InputSleep( inputdata_t &inputdata )
+void CPhysBox::InputSleep( inputdata_t &&inputdata )
 {
 	VPhysicsGetObject()->Sleep();
 }
@@ -658,7 +658,7 @@ void CPhysBox::InputSleep( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Enable physics motion and collision response (on by default)
 //-----------------------------------------------------------------------------
-void CPhysBox::InputEnableMotion( inputdata_t &inputdata )
+void CPhysBox::InputEnableMotion( inputdata_t &&inputdata )
 {
 	EnableMotion();
 }
@@ -684,7 +684,7 @@ void CPhysBox::EnableMotion( void )
 //-----------------------------------------------------------------------------
 // Purpose: Disable any physics motion or collision response
 //-----------------------------------------------------------------------------
-void CPhysBox::InputDisableMotion( inputdata_t &inputdata )
+void CPhysBox::InputDisableMotion( inputdata_t &&inputdata )
 {
 	IPhysicsObject *pPhysicsObject = VPhysicsGetObject();
 	if ( pPhysicsObject != NULL )
@@ -694,7 +694,7 @@ void CPhysBox::InputDisableMotion( inputdata_t &inputdata )
 }
 
 // Turn off floating simulation (and cost)
-void CPhysBox::InputDisableFloating( inputdata_t &inputdata )
+void CPhysBox::InputDisableFloating( inputdata_t &&inputdata )
 {
 	PhysEnableFloating( VPhysicsGetObject(), false );
 }
@@ -702,7 +702,7 @@ void CPhysBox::InputDisableFloating( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Adds or removes the debris spawnflag.
 //-----------------------------------------------------------------------------
-void CPhysBox::InputSetDebris( inputdata_t &inputdata )
+void CPhysBox::InputSetDebris( inputdata_t &&inputdata )
 {
 	if (inputdata.value.Bool())
 	{
@@ -719,7 +719,7 @@ void CPhysBox::InputSetDebris( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: If we're being held by the player's hand/physgun, force it to drop us
 //-----------------------------------------------------------------------------
-void CPhysBox::InputForceDrop( inputdata_t &inputdata )
+void CPhysBox::InputForceDrop( inputdata_t &&inputdata )
 {
 	if ( m_hCarryingPlayer )
 	{
@@ -891,10 +891,10 @@ LINK_ENTITY_TO_CLASS( env_physexplosion, CPhysExplosion );
 
 BEGIN_MAPENTITY( CPhysExplosion )
 
-	DEFINE_KEYFIELD( m_damage, FIELD_FLOAT, "magnitude" ),
-	DEFINE_KEYFIELD( m_radius, FIELD_FLOAT, "radius" ),
-	DEFINE_KEYFIELD( m_targetEntityName, FIELD_STRING, "targetentityname" ),
-	DEFINE_KEYFIELD( m_flInnerRadius, FIELD_FLOAT, "inner_radius" ),
+	DEFINE_KEYFIELD_AUTO( m_damage, "magnitude" ),
+	DEFINE_KEYFIELD_AUTO( m_radius, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_targetEntityName, "targetentityname" ),
+	DEFINE_KEYFIELD_AUTO( m_flInnerRadius, "inner_radius" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Explode", InputExplode ),
@@ -950,7 +950,7 @@ CBaseEntity *CPhysExplosion::FindEntity( CBaseEntity *pEntity, CBaseEntity *pAct
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPhysExplosion::InputExplode( inputdata_t &inputdata )
+void CPhysExplosion::InputExplode( inputdata_t &&inputdata )
 {
 	Explode( inputdata.pActivator, inputdata.pCaller );
 }
@@ -958,7 +958,7 @@ void CPhysExplosion::InputExplode( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPhysExplosion::InputExplodeAndRemove( inputdata_t &inputdata )
+void CPhysExplosion::InputExplodeAndRemove( inputdata_t &&inputdata )
 {
 	Explode( inputdata.pActivator, inputdata.pCaller );
 	UTIL_Remove(this);
@@ -1146,9 +1146,9 @@ LINK_ENTITY_TO_CLASS( env_physimpact, CPhysImpact );
 
 BEGIN_MAPENTITY( CPhysImpact )
 
-	DEFINE_KEYFIELD( m_damage,				FIELD_FLOAT,	"magnitude" ),
-	DEFINE_KEYFIELD( m_distance,			FIELD_FLOAT,	"distance" ),
-	DEFINE_KEYFIELD( m_directionEntityName,FIELD_STRING,	"directionentityname" ),
+	DEFINE_KEYFIELD_AUTO( m_damage, "magnitude" ),
+	DEFINE_KEYFIELD_AUTO( m_distance, "distance" ),
+	DEFINE_KEYFIELD_AUTO( m_directionEntityName, "directionentityname" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Impact", InputImpact ),
 
@@ -1198,7 +1198,7 @@ void CPhysImpact::PointAtEntity( void )
 //			useType - 
 //			value - 
 //-----------------------------------------------------------------------------
-void CPhysImpact::InputImpact( inputdata_t &inputdata )
+void CPhysImpact::InputImpact( inputdata_t &&inputdata )
 {
 	Vector	dir;
 	trace_t	trace;
@@ -1456,7 +1456,7 @@ public:
 	COutputEvent m_OnConvert;	
 
 	// Input handlers
-	void InputConvertTarget( inputdata_t &inputdata );
+	void InputConvertTarget( inputdata_t &&inputdata );
 
 	enum
 	{
@@ -1476,8 +1476,8 @@ LINK_ENTITY_TO_CLASS( phys_convert, CPhysConvert );
 
 BEGIN_MAPENTITY( CPhysConvert )
 
-	DEFINE_KEYFIELD( m_swapModel,		FIELD_STRING,	"swapmodel" ),
-	DEFINE_KEYFIELD( m_flMassOverride,	FIELD_FLOAT,	"massoverride" ),
+	DEFINE_KEYFIELD_AUTO( m_swapModel, "swapmodel" ),
+	DEFINE_KEYFIELD_AUTO( m_flMassOverride, "massoverride" ),
 	DEFINE_INPUT( m_iPhysicsEntityType,	FIELD_INTEGER,	"SetConversionType" ),
 	
 	// Inputs
@@ -1493,7 +1493,7 @@ END_MAPENTITY()
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that converts our target to a physics object.
 //-----------------------------------------------------------------------------
-void CPhysConvert::InputConvertTarget( inputdata_t &inputdata )
+void CPhysConvert::InputConvertTarget( inputdata_t &&inputdata )
 {
 	bool createAsleep = HasSpawnFlags(SF_CONVERT_ASLEEP);
 	bool createAsDebris = HasSpawnFlags(SF_CONVERT_AS_DEBRIS);
@@ -1602,11 +1602,11 @@ BEGIN_MAPENTITY( CPhysMagnet )
 	DEFINE_OUTPUT( m_OnMagnetDetach, "OnDetach" ),
 
 	// Keys
-	DEFINE_KEYFIELD( m_massScale, FIELD_FLOAT, "massScale" ),
-	DEFINE_KEYFIELD( m_iszOverrideScript, FIELD_STRING, "overridescript" ),
-	DEFINE_KEYFIELD( m_iMaxObjectsAttached, FIELD_INTEGER, "maxobjects" ),
-	DEFINE_KEYFIELD( m_forceLimit, FIELD_FLOAT, "forcelimit" ),
-	DEFINE_KEYFIELD( m_torqueLimit, FIELD_FLOAT, "torquelimit" ),
+	DEFINE_KEYFIELD_AUTO( m_massScale, "massScale" ),
+	DEFINE_KEYFIELD_AUTO( m_iszOverrideScript, "overridescript" ),
+	DEFINE_KEYFIELD_AUTO( m_iMaxObjectsAttached, "maxobjects" ),
+	DEFINE_KEYFIELD_AUTO( m_forceLimit, "forcelimit" ),
+	DEFINE_KEYFIELD_AUTO( m_torqueLimit, "torquelimit" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
@@ -1938,7 +1938,7 @@ void CPhysMagnet::SetConstraintGroup( IPhysicsConstraintGroup *pGroup )
 //-----------------------------------------------------------------------------
 // Purpose: Make the magnet active
 //-----------------------------------------------------------------------------
-void CPhysMagnet::InputTurnOn( inputdata_t &inputdata )
+void CPhysMagnet::InputTurnOn( inputdata_t &&inputdata )
 {
 	m_bActive = true;
 }
@@ -1946,7 +1946,7 @@ void CPhysMagnet::InputTurnOn( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Make the magnet inactive. Drop everything it's got hooked on.
 //-----------------------------------------------------------------------------
-void CPhysMagnet::InputTurnOff( inputdata_t &inputdata )
+void CPhysMagnet::InputTurnOff( inputdata_t &&inputdata )
 {
 	m_bActive = false;
 	DetachAll();
@@ -1955,7 +1955,7 @@ void CPhysMagnet::InputTurnOff( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Toggle the magnet's active state
 //-----------------------------------------------------------------------------
-void CPhysMagnet::InputToggle( inputdata_t &inputdata )
+void CPhysMagnet::InputToggle( inputdata_t &&inputdata )
 {
 	if ( m_bActive )
 	{
@@ -2072,8 +2072,8 @@ public:
 	virtual void Activate( void );
 	void PushThink( void );
 	
-	void	InputEnable( inputdata_t &inputdata );
-	void	InputDisable( inputdata_t &inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
 
 	virtual void DrawDebugGeometryOverlays( void );
 
@@ -2094,11 +2094,11 @@ LINK_ENTITY_TO_CLASS( point_push, CPointPush );
 
 BEGIN_MAPENTITY( CPointPush )
 
-	DEFINE_KEYFIELD( m_bEnabled,	FIELD_BOOLEAN,	"enabled" ),
-	DEFINE_KEYFIELD( m_flMagnitude, FIELD_FLOAT,	"magnitude" ),
-	DEFINE_KEYFIELD( m_flRadius,	FIELD_FLOAT,	"radius" ),
-	DEFINE_KEYFIELD( m_flInnerRadius,FIELD_FLOAT,	"inner_radius" ),
-	DEFINE_KEYFIELD( m_flConeOfInfluence,	FIELD_FLOAT,	"influence_cone" ),
+	DEFINE_KEYFIELD_AUTO( m_bEnabled, "enabled" ),
+	DEFINE_KEYFIELD_AUTO( m_flMagnitude, "magnitude" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_flInnerRadius, "inner_radius" ),
+	DEFINE_KEYFIELD_AUTO( m_flConeOfInfluence, "influence_cone" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -2291,7 +2291,7 @@ void CPointPush::PushThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointPush::InputEnable( inputdata_t &inputdata )
+void CPointPush::InputEnable( inputdata_t &&inputdata )
 {
 	m_bEnabled = true;
 	SetThink( &CPointPush::PushThink );
@@ -2301,7 +2301,7 @@ void CPointPush::InputEnable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointPush::InputDisable( inputdata_t &inputdata )
+void CPointPush::InputDisable( inputdata_t &&inputdata )
 {
 	m_bEnabled = false;
 	SetThink( NULL );

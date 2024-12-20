@@ -32,23 +32,23 @@ public:
 
 	// Parse data from a map file
 	virtual void Activate();
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 
 	// Input handlers
-	void InputSetFadeTime(inputdata_t &data);
-	void InputSetLocalContrastStrength(inputdata_t &data);
-	void InputSetLocalContrastEdgeStrength(inputdata_t &data);
-	void InputSetVignetteStart(inputdata_t &data);
-	void InputSetVignetteEnd(inputdata_t &data);
-	void InputSetVignetteBlurStrength(inputdata_t &data);
-	void InputSetFadeToBlackStrength(inputdata_t &data);
-	void InputSetDepthBlurFocalDistance(inputdata_t &data);
-	void InputSetDepthBlurStrength(inputdata_t &data);
-	void InputSetScreenBlurStrength(inputdata_t &data);
-	void InputSetFilmGrainStrength(inputdata_t &data);
+	void InputSetFadeTime( inputdata_t &&inputdata );
+	void InputSetLocalContrastStrength( inputdata_t &&inputdata );
+	void InputSetLocalContrastEdgeStrength( inputdata_t &&inputdata );
+	void InputSetVignetteStart( inputdata_t &&inputdata );
+	void InputSetVignetteEnd( inputdata_t &&inputdata );
+	void InputSetVignetteBlurStrength( inputdata_t &&inputdata );
+	void InputSetFadeToBlackStrength( inputdata_t &&inputdata );
+	void InputSetDepthBlurFocalDistance( inputdata_t &&inputdata );
+	void InputSetDepthBlurStrength( inputdata_t &&inputdata );
+	void InputSetScreenBlurStrength( inputdata_t &&inputdata );
+	void InputSetFilmGrainStrength( inputdata_t &&inputdata );
 
-	void InputTurnOn(inputdata_t &data);
-	void InputTurnOff(inputdata_t &data);
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
 
 	void Spawn( void );
 

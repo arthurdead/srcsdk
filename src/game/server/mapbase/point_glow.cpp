@@ -15,20 +15,20 @@ class CPointGlow : public CPointEntity
 	DECLARE_CLASS( CPointGlow, CPointEntity );
 public:
 
-	int UpdateTransmitState( void ) { return SetTransmitState( FL_EDICT_ALWAYS ); }
+	EdictStateFlags_t UpdateTransmitState( void ) { return SetTransmitState( FL_EDICT_ALWAYS ); }
 	
 	void Spawn( void );
 
 	void SetGlowTarget( CBaseEntity *pActivator, CBaseEntity *pCaller ) { m_hGlowTarget = gEntList.FindEntityByName(NULL, m_target, this, pActivator, pCaller); }
 
 	// Inputs
-	void InputSetTarget( inputdata_t &inputdata ) { BaseClass::InputSetTarget(inputdata); SetGlowTarget( inputdata.pActivator, inputdata.pCaller ); }
+	void InputSetTarget( inputdata_t &&inputdata ) { BaseClass::InputSetTarget(inputdata); SetGlowTarget( inputdata.pActivator, inputdata.pCaller ); }
 
-	void InputEnable( inputdata_t &inputdata ) { m_bGlowDisabled = false; SetGlowTarget( inputdata.pActivator, inputdata.pCaller ); }
-	void InputDisable( inputdata_t &inputdata ) { m_bGlowDisabled = true; }
-	void InputToggle( inputdata_t &inputdata ) { m_bGlowDisabled ? InputEnable(inputdata) : InputDisable(inputdata); }
+	void InputEnable( inputdata_t &&inputdata ) { m_bGlowDisabled = false; SetGlowTarget( inputdata.pActivator, inputdata.pCaller ); }
+	void InputDisable( inputdata_t &&inputdata ) { m_bGlowDisabled = true; }
+	void InputToggle( inputdata_t &&inputdata ) { m_bGlowDisabled ? InputEnable(inputdata) : InputDisable(inputdata); }
 
-	void InputSetGlowColor( inputdata_t &inputdata ) { m_GlowColor = inputdata.value.Color32(); }
+	void InputSetGlowColor( inputdata_t &&inputdata ) { m_GlowColor = inputdata.value.Color32(); }
 
 	CNetworkHandle( CBaseEntity, m_hGlowTarget );
 	CNetworkColor32( m_GlowColor );
@@ -44,9 +44,9 @@ LINK_ENTITY_TO_CLASS( point_glow, CPointGlow );
 BEGIN_DATADESC( CPointGlow )
 
 	// Keys
-	DEFINE_KEYFIELD( m_GlowColor, FIELD_COLOR32, "GlowColor" ),
+	DEFINE_KEYFIELD_AUTO( m_GlowColor, "GlowColor" ),
 	DEFINE_FIELD( m_hGlowTarget, FIELD_EHANDLE ),
-	DEFINE_KEYFIELD( m_bGlowDisabled, FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bGlowDisabled, "StartDisabled" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),

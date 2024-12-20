@@ -555,7 +555,7 @@ public:
 	DECLARE_SERVERCLASS();
 
 	bool				ShouldSavePhysics()	{ return false; }
-	virtual unsigned int	PhysicsSolidMaskForEntity( void ) const;
+	virtual ContentsFlags_t	PhysicsSolidMaskForEntity( void ) const;
 
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 	virtual bool GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen );
@@ -575,7 +575,7 @@ public:
 	virtual void		CleanupOnDeath( CBaseEntity *pCulprit = NULL, bool bFireDeathOutput = true );
 	virtual void		UpdateOnRemove( void );
 
-	virtual int			UpdateTransmitState();
+	virtual EdictStateFlags_t			UpdateTransmitState();
 
 	//---------------------------------
 	// Component creation factories
@@ -616,7 +616,7 @@ public:
 	// Thinking, including core thinking, movement, animation
 	virtual void		NPCThink( void );
 
-	void				InputSetThinkNPC( inputdata_t &inputdata );
+	void				InputSetThinkNPC( inputdata_t &&inputdata );
 
 	// Core thinking (schedules & tasks)
 	virtual void		RunAI( void );// core ai function!	
@@ -962,8 +962,8 @@ public:
 
 	bool				DidChooseEnemy() const			{ return !m_bSkippedChooseEnemy; }
 
-	void				InputSetCondition( inputdata_t &inputdata );
-	void				InputClearCondition( inputdata_t &inputdata );
+	void				InputSetCondition( inputdata_t &&inputdata );
+	void				InputClearCondition( inputdata_t &&inputdata );
 
 private:
 	CAI_ScheduleBits	m_Conditions;
@@ -1046,13 +1046,13 @@ public:
 	Activity			GetActivity( void ) { return m_Activity; }
 	virtual void		SetActivity( Activity NewActivity );
 	Activity			GetIdealActivity( void ) { return m_IdealActivity; }
-	void				SetIdealSequence( int iSequence, bool bReset = false ) { if ( bReset ) ResetIdealActivity( ACT_SPECIFIC_SEQUENCE ); else SetIdealActivity( ACT_SPECIFIC_SEQUENCE ); m_nIdealSequence = iSequence; }
+	void				SetIdealSequence( sequence_t iSequence, bool bReset = false ) { if ( bReset ) ResetIdealActivity( ACT_SPECIFIC_SEQUENCE ); else SetIdealActivity( ACT_SPECIFIC_SEQUENCE ); m_nIdealSequence = iSequence; }
 	void				SetIdealActivity( Activity NewActivity );
 	Activity			GetTranslatedActivity( void ) { return m_translatedActivity; }
 	Activity			GetIdealTranslatedActivity( void ) { return m_IdealTranslatedActivity; }
 	void				ResetIdealActivity( Activity newIdealActivity );
 	void				SetSequenceByName( const char *szSequence );
-	void				SetSequenceById( int iSequence );
+	void				SetSequenceById( sequence_t iSequence );
 	Activity			GetScriptCustomMoveActivity( void );
 	int					GetScriptCustomMoveSequence( void );
 	Activity			GetStoppedActivity( void );
@@ -1064,7 +1064,7 @@ public:
 	void				MaintainActivity(void);
 	void				ResetActivity(void) { m_Activity = ACT_RESET; }
 
-	void				SetActivityAndSequence(Activity NewActivity, int iSequence, Activity translatedActivity, Activity weaponActivity);
+	void				SetActivityAndSequence(Activity NewActivity, sequence_t iSequence, Activity translatedActivity, Activity weaponActivity);
 
 	//-----------------------------------------------------
 
@@ -1086,13 +1086,13 @@ public:
 private:
 
 	void				AdvanceToIdealActivity(void);
-	void				ResolveActivityToSequence(Activity NewActivity, int &iSequence, Activity &translatedActivity, Activity &weaponActivity);
+	void				ResolveActivityToSequence(Activity NewActivity, sequence_t &iSequence, Activity &translatedActivity, Activity &weaponActivity);
 
 	Activity			m_Activity;				// Current animation state
 	Activity			m_translatedActivity;	// Current actual translated animation
 
 	Activity			m_IdealActivity;				// Desired animation state
-	int					m_nIdealSequence;				// Desired animation sequence
+	sequence_t					m_nIdealSequence;				// Desired animation sequence
 	Activity			m_IdealTranslatedActivity;		// Desired actual translated animation state
 	Activity			m_IdealWeaponActivity;			// Desired weapon animation state
 	int					m_FakeSequenceGestureLayer;		// The gesture layer impersonating a sequence (-1 if invalid)
@@ -1111,8 +1111,8 @@ public:
 	const CAI_Senses *	GetSenses() const	{ return m_pSenses; }
 	
 	void				SetDistLook( float flDistLook );
-	void				InputSetDistLook( inputdata_t &inputdata );
-	void				InputSetDistTooFar( inputdata_t &inputdata );
+	void				InputSetDistLook( inputdata_t &&inputdata );
+	void				InputSetDistTooFar( inputdata_t &&inputdata );
 
 	virtual bool		QueryHearSound( CSound *pSound );
 	virtual bool		QuerySeeEntity( CBaseEntity *pEntity, bool bOnlyHateOrFearIfNPC = false );
@@ -1183,7 +1183,7 @@ public:
 	CBaseEntity *GetEnemyOccluder(void);
 
 	virtual void		StartTargetHandling( CBaseEntity *pTargetEnt );
-	void				InputSetTarget( inputdata_t &inputdata );
+	void				InputSetTarget( inputdata_t &&inputdata );
 
 	//---------------------------------
 	
@@ -1266,7 +1266,7 @@ public:
 
 	ThreeState_t m_FriendlyFireOverride = TRS_NONE;
 	virtual bool	FriendlyFireEnabled();
-	void			InputSetFriendlyFire( inputdata_t &inputdata );
+	void			InputSetFriendlyFire( inputdata_t &&inputdata );
 
 	// Grenade-related functions from Combine soldiers ported to ai_basenpc so they could be shared.
 	// 
@@ -1305,7 +1305,7 @@ protected:
 	bool HasValidInteractionsOnCurrentEnemy( void );
 	virtual bool CanStartDynamicInteractionDuringMelee() { return false; }
 
-	void InputForceInteractionWithNPC( inputdata_t &inputdata );
+	void InputForceInteractionWithNPC( inputdata_t &&inputdata );
 	void StartForcedInteraction( CAI_BaseNPC *pNPC, int iInteraction );
 	void CleanupForcedInteraction( void );
 	void CalculateForcedInteractionPosition( void );
@@ -1395,8 +1395,8 @@ public:
 	int					CapabilitiesRemove( int capabilities );
 	void				CapabilitiesClear( void );
 
-	void				InputAddCapabilities( inputdata_t &inputdata );
-	void				InputRemoveCapabilities( inputdata_t &inputdata );
+	void				InputAddCapabilities( inputdata_t &&inputdata );
+	void				InputRemoveCapabilities( inputdata_t &&inputdata );
 
 private:
 	int					m_afCapability;			// tells us what a npc can/can't do.
@@ -1627,16 +1627,16 @@ public:
 	//-----------------------------------------------------
 	inline bool			IsInAScript( void ) { return m_bInAScript; }
 	inline void			SetInAScript( bool bScript ) { m_bInAScript = bScript; }
-	void				InputStartScripting( inputdata_t &inputdata ) { m_bInAScript = true; }
-	void				InputStopScripting( inputdata_t &inputdata ) { m_bInAScript = false; }
+	void				InputStartScripting( inputdata_t &&inputdata ) { m_bInAScript = true; }
+	void				InputStopScripting( inputdata_t &&inputdata ) { m_bInAScript = false; }
 
-	void				InputGagEnable( inputdata_t &inputdata ) { AddSpawnFlags(SF_NPC_GAG); }
-	void				InputGagDisable( inputdata_t &inputdata ) { RemoveSpawnFlags(SF_NPC_GAG); }
+	void				InputGagEnable( inputdata_t &&inputdata ) { AddSpawnFlags(SF_NPC_GAG); }
+	void				InputGagDisable( inputdata_t &&inputdata ) { RemoveSpawnFlags(SF_NPC_GAG); }
 
 	bool				HandleInteraction(int interactionType, void *data, CBaseCombatCharacter* sourceEnt);
 
-	virtual void		InputOutsideTransition( inputdata_t &inputdata );
-	virtual void		InputInsideTransition( inputdata_t &inputdata );
+	virtual void		InputOutsideTransition( inputdata_t &&inputdata );
+	virtual void		InputInsideTransition( inputdata_t &&inputdata );
 
 	void				CleanupScriptsOnTeleport( bool bEnrouteAsWell );
 
@@ -1731,9 +1731,9 @@ public:
 	virtual bool		CanHolsterWeapon( void );
 	virtual int			HolsterWeapon( void );
 	virtual int			UnholsterWeapon( void );
-	void				InputHolsterWeapon( inputdata_t &inputdata );
-	void				InputHolsterAndDestroyWeapon( inputdata_t &inputdata );
-	void				InputUnholsterWeapon( inputdata_t &inputdata );
+	void				InputHolsterWeapon( inputdata_t &&inputdata );
+	void				InputHolsterAndDestroyWeapon( inputdata_t &&inputdata );
+	void				InputUnholsterWeapon( inputdata_t &&inputdata );
 	bool				IsWeaponHolstered( void );
 	bool				IsWeaponStateChanging( void );
 	void				SetDesiredWeaponState( DesiredWeaponState_t iState ) { m_iDesiredWeaponState = iState; }
@@ -1744,10 +1744,10 @@ public:
 	virtual bool		ShouldUnholsterWeapon();
 	virtual bool		CanUnholsterWeapon();
 
-	void				InputGiveWeaponHolstered( inputdata_t &inputdata );
-	void				InputChangeWeapon( inputdata_t &inputdata );
-	void				InputPickupWeapon( inputdata_t &inputdata );
-	void				InputPickupItem( inputdata_t &inputdata );
+	void				InputGiveWeaponHolstered( inputdata_t &&inputdata );
+	void				InputChangeWeapon( inputdata_t &&inputdata );
+	void				InputPickupWeapon( inputdata_t &&inputdata );
+	void				InputPickupItem( inputdata_t &&inputdata );
 
 	// NOTE: The Shot Regulator is used to manage the RangeAttack1 weapon.
 	inline CAI_ShotRegulator* GetShotRegulator()		{ return &m_ShotRegulator; }
@@ -1920,10 +1920,10 @@ public:
 	//---------------------------------
 
 	void				MakeDamageBloodDecal( int cCount, float flNoise, trace_t *ptr, Vector vecDir );
-	virtual float		GetHitgroupDamageMultiplier( int iHitGroup, const CTakeDamageInfo &info );
+	virtual float		GetHitgroupDamageMultiplier( Hitgroup_t iHitGroup, const CTakeDamageInfo &info );
 	void				TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	void				DecalTrace( trace_t *pTrace, char const *decalName );
-	void				ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName );
+	void				ImpactTrace( trace_t *pTrace, DamageTypes_t iDamageType, const char *pCustomImpactName );
 	virtual	bool		PlayerInSpread( const Vector &sourcePos, const Vector &targetPos, float flSpread, float maxDistOffCenter, bool ignoreHatedPlayers = true );
 	CBaseEntity *		PlayerInRange( const Vector &vecLocation, float flDist );
 	bool				PointInSpread( CBaseCombatCharacter *pCheckEntity, const Vector &sourcePos, const Vector &targetPos, const Vector &testPoint, float flSpread, float maxDistOffCenter );
@@ -1967,8 +1967,8 @@ public:
 	virtual bool		IsLightDamage( const CTakeDamageInfo &info );
 	virtual bool		IsHeavyDamage( const CTakeDamageInfo &info );
 
-	void				DoRadiusDamage( const CTakeDamageInfo &info, int iClassIgnore, CBaseEntity *pEntityIgnore );
-	void				DoRadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, int iClassIgnore, CBaseEntity *pEntityIgnore );
+	void				DoRadiusDamage( const CTakeDamageInfo &info, Class_T iClassIgnore, CBaseEntity *pEntityIgnore );
+	void				DoRadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, Class_T iClassIgnore, CBaseEntity *pEntityIgnore );
 
 	//---------------------------------
 
@@ -1980,17 +1980,17 @@ public:
 	//---------------------------------
 	// Inputs
 	//---------------------------------
-	void InputSetRelationship( inputdata_t &inputdata );
-	void InputSetEnemyFilter( inputdata_t &inputdata );
-	void InputSetHealth( inputdata_t &inputdata );
-	void InputBeginRappel( inputdata_t &inputdata );
-	void InputSetSquad( inputdata_t &inputdata );
-	void InputWake( inputdata_t &inputdata );
-	void InputForgetEntity( inputdata_t &inputdata );
-	void InputIgnoreDangerSounds( inputdata_t &inputdata );
-	void InputUpdateEnemyMemory( inputdata_t &inputdata );
-	void InputCreateAddon( inputdata_t &inputdata );
-	void InputSetHealthFraction( inputdata_t &inputdata );
+	void InputSetRelationship( inputdata_t &&inputdata );
+	void InputSetEnemyFilter( inputdata_t &&inputdata );
+	void InputSetHealth( inputdata_t &&inputdata );
+	void InputBeginRappel( inputdata_t &&inputdata );
+	void InputSetSquad( inputdata_t &&inputdata );
+	void InputWake( inputdata_t &&inputdata );
+	void InputForgetEntity( inputdata_t &&inputdata );
+	void InputIgnoreDangerSounds( inputdata_t &&inputdata );
+	void InputUpdateEnemyMemory( inputdata_t &&inputdata );
+	void InputCreateAddon( inputdata_t &&inputdata );
+	void InputSetHealthFraction( inputdata_t &&inputdata );
 
 	//---------------------------------
 	
@@ -2289,7 +2289,7 @@ private:
 
 	// Break into pieces!
 	void				Break( CBaseEntity *pBreaker );
-	void				InputBreak( inputdata_t &inputdata );
+	void				InputBreak( inputdata_t &&inputdata );
 
 	friend void 		CC_NPC_Go();
 	friend void 		CC_NPC_GoRandom();
@@ -2309,16 +2309,16 @@ public:
 
 	float	m_flFrozenMoveBlock;	// entity can't move after it's frozen past this amount
 
-	void				InputActivateSpeedModifier( inputdata_t &inputdata ) { m_bSpeedModActive = true; }
-	void				InputDisableSpeedModifier( inputdata_t &inputdata ) { m_bSpeedModActive = false; }
-	void				InputSetSpeedModifierRadius( inputdata_t &inputdata );
-	void				InputSetSpeedModifierSpeed( inputdata_t &inputdata );
+	void				InputActivateSpeedModifier( inputdata_t &&inputdata ) { m_bSpeedModActive = true; }
+	void				InputDisableSpeedModifier( inputdata_t &&inputdata ) { m_bSpeedModActive = false; }
+	void				InputSetSpeedModifierRadius( inputdata_t &&inputdata );
+	void				InputSetSpeedModifierSpeed( inputdata_t &&inputdata );
 
 	// Hammer input to change the speed of the NPC (based on 1upD's npc_shadow_walker code)
 	// Not to be confused with the inputs above
 	virtual float		GetSequenceGroundSpeed( CStudioHdr *pStudioHdr, int iSequence );
 	inline float		GetSequenceGroundSpeed( int iSequence ) { return GetSequenceGroundSpeed( GetModelPtr(), iSequence ); }
-	void				InputSetSpeedModifier( inputdata_t &inputdata );
+	void				InputSetSpeedModifier( inputdata_t &&inputdata );
 	float				m_flSpeedModifier;
 
 	virtual bool		ShouldProbeCollideAgainstEntity( CBaseEntity *pEntity );
@@ -2336,11 +2336,11 @@ private:
 	int					m_iAIIndex; 
 
 protected:
-	unsigned int		m_nAITraceMask;
+	ContentsFlags_t		m_nAITraceMask;
 
 public:
-	inline unsigned int	GetAITraceMask( void ) const { return m_nAITraceMask; }
-	inline unsigned int GetAITraceMask_BrushOnly( void ) const { return (m_nAITraceMask & ~CONTENTS_MONSTER); }
+	inline ContentsFlags_t	GetAITraceMask( void ) const { return m_nAITraceMask; }
+	inline ContentsFlags_t GetAITraceMask_BrushOnly( void ) const { return (m_nAITraceMask & ~CONTENTS_MONSTER); }
 
 	virtual	bool		OnlySeeAliveEntities( void ) { return true; }
 };
@@ -3064,28 +3064,28 @@ inline float CAI_Component::GetIdealAccel() const
 
 //-----------------------------------------------------------------------------
 
-inline int CAI_Component::GetSequence()
+inline sequence_t CAI_Component::GetSequence()
 {
 	return GetOuter()->GetSequence();
 }
 
 //-----------------------------------------------------------------------------
 
-inline int CAI_Component::GetEntFlags() const
+inline EntityBehaviorFlags_t CAI_Component::GetEntFlags() const
 {
 	return GetOuter()->GetFlags();
 }
 
 //-----------------------------------------------------------------------------
 
-inline void CAI_Component::AddEntFlag( int flags )
+inline void CAI_Component::AddEntFlag( EntityBehaviorFlags_t flags )
 {
 	GetOuter()->AddFlag( flags );
 }
 
 //-----------------------------------------------------------------------------
 
-inline void CAI_Component::RemoveEntFlag( int flagsToRemove )
+inline void CAI_Component::RemoveEntFlag( EntityBehaviorFlags_t flagsToRemove )
 {
 	GetOuter()->RemoveFlag( flagsToRemove );
 }
@@ -3102,7 +3102,7 @@ inline void	 CAI_Component::SetGroundEntity( CBaseEntity *ground )
 
 //-----------------------------------------------------------------------------
 
-inline void CAI_Component::ToggleEntFlag( int flagToToggle )
+inline void CAI_Component::ToggleEntFlag( EntityBehaviorFlags_t flagToToggle )
 {
 	GetOuter()->ToggleFlag( flagToToggle );
 }
@@ -3226,12 +3226,12 @@ public:
 	virtual	bool	HasBeenInteractedWith()	{ return false; };
 	virtual void	NotifyInteraction( CAI_BaseNPC *pUser ) { return; };
 
-	virtual void	InputPowerdown( inputdata_t &inputdata )
+	virtual void	InputPowerdown( inputdata_t &&inputdata )
 	{
 
 	}
 
-	virtual void	InputDoInteraction( inputdata_t &inputdata )
+	virtual void	InputDoInteraction( inputdata_t &&inputdata )
 	{
 		NotifyInteraction(inputdata.pActivator ? inputdata.pActivator->MyNPCPointer() : NULL);
 	}

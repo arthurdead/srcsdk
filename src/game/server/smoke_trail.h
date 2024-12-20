@@ -133,8 +133,8 @@ public:
 
 	static SporeExplosion*		CreateSporeExplosion();
 
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
 //Data members
 public:

@@ -90,8 +90,8 @@ LINK_ENTITY_TO_CLASS( keyframe_track, CPathKeyFrame );
 
 BEGIN_MAPENTITY( CPathKeyFrame )
 
-	DEFINE_KEYFIELD( m_iNextKey, FIELD_STRING, "NextKey" ),
-	DEFINE_KEYFIELD( m_flSpeed, FIELD_FLOAT, "MoveSpeed" ),
+	DEFINE_KEYFIELD_AUTO( m_iNextKey, "NextKey" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpeed, "MoveSpeed" ),
 
 END_MAPENTITY()
 
@@ -300,9 +300,9 @@ LINK_ENTITY_TO_CLASS( move_keyframed, CBaseMoveBehavior );
 
 BEGIN_MAPENTITY( CBaseMoveBehavior )
 
-//	DEFINE_KEYFIELD( m_iTimeModifier, FIELD_INTEGER, "TimeModifier" ),
-	DEFINE_KEYFIELD( m_iPositionInterpolator, FIELD_INTEGER, "PositionInterpolator" ),
-	DEFINE_KEYFIELD( m_iRotationInterpolator, FIELD_INTEGER, "RotationInterpolator" ),
+//	DEFINE_KEYFIELD_AUTO( m_iTimeModifier, "TimeModifier" ),
+	DEFINE_KEYFIELD_AUTO( m_iPositionInterpolator, "PositionInterpolator" ),
+	DEFINE_KEYFIELD_AUTO( m_iRotationInterpolator, "RotationInterpolator" ),
 
 END_MAPENTITY()
 

@@ -58,7 +58,7 @@ CSharedBaseParticleEntity::~CBaseParticleEntity( void )
 #endif
 
 #if !defined( CLIENT_DLL )
-int CSharedBaseParticleEntity::UpdateTransmitState( void )
+EdictStateFlags_t CSharedBaseParticleEntity::UpdateTransmitState( void )
 {
 	if ( IsEffectActive( EF_NODRAW ) )
 		return SetTransmitState( FL_EDICT_DONTSEND );

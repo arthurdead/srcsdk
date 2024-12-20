@@ -11,7 +11,7 @@
 
 #include "tier0/platform.h"
 
-enum : uint64
+enum InButtons_t : uint64
 {
 	IN_ATTACK = (1 << 0),
 	IN_JUMP = (1 << 1),
@@ -48,5 +48,7 @@ enum : uint64
 	IN_LAST_SHARED_BUTTON_BIT = 27,
 	IN_LAST_SHARED_BUTTON = (1 << IN_LAST_SHARED_BUTTON_BIT),
 };
+
+FLAGENUM_OPERATORS( InButtons_t, uint64 )
 
 #endif // IN_BUTTONS_H

@@ -27,8 +27,8 @@ public:
 
 	void Spawn( void );
 	bool KeyValue( const char *szKeyName, const char *szValue );
-	int  UpdateTransmitState();
-	void InputSetAngles( inputdata_t &inputdata );
+	EdictStateFlags_t UpdateTransmitState();
+	void InputSetAngles( inputdata_t &&inputdata );
 
 	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
@@ -47,9 +47,9 @@ LINK_ENTITY_TO_CLASS(shadow_control, CShadowControl);
 
 BEGIN_MAPENTITY( CShadowControl )
 
-	DEFINE_KEYFIELD( m_flShadowMaxDist, FIELD_FLOAT, "distance" ),
-	DEFINE_KEYFIELD( m_bDisableShadows, FIELD_BOOLEAN, "disableallshadows" ),
-	DEFINE_KEYFIELD( m_bEnableLocalLightShadows, FIELD_BOOLEAN, "enableshadowsfromlocallights" ),
+	DEFINE_KEYFIELD_AUTO( m_flShadowMaxDist, "distance" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisableShadows, "disableallshadows" ),
+	DEFINE_KEYFIELD_AUTO( m_bEnableLocalLightShadows, "enableshadowsfromlocallights" ),
 
 	// Inputs
 	DEFINE_INPUT( m_shadowColor,		FIELD_COLOR32, "color" ),
@@ -85,7 +85,7 @@ CShadowControl::CShadowControl()
 //------------------------------------------------------------------------------
 // Purpose : Send even though we don't have a model
 //------------------------------------------------------------------------------
-int CShadowControl::UpdateTransmitState()
+EdictStateFlags_t CShadowControl::UpdateTransmitState()
 {
 	// ALWAYS transmit to all clients.
 	return SetTransmitState( FL_EDICT_ALWAYS );
@@ -144,7 +144,7 @@ void CShadowControl::Spawn( void )
 //------------------------------------------------------------------------------
 // Input values
 //------------------------------------------------------------------------------
-void CShadowControl::InputSetAngles( inputdata_t &inputdata )
+void CShadowControl::InputSetAngles( inputdata_t &&inputdata )
 {
 	const char *pAngles = inputdata.value.String();
 

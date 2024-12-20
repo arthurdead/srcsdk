@@ -9,6 +9,14 @@
 
 #pragma once
 
+#include "networkvar.h"
+#include "datamap.h"
+
+#ifdef CLIENT_DLL
+#include "dt_recv.h"
+#else
+#include "dt_send.h"
+#endif
 
 //-----------------------------------------------------------------------------
 // For networking this bad boy
@@ -23,7 +31,7 @@ EXTERN_SEND_TABLE( DT_EntityParticleTrailInfo );
 //-----------------------------------------------------------------------------
 // Particle trail info
 //-----------------------------------------------------------------------------
-struct EntityParticleTrailInfo_t
+struct EntityParticleTrailInfo_t : public INetworkableObject
 {
 	EntityParticleTrailInfo_t();
 

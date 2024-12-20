@@ -21,10 +21,10 @@
 #include "mathlib/mathlib.h"
 #include "utlvector.h"
 #include "utlhash.h"
-#include "datamap.h"
 #include "generichash.h"
 #include "localflexcontroller.h"
 #include "utlsymbol.h"
+#include "bspflags.h"
 
 #define STUDIO_ENABLE_PERF_COUNTERS
 
@@ -44,6 +44,15 @@ namespace OptimizedModel
 	struct StripHeader_t;
 }
 
+enum Activity : unsigned short;
+//enum sequence_t : unsigned short;
+typedef int sequence_t;
+
+//TODO!!!! differentiate between a global sequence and a local sequence
+
+inline const Activity INVALID_ACTIVITY = (Activity)-1;
+inline const sequence_t INVALID_SEQUENCE = (sequence_t)-1;
+inline const sequence_t ROOT_SEQUENCE = (sequence_t)0;
 
 /*
 ==============================================================================
@@ -88,7 +97,6 @@ struct mstudiodata_t
 
 struct mstudioaxisinterpbone_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int				control;// local transformation of this bone used to calc 3 point blend
 	int				axis;	// axis to check
 	Vector			pos[6];	// X+, X-, Y+, Y-, Z+, Z-
@@ -103,7 +111,6 @@ private:
 
 struct mstudioquatinterpinfo_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	float			inv_tolerance;	// 1 / radian angle of trigger influence
 	Quaternion		trigger;	// angle to match
 	Vector			pos;		// new position
@@ -117,7 +124,6 @@ private:
 
 struct mstudioquatinterpbone_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int				control;// local transformation to check
 	int				numtriggers;
 	int				triggerindex;
@@ -141,7 +147,6 @@ private:
 
 struct mstudiojigglebone_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 
 	int				flags;
 
@@ -200,7 +205,6 @@ private:
 
 struct mstudioaimatbone_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 
 	int				parent;
 	int				aim;		// Might be bone or attach
@@ -219,7 +223,6 @@ private:
 //-----------------------------------------------------------------------------
 struct mstudiotwistbonetarget_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 
 	int				m_nBone;
 	float			m_flWeight;
@@ -238,7 +241,6 @@ private:
 //-----------------------------------------------------------------------------
 struct mstudiotwistbone_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 
 	bool			m_bInverse;				// False: Apply child rotation to twist targets True: Apply parent rotation to twist targets
 	Vector			m_vUpVector;			// In parent space, projected into plane defined by vector between parent & child
@@ -259,7 +261,6 @@ private:
 // bones
 struct mstudiobone_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					sznameindex;
 	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
 	int		 			parent;		// parent bone
@@ -282,7 +283,7 @@ struct mstudiobone_t
 	inline void *pProcedure( ) const { if (procindex == 0) return NULL; else return  (void *)(((byte *)this) + procindex); };
 	int					surfacepropidx;	// index into string tablefor property name
 	inline char * const pszSurfaceProp( void ) const { return ((char *)this) + surfacepropidx; }
-	int					contents;		// See BSPFlags.h for the contents flags
+	ContentsFlags_t		contents;		// See BSPFlags.h for the contents flags
 
 	int					unused[8];		// remove as appropriate
 
@@ -294,7 +295,6 @@ private:
 
 struct mstudiolinearbone_t	
 {
-	DECLARE_BYTESWAP_DATADESC();
 
 	int numbones;
 
@@ -352,7 +352,6 @@ enum StudioBoneFlexComponent_t
 //-----------------------------------------------------------------------------
 struct mstudioboneflexdrivercontrol_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 
 	int m_nBoneComponent;		// Bone component that drives flex, StudioBoneFlexComponent_t
 	int m_nFlexControllerIndex;	// Flex controller to drive
@@ -371,7 +370,6 @@ private:
 //-----------------------------------------------------------------------------
 struct mstudioboneflexdriver_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 
 	int m_nBoneIndex;			// Bone to drive flex controller
 	int m_nControlCount;		// Number of flex controllers being driven
@@ -429,7 +427,6 @@ private:
 // bone controllers
 struct mstudiobonecontroller_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					bone;	// -1 == 0
 	int					type;	// X, Y, Z, XR, YR, ZR, M
 	float				start;
@@ -442,7 +439,6 @@ struct mstudiobonecontroller_t
 // intersection boxes
 struct mstudiobbox_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					bone;
 	int					group;				// intersection group
 	Vector				bbmin;				// bounding box
@@ -468,7 +464,6 @@ private:
 // demand loaded sequence groups
 struct mstudiomodelgroup_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					szlabelindex;	// textual name
 	inline char * const pszLabel( void ) const { return ((char *)this) + szlabelindex; }
 	int					sznameindex;	// file name
@@ -487,7 +482,6 @@ struct mstudiomodelgrouplookup_t
 // events
 struct mstudioevent_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	float				cycle;
 
 	unsigned short			event_server;
@@ -559,7 +553,6 @@ struct mstudioevent_t
 // attachment
 struct mstudioattachment_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					sznameindex;
 	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
 	unsigned int		flags;
@@ -577,7 +570,6 @@ struct mstudioattachment_t
 
 struct mstudioikerror_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	Vector		pos;
 	Quaternion	q;
 
@@ -592,7 +584,6 @@ union mstudioanimvalue_t;
 
 struct mstudiocompressedikerror_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	float	scale[6];
 	short	offset[6];
 	inline mstudioanimvalue_t *pAnimvalue( int i ) const { if (offset[i] > 0) return  (mstudioanimvalue_t *)(((byte *)this) + offset[i]); else return NULL; };
@@ -605,7 +596,6 @@ private:
 
 struct mstudioikrule_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int			index;
 
 	int			type;
@@ -666,7 +656,6 @@ struct mstudioikrulezeroframe_t
 
 struct mstudioiklock_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int			chain;
 	float		flPosWeight;
 	float		flLocalQWeight;
@@ -678,7 +667,6 @@ struct mstudioiklock_t
 
 struct mstudiolocalhierarchy_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int			iBone;			// bone being adjusted
 	int			iNewParent;		// the bones new parent
 
@@ -710,7 +698,6 @@ union mstudioanimvalue_t
 
 struct mstudioanim_valueptr_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	short	offset[3];
 	inline mstudioanimvalue_t *pAnimvalue( int i ) const { if (offset[i] > 0) return  (mstudioanimvalue_t *)(((byte *)this) + offset[i]); else return NULL; };
 };
@@ -726,7 +713,6 @@ struct mstudioanim_valueptr_t
 // per bone per animation DOF and weight pointers
 struct mstudioanim_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	byte				bone;
 	byte				flags;		// weighing options
 
@@ -752,7 +738,6 @@ struct mstudioanim_t
 
 struct mstudio_frame_anim_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 
 	inline byte		*pBoneFlags( void ) const { return (((byte *)this) + sizeof( struct mstudio_frame_anim_t )); };
 	
@@ -768,7 +753,6 @@ struct mstudio_frame_anim_t
 
 struct mstudiomovement_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					endframe;				
 	int					motionflags;
 	float				v0;			// velocity at start of block
@@ -788,21 +772,18 @@ struct studiohdr_t;
 // used for piecewise loading of animation data
 struct mstudioanimblock_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					datastart;
 	int					dataend;
 };
 
 struct mstudioanimsections_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					animblock;
 	int					animindex;
 };
 
 struct mstudioanimdesc_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					baseptr;
 	inline studiohdr_t	*pStudiohdr( void ) const { return (studiohdr_t *)(((byte *)this) + baseptr); }
 
@@ -856,7 +837,6 @@ struct mstudioikrule_t;
 
 struct mstudioautolayer_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 //private:
 	short				iSequence;
 	short				iPose;
@@ -870,7 +850,6 @@ struct mstudioautolayer_t
 
 struct mstudioactivitymodifier_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	
 	int					sznameindex;
 	inline char			*pszName() { return (sznameindex) ? (char *)(((byte *)this) + sznameindex ) : NULL; }
@@ -965,7 +944,6 @@ struct mstudioactivitymodifier_t
 // sequence descriptions
 struct mstudioseqdesc_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					baseptr;
 	inline studiohdr_t	*pStudiohdr( void ) const { return (studiohdr_t *)(((byte *)this) + baseptr); }
 
@@ -981,31 +959,31 @@ struct mstudioseqdesc_t
 	unsigned short			activity_client;	// initialized at loadtime to game DLL values
 
 #if defined GAME_DLL || defined CLIENT_DLL
-	int Activity( void ) const
+	enum Activity Activity( void ) const
 	{
 	#ifdef GAME_DLL
-		return activity_server;
+		return (enum Activity)activity_server;
 	#elif defined CLIENT_DLL
-		return activity_client;
+		return (enum Activity)activity_client;
 	#endif
 	}
-	void Activity( int nActivity )
+	void Activity( enum Activity nActivity )
 	{
 	#ifdef GAME_DLL
-		activity_server = nActivity;
+		activity_server = (unsigned short)nActivity;
 	#elif defined CLIENT_DLL
-		activity_client = nActivity;
+		activity_client = (unsigned short)nActivity;
 	#endif
 	}
 #else
-	int Activity( void ) const
+	enum Activity Activity( void ) const
 	{
 		if(flags & STUDIO_ACTIVITY_SERVER) {
-			return activity_server;
+			return (enum Activity)activity_server;
 		} else if(flags & STUDIO_ACTIVITY_CLIENT) {
-			return activity_client;
+			return (enum Activity)activity_client;
 		} else {
-			return -1;
+			return (enum Activity)-1;
 		}
 	}
 #endif
@@ -1105,7 +1083,6 @@ private:
 
 struct mstudioposeparamdesc_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					sznameindex;
 	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
 	int					flags;	// ????
@@ -1116,7 +1093,6 @@ struct mstudioposeparamdesc_t
 
 struct mstudioflexdesc_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					szFACSindex;
 	inline char * const pszFACS( void ) const { return ((char *)this) + szFACSindex; }
 };
@@ -1125,7 +1101,6 @@ struct mstudioflexdesc_t
 
 struct mstudioflexcontroller_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					sztypeindex;
 	inline char * const pszType( void ) const { return ((char *)this) + sztypeindex; }
 	int					sznameindex;
@@ -1148,7 +1123,6 @@ enum FlexControllerRemapType_t
 class CStudioHdr;
 struct mstudioflexcontrollerui_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					sznameindex;
 	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
 
@@ -1205,7 +1179,6 @@ struct mstudioflexcontrollerui_t
 // this is the memory image of vertex anims (16-bit fixed point)
 struct mstudiovertanim_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	unsigned short		index;
 	byte				speed;	// 255/max_length_in_flex
 	byte				side;	// 255/left_right
@@ -1306,7 +1279,6 @@ public:
 // this is the memory image of vertex anims (16-bit fixed point)
 struct mstudiovertanim_wrinkle_t : public mstudiovertanim_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 
 	short	wrinkledelta;
 
@@ -1341,7 +1313,6 @@ enum StudioVertAnimType_t
 
 struct mstudioflex_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					flexdesc;	// input value
 
 	float				target0;	// zero
@@ -1367,7 +1338,6 @@ struct mstudioflex_t
 
 struct mstudioflexop_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int		op;
 	union 
 	{
@@ -1378,7 +1348,6 @@ struct mstudioflexop_t
 
 struct mstudioflexrule_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					flex;
 	int					numops;
 	int					opindex;
@@ -1388,7 +1357,6 @@ struct mstudioflexrule_t
 // 16 bytes
 struct mstudioboneweight_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	float	weight[MAX_NUM_BONES_PER_VERT];
 	char	bone[MAX_NUM_BONES_PER_VERT]; 
 	byte	numbones;
@@ -1401,7 +1369,6 @@ struct mstudioboneweight_t
 // NOTE: This is exactly 48 bytes
 struct mstudiovertex_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	mstudioboneweight_t	m_BoneWeights;
 	Vector				m_vecPosition;
 	Vector				m_vecNormal;
@@ -1417,7 +1384,6 @@ private:
 // skin info
 struct mstudiotexture_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int						sznameindex;
 	inline char * const		pszName( void ) const { return ((char *)this) + sznameindex; }
 	int						flags;
@@ -1432,7 +1398,6 @@ struct mstudiotexture_t
 // eyeball
 struct mstudioeyeball_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					sznameindex;
 	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
 	int		bone;
@@ -1469,7 +1434,6 @@ private:
 // ikinfo
 struct mstudioiklink_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int		bone;
 	Vector	kneeDir;	// ideal bending direction (per link, if applicable)
 	Vector	unused0;	// unused
@@ -1482,7 +1446,6 @@ private:
 
 struct mstudioikchain_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int				sznameindex;
 	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
 	int				linktype;
@@ -1508,7 +1471,6 @@ struct mstudiomodel_t;
 
 struct mstudio_modelvertexdata_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	Vector				*Position( int i ) const;
 	Vector				*Normal( int i ) const;
 	Vector4D			*TangentS( int i ) const;
@@ -1526,7 +1488,6 @@ struct mstudio_modelvertexdata_t
 
 struct mstudio_meshvertexdata_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	Vector				*Position( int i ) const;
 	Vector				*Normal( int i ) const;
 	Vector4D			*TangentS( int i ) const;
@@ -1547,7 +1508,6 @@ struct mstudio_meshvertexdata_t
 
 struct mstudiomesh_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					material;
 
 	int					modelindex;
@@ -1586,7 +1546,6 @@ private:
 // studio models
 struct mstudiomodel_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	inline const char * pszName( void ) const { return name; }
 	char				name[64];
 
@@ -1834,7 +1793,6 @@ struct studiohwdata_t
 // body part index
 struct mstudiobodyparts_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					sznameindex;
 	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
 	int					nummodels;
@@ -1846,7 +1804,6 @@ struct mstudiobodyparts_t
 
 struct mstudiomouth_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					bone;
 	Vector				forward;
 	int					flexdesc;
@@ -1859,7 +1816,6 @@ private:
 
 struct mstudiohitboxset_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					sznameindex;
 	inline char * const	pszName( void ) const { return ((char *)this) + sznameindex; }
 	int					numhitboxes;
@@ -1874,7 +1830,6 @@ struct mstudiohitboxset_t
 //-----------------------------------------------------------------------------
 struct mstudiosrcbonetransform_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 
 	int			sznameindex;
 	inline const char *pszName( void ) const { return ((char *)this) + sznameindex; }
@@ -2121,7 +2076,6 @@ private:
 
 struct vertexStreamFileHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int		id;								// MODEL_STREAM_FILE_ID
 	int		version;						// MODEL_STREAM_FILE_VERSION
 	long	checksum;						// same as studiohdr_t, ensures sync
@@ -2153,7 +2107,6 @@ public:
 
 struct vertexFileHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int		id;								// MODEL_VERTEX_FILE_ID
 	int		version;						// MODEL_VERTEX_FILE_VERSION
 	int		checksum;						// same as studiohdr_t, ensures sync
@@ -2225,7 +2178,6 @@ inline const thinModelVertices_t * mstudiomodel_t::GetThinVertexData( void *pMod
 // apply sequentially to lod sorted vertex and tangent pools to re-establish mesh order
 struct vertexFileFixup_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int		lod;				// used to skip culled root lod
 	int		sourceVertexID;		// absolute index from start of vertex/tangent blocks
 	int		numVertexes;
@@ -2315,7 +2267,6 @@ struct studiohdr2_t
 	// NOTE: For forward compat, make sure any methods in this struct
 	// are also available in studiohdr_t so no leaf code ever directly references
 	// a studiohdr2_t structure
-	DECLARE_BYTESWAP_DATADESC();
 	int numsrcbonetransform;
 	int srcbonetransformindex;
 
@@ -2340,7 +2291,6 @@ struct studiohdr2_t
 
 struct studiohdr_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					id;
 	int					version;
 
@@ -2366,7 +2316,7 @@ struct studiohdr_t
 	int					numbones;			// bones
 	int					boneindex;
 	inline mstudiobone_t *pBone( int i ) const { Assert( i >= 0 && i < numbones); return (mstudiobone_t *)(((byte *)this) + boneindex) + i; };
-	int					RemapSeqBone( int iSequence, int iLocalBone ) const;	// maps local sequence bone to global bone
+	int					RemapSeqBone( sequence_t iSequence, int iLocalBone ) const;	// maps local sequence bone to global bone
 	int					RemapAnimBone( int iAnim, int iLocalBone ) const;		// maps local animations bone to global bone
 
 	int					numbonecontrollers;		// bone controllers
@@ -2411,22 +2361,22 @@ struct studiohdr_t
 
 	int					numlocalseq;				// sequences
 	int					localseqindex;
-  	inline mstudioseqdesc_t *pLocalSeqdesc( int i ) const { if (i < 0 || i >= numlocalseq) i = 0; return (mstudioseqdesc_t *)(((byte *)this) + localseqindex) + i; };
+  	inline mstudioseqdesc_t *pLocalSeqdesc( sequence_t i ) const { Assert(i == ROOT_SEQUENCE || i < numlocalseq); return (mstudioseqdesc_t *)(((byte *)this) + localseqindex) + i; };
 
 //public:
 	bool				SequencesAvailable() const;
 	int					GetNumSeq() const;
 	mstudioanimdesc_t	&pAnimdesc( int i ) const;
-	mstudioseqdesc_t	&pSeqdesc( int i ) const;
-	int					iRelativeAnim( int baseseq, int relanim ) const;	// maps seq local anim reference to global anim index
-	int					iRelativeSeq( int baseseq, int relseq ) const;		// maps seq local seq reference to global seq index
+	mstudioseqdesc_t	&pSeqdesc( sequence_t i ) const;
+	int					iRelativeAnim( sequence_t baseseq, int relanim ) const;	// maps seq local anim reference to global anim index
+	sequence_t					iRelativeSeq( sequence_t baseseq, sequence_t relseq ) const;		// maps seq local seq reference to global seq index
 
 //private:
 	mutable int			activitylistversion;	// initialization flag - have the sequences been indexed?
 	mutable int			eventsindexed;
 //public:
-	int					GetSequenceActivity( int iSequence );
-	void				SetSequenceActivity( int iSequence, int iActivity );
+	Activity					GetSequenceActivity( sequence_t iSequence );
+	void				SetSequenceActivity( sequence_t iSequence, Activity iActivity );
 	int					GetActivityListVersion( void );
 	void				SetActivityListVersion( int version ) const;
 	int					GetEventListVersion( void );
@@ -2474,8 +2424,8 @@ struct studiohdr_t
 	inline byte			*pLocalTransition( int i ) const { Assert( i >= 0 && i < (numlocalnodes * numlocalnodes)); return (byte *)(((byte *)this) + localnodeindex) + i; };
 
 //public:
-	int					EntryNode( int iSequence );
-	int					ExitNode( int iSequence );
+	int					EntryNode( sequence_t iSequence );
+	int					ExitNode( sequence_t iSequence );
 	const char			*pszNodeName( int iNode );
 	int					GetTransition( int iFrom, int iTo ) const;
 
@@ -2506,7 +2456,7 @@ struct studiohdr_t
 //public:
 	int					GetNumPoseParameters( void ) const;
 	const mstudioposeparamdesc_t &pPoseParameter( int i );
-	int					GetSharedPoseParameter( int iSequence, int iLocalPose ) const;
+	int					GetSharedPoseParameter( sequence_t iSequence, int iLocalPose ) const;
 
 	int					surfacepropindex;
 	inline char * const pszSurfaceProp( void ) const { return ((char *)this) + surfacepropindex; }
@@ -2523,7 +2473,7 @@ struct studiohdr_t
 	int					GetNumIKAutoplayLocks( void ) const;
 	const mstudioiklock_t &pIKAutoplayLock( int i );
 	int					CountAutoplaySequences() const;
-	int					CopyAutoplaySequences( unsigned short *pOut, int outCount ) const;
+	int					CopyAutoplaySequences( sequence_t *pOut, int outCount ) const;
 	int					GetAutoplayList( unsigned short **pOut ) const;
 
 	// The collision model mass that jay wanted
@@ -2643,7 +2593,7 @@ public:
 	inline bool IsReadyForAccess( void ) const { return (m_pStudioHdr != NULL); };
 	inline virtualmodel_t		*GetVirtualModel( void ) const { return m_pVModel; };
 	inline const studiohdr_t	*GetRenderHdr( void ) const { return m_pStudioHdr; };
-	const studiohdr_t *pSeqStudioHdr( int sequence );
+	const studiohdr_t *pSeqStudioHdr( sequence_t sequence );
 	const studiohdr_t *pAnimStudioHdr( int animation );
 
 private:
@@ -2667,12 +2617,12 @@ public:
 	bool				SequencesAvailable() const;
 	int					GetNumSeq( void ) const;
 	mstudioanimdesc_t	&pAnimdesc( int i );
-	mstudioseqdesc_t	&pSeqdesc( int iSequence );
+	mstudioseqdesc_t	&pSeqdesc( sequence_t iSequence );
 	int					iRelativeAnim( int baseseq, int relanim ) const;	// maps seq local anim reference to global anim index
-	int					iRelativeSeq( int baseseq, int relseq ) const;		// maps seq local seq reference to global seq index
+	sequence_t					iRelativeSeq( sequence_t baseseq, sequence_t relseq ) const;		// maps seq local seq reference to global seq index
 
-	int					GetSequenceActivity( int iSequence );
-	void				SetSequenceActivity( int iSequence, int iActivity );
+	Activity					GetSequenceActivity( sequence_t iSequence );
+	void				SetSequenceActivity( int iSequence, Activity iActivity );
 	int					GetActivityListVersion( void );
 	void				SetActivityListVersion( int version );
 	int					GetEventListVersion( void );
@@ -2684,8 +2634,8 @@ public:
 	// used on my tools in hlmv, not persistant
 	void				SetAttachmentBone( int iAttachment, int iBone );
 
-	int					EntryNode( int iSequence );
-	int					ExitNode( int iSequence );
+	int					EntryNode( sequence_t iSequence );
+	int					ExitNode( sequence_t iSequence );
 	const char				*pszNodeName( int iNode );
 	// FIXME: where should this one be?
 	int					GetTransition( int iFrom, int iTo ) const;
@@ -2698,7 +2648,7 @@ public:
 	const mstudioiklock_t &pIKAutoplayLock( int i );
 
 	inline int			CountAutoplaySequences() const { return m_pStudioHdr->CountAutoplaySequences(); };
-	inline int			CopyAutoplaySequences( unsigned short *pOut, int outCount ) const { return m_pStudioHdr->CopyAutoplaySequences( pOut, outCount ); };
+	inline int			CopyAutoplaySequences( sequence_t *pOut, int outCount ) const { return m_pStudioHdr->CopyAutoplaySequences( pOut, outCount ); };
 	inline int			GetAutoplayList( unsigned short **pOut ) const { return m_pStudioHdr->GetAutoplayList( pOut ); };
 
 	inline int			GetNumBoneControllers( void ) const { return m_pStudioHdr->numbonecontrollers; };
@@ -2769,8 +2719,8 @@ public:
 	inline float		VertAnimFixedPointScale() const { return m_pStudioHdr->VertAnimFixedPointScale(); }
 
 public:
-	int IsSequenceLooping( int iSequence );
-	float GetSequenceCycleRate( int iSequence );
+	int IsSequenceLooping( sequence_t iSequence );
+	float GetSequenceCycleRate( sequence_t iSequence );
 
 	void				RunFlexRules( const float *src, float *dest );
 	void				RunFlexRulesOld( const float *src, float *dest );
@@ -2830,11 +2780,11 @@ public:
 			int count;
 			int totalWeight;
 
-			HashValueType(int _actIdx, int _stIdx, int _ct, int _tW) : 
-			activityIdx(_actIdx), startingIdx(_stIdx), count(_ct), totalWeight(_tW) {}
+			HashValueType(Activity _actIdx, int _stIdx, int _ct, int _tW) : 
+			activityIdx((int)(unsigned short)_actIdx), startingIdx(_stIdx), count(_ct), totalWeight(_tW) {}
 
 			// default constructor (ought not to be actually used)
-			HashValueType() : activityIdx(-1), startingIdx(-1), count(-1), totalWeight(-1) 
+			HashValueType() : activityIdx((int)INVALID_ACTIVITY), startingIdx(-1), count(-1), totalWeight(-1) 
 				{ AssertMsg(false, "Don't use default HashValueType()!"); }
 
 
@@ -2891,10 +2841,10 @@ public:
 		/// and the total weight of all the sequences. (it would be more LHS-friendly
 		/// to return these on registers, if only C++ offered more than one return 
 		/// value....)
-		const SequenceTuple *GetSequences( int forActivity, int *outSequenceCount, int *outTotalWeight );
+		const SequenceTuple *GetSequences( Activity forActivity, int *outSequenceCount, int *outTotalWeight );
 
 		/// The number of sequences available for an activity.
-		int NumSequencesForActivity( int forActivity );
+		int NumSequencesForActivity( Activity forActivity );
 
 		inline bool IsInitialized( void ) { return m_bIsInitialized; }
 
@@ -2908,10 +2858,10 @@ public:
 		void Reinitialize( CStudioHdr *pstudiohdr );
 
 		/// A more efficient version of the old SelectWeightedSequence() function in animation.cpp. 
-		int SelectWeightedSequence( CStudioHdr *pstudiohdr, int activity, int curSequence );
+		sequence_t SelectWeightedSequence( CStudioHdr *pstudiohdr, Activity activity, sequence_t curSequence );
 
 		// selects the sequence with the most matching modifiers
-		int SelectWeightedSequenceFromModifiers( CStudioHdr *pstudiohdr, int activity, CUtlSymbol *pActivityModifiers, int iModifierCount );
+		sequence_t SelectWeightedSequenceFromModifiers( CStudioHdr *pstudiohdr, Activity activity, CUtlSymbol *pActivityModifiers, int iModifierCount );
 
 		// Actually a big array, into which the hash values index.
 		SequenceTuple *m_pSequenceTuples;
@@ -2942,7 +2892,7 @@ public:
 
 	/// A more efficient version of the old SelectWeightedSequence() function in animation.cpp. 
 	/// Returns -1 on failure to find a sequence
-	inline int SelectWeightedSequence( int activity, int curSequence )
+	inline sequence_t SelectWeightedSequence( Activity activity, sequence_t curSequence )
 	{
 		// We lazy-initialize the header on demand here, because CStudioHdr::Init() is
 		// called from the constructor, at which time the this pointer is illegitimate.
@@ -2953,7 +2903,7 @@ public:
 		return m_ActivityToSequence.SelectWeightedSequence( this, activity, curSequence );
 	}
 
-	inline int SelectWeightedSequenceFromModifiers( int activity, CUtlSymbol *pActivityModifiers, int iModifierCount )
+	inline sequence_t SelectWeightedSequenceFromModifiers( Activity activity, CUtlSymbol *pActivityModifiers, int iModifierCount )
 	{
 		// We lazy-initialize the header on demand here, because CStudioHdr::Init() is
 		// called from the constructor, at which time the this pointer is illegitimate.
@@ -2965,7 +2915,7 @@ public:
 	}
 
 	/// True iff there is at least one sequence for the given activity.
-	inline bool HaveSequenceForActivity( int activity )	
+	inline bool HaveSequenceForActivity( Activity activity )	
 	{
 		if ( !m_ActivityToSequence.IsInitialized() )
 		{

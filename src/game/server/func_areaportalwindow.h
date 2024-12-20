@@ -56,8 +56,8 @@ public:
 	CNetworkModelIndex( m_iBackgroundModelIndex );
 
 	//Input handlers
-	void InputSetFadeStartDistance( inputdata_t &inputdata );
-	void InputSetFadeEndDistance( inputdata_t &inputdata );
+	void InputSetFadeStartDistance( inputdata_t &&inputdata );
+	void InputSetFadeEndDistance( inputdata_t &&inputdata );
 };
 
 

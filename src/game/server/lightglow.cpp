@@ -30,12 +30,12 @@ public:
 					
 	virtual void	Spawn( void );
 	virtual void	Activate( void );
-	virtual int		UpdateTransmitState( void );
+	virtual EdictStateFlags_t UpdateTransmitState( void );
 
-	void InputColor(inputdata_t &data);
+	void InputColor( inputdata_t &&inputdata );
 
-	void InputEnable( inputdata_t &data ) { m_bDisabled = false; }
-	void InputDisable( inputdata_t &data ) { m_bDisabled = true; }
+	void InputEnable( inputdata_t &&inputdata ) { m_bDisabled = false; }
+	void InputDisable( inputdata_t &&inputdata ) { m_bDisabled = true; }
 
 public:
 	CNetworkVar( int, m_nHorizontalSize );
@@ -71,16 +71,16 @@ LINK_ENTITY_TO_CLASS( env_lightglow, CLightGlow );
 
 BEGIN_MAPENTITY( CLightGlow )
 
-	DEFINE_KEYFIELD( m_nVerticalSize,		FIELD_INTEGER,	"VerticalGlowSize" ),
-	DEFINE_KEYFIELD( m_nHorizontalSize,		FIELD_INTEGER,	"HorizontalGlowSize" ),
-	DEFINE_KEYFIELD( m_nMinDist,			FIELD_INTEGER,	"MinDist" ),
-	DEFINE_KEYFIELD( m_nMaxDist,			FIELD_INTEGER,	"MaxDist" ),
-	DEFINE_KEYFIELD( m_nOuterMaxDist,		FIELD_INTEGER,	"OuterMaxDist" ),
-	DEFINE_KEYFIELD( m_flGlowProxySize,		FIELD_FLOAT,	"GlowProxySize" ),
-	DEFINE_KEYFIELD( m_flHDRColorScale,		FIELD_FLOAT,	"HDRColorScale" ),
+	DEFINE_KEYFIELD_AUTO( m_nVerticalSize, "VerticalGlowSize" ),
+	DEFINE_KEYFIELD_AUTO( m_nHorizontalSize, "HorizontalGlowSize" ),
+	DEFINE_KEYFIELD_AUTO( m_nMinDist, "MinDist" ),
+	DEFINE_KEYFIELD_AUTO( m_nMaxDist, "MaxDist" ),
+	DEFINE_KEYFIELD_AUTO( m_nOuterMaxDist, "OuterMaxDist" ),
+	DEFINE_KEYFIELD_AUTO( m_flGlowProxySize, "GlowProxySize" ),
+	DEFINE_KEYFIELD_AUTO( m_flHDRColorScale, "HDRColorScale" ),
 	DEFINE_INPUTFUNC( FIELD_COLOR32, "Color",  InputColor ),
 
-	DEFINE_KEYFIELD( m_bDisabled,			FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
@@ -114,7 +114,7 @@ void CLightGlow::Spawn( void )
 // Purpose: Always transmit light glows to clients to avoid spikes as we enter
 //			or leave PVS. Done because we often have many glows in an area.
 //-----------------------------------------------------------------------------
-int CLightGlow::UpdateTransmitState( void )
+EdictStateFlags_t CLightGlow::UpdateTransmitState( void )
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
@@ -139,7 +139,7 @@ void CLightGlow::Activate()
 	}
 }
 
-void CLightGlow::InputColor(inputdata_t &inputdata)
+void CLightGlow::InputColor( inputdata_t &&inputdata )
 {
 	color32 clrRender = inputdata.value.Color32();
 	SetRenderColor( clrRender.r(), clrRender.g(), clrRender.b() );

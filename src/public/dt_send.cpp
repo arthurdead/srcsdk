@@ -23,12 +23,6 @@ DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_SENDPROP, "SendProp" );
 
 static CNonModifiedPointerProxy *s_pNonModifiedPointerProxyHead = NULL;
 
-
-void SendProxy_UInt8( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-void SendProxy_UInt16( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-void SendProxy_UInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-void SendProxy_UInt64( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-
 const char *s_ElementNames[MAX_ARRAY_ELEMENTS] =
 {
 	"000", "001", "002", "003", "004", "005", "006", "007", "008", "009", 
@@ -148,13 +142,13 @@ CNonModifiedPointerProxy::CNonModifiedPointerProxy( SendTableProxyFn fn )
 
 CStandardSendProxiesV1::CStandardSendProxiesV1()
 {
-	m_Int8 = SendProxy_Int8;
-	m_Int16 = SendProxy_Int16;
-	m_Int32 = SendProxy_Int32;
+	m_Int8 = SendProxy_SChar;
+	m_Int16 = SendProxy_Short;
+	m_Int32 = SendProxy_Int;
 
-	m_UInt8 = SendProxy_UInt8;
-	m_UInt16 = SendProxy_UInt16;
-	m_UInt32 = SendProxy_UInt32;
+	m_UInt8 = SendProxy_UChar;
+	m_UInt16 = SendProxy_UShort;
+	m_UInt32 = SendProxy_UInt;
 	
 	m_Float = SendProxy_Float;
 	m_Vector = SendProxy_Vector;
@@ -242,32 +236,42 @@ void SendProxy_Quaternion( const SendProp *pProp, const void *pStruct, const voi
 #endif
 }
 
-void SendProxy_Int8( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_Char( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	pOut->m_Char = *((const char*)pData);
 }
 
-void SendProxy_UInt8( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_SChar( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+{
+	pOut->m_SChar = *((const signed char*)pData);
+}
+
+void SendProxy_Bool( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+{
+	pOut->m_Bool = *((const bool*)pData);
+}
+
+void SendProxy_UChar( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	pOut->m_UChar = *((const unsigned char*)pData);
 }
 
-void SendProxy_Int16( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_Short( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	pOut->m_Short = *((short*)pData);
 }
 
-void SendProxy_UInt16( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_UShort( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	pOut->m_UShort = *((unsigned short*)pData);
 }
 
-void SendProxy_Int32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_Int( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	pOut->m_Int = *((int*)pData);
 }
 
-void SendProxy_UInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_UInt( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	pOut->m_Int = *((unsigned int*)pData);
 }
@@ -292,49 +296,55 @@ void SendProxy_UInt64( const SendProp *pProp, const void *pStruct, const void *p
 
 void SendProxy_IntAddOne( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID)
 {
-	int *pInt = (int *)pVarData;
+	const int *pInt = (const int *)pVarData;
 
 	pOut->m_Int = (*pInt) + 1;
 }
 
 void SendProxy_ShortAddOne( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID)
 {
-	short *pInt = (short *)pVarData;
+	const short *pInt = (const short *)pVarData;
 
 	pOut->m_Short = (*pInt) + 1;
 }
 
 void SendProxy_Color32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
-	pOut->m_Color32 = *((color32 *)pData);
+	pOut->m_Color32 = *((const color32 *)pData);
 }
 
 void SendProxy_Color32E( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
-	pOut->m_Color32E = *((ColorRGBExp32 *)pData);
+	pOut->m_Color32E = *((const ColorRGBExp32 *)pData);
 }
 
 void SendProxy_Color24( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
-	pOut->m_Color24 = *((color24 *)pData);
+	pOut->m_Color24 = *((const color24 *)pData);
 }
 
-void SendProxy_String( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_CString( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	pOut->m_pString = (const char*)pData;
 }
 
 void* SendProxy_DataTableToDataTable( const SendProp *pProp, const void *pStructBase, const void *pData, CSendProxyRecipients *pRecipients, int objectID )
 {
-	return (void*)pData;
+	Assert( pData );
+	void *out = (void*)pData;
+	Assert( out );
+	return out;
 }
 
 void* SendProxy_DataTablePtrToDataTable( const SendProp *pProp, const void *pStructBase, const void *pData, CSendProxyRecipients *pRecipients, int objectID )
 {
-	return *((void**)pData);
+	Assert( pData );
+	void *out = *((void**)pData);
+	Assert( out );
+	return out;
 }
 
-static void SendProxy_Empty( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void SendProxy_Empty( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 }
 
@@ -419,27 +429,343 @@ float AssignRangeMultiplier( int nBits, double range )
 	return fHighLowMul;
 }
 
+static SendPropType g_dtFieldTypes[FIELD_BASE_TYPECOUNT] = 
+{
+	DPT_NUMSendPropTypes,
+	DPT_Float,
+	DPT_VectorXY,
+	DPT_Int,
+	DPT_Int,
+#ifdef DT_INT64_SUPPORTED
+	DPT_Int64,
+	DPT_Int64,
+#else
+	DPT_VectorXY,
+	DPT_VectorXY,
+#endif
+	DPT_Int,
+	DPT_Int,
+	DPT_Int,
+	DPT_Int,
+	DPT_Int,
+	DPT_Int,
+	DPT_Int,
+	DPT_Int,
+	DPT_Int,
+	DPT_Int,
+	DPT_String,
+	DPT_String,
+	DPT_Vector,
+#ifdef DT_QUATERNION_SUPPORTED
+	DPT_Quaternion,
+#elif defined DT_INT64_SUPPORTED
+	DPT_Int64,
+#else
+	DPT_NUMSendPropTypes,
+#endif
+	DPT_NUMSendPropTypes,
+	DPT_NUMSendPropTypes,
+	DPT_Vector,
+	DPT_VectorXY,
+#ifdef DT_QUATERNION_SUPPORTED
+	DPT_Quaternion,
+#elif defined DT_INT64_SUPPORTED
+	DPT_Int64,
+#else
+	DPT_NUMSendPropTypes,
+#endif
+#ifdef DT_INT64_SUPPORTED
+	DPT_Int64,
+#else
+	DPT_VectorXY,
+#endif
+	DPT_Int,
+	DPT_Int,
+	DPT_Int,
+	DPT_NUMSendPropTypes,
+	DPT_NUMSendPropTypes,
+	DPT_NUMSendPropTypes,
+	DPT_NUMSendPropTypes,
+	DPT_NUMSendPropTypes,
+};
 
+extern void SendProxy_StringT( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
+extern void SendProxy_EHandle( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID);
+extern void SendProxy_ModelIndex( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID);
+extern void SendProxy_PredictableId( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
+extern void SendProxy_Time( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
 
-SendProp SendPropFloat(
+static SendVarProxyFn g_dtFieldProxies[FIELD_BASE_TYPECOUNT] = 
+{
+	NULL,
+	SendProxy_Float,
+	NULL,
+	SendProxy_UInt,
+	SendProxy_Int,
+	SendProxy_Int64,
+	SendProxy_UInt64,
+	SendProxy_UShort,
+	SendProxy_Short,
+	SendProxy_Bool,
+	SendProxy_Char,
+	SendProxy_UChar,
+	SendProxy_SChar,
+	SendProxy_ModelIndex,
+	SendProxy_Color32,
+	SendProxy_Color32E,
+	SendProxy_Color24,
+	SendProxy_StringT,
+	SendProxy_CString,
+	SendProxy_Vector,
+	SendProxy_Quaternion,
+	NULL,
+	NULL,
+	SendProxy_QAngles,
+	SendProxy_Vector2D,
+	NULL,
+	SendProxy_PredictableId,
+	NULL,
+	SendProxy_EHandle,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+};
+
+void SendPropAuto_impl(SendPropEx &ret, const char *pVarName, fieldtype_t type, int offset, int sizeofVar, int nBits, DTFlags_t flags, SendVarProxyFn varProxy, DTPriority_t priority)
+{
+	switch(type) {
+	case FIELD_TIME:
+	case FIELD_DISTANCE:
+	case FIELD_SCALE:
+		flags |= SPROP_UNSIGNED;
+		break;
+	default:
+		switch(GetBaseFieldType(type)) {
+		case FIELD_UINTEGER:
+		case FIELD_UINTEGER64:
+		case FIELD_USHORT:
+		case FIELD_BOOLEAN:
+		case FIELD_UCHARACTER:
+		case FIELD_COLOR32:
+		case FIELD_COLOR32E:
+		case FIELD_COLOR24:
+		case FIELD_POOLED_STRING:
+		case FIELD_CSTRING:
+		case FIELD_EHANDLE:
+		case FIELD_PREDICTABLEID:
+			flags |= SPROP_UNSIGNED;
+			break;
+		}
+		break;
+	}
+
+	switch(GetBaseFieldType(type)) {
+	case FIELD_INTEGER64:
+	case FIELD_UINTEGER64:
+	case FIELD_COLOR32:
+	case FIELD_COLOR32E:
+	case FIELD_POOLED_STRING:
+	case FIELD_CSTRING:
+		flags |= SPROP_NOSCALE;
+		break;
+	}
+
+	switch(GetBaseFieldType(type)) {
+	case FIELD_FLOAT:
+	case FIELD_VECTOR:
+	case FIELD_QUATERNION:
+	case FIELD_VMATRIX:
+	case FIELD_MATRIX3X4:
+	case FIELD_VECTOR2D:
+	case FIELD_VECTOR4D:
+		if((GetFieldTypeFlags(type) & FIELD_TYPE_FLAG_WORLDSPACE) != 0) {
+			if((flags & (
+				(SPROP_COORD|SPROP_COORD_MP|SPROP_COORD_MP_LOWPRECISION|SPROP_COORD_MP_INTEGRAL)
+			#ifdef DT_CELL_COORD_SUPPORTED
+				|(SPROP_CELL_COORD|SPROP_CELL_COORD_LOWPRECISION|SPROP_CELL_COORD_INTEGRAL)
+			#endif
+			)) == 0) {
+				flags |= SPROP_COORD_MP;
+			}
+		}
+		break;
+	}
+
+	if(flags & SPROP_NOSCALE) {
+		flags &= ~(
+			(SPROP_NORMAL|SPROP_ROUNDDOWN|SPROP_ROUNDUP)|
+			(SPROP_COORD|SPROP_COORD_MP|SPROP_COORD_MP_LOWPRECISION|SPROP_COORD_MP_INTEGRAL)
+		#ifdef DT_CELL_COORD_SUPPORTED
+			|(SPROP_CELL_COORD|SPROP_CELL_COORD_LOWPRECISION|SPROP_CELL_COORD_INTEGRAL)
+		#endif
+		);
+
+		nBits = (sizeofVar * 8);
+	} else {
+		switch(type) {
+		case FIELD_TIME:
+			nBits = TIME_BITS;
+			break;
+		case FIELD_DISTANCE:
+			nBits = DISTANCE_BITS;
+			break;
+		case FIELD_SCALE:
+			nBits = SCALE_BITS;
+			break;
+		default:
+			switch(GetBaseFieldType(type)) {
+			case FIELD_EHANDLE:
+				nBits = NUM_NETWORKED_EHANDLE_BITS;
+				break;
+			case FIELD_PREDICTABLEID:
+				nBits = PREDICTABLE_ID_BITS;
+				break;
+			case FIELD_FLOAT:
+			case FIELD_VECTOR:
+			case FIELD_QUATERNION:
+			case FIELD_VMATRIX:
+			case FIELD_MATRIX3X4:
+			case FIELD_VECTOR2D:
+			case FIELD_VECTOR4D:
+				if(flags & SPROP_NORMAL) {
+					nBits = NORMAL_FRACTIONAL_BITS;
+				} else if(flags & SPROP_COORD_MP_LOWPRECISION) {
+					nBits = (COORD_INTEGER_BITS_MP + COORD_FRACTIONAL_BITS_MP_LOWPRECISION);
+				} else if(flags & (SPROP_COORD_MP|SPROP_COORD_MP_INTEGRAL)) {
+					nBits = (COORD_INTEGER_BITS_MP + COORD_FRACTIONAL_BITS);
+				} else if(flags & SPROP_COORD) {
+					nBits = (COORD_INTEGER_BITS + COORD_FRACTIONAL_BITS);
+				}
+				break;
+			case FIELD_BOOLEAN:
+			case FIELD_UINTEGER:
+			case FIELD_INTEGER:
+			case FIELD_INTEGER64:
+			case FIELD_UINTEGER64:
+			case FIELD_USHORT:
+			case FIELD_SHORT:
+			case FIELD_CHARACTER:
+			case FIELD_UCHARACTER:
+			case FIELD_SCHARACTER:
+				if(flags & SPROP_NORMAL) {
+					nBits = 1;
+				} else if(flags & SPROP_COORD_MP_LOWPRECISION) {
+					nBits = COORD_INTEGER_BITS_MP;
+				} else if(flags & (SPROP_COORD_MP|SPROP_COORD_MP_INTEGRAL)) {
+					nBits = COORD_INTEGER_BITS_MP;
+				} else if(flags & SPROP_COORD) {
+					nBits = COORD_INTEGER_BITS;
+				}
+				break;
+			case FIELD_QANGLE:
+				nBits = ANGLE_BITS;
+				break;
+			default:
+				break;
+			}
+			break;
+		}
+	}
+
+	if(nBits <= 0) {
+		nBits = (sizeofVar * 8);
+	}
+
+	if(flags & SPROP_NOSCALE) {
+		ret.m_fLowValue = 0.0f;
+		ret.m_fHighValue = 0.0f;
+		ret.m_fHighLowMul = 0.0f;
+	} else if(flags & SPROP_NORMAL) {
+		ret.m_fLowValue = -1.0f;
+		ret.m_fHighValue = 1.0f;
+		ret.m_fHighLowMul = AssignRangeMultiplier( NORMAL_FRACTIONAL_BITS, 1.0f - -1.0f );
+	} else if(flags & SPROP_COORD_MP_INTEGRAL) {
+		ret.m_fLowValue = INT_MIN;
+		ret.m_fHighValue = INT_MAX;
+		ret.m_fHighLowMul = AssignRangeMultiplier( (COORD_INTEGER_BITS_MP + COORD_FRACTIONAL_BITS), static_cast<float>(INT_MAX) - static_cast<float>(INT_MIN) );
+	} else if(flags & SPROP_COORD_MP_LOWPRECISION) {
+		ret.m_fLowValue = MIN_COORD_FLOAT;
+		ret.m_fHighValue = MAX_COORD_FLOAT;
+		ret.m_fHighLowMul = AssignRangeMultiplier( (COORD_INTEGER_BITS_MP + COORD_FRACTIONAL_BITS_MP_LOWPRECISION), MAX_COORD_FLOAT - MIN_COORD_FLOAT );
+	} else if(flags & SPROP_COORD_MP) {
+		ret.m_fLowValue = MIN_COORD_FLOAT;
+		ret.m_fHighValue = MAX_COORD_FLOAT;
+		ret.m_fHighLowMul = AssignRangeMultiplier( (COORD_INTEGER_BITS_MP + COORD_FRACTIONAL_BITS), MAX_COORD_FLOAT - MIN_COORD_FLOAT );
+	} else if(flags & SPROP_COORD) {
+		ret.m_fLowValue = MIN_COORD_FLOAT;
+		ret.m_fHighValue = MAX_COORD_FLOAT;
+		ret.m_fHighLowMul = AssignRangeMultiplier( (COORD_INTEGER_BITS + COORD_FRACTIONAL_BITS), MAX_COORD_FLOAT - MIN_COORD_FLOAT );
+	} else if(GetBaseFieldType(type) == FIELD_QANGLE) {
+		ret.m_fLowValue = -360.0f;
+		ret.m_fHighValue = 360.0f;
+		ret.m_fHighLowMul = AssignRangeMultiplier( ANGLE_BITS, 360.0f - -360.0f );
+	} else if(type == FIELD_DISTANCE) {
+		ret.m_fLowValue = 0.0f;
+		ret.m_fHighValue = MAX_TRACE_LENGTH;
+		ret.m_fHighLowMul = AssignRangeMultiplier( DISTANCE_BITS, MAX_TRACE_LENGTH - 0.0f );
+	} else if(type == FIELD_SCALE) {
+		ret.m_fLowValue = 0.0f;
+		ret.m_fHighValue = 1.0f;
+		ret.m_fHighLowMul = AssignRangeMultiplier( SCALE_BITS, 1.0f - 0.0f );
+	}
+
+	if(priority == SENDPROP_CHANGES_OFTEN_PRIORITY) {
+		flags |= SPROP_CHANGES_OFTEN;
+	}
+
+	if((flags & SPROP_CHANGES_OFTEN) != 0 && priority == SENDPROP_DEFAULT_PRIORITY) {
+		priority = SENDPROP_CHANGES_OFTEN_PRIORITY;
+	}
+
+	ret.m_Type = g_dtFieldTypes[ GetBaseFieldType(type) ];
+	Assert( ret.m_Type != DPT_NUMSendPropTypes );
+
+	if(!varProxy) {
+		switch(type) {
+		case FIELD_TIME:
+			varProxy = SendProxy_Time;
+			break;
+		default:
+			varProxy = g_dtFieldProxies[ GetBaseFieldType(type) ];
+			break;
+		}
+	}
+	Assert( varProxy != NULL );
+	ret.SetProxyFn( varProxy );
+
+	ret.m_pVarName = pVarName;
+	ret.SetOffset( offset );
+	ret.m_nBits = nBits;
+	ret.SetFlags( flags );
+	ret.SetPriority( priority );
+}
+
+SendPropEx SendPropFloat(
 	const char *pVarName,		
 	// Variable name.
 	int offset,			// Offset into container structure.
 	int sizeofVar,
 	int nBits,			// Number of bits to use when encoding.
-	int flags,
+	DTFlags_t flags,
 	float fLowValue,		// For floating point, low and high values.
 	float fHighValue,		// High value. If HIGH_DEFAULT, it's (1<<nBits).
 	SendVarProxyFn varProxy,
-	byte priority
+	DTPriority_t priority
 	)
 {
-	SendProp ret;
+	SendPropEx ret;
 
+	SendPropAuto_impl(ret, pVarName, FIELD_FLOAT, offset, sizeofVar, nBits, flags, varProxy, priority);
+
+#ifdef _DEBUG
 	if ( varProxy == SendProxy_Float )
 	{
 		Assert( sizeofVar == 0 || sizeofVar == 4 );
 	}
+#endif
 
 	if ( nBits <= 0 || nBits == 32 )
 	{
@@ -467,30 +793,33 @@ SendProp SendPropFloat(
 	ret.m_fHighValue = fHighValue;
 	ret.m_fHighLowMul = AssignRangeMultiplier( ret.m_nBits, ret.m_fHighValue - ret.m_fLowValue );
 	ret.SetProxyFn( varProxy );
+	ret.SetPriority( priority );
 	if( ret.GetFlags() & (SPROP_COORD | SPROP_NOSCALE | SPROP_NORMAL | SPROP_COORD_MP | SPROP_COORD_MP_LOWPRECISION | SPROP_COORD_MP_INTEGRAL ) )
 		ret.m_nBits = 0;
 
 	return ret;
 }
 
-SendProp SendPropVector(
+SendPropEx SendPropVector(
 	const char *pVarName,
 	int offset,
 	int sizeofVar,
 	int nBits,					// Number of bits to use when encoding.
-	int flags,
+	DTFlags_t flags,
 	float fLowValue,			// For floating point, low and high values.
 	float fHighValue,			// High value. If HIGH_DEFAULT, it's (1<<nBits).
 	SendVarProxyFn varProxy,
-	byte priority
+	DTPriority_t priority
 	)
 {
-	SendProp ret;
+	SendPropEx ret;
 
+#ifdef _DEBUG
 	if(varProxy == SendProxy_Vector )
 	{
 		Assert(sizeofVar == sizeof(Vector));
 	}
+#endif
 
 	if ( nBits == 32 )
 		flags |= SPROP_NOSCALE;
@@ -504,30 +833,33 @@ SendProp SendPropVector(
 	ret.m_fHighValue = fHighValue;
 	ret.m_fHighLowMul = AssignRangeMultiplier( ret.m_nBits, ret.m_fHighValue - ret.m_fLowValue );
 	ret.SetProxyFn( varProxy );
+	ret.SetPriority( priority );
 	if( ret.GetFlags() & (SPROP_COORD | SPROP_NOSCALE | SPROP_NORMAL | SPROP_COORD_MP | SPROP_COORD_MP_LOWPRECISION | SPROP_COORD_MP_INTEGRAL) )
 		ret.m_nBits = 0;
 
 	return ret;
 }
 
-SendProp SendPropVectorXY(
+SendPropEx SendPropVectorXY(
 	const char *pVarName,
 	int offset,
 	int sizeofVar,
 	int nBits,					// Number of bits to use when encoding.
-	int flags,
+	DTFlags_t flags,
 	float fLowValue,			// For floating point, low and high values.
 	float fHighValue,			// High value. If HIGH_DEFAULT, it's (1<<nBits).
 	SendVarProxyFn varProxy,
-	byte priority
+	DTPriority_t priority
 	)
 {
-	SendProp ret;
+	SendPropEx ret;
 
+#ifdef _DEBUG
 	if(varProxy == SendProxy_VectorXY )
 	{
 		Assert(sizeofVar == sizeof(Vector));
 	}
+#endif
 
 	if ( nBits == 32 )
 		flags |= SPROP_NOSCALE;
@@ -541,37 +873,43 @@ SendProp SendPropVectorXY(
 	ret.m_fHighValue = fHighValue;
 	ret.m_fHighLowMul = AssignRangeMultiplier( ret.m_nBits, ret.m_fHighValue - ret.m_fLowValue );
 	ret.SetProxyFn( varProxy );
+	ret.SetPriority( priority );
 	if( ret.GetFlags() & (SPROP_COORD | SPROP_NOSCALE | SPROP_NORMAL | SPROP_COORD_MP | SPROP_COORD_MP_LOWPRECISION | SPROP_COORD_MP_INTEGRAL) )
 		ret.m_nBits = 0;
 
 	return ret;
 }
 
-SendProp SendPropQuaternion(
+SendPropEx SendPropQuaternion(
 	const char *pVarName,
 	int offset,
 	int sizeofVar,
 	int nBits,					// Number of bits to use when encoding.
-	int flags,
+	DTFlags_t flags,
 	float fLowValue,			// For floating point, low and high values.
 	float fHighValue,			// High value. If HIGH_DEFAULT, it's (1<<nBits).
-	SendVarProxyFn varProxy
+	SendVarProxyFn varProxy,
+	DTPriority_t priority
 	)
 {
-	SendProp ret;
+	SendPropEx ret;
 
+#ifdef _DEBUG
 	if(varProxy == SendProxy_Quaternion )
 	{
 		Assert(sizeofVar == sizeof(Quaternion));
 	}
+#endif
 
 	if ( nBits == 32 )
 		flags |= SPROP_NOSCALE;
 
 #ifdef DT_QUATERNION_SUPPORTED
 	ret.m_Type = DPT_Quaternion;
+#elif defined DT_INT64_SUPPORTED
+	ret.m_Type = DPT_Int64;
 #else
-	ret.m_Type = DPT_Vector;
+	Error( "Quaternion sendprops are not supported" );
 #endif
 
 	ret.m_pVarName = pVarName;
@@ -582,28 +920,31 @@ SendProp SendPropQuaternion(
 	ret.m_fHighValue = fHighValue;
 	ret.m_fHighLowMul = AssignRangeMultiplier( ret.m_nBits, ret.m_fHighValue - ret.m_fLowValue );
 	ret.SetProxyFn( varProxy );
+	ret.SetPriority( priority );
 	if( ret.GetFlags() & (SPROP_COORD | SPROP_NOSCALE | SPROP_NORMAL | SPROP_COORD_MP | SPROP_COORD_MP_LOWPRECISION | SPROP_COORD_MP_INTEGRAL) )
 		ret.m_nBits = 0;
 
 	return ret;
 }
 
-SendProp SendPropAngle(
+SendPropEx SendPropAngle(
 	const char *pVarName,
 	int offset,
 	int sizeofVar,
 	int nBits,
-	int flags,
+	DTFlags_t flags,
 	SendVarProxyFn varProxy,
-	byte priority
+	DTPriority_t priority
 	)
 {
-	SendProp ret;
+	SendPropEx ret;
 
+#ifdef _DEBUG
 	if(varProxy == SendProxy_FloatAngle )
 	{
 		Assert(sizeofVar == 4);
 	}
+#endif
 
 	if ( nBits == 32 )
 		flags |= SPROP_NOSCALE;
@@ -617,27 +958,30 @@ SendProp SendPropAngle(
 	ret.m_fHighValue = 360.0f;
 	ret.m_fHighLowMul = AssignRangeMultiplier( ret.m_nBits, ret.m_fHighValue - ret.m_fLowValue );
 	ret.SetProxyFn( varProxy );
+	ret.SetPriority( priority );
 
 	return ret;
 }
 
 
-SendProp SendPropQAngles(
+SendPropEx SendPropQAngles(
 	const char *pVarName,
 	int offset,
 	int sizeofVar,
 	int nBits,
-	int flags,
+	DTFlags_t flags,
 	SendVarProxyFn varProxy,
-	byte priority
+	DTPriority_t priority
 	)
 {
-	SendProp ret;
+	SendPropEx ret;
 
+#ifdef _DEBUG
 	if(varProxy == SendProxy_QAngles )
 	{
 		Assert(sizeofVar == sizeof(QAngle));
 	}
+#endif
 
 	if ( nBits == 32 )
 		flags |= SPROP_NOSCALE;
@@ -650,37 +994,37 @@ SendProp SendPropQAngles(
 	ret.m_fLowValue = 0.0f;
 	ret.m_fHighValue = 360.0f;
 	ret.m_fHighLowMul = AssignRangeMultiplier( ret.m_nBits, ret.m_fHighValue - ret.m_fLowValue );
-
 	ret.SetProxyFn( varProxy );
+	ret.SetPriority( priority );
 
 	return ret;
 }
   
-SendProp SendPropInt(
+SendPropEx SendPropInt(
 	const char *pVarName,
 	int offset,
 	int sizeofVar,
 	int nBits,
-	int flags,
+	DTFlags_t flags,
 	SendVarProxyFn varProxy,
-	byte priority
+	DTPriority_t priority
 	)
 {
-	SendProp ret;
+	SendPropEx ret;
 
 	if ( !varProxy )
 	{
 		if ( sizeofVar == 1 )
 		{
-			varProxy = SendProxy_Int8;
+			varProxy = SendProxy_SChar;
 		}
 		else if ( sizeofVar == 2 )
 		{
-			varProxy = SendProxy_Int16;
+			varProxy = SendProxy_Short;
 		}
 		else if ( sizeofVar == 4 )
 		{
-			varProxy = SendProxy_Int32;
+			varProxy = SendProxy_Int;
 		}
 		else if ( sizeofVar == 8 )
 		{
@@ -689,7 +1033,7 @@ SendProp SendPropInt(
 		else
 		{
 			Assert(!"SendPropInt var has invalid size");
-			varProxy = SendProxy_Int8;	// safest one...
+			varProxy = SendProxy_SChar;	// safest one...
 		}
 	}
 
@@ -719,6 +1063,7 @@ SendProp SendPropInt(
 	ret.SetOffset( offset );
 	ret.m_nBits = nBits;
 	ret.SetFlags( flags );
+	ret.SetPriority( priority );
 
 	// Use UInt proxies if they want unsigned data. This isn't necessary to encode
 	// the values correctly, but it lets us check the ranges of the data to make sure
@@ -726,14 +1071,14 @@ SendProp SendPropInt(
 	ret.SetProxyFn( varProxy );
 	if( ret.GetFlags() & SPROP_UNSIGNED )
 	{
-		if( varProxy == SendProxy_Int8 )
-			ret.SetProxyFn( SendProxy_UInt8 );
+		if( varProxy == SendProxy_SChar )
+			ret.SetProxyFn( SendProxy_UChar );
 		
-		else if( varProxy == SendProxy_Int16 )
-			ret.SetProxyFn( SendProxy_UInt16 );
+		else if( varProxy == SendProxy_Short )
+			ret.SetProxyFn( SendProxy_UShort );
 
-		else if( varProxy == SendProxy_Int32 )
-			ret.SetProxyFn( SendProxy_UInt32 );
+		else if( varProxy == SendProxy_Int )
+			ret.SetProxyFn( SendProxy_UInt );
 		else if( varProxy == SendProxy_Int64 )
 			ret.SetProxyFn( SendProxy_UInt64 );
 	}
@@ -741,29 +1086,30 @@ SendProp SendPropInt(
 	return ret;
 }
 
-SendProp SendPropBool(
+SendPropEx SendPropBool(
 	const char *pVarName,
 	int offset,
-	int sizeofVar )
+	int sizeofVar,
+	DTPriority_t priority )
 {
 	Assert( sizeofVar == sizeof( bool ) );
-	return SendPropInt( pVarName, offset, sizeofVar, 1, SPROP_UNSIGNED, SendProxy_UInt8 );
+	return SendPropInt( pVarName, offset, sizeofVar, 1, SPROP_UNSIGNED, SendProxy_Bool, priority );
 }
 
-SendProp SendPropIntWithMinusOneFlag( const char *pVarName, int offset, int sizeofVar, int nBits, SendVarProxyFn proxyFn )
+SendPropEx SendPropIntWithMinusOneFlag( const char *pVarName, int offset, int sizeofVar, int nBits, SendVarProxyFn proxyFn )
 {
 	return SendPropInt( pVarName, offset, sizeofVar, nBits, SPROP_UNSIGNED, proxyFn );
 }
 
-SendProp SendPropString(
+SendPropEx SendPropString(
 	const char *pVarName,
 	int offset,
 	int bufferLen,
-	int flags,
+	DTFlags_t flags,
 	SendVarProxyFn varProxy,
-	byte priority)
+	DTPriority_t priority)
 {
-	SendProp ret;
+	SendPropEx ret;
 
 	Assert( bufferLen <= DT_MAX_STRING_BUFFERSIZE ); // You can only have strings with 8-bits worth of length.
 	
@@ -772,21 +1118,22 @@ SendProp SendPropString(
 	ret.SetOffset( offset );
 	ret.SetFlags( flags );
 	ret.SetProxyFn( varProxy );
+	ret.SetPriority( priority );
 
 	return ret;
 }
 
-SendProp SendPropArray3(
+SendPropEx SendPropArray3(
 	const char *pVarName,
 	int offset,
 	int sizeofVar,
 	int elements,
-	SendProp pArrayProp,
+	SendPropEx pArrayProp,
 	SendTableProxyFn varProxy,
-	byte priority
+	DTPriority_t priority
 	)
 {
-	SendProp ret;
+	SendPropEx ret;
 
 	Assert( elements <= MAX_ARRAY_ELEMENTS );
 
@@ -794,16 +1141,18 @@ SendProp SendPropArray3(
 	ret.m_pVarName = pVarName;
 	ret.SetOffset( offset );
 	ret.SetDataTableProxyFn( varProxy );
-	
-	SendProp *pArrayPropAllocated = new SendProp;
-	*pArrayPropAllocated = pArrayProp;
-	ret.SetArrayProp( pArrayPropAllocated );
-	
+	ret.SetPriority( priority );
+
 	// Handle special proxy types where they always let all clients get the results.
 	if ( varProxy == SendProxy_DataTableToDataTable || varProxy == SendProxy_DataTablePtrToDataTable )
 	{
 		ret.SetFlags( SPROP_PROXY_ALWAYS_YES );
 	}
+
+	SendPropEx *pArrayPropAllocated = new SendPropEx;
+	*pArrayPropAllocated = pArrayProp;
+	ret.SetArrayProp( pArrayPropAllocated );
+	ret.m_Flags |= SPROP_ALLOCATED_ARRAYPROP;
 
 	SendProp *pProps = new SendProp[elements]; // TODO free that again
 	
@@ -816,27 +1165,28 @@ SendProp SendPropArray3(
 	}
 
 	SendTable *pTable = new SendTable( pProps, elements, pVarName ); // TODO free that again
-
 	ret.SetDataTable( pTable );
+	ret.m_Flags |= SPROP_ALLOCATED_SENDTABLE;
 
 	return ret;
 }
 
-SendProp SendPropDataTable(
+SendPropEx SendPropDataTable(
 	const char *pVarName,
 	int offset,
 	SendTable *pTable,
 	SendTableProxyFn varProxy,
-	byte priority
+	DTPriority_t priority
 	)
 {
-	SendProp ret;
+	SendPropEx ret;
 
 	ret.m_Type = DPT_DataTable;
 	ret.m_pVarName = pVarName;
 	ret.SetOffset( offset );
 	ret.SetDataTable( pTable );
 	ret.SetDataTableProxyFn( varProxy );
+	ret.SetPriority( priority );
 	
 	// Handle special proxy types where they always let all clients get the results.
 	if ( varProxy == SendProxy_DataTableToDataTable || varProxy == SendProxy_DataTablePtrToDataTable )
@@ -853,20 +1203,21 @@ SendProp SendPropDataTable(
 }
 
 
-SendProp InternalSendPropArray(
+SendPropEx InternalSendPropArray(
 	const int elementCount,
 	const int elementStride,
 	const char *pName,
 	ArrayLengthSendProxyFn arrayLengthFn,
-	byte priority
+	DTPriority_t priority
 	)
 {
-	SendProp ret;
+	SendPropEx ret;
 
 	ret.m_Type = DPT_Array;
 	ret.m_nElements = elementCount;
 	ret.m_ElementStride = elementStride;
 	ret.m_pVarName = pName;
+	ret.SetPriority( priority );
 	ret.SetProxyFn( SendProxy_Empty );
 	ret.m_pArrayProp = NULL;	// This gets set in SendTable_InitTable. It always points at the property that precedes
 								// this one in the datatable's list.
@@ -876,12 +1227,12 @@ SendProp InternalSendPropArray(
 }
 
 
-SendProp SendPropExclude(
+SendPropEx SendPropExclude(
 	const char *pDataTableName,	// Data table name (given to BEGIN_SEND_TABLE and BEGIN_RECV_TABLE).
 	const char *pPropName		// Name of the property to exclude.
 	)
 {
-	SendProp ret;
+	SendPropEx ret;
 
 	ret.SetFlags( SPROP_EXCLUDE );
 	ret.m_pExcludeDTName = pDataTableName;
@@ -904,22 +1255,134 @@ SendProp::SendProp()
 	m_pExcludeDTName = NULL;
 	m_pParentArrayPropName = NULL;
 
-	
 	m_Type = DPT_Int;
-	m_Flags = 0;
+	m_Flags = SPROP_NONE;
 	m_nBits = 0;
 
 	m_fLowValue = 0.0f;
 	m_fHighValue = 0.0f;
+	m_fHighLowMul = 0.0f;
 	m_pArrayProp = 0;
 	m_ArrayLengthProxy = 0;
 	m_nElements = 1;
 	m_ElementStride = -1;
+
+#ifdef DT_PRIORITY_SUPPORTED
+	m_priority = (byte)SENDPROP_DEFAULT_PRIORITY;
+#else
+	m_pExtraData = new CSendPropExtra_Base;
+	m_pExtraData->m_priority = (byte)SENDPROP_DEFAULT_PRIORITY;
+	m_Flags |= SPROP_ALLOCATED_EXTRADATA;
+#endif
 }
 
+SendProp::SendProp(SendProp &&other)
+{
+	m_pMatchingRecvProp = other.m_pMatchingRecvProp;
+	m_Type = other.m_Type;
+	m_nBits = other.m_nBits;
+	m_fLowValue = other.m_fLowValue;
+	m_fHighValue = other.m_fHighValue;
+	m_pArrayProp = other.m_pArrayProp;
+	m_ArrayLengthProxy = other.m_ArrayLengthProxy;
+	m_nElements = other.m_nElements;
+	m_ElementStride = other.m_ElementStride;
+	m_pExcludeDTName = other.m_pExcludeDTName;
+	m_pParentArrayPropName = other.m_pParentArrayPropName;
+	m_pVarName = other.m_pVarName;
+	m_fHighLowMul = other.m_fHighLowMul;
+#ifdef DT_PRIORITY_SUPPORTED
+	m_priority = other.m_priority;
+#endif
+	m_Flags = other.m_Flags;
+	m_ProxyFn = other.m_ProxyFn;
+	m_DataTableProxyFn = other.m_DataTableProxyFn;
+	m_pDataTable = other.m_pDataTable;
+	m_Offset = other.m_Offset;
+	m_pExtraData = other.m_pExtraData;
+
+	other.m_pExtraData = NULL;
+	other.m_Flags &= ~SPROP_ALLOCATED_EXTRADATA;
+	other.m_pArrayProp = NULL;
+	other.m_Flags &= ~SPROP_ALLOCATED_ARRAYPROP;
+	other.m_pDataTable = NULL;
+	other.m_Flags &= ~SPROP_ALLOCATED_SENDTABLE;
+}
+
+SendProp &SendProp::operator=(SendProp &&other)
+{
+	if((m_Flags & SPROP_ALLOCATED_EXTRADATA) != 0) {
+		if(m_pExtraData) {
+			delete m_pExtraData;
+		}
+	}
+
+	if((m_Flags & SPROP_ALLOCATED_ARRAYPROP) != 0) {
+		if(m_pArrayProp) {
+			delete m_pArrayProp;
+		}
+	}
+
+	if((m_Flags & SPROP_ALLOCATED_SENDTABLE) != 0) {
+		if(m_pDataTable) {
+			delete[] m_pDataTable->m_pProps;
+			delete m_pDataTable;
+		}
+	}
+
+	m_pMatchingRecvProp = other.m_pMatchingRecvProp;
+	m_Type = other.m_Type;
+	m_nBits = other.m_nBits;
+	m_fLowValue = other.m_fLowValue;
+	m_fHighValue = other.m_fHighValue;
+	m_pArrayProp = other.m_pArrayProp;
+	m_ArrayLengthProxy = other.m_ArrayLengthProxy;
+	m_nElements = other.m_nElements;
+	m_ElementStride = other.m_ElementStride;
+	m_pExcludeDTName = other.m_pExcludeDTName;
+	m_pParentArrayPropName = other.m_pParentArrayPropName;
+	m_pVarName = other.m_pVarName;
+	m_fHighLowMul = other.m_fHighLowMul;
+#ifdef DT_PRIORITY_SUPPORTED
+	m_priority = other.m_priority;
+#endif
+	m_Flags = other.m_Flags;
+	m_ProxyFn = other.m_ProxyFn;
+	m_DataTableProxyFn = other.m_DataTableProxyFn;
+	m_pDataTable = other.m_pDataTable;
+	m_Offset = other.m_Offset;
+	m_pExtraData = other.m_pExtraData;
+
+	other.m_pExtraData = NULL;
+	other.m_Flags &= ~SPROP_ALLOCATED_EXTRADATA;
+	other.m_pArrayProp = NULL;
+	other.m_Flags &= ~SPROP_ALLOCATED_ARRAYPROP;
+	other.m_pDataTable = NULL;
+	other.m_Flags &= ~SPROP_ALLOCATED_SENDTABLE;
+
+	return *this;
+}
 
 SendProp::~SendProp()
 {
+	if((m_Flags & SPROP_ALLOCATED_EXTRADATA) != 0) {
+		if(m_pExtraData) {
+			delete m_pExtraData;
+		}
+	}
+
+	if((m_Flags & SPROP_ALLOCATED_ARRAYPROP) != 0) {
+		if(m_pArrayProp) {
+			delete m_pArrayProp;
+		}
+	}
+
+	if((m_Flags & SPROP_ALLOCATED_SENDTABLE) != 0) {
+		if(m_pDataTable) {
+			delete[] m_pDataTable->m_pProps;
+			delete m_pDataTable;
+		}
+	}
 }
 
 

@@ -49,7 +49,7 @@ void UpdateDirtySpatialPartitionEntities();
 //-----------------------------------------------------------------------------
 // Specifies how to compute the surrounding box
 //-----------------------------------------------------------------------------
-enum SurroundingBoundsType_t
+enum SurroundingBoundsType_t : unsigned char
 {
 	USE_OBB_COLLISION_BOUNDS = 0,
 	USE_BEST_COLLISION_BOUNDS,		// Always use the best bounds (most expensive)
@@ -78,7 +78,7 @@ typedef CCollisionProperty CSharedCollisionProperty;
 	#define CCollisionProperty C_CollisionProperty
 #endif
 
-class CCollisionProperty : public ICollideable
+class CCollisionProperty : public ICollideable, public INetworkableObject
 {
 public:
 	DECLARE_CLASS_NOBASE( CCollisionProperty );
@@ -89,9 +89,8 @@ public:
 	#undef CCollisionProperty
 #endif
 
-	DECLARE_NETWORKVAR_CHAIN()
-
 	DECLARE_PREDICTABLE();
+	DECLARE_EMBEDDED_NETWORKVAR();
 
 #ifdef GAME_DLL
 	DECLARE_MAPEMBEDDED();
@@ -114,9 +113,9 @@ public:
 	virtual const QAngle&	GetCollisionAngles() const;
 	virtual const matrix3x4_t&	CollisionToWorldTransform() const;
 	virtual SolidType_t		GetSolid() const;
-	virtual int				GetSolidFlags() const;
+	virtual SolidFlags_t				GetSolidFlags() const;
 	virtual IClientUnknown*	GetIClientUnknown();
-	virtual int				GetCollisionGroup() const;
+	virtual Collision_Group_t				GetCollisionGroup() const;
 	virtual void			WorldSpaceSurroundingBounds( Vector *pVecMins, Vector *pVecMaxs );
 	virtual bool			ShouldTouchTrigger( int triggerSolidFlags ) const;
 	virtual const matrix3x4_t *GetRootParentToWorldTransform() const;
@@ -173,10 +172,10 @@ public:
 
 	// Methods related to solid flags
 	void			ClearSolidFlags( void );	
-	void			RemoveSolidFlags( int flags );
-	void			AddSolidFlags( int flags );
-	bool			IsSolidFlagSet( int flagMask ) const;
-	void		 	SetSolidFlags( int flags );
+	void			RemoveSolidFlags( SolidFlags_t flags );
+	void			AddSolidFlags( SolidFlags_t flags );
+	bool			IsSolidFlagSet( SolidFlags_t flagMask ) const;
+	void		 	SetSolidFlags( SolidFlags_t flags );
 	bool			IsSolid() const;
 
 	// Updates the spatial partition
@@ -293,14 +292,14 @@ private:
 	float m_flHeight;
 	float m_flLength;
 
-	CNetworkVar( unsigned short, m_usSolidFlags );
+	CNetworkVar( SolidFlags_t, m_usSolidFlags );
 
 	// Spatial partition
 	SpatialPartitionHandle_t m_Partition;
-	CNetworkVar( unsigned char, m_nSurroundType );
+	CNetworkVar( SurroundingBoundsType_t, m_nSurroundType );
 
 	// One of the SOLID_ defines. Use GetSolid/SetSolid.
-	CNetworkVar( unsigned char, m_nSolidType );			
+	CNetworkVar( SolidType_t, m_nSolidType );			
 	CNetworkVar( float , m_triggerBloat );
 
 	// SUCKY: We didn't use to have to store this previously
@@ -400,32 +399,32 @@ inline bool CSharedCollisionProperty::IsBoundsDefinedInEntitySpace() const
 
 inline void CSharedCollisionProperty::ClearSolidFlags( void )
 {
-	SetSolidFlags( 0 );
+	SetSolidFlags( FSOLID_NONE );
 }
 
-inline void CSharedCollisionProperty::RemoveSolidFlags( int flags )
+inline void CSharedCollisionProperty::RemoveSolidFlags( SolidFlags_t flags )
 {
 	SetSolidFlags( m_usSolidFlags & ~flags );
 }
 
-inline void CSharedCollisionProperty::AddSolidFlags( int flags )
+inline void CSharedCollisionProperty::AddSolidFlags( SolidFlags_t flags )
 {
 	SetSolidFlags( m_usSolidFlags | flags );
 }
 
-inline int CSharedCollisionProperty::GetSolidFlags( void ) const
+inline SolidFlags_t CSharedCollisionProperty::GetSolidFlags( void ) const
 {
 	return m_usSolidFlags;
 }
 
-inline bool CSharedCollisionProperty::IsSolidFlagSet( int flagMask ) const
+inline bool CSharedCollisionProperty::IsSolidFlagSet( SolidFlags_t flagMask ) const
 {
 	return (m_usSolidFlags & flagMask) != 0;
 }
 
 inline bool CSharedCollisionProperty::IsSolid() const
 {
-	return ::IsSolid( (SolidType_t)(unsigned char)m_nSolidType, m_usSolidFlags );
+	return ::IsSolid( m_nSolidType, m_usSolidFlags );
 }
 
 

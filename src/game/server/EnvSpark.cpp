@@ -54,9 +54,9 @@ const int SF_SPARK_DIRECTIONAL		= 512;
 
 BEGIN_MAPENTITY( CEnvSpark )
 
-	DEFINE_KEYFIELD( m_flDelay, FIELD_FLOAT, "MaxDelay" ),
-	DEFINE_KEYFIELD( m_nMagnitude, FIELD_INTEGER, "Magnitude" ),
-	DEFINE_KEYFIELD( m_nTrailLength, FIELD_INTEGER, "TrailLength" ),
+	DEFINE_KEYFIELD_AUTO( m_flDelay, "MaxDelay" ),
+	DEFINE_KEYFIELD_AUTO( m_nMagnitude, "Magnitude" ),
+	DEFINE_KEYFIELD_AUTO( m_nTrailLength, "TrailLength" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartSpark", InputStartSpark ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopSpark", InputStopSpark ),
@@ -158,7 +158,7 @@ void CEnvSpark::SparkThink(void)
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for starting the sparks.
 //-----------------------------------------------------------------------------
-void CEnvSpark::InputStartSpark( inputdata_t &inputdata )
+void CEnvSpark::InputStartSpark( inputdata_t &&inputdata )
 {
 	StartSpark();
 }
@@ -175,7 +175,7 @@ void CEnvSpark::StartSpark( void )
 //-----------------------------------------------------------------------------
 // Purpose: Shoot one spark.
 //-----------------------------------------------------------------------------
-void CEnvSpark::InputSparkOnce( inputdata_t &inputdata )
+void CEnvSpark::InputSparkOnce( inputdata_t &&inputdata )
 {
 	SparkThink();
 	SetNextThink( TICK_NEVER_THINK );
@@ -184,7 +184,7 @@ void CEnvSpark::InputSparkOnce( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for starting the sparks.
 //-----------------------------------------------------------------------------
-void CEnvSpark::InputStopSpark( inputdata_t &inputdata )
+void CEnvSpark::InputStopSpark( inputdata_t &&inputdata )
 {
 	StopSpark();
 }
@@ -200,7 +200,7 @@ void CEnvSpark::StopSpark( void )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for toggling the on/off state of the sparks.
 //-----------------------------------------------------------------------------
-void CEnvSpark::InputToggleSpark( inputdata_t &inputdata )
+void CEnvSpark::InputToggleSpark( inputdata_t &&inputdata )
 {
 	if ( GetNextThink() == TICK_NEVER_THINK )
 	{

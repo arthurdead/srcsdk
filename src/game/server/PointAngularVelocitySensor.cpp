@@ -42,8 +42,8 @@ private:
 	void DrawDebugLines( void );
 
 	// Input handlers
-	void InputTest( inputdata_t &inputdata );
-	void InputTestWithInterval( inputdata_t &inputdata );
+	void InputTest( inputdata_t &&inputdata );
+	void InputTestWithInterval( inputdata_t &&inputdata );
 
 	EHANDLE m_hTargetEntity;				// Entity whose angles are being monitored.
 	float m_flThreshold;					// The threshold angular velocity that we are looking for.
@@ -79,9 +79,9 @@ LINK_ENTITY_TO_CLASS(point_angularvelocitysensor, CPointAngularVelocitySensor);
 BEGIN_MAPENTITY( CPointAngularVelocitySensor )
 
 	// Fields
-	DEFINE_KEYFIELD(m_flThreshold, FIELD_FLOAT, "threshold"),
+	DEFINE_KEYFIELD_AUTO( m_flThreshold, "threshold" ),
 
-	DEFINE_KEYFIELD( m_flFireInterval, FIELD_FLOAT, "fireinterval" ),
+	DEFINE_KEYFIELD_AUTO( m_flFireInterval, "fireinterval" ),
 
 	
 	// Inputs
@@ -96,8 +96,8 @@ BEGIN_MAPENTITY( CPointAngularVelocitySensor )
 	DEFINE_OUTPUT(m_OnEqualTo, "OnEqualTo"),
 	DEFINE_OUTPUT(m_AngularVelocity, "AngularVelocity"),
 
-	DEFINE_KEYFIELD( m_vecAxis, FIELD_VECTOR, "axis" ),
-	DEFINE_KEYFIELD( m_bUseHelper, FIELD_BOOLEAN, "usehelper" ),
+	DEFINE_KEYFIELD_AUTO( m_vecAxis, "axis" ),
+	DEFINE_KEYFIELD_AUTO( m_bUseHelper, "usehelper" ),
 
 END_MAPENTITY()
 
@@ -323,7 +323,7 @@ void CPointAngularVelocitySensor::Think(void)
 //-----------------------------------------------------------------------------
 // Fires the output after the fire interval if the velocity is stable. 
 //-----------------------------------------------------------------------------
-void CPointAngularVelocitySensor::InputTestWithInterval( inputdata_t &inputdata )
+void CPointAngularVelocitySensor::InputTestWithInterval( inputdata_t &&inputdata )
 {
 	if (m_hTargetEntity != NULL)
 	{
@@ -339,7 +339,7 @@ void CPointAngularVelocitySensor::InputTestWithInterval( inputdata_t &inputdata 
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for forcing an instantaneous test of the condition.
 //-----------------------------------------------------------------------------
-void CPointAngularVelocitySensor::InputTest( inputdata_t &inputdata )
+void CPointAngularVelocitySensor::InputTest( inputdata_t &&inputdata )
 {
 	int nCompareResult = CompareToThreshold(m_hTargetEntity, m_flThreshold, false);
 	FireCompareOutput(nCompareResult, inputdata.pActivator);
@@ -399,8 +399,8 @@ private:
 	float m_fPrevVelocity; // stores velocity from last frame, so we only write the output if it has changed
 	COutputFloat m_Velocity;
 
-	void	InputEnable( inputdata_t &inputdata );
-	void	InputDisable( inputdata_t &inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 };
@@ -410,8 +410,8 @@ LINK_ENTITY_TO_CLASS( point_velocitysensor, CPointVelocitySensor );
 BEGIN_MAPENTITY( CPointVelocitySensor )
 
 	// Fields
-	DEFINE_KEYFIELD( m_vecAxis,		FIELD_VECTOR, "axis" ),
-	DEFINE_KEYFIELD( m_bEnabled,	FIELD_BOOLEAN, "enabled" ),
+	DEFINE_KEYFIELD_AUTO( m_vecAxis, "axis" ),
+	DEFINE_KEYFIELD_AUTO( m_bEnabled, "enabled" ),
 
 	// Outputs
 	DEFINE_OUTPUT( m_Velocity, "Velocity" ),
@@ -450,7 +450,7 @@ void CPointVelocitySensor::Activate( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointVelocitySensor::InputEnable( inputdata_t &inputdata )
+void CPointVelocitySensor::InputEnable( inputdata_t &&inputdata )
 {
 	// Don't interrupt us if we're already enabled
 	if ( m_bEnabled )
@@ -467,7 +467,7 @@ void CPointVelocitySensor::InputEnable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointVelocitySensor::InputDisable( inputdata_t &inputdata )
+void CPointVelocitySensor::InputDisable( inputdata_t &&inputdata )
 {
 	m_bEnabled = false;
 }

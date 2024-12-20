@@ -13,6 +13,7 @@
 #include "shareddefs.h"
 #include "c_baseflex.h"
 #include "basecombatcharacter_shared.h"
+#include "ammodef.h"
 
 class C_BaseCombatWeapon;
 
@@ -37,7 +38,6 @@ public:
 	// -----------------------
 	// Vision
 	// -----------------------
-	enum FieldOfViewCheckType { USE_FOV, DISREGARD_FOV };
 	bool IsAbleToSee( const C_BaseEntity *entity, FieldOfViewCheckType checkFOV );	// Visible starts with line of sight, and adds all the extra game checks like fog, smoke, camo...
 	bool IsAbleToSee( C_BaseCombatCharacter *pBCC, FieldOfViewCheckType checkFOV );	// Visible starts with line of sight, and adds all the extra game checks like fog, smoke, camo...
 
@@ -73,15 +73,15 @@ public:
 	// -----------------------
 	// Ammo
 	// -----------------------
-	void				RemoveAmmo( int iCount, int iAmmoIndex );
+	void				RemoveAmmo( int iCount, AmmoIndex_t iAmmoIndex );
 	void				RemoveAmmo( int iCount, const char *szName );
 	void				RemoveAllAmmo( );
-	int					GetAmmoCount( int iAmmoIndex ) const;
+	int					GetAmmoCount( AmmoIndex_t iAmmoIndex ) const;
 	int					GetAmmoCount( char *szName ) const;
 
 	virtual C_BaseCombatWeapon*	Weapon_OwnsThisType( const char *pszWeapon, int iSubType = 0 ) const;  // True if already owns a weapon of this class
 	virtual int			Weapon_GetSlot( const char *pszWeapon, int iSubType = 0 ) const;  // Returns -1 if they don't have one
-	virtual	int		Weapon_Switch( C_BaseCombatWeapon *pWeapon, int viewmodelindex = VIEWMODEL_WEAPON, bool bDeploy = true );
+	virtual	WeaponSwitchResult_t		Weapon_Switch( C_BaseCombatWeapon *pWeapon, int viewmodelindex = VIEWMODEL_WEAPON, bool bDeploy = true );
 	virtual bool		Weapon_CanSwitchTo(C_BaseCombatWeapon *pWeapon);
 	
 	// I can't use my current weapon anymore. Switch me to the next best weapon.
@@ -92,15 +92,15 @@ public:
 	virtual C_BaseCombatWeapon	*GetWeapon( int i ) const;
 
 	// This is a sort of hack back-door only used by physgun!
-	void SetAmmoCount( int iCount, int iAmmoIndex );
+	void SetAmmoCount( int iCount, AmmoIndex_t iAmmoIndex );
 
 	float				GetNextAttack() const { return m_flNextAttack; }
 	void				SetNextAttack( float flWait ) { m_flNextAttack = flWait; }
 
-	virtual int			BloodColor();
+	virtual BloodColor_t			BloodColor();
 
 	// Blood color (see BLOOD_COLOR_* macros in baseentity.h)
-	void SetBloodColor( int nBloodColor );
+	void SetBloodColor( BloodColor_t nBloodColor );
 
 	virtual void		DoMuzzleFlash();
 

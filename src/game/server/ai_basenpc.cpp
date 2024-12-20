@@ -561,14 +561,14 @@ Activity CAI_BaseNPC::GetFlinchActivity( bool bHeavyDamage, bool bGesture )
 	}
 
 	// do we have a sequence for the ideal activity?
-	if ( SelectWeightedSequence ( flinchActivity ) == ACTIVITY_NOT_AVAILABLE )
+	if ( SelectWeightedSequence ( flinchActivity ) == INVALID_SEQUENCE )
 	{
 		if ( bHeavyDamage )
 		{
 			flinchActivity = bGesture ? ACT_GESTURE_BIG_FLINCH : ACT_BIG_FLINCH;
 
 			// If we fail at finding a big flinch, resort to a small one
-			if ( SelectWeightedSequence ( flinchActivity ) == ACTIVITY_NOT_AVAILABLE )
+			if ( SelectWeightedSequence ( flinchActivity ) == INVALID_SEQUENCE )
 			{
 				flinchActivity = bGesture ? ACT_GESTURE_SMALL_FLINCH : ACT_SMALL_FLINCH;
 			}
@@ -772,7 +772,7 @@ bool CAI_BaseNPC::FriendlyFireEnabled()
 }
 
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputSetFriendlyFire( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetFriendlyFire( inputdata_t &&inputdata )
 {
 	m_FriendlyFireOverride = TO_THREESTATE(inputdata.value.Int());
 }
@@ -1159,13 +1159,13 @@ bool CAI_BaseNPC::IsHeavyDamage( const CTakeDamageInfo &info )
 	return ( info.GetDamage() >  20 );
 }
 
-void CAI_BaseNPC::DoRadiusDamage( const CTakeDamageInfo &info, int iClassIgnore, CBaseEntity *pEntityIgnore )
+void CAI_BaseNPC::DoRadiusDamage( const CTakeDamageInfo &info, Class_T iClassIgnore, CBaseEntity *pEntityIgnore )
 {
 	RadiusDamage( info, GetAbsOrigin(), info.GetDamage() * 2.5, iClassIgnore, pEntityIgnore );
 }
 
 
-void CAI_BaseNPC::DoRadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, int iClassIgnore, CBaseEntity *pEntityIgnore )
+void CAI_BaseNPC::DoRadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, Class_T iClassIgnore, CBaseEntity *pEntityIgnore )
 {
 	RadiusDamage( info, vecSrc, info.GetDamage() * 2.5, iClassIgnore, pEntityIgnore );
 }
@@ -1174,7 +1174,7 @@ void CAI_BaseNPC::DoRadiusDamage( const CTakeDamageInfo &info, const Vector &vec
 //-----------------------------------------------------------------------------
 // Set the contents types that are solid by default to all NPCs
 //-----------------------------------------------------------------------------
-unsigned int CAI_BaseNPC::PhysicsSolidMaskForEntity( void ) const 
+ContentsFlags_t CAI_BaseNPC::PhysicsSolidMaskForEntity( void ) const 
 { 
 	return MASK_NPCSOLID;
 }
@@ -1199,7 +1199,7 @@ void CAI_BaseNPC::DecalTrace( trace_t *pTrace, char const *decalName )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName )
+void CAI_BaseNPC::ImpactTrace( trace_t *pTrace, DamageTypes_t iDamageType, const char *pCustomImpactName )
 {
 	if ( m_fNoDamageDecal )
 	{
@@ -1490,7 +1490,7 @@ void BulletWizz( Vector vecSrc, Vector vecEndPos, edict_t *pShooter, bool isTrac
 class CTriggerTraceEnum : public IEntityEnumerator
 {
 public:
-	CTriggerTraceEnum( Ray_t *pRay, const CTakeDamageInfo &info, const Vector& dir, int contentsMask ) :
+	CTriggerTraceEnum( Ray_t *pRay, const CTakeDamageInfo &info, const Vector& dir, ContentsFlags_t contentsMask ) :
 		m_info( info ),	m_VecDir(dir), m_ContentsMask(contentsMask), m_pRay(pRay)
 	{
 	}
@@ -1517,7 +1517,7 @@ public:
 
 private:
 	Vector m_VecDir;
-	int m_ContentsMask;
+	ContentsFlags_t m_ContentsMask;
 	Ray_t *m_pRay;
 	CTakeDamageInfo m_info;
 };
@@ -1880,7 +1880,7 @@ void CAI_BaseNPC::ClearIgnoreConditions( int *pConditions, int nConditions )
 //------------------------------------------------------------------------------
 // Purpose: Adds a condition to this NPC, integral or not
 //------------------------------------------------------------------------------
-void CAI_BaseNPC::InputSetCondition( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetCondition( inputdata_t &&inputdata )
 {
 	const char *pszCondition = inputdata.value.String();
 	if (!pszCondition || !pszCondition[0])
@@ -1899,7 +1899,7 @@ void CAI_BaseNPC::InputSetCondition( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Removes a condition from this NPC, integral or not
 //------------------------------------------------------------------------------
-void CAI_BaseNPC::InputClearCondition( inputdata_t &inputdata )
+void CAI_BaseNPC::InputClearCondition( inputdata_t &&inputdata )
 {
 	const char *pszCondition = inputdata.value.String();
 	if (!pszCondition || !pszCondition[0])
@@ -1918,7 +1918,7 @@ void CAI_BaseNPC::InputClearCondition( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Sets our think to CallNPCThink() in case SetThinkNull was fired before
 //------------------------------------------------------------------------------
-void CAI_BaseNPC::InputSetThinkNPC( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetThinkNPC( inputdata_t &&inputdata )
 {
 	SetThink ( &CAI_BaseNPC::CallNPCThink );
 	SetNextThink(gpGlobals->curtime + inputdata.value.Float());
@@ -1927,7 +1927,7 @@ void CAI_BaseNPC::InputSetThinkNPC( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Sets our look distance
 //------------------------------------------------------------------------------
-void CAI_BaseNPC::InputSetDistLook( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetDistLook( inputdata_t &&inputdata )
 {
 	if ( inputdata.value.Float() != 0.0f )
 	{
@@ -1947,7 +1947,7 @@ void CAI_BaseNPC::InputSetDistLook( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Sets our distance too far
 //------------------------------------------------------------------------------
-void CAI_BaseNPC::InputSetDistTooFar( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetDistTooFar( inputdata_t &&inputdata )
 {
 	if ( inputdata.value.Float() != 0.0f )
 	{
@@ -1967,7 +1967,7 @@ void CAI_BaseNPC::InputSetDistTooFar( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CAI_BaseNPC::InputSetTarget( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetTarget( inputdata_t &&inputdata )
 {
 	m_target = inputdata.value.StringID();
 
@@ -3185,7 +3185,7 @@ void CAI_BaseNPC::RunAnimation( void )
 	// perhaps MaintainActivity() or a ShiftAnimationOverTime() or something.
 	if ( m_NPCState != NPC_STATE_SCRIPT && m_NPCState != NPC_STATE_DEAD && m_Activity == ACT_IDLE && IsActivityFinished() )
 	{
-		int iSequence;
+		sequence_t iSequence;
 
 		// FIXME: this doesn't reissue a translation, so if the idle activity translation changes over time, it'll never get reset
 		if ( SequenceLoops() )
@@ -3199,7 +3199,7 @@ void CAI_BaseNPC::RunAnimation( void )
 			// and should return to our heaviest weighted idle (the subtle one)
 			iSequence = SelectHeaviestSequence ( m_translatedActivity );
 		}
-		if ( iSequence != ACTIVITY_NOT_AVAILABLE )
+		if ( iSequence != INVALID_SEQUENCE )
 		{
 			ResetSequence( iSequence ); // Set to new anim (if it's there)
 
@@ -4378,7 +4378,7 @@ int CAI_BaseNPC::CapabilitiesGet( void ) const
 //------------------------------------------------------------------------------
 // Purpose: Adds capabilities to this NPC
 //------------------------------------------------------------------------------
-void CAI_BaseNPC::InputAddCapabilities( inputdata_t &inputdata )
+void CAI_BaseNPC::InputAddCapabilities( inputdata_t &&inputdata )
 {
 	CapabilitiesAdd(inputdata.value.Int());
 }
@@ -4386,7 +4386,7 @@ void CAI_BaseNPC::InputAddCapabilities( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Removes capabilities from this NPC
 //------------------------------------------------------------------------------
-void CAI_BaseNPC::InputRemoveCapabilities( inputdata_t &inputdata )
+void CAI_BaseNPC::InputRemoveCapabilities( inputdata_t &&inputdata )
 {
 	CapabilitiesRemove(inputdata.value.Int());
 }
@@ -7581,7 +7581,7 @@ int CAI_BaseNPC::UnholsterWeapon( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputHolsterWeapon( inputdata_t &inputdata )
+void CAI_BaseNPC::InputHolsterWeapon( inputdata_t &&inputdata )
 {
 	// Support for unholstering a specific weapon
 	if (inputdata.value.String())
@@ -7607,7 +7607,7 @@ void CAI_BaseNPC::InputHolsterWeapon( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputHolsterAndDestroyWeapon( inputdata_t &inputdata )
+void CAI_BaseNPC::InputHolsterAndDestroyWeapon( inputdata_t &&inputdata )
 {
 	m_iDesiredWeaponState = DESIREDWEAPONSTATE_HOLSTERED_DESTROYED;
 }
@@ -7615,7 +7615,7 @@ void CAI_BaseNPC::InputHolsterAndDestroyWeapon( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputUnholsterWeapon( inputdata_t &inputdata )
+void CAI_BaseNPC::InputUnholsterWeapon( inputdata_t &&inputdata )
 {
 	m_iDesiredWeaponState = DESIREDWEAPONSTATE_UNHOLSTERED;
 }
@@ -7741,7 +7741,7 @@ bool CAI_BaseNPC::CanUnholsterWeapon( void )
 //------------------------------------------------------------------------------
 // Purpose: Give the NPC in question the weapon specified
 //------------------------------------------------------------------------------
-void CAI_BaseNPC::InputGiveWeaponHolstered( inputdata_t &inputdata )
+void CAI_BaseNPC::InputGiveWeaponHolstered( inputdata_t &&inputdata )
 {
 	string_t iszWeaponName = inputdata.value.StringID();
 	if ( iszWeaponName != NULL_STRING )
@@ -7753,7 +7753,7 @@ void CAI_BaseNPC::InputGiveWeaponHolstered( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Makes the NPC change to the specified weapon via successive holster/unholster animations, creates it if it doesn't exist
 //------------------------------------------------------------------------------
-void CAI_BaseNPC::InputChangeWeapon( inputdata_t &inputdata )
+void CAI_BaseNPC::InputChangeWeapon( inputdata_t &&inputdata )
 {
 	CBaseCombatWeapon *pSwitchTo = NULL; // The weapon itself
 	int iSwitchTo; // Index in m_hMyWeapons
@@ -7811,7 +7811,7 @@ void CAI_BaseNPC::InputChangeWeapon( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Makes the NPC pick up the specified weapon if it can
 //------------------------------------------------------------------------------
-void CAI_BaseNPC::InputPickupWeapon( inputdata_t &inputdata )
+void CAI_BaseNPC::InputPickupWeapon( inputdata_t &&inputdata )
 {
 	string_t iszWeaponName = inputdata.value.StringID();
 	if (iszWeaponName == NULL_STRING)
@@ -7863,7 +7863,7 @@ void CAI_BaseNPC::InputPickupWeapon( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Makes the NPC pick up the specified item if it can
 //------------------------------------------------------------------------------
-void CAI_BaseNPC::InputPickupItem( inputdata_t &inputdata )
+void CAI_BaseNPC::InputPickupItem( inputdata_t &&inputdata )
 {
 	string_t iszItemName = inputdata.value.StringID();
 	if (iszItemName == NULL_STRING)
@@ -8840,7 +8840,7 @@ void CAI_BaseNPC::HandleAnimEvent( animevent_t *pEvent )
 	case SCRIPT_EVENT_FIRE_INPUT:
 		{
 			variant_t emptyVariant;
-			this->AcceptInput( pEvent->options, this, this, emptyVariant, 0 );
+			this->AcceptInput( pEvent->options, this, this, Move(emptyVariant), 0 );
 			break;
 		}
 
@@ -11091,17 +11091,17 @@ CBaseCombatCharacter* CAI_BaseNPC::GetEnemyCombatCharacterPointer()
 
 BEGIN_MAPENTITY( CAI_BaseNPC, MAPENT_NPCCLASS )
 
-	DEFINE_KEYFIELD( m_SleepState,				FIELD_INTEGER, "sleepstate" ),
-	DEFINE_KEYFIELD( m_flWakeRadius, FIELD_FLOAT, "wakeradius" ),
-	DEFINE_KEYFIELD( m_bWakeSquad, FIELD_BOOLEAN, "wakesquad" ),
+	DEFINE_KEYFIELD_AUTO( m_SleepState, "sleepstate" ),
+	DEFINE_KEYFIELD_AUTO( m_flWakeRadius, "wakeradius" ),
+	DEFINE_KEYFIELD_AUTO( m_bWakeSquad, "wakesquad" ),
 
-	DEFINE_KEYFIELD( m_bIgnoreUnseenEnemies, FIELD_BOOLEAN , "ignoreunseenenemies"),
+	DEFINE_KEYFIELD_AUTO( m_bIgnoreUnseenEnemies, "ignoreunseenenemies" ),
 
-	DEFINE_KEYFIELD(m_SquadName,				FIELD_STRING, "squadname" ),
+	DEFINE_KEYFIELD_AUTO( m_SquadName, "squadname" ),
 
-	DEFINE_KEYFIELD(m_spawnEquipment,			FIELD_STRING, "additionalequipment" ),
+	DEFINE_KEYFIELD_AUTO( m_spawnEquipment, "additionalequipment" ),
 
-	DEFINE_KEYFIELD( m_iszEnemyFilterName,		FIELD_STRING, "enemyfilter" ),
+	DEFINE_KEYFIELD_AUTO( m_iszEnemyFilterName, "enemyfilter" ),
 
 	// Outputs
 	DEFINE_OUTPUT( m_OnDamaged,				"OnDamaged" ),
@@ -11157,11 +11157,11 @@ BEGIN_MAPENTITY( CAI_BaseNPC, MAPENT_NPCCLASS )
 
 	DEFINE_INPUT( m_iDynamicInteractionsAllowed,		FIELD_INTEGER, "SetDynamicInteractions" ),
 
-	DEFINE_KEYFIELD( m_bInAScript,			FIELD_BOOLEAN, "SpawnWithStartScripting" ),
+	DEFINE_KEYFIELD_AUTO( m_bInAScript, "SpawnWithStartScripting" ),
 
-	DEFINE_KEYFIELD( m_FriendlyFireOverride,	FIELD_INTEGER, "FriendlyFireOverride" ),
+	DEFINE_KEYFIELD_AUTO( m_FriendlyFireOverride, "FriendlyFireOverride" ),
 
-	DEFINE_KEYFIELD( m_flSpeedModifier, FIELD_FLOAT, "BaseSpeedModifier" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpeedModifier, "BaseSpeedModifier" ),
 
 	DEFINE_OUTPUT( m_OnItemPickup, "OnItemPickup" ),
 	DEFINE_OUTPUT( m_OnItemDrop, "OnItemDrop" ),
@@ -11569,7 +11569,7 @@ void CAI_BaseNPC::UpdateOnRemove(void)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-int CAI_BaseNPC::UpdateTransmitState()
+EdictStateFlags_t CAI_BaseNPC::UpdateTransmitState()
 {
 	if( gpGlobals->curtime < m_flTimePingEffect )
 	{
@@ -11676,7 +11676,7 @@ CAI_Pathfinder *CAI_BaseNPC::CreatePathfinder()
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputSetRelationship( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetRelationship( inputdata_t &&inputdata )
 {
 	AddRelationship( inputdata.value.String(), inputdata.pActivator );
 }
@@ -11685,7 +11685,7 @@ void CAI_BaseNPC::InputSetRelationship( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Won't affect the current enemy, only future enemy acquisitions.
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputSetEnemyFilter( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetEnemyFilter( inputdata_t &&inputdata )
 {
 	// Get a handle to my enemy filter entity if there is one.
 	CBaseEntity *pFilter = gEntList.FindEntityByName( NULL, inputdata.value.StringID() );
@@ -11695,7 +11695,7 @@ void CAI_BaseNPC::InputSetEnemyFilter( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputSetHealthFraction( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetHealthFraction( inputdata_t &&inputdata )
 {
 	// npc_helicopter uses an identically named input and scales down whole numbers instead of using fractions directly.
 	// This function is overridden by npc_helicopter for other reasons, but support for its differing behavior is also available through this input.
@@ -11724,7 +11724,7 @@ void CAI_BaseNPC::InputSetHealthFraction( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputSetHealth( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetHealth( inputdata_t &&inputdata )
 {
 	int iNewHealth = inputdata.value.Int();
 	int iDelta = abs(GetHealth() - iNewHealth);
@@ -11741,7 +11741,7 @@ void CAI_BaseNPC::InputSetHealth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputBeginRappel( inputdata_t &inputdata )
+void CAI_BaseNPC::InputBeginRappel( inputdata_t &&inputdata )
 {
 	BeginRappel();
 }
@@ -11749,7 +11749,7 @@ void CAI_BaseNPC::InputBeginRappel( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputSetSquad( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetSquad( inputdata_t &&inputdata )
 {
 	if ( !( CapabilitiesGet() & bits_CAP_SQUAD ) )
 	{
@@ -11777,7 +11777,7 @@ void CAI_BaseNPC::InputSetSquad( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputWake( inputdata_t &inputdata )
+void CAI_BaseNPC::InputWake( inputdata_t &&inputdata )
 {
 	Wake( inputdata.pActivator );
 
@@ -11802,7 +11802,7 @@ void CAI_BaseNPC::InputWake( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputForgetEntity( inputdata_t &inputdata )
+void CAI_BaseNPC::InputForgetEntity( inputdata_t &&inputdata )
 {
 	const char *pszEntityToForget = inputdata.value.String();
 
@@ -11823,7 +11823,7 @@ void CAI_BaseNPC::InputForgetEntity( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputIgnoreDangerSounds( inputdata_t &inputdata )
+void CAI_BaseNPC::InputIgnoreDangerSounds( inputdata_t &&inputdata )
 {
 	// Default is 10 seconds.
 	float flDelay = 10.0f;
@@ -11838,7 +11838,7 @@ void CAI_BaseNPC::InputIgnoreDangerSounds( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputUpdateEnemyMemory( inputdata_t &inputdata )
+void CAI_BaseNPC::InputUpdateEnemyMemory( inputdata_t &&inputdata )
 {
 	const char *pszEnemy = inputdata.value.String();
 	CBaseEntity *pEnemy = gEntList.FindEntityByName( NULL, pszEnemy, this, inputdata.pActivator, inputdata.pCaller );
@@ -11851,7 +11851,7 @@ void CAI_BaseNPC::InputUpdateEnemyMemory( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // create an addon and attach to npc
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputCreateAddon( inputdata_t &inputdata )
+void CAI_BaseNPC::InputCreateAddon( inputdata_t &&inputdata )
 {
 	Vector vecSpawnOrigin = GetLocalOrigin();
 
@@ -11875,7 +11875,7 @@ void CAI_BaseNPC::InputCreateAddon( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputOutsideTransition( inputdata_t &inputdata )
+void CAI_BaseNPC::InputOutsideTransition( inputdata_t &&inputdata )
 {
 }
 
@@ -11883,7 +11883,7 @@ void CAI_BaseNPC::InputOutsideTransition( inputdata_t &inputdata )
 // Purpose: Called when this NPC transitions to another level with the player
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputInsideTransition( inputdata_t &inputdata )
+void CAI_BaseNPC::InputInsideTransition( inputdata_t &&inputdata )
 {
 	CleanupScriptsOnTeleport( true );
 
@@ -13012,7 +13012,7 @@ void CAI_BaseNPC::Break( CBaseEntity *pBreaker )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for breaking the breakable immediately.
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputBreak( inputdata_t &inputdata )
+void CAI_BaseNPC::InputBreak( inputdata_t &&inputdata )
 {
 	Break( inputdata.pActivator );
 }
@@ -13143,12 +13143,12 @@ void AI_TraceLOS( const Vector& vecAbsStart, const Vector& vecAbsEnd, CBaseEntit
 	AI_TraceLine( vecAbsStart, vecAbsEnd, MASK_BLOCKLOS_AND_NPCS, pFilter, ptr );
 }
 
-void CAI_BaseNPC::InputSetSpeedModifierRadius( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetSpeedModifierRadius( inputdata_t &&inputdata )
 {
 	m_iSpeedModRadius = inputdata.value.Int();
 	m_iSpeedModRadius *= m_iSpeedModRadius;
 }
-void CAI_BaseNPC::InputSetSpeedModifierSpeed( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetSpeedModifierSpeed( inputdata_t &&inputdata )
 {
 	m_iSpeedModSpeed = inputdata.value.Int();
 }
@@ -13174,7 +13174,7 @@ float CAI_BaseNPC::GetSequenceGroundSpeed( CStudioHdr *pStudioHdr, int iSequence
 // Purpose: Hammer input to change the speed of the NPC (based on 1upD's npc_shadow_walker code)
 // Not to be confused with the inputs above
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputSetSpeedModifier( inputdata_t &inputdata )
+void CAI_BaseNPC::InputSetSpeedModifier( inputdata_t &&inputdata )
 {
 	this->m_flSpeedModifier = inputdata.value.Float();
 }
@@ -13527,8 +13527,6 @@ void CAI_BaseNPC::StartRunningInteraction( CAI_BaseNPC *pOtherNPC, bool bActive 
 //-----------------------------------------------------------------------------
 void CAI_BaseNPC::StartScriptedNPCInteraction( CAI_BaseNPC *pOtherNPC, ScriptedNPCInteraction_t *pInteraction, Vector vecOtherOrigin, QAngle angOtherAngles )
 {
-	variant_t emptyVariant;
-
  	StartRunningInteraction( pOtherNPC, true );
 	if ( pOtherNPC )
 	{
@@ -13723,10 +13721,11 @@ void CAI_BaseNPC::StartScriptedNPCInteraction( CAI_BaseNPC *pOtherNPC, ScriptedN
 	}
 
 	// Tell both sequences to start
-	pMySequence->AcceptInput( "BeginSequence", this, this, emptyVariant, 0 );
+	variant_t emptyVariant;
+	pMySequence->AcceptInput( "BeginSequence", this, this, Move(emptyVariant), 0 );
 	if ( pTheirSequence )
 	{
-		pTheirSequence->AcceptInput( "BeginSequence", this, this, emptyVariant, 0 );
+		pTheirSequence->AcceptInput( "BeginSequence", this, this, Move(emptyVariant), 0 );
 	}
 }
 
@@ -14448,7 +14447,7 @@ bool CAI_BaseNPC::HasValidInteractionsOnCurrentEnemy( void )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::InputForceInteractionWithNPC( inputdata_t &inputdata )
+void CAI_BaseNPC::InputForceInteractionWithNPC( inputdata_t &&inputdata )
 {
 	// Get the interaction name & target
 	char parseString[255];

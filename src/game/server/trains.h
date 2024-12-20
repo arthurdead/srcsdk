@@ -97,27 +97,27 @@ public:
 	void SetSpeedDirAccel( float flNewSpeed );
 	
 	// Input handlers
-	void InputSetSpeed( inputdata_t &inputdata );
-	void InputSetSpeedDir( inputdata_t &inputdata );
-	void InputSetSpeedReal( inputdata_t &inputdata );
-	void InputStop( inputdata_t &inputdata );
-	void InputResume( inputdata_t &inputdata );
-	void InputReverse( inputdata_t &inputdata );
-	void InputStartForward( inputdata_t &inputdata );
-	void InputStartBackward( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
-	void InputSetSpeedDirAccel( inputdata_t &inputdata );
-	void InputTeleportToPathTrack( inputdata_t &inputdata );
-	void InputSetSpeedForwardModifier( inputdata_t &inputdata );
-	void InputTeleportToPathNode( inputdata_t &inputdata );
-	void InputLockOrientation( inputdata_t &inputdata );
-	void InputUnlockOrientation( inputdata_t &inputdata );
-	void InputSetMaxSpeed( inputdata_t &inputdata );
-	void InputMoveToPathNode(inputdata_t &inputdata);
+	void InputSetSpeed( inputdata_t &&inputdata );
+	void InputSetSpeedDir( inputdata_t &&inputdata );
+	void InputSetSpeedReal( inputdata_t &&inputdata );
+	void InputStop( inputdata_t &&inputdata );
+	void InputResume( inputdata_t &&inputdata );
+	void InputReverse( inputdata_t &&inputdata );
+	void InputStartForward( inputdata_t &&inputdata );
+	void InputStartBackward( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputSetSpeedDirAccel( inputdata_t &&inputdata );
+	void InputTeleportToPathTrack( inputdata_t &&inputdata );
+	void InputSetSpeedForwardModifier( inputdata_t &&inputdata );
+	void InputTeleportToPathNode( inputdata_t &&inputdata );
+	void InputLockOrientation( inputdata_t &&inputdata );
+	void InputUnlockOrientation( inputdata_t &&inputdata );
+	void InputSetMaxSpeed( inputdata_t &&inputdata );
+	void InputMoveToPathNode( inputdata_t &&inputdata );
 
 	static CFuncTrackTrain *Instance( edict_t *pent );
 
-	int UpdateTransmitState()
+	EdictStateFlags_t UpdateTransmitState()
 	{
 		return SetTransmitState( FL_EDICT_ALWAYS );
 	}

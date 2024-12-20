@@ -98,14 +98,14 @@ public:
 	void			DisableMotion( void );
 
 	// Input/Output
-	void			InputStartRadgollBoogie( inputdata_t &inputdata );
-	void			InputEnableMotion( inputdata_t &inputdata );
-	void			InputDisableMotion( inputdata_t &inputdata );
-	void			InputTurnOn( inputdata_t &inputdata );
-	void			InputTurnOff( inputdata_t &inputdata );
-	void			InputFadeAndRemove( inputdata_t &inputdata );
-	void			InputWake( inputdata_t &inputdata );
-	void			InputSleep( inputdata_t &inputdata );
+	void			InputStartRadgollBoogie( inputdata_t &&inputdata );
+	void			InputEnableMotion( inputdata_t &&inputdata );
+	void			InputDisableMotion( inputdata_t &&inputdata );
+	void			InputTurnOn( inputdata_t &&inputdata );
+	void			InputTurnOff( inputdata_t &&inputdata );
+	void			InputFadeAndRemove( inputdata_t &&inputdata );
+	void			InputWake( inputdata_t &&inputdata );
+	void			InputSleep( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 

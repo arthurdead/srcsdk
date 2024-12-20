@@ -86,23 +86,23 @@ inline CSharedBasePlayer *CSharedBaseEntity::GetSimulatingPlayer( void )
 
 inline MoveType_t CSharedBaseEntity::GetMoveType() const
 {
-	return (MoveType_t)(unsigned char)m_MoveType;
+	return m_MoveType;
 }
 
 inline MoveCollide_t CSharedBaseEntity::GetMoveCollide() const
 {
-	return (MoveCollide_t)(unsigned char)m_MoveCollide;
+	return m_MoveCollide;
 }
 
 //-----------------------------------------------------------------------------
 // Collision group accessors
 //-----------------------------------------------------------------------------
-inline int CSharedBaseEntity::GetCollisionGroup() const
+inline Collision_Group_t CSharedBaseEntity::GetCollisionGroup() const
 {
 	return m_CollisionGroup;
 }
 
-inline uint64	CSharedBaseEntity::GetFlags( void ) const
+inline EntityBehaviorFlags_t	CSharedBaseEntity::GetFlags( void ) const
 {
 	return m_fFlags;
 }
@@ -194,12 +194,12 @@ inline void CSharedBaseEntity::SetSimulationTime( float st )
 	m_flSimulationTime = st;
 }
 
-inline int CSharedBaseEntity::GetEffects( void ) const
+inline Effects_t CSharedBaseEntity::GetEffects( void ) const
 { 
 	return m_fEffects; 
 }
 
-inline void CSharedBaseEntity::RemoveEffects( int nEffects ) 
+inline void CSharedBaseEntity::RemoveEffects( Effects_t nEffects ) 
 { 
 #if !defined( CLIENT_DLL )
 #ifdef HL2_EPISODIC
@@ -241,7 +241,7 @@ inline void CSharedBaseEntity::ClearEffects( void )
 #endif // HL2_EPISODIC
 #endif // !CLIENT_DLL
 
-	m_fEffects = 0;
+	m_fEffects = EF_NONE;
 #ifndef CLIENT_DLL
 		DispatchUpdateTransmitState();
 #else
@@ -249,7 +249,7 @@ inline void CSharedBaseEntity::ClearEffects( void )
 #endif
 }
 
-inline bool CSharedBaseEntity::IsEffectActive( int nEffects ) const
+inline bool CSharedBaseEntity::IsEffectActive( Effects_t nEffects ) const
 { 
 	return (m_fEffects & nEffects) != 0; 
 }

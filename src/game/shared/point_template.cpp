@@ -55,7 +55,7 @@ BEGIN_MAPENTITY_ALIASED( PointTemplate, MAPENT_POINTCLASS )
 	DEFINE_OUTPUT( m_pOutputOnSpawned, "OnEntitySpawned" ),
 	DEFINE_OUTPUT( m_pOutputOutEntity, "OutSpawnedEntity" ),
 
-	DEFINE_KEYFIELD( m_bFixupExpanded, FIELD_BOOLEAN, "FixupMode" ),
+	DEFINE_KEYFIELD_AUTO( m_bFixupExpanded, "FixupMode" ),
 
 END_MAPENTITY()
 
@@ -503,7 +503,7 @@ void CSharedPointTemplate::CreationComplete( const CUtlVector<CSharedBaseEntity*
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CSharedPointTemplate::InputForceSpawn( inputdata_t &inputdata )
+void CSharedPointTemplate::InputForceSpawn( inputdata_t &&inputdata )
 {
 	// Spawn our template
 	CUtlVector<CSharedBaseEntity*> hNewEntities;
@@ -526,7 +526,7 @@ void CSharedPointTemplate::InputForceSpawn( inputdata_t &inputdata )
 //			This is copied from CreateInstance().
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CSharedPointTemplate::InputForceSpawnRandomTemplate( inputdata_t &inputdata )
+void CSharedPointTemplate::InputForceSpawnRandomTemplate( inputdata_t &&inputdata )
 {
 	// Spawn our template
 	CSharedBaseEntity *pEntity = NULL;

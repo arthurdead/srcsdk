@@ -97,9 +97,9 @@ public:
 
 	virtual void Precache();
 	virtual void Spawn();
-	virtual int  UpdateTransmitState();
+	virtual EdictStateFlags_t  UpdateTransmitState();
 
-	void InputSetSequence( inputdata_t &inputdata );
+	void InputSetSequence( inputdata_t &&inputdata );
 	void ParseScriptFile( void );
 	void LoadFromBuffer( const char *scriptfile, const char *buffer );
 
@@ -181,7 +181,7 @@ inline bool TokenWaiting( void )
 BEGIN_MAPENTITY( CEnvEffectsScript )
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetSequence", InputSetSequence ),
-	DEFINE_KEYFIELD( m_iszScriptName, FIELD_STRING, "scriptfile" ),
+	DEFINE_KEYFIELD_AUTO( m_iszScriptName, "scriptfile" ),
 
 END_MAPENTITY()
 
@@ -190,7 +190,7 @@ LINK_ENTITY_TO_CLASS( env_effectscript, CEnvEffectsScript );
 //-----------------------------------------------------------------------------
 // Should we transmit it to the client?
 //-----------------------------------------------------------------------------
-int CEnvEffectsScript::UpdateTransmitState()
+EdictStateFlags_t CEnvEffectsScript::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
@@ -354,7 +354,7 @@ void CEnvEffectsScript::HandleAnimEvent ( animevent_t *pEvent )
 //-----------------------------------------------------------------------------
 // Purpose: Input that sets the sequence of the entity
 //-----------------------------------------------------------------------------
-void CEnvEffectsScript::InputSetSequence( inputdata_t &inputdata )
+void CEnvEffectsScript::InputSetSequence( inputdata_t &&inputdata )
 {
 	if ( inputdata.value.StringID() != NULL_STRING )
 	{

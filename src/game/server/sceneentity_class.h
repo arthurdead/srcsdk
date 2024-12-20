@@ -59,7 +59,7 @@ public:
 	virtual bool			CheckEvent( float currenttime, CChoreoScene *scene, CChoreoEvent *event );
 
 
-	virtual int				UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 	virtual int				ShouldTransmit( const CCheckTransmitInfo *pInfo );
 
 	void					SetRecipientFilter( IRecipientFilter *filter );
@@ -102,19 +102,19 @@ public:
 	bool					ShouldBreakOnNonIdle( void ) { return m_bBreakOnNonIdle; }
 
 	// Inputs
-	void InputStartPlayback( inputdata_t &inputdata );
-	void InputPausePlayback( inputdata_t &inputdata );
-	void InputResumePlayback( inputdata_t &inputdata );
-	void InputCancelPlayback( inputdata_t &inputdata );
-	void InputCancelAtNextInterrupt( inputdata_t &inputdata );
-	void InputPitchShiftPlayback( inputdata_t &inputdata );
-	void InputTriggerEvent( inputdata_t &inputdata );
+	void InputStartPlayback( inputdata_t &&inputdata );
+	void InputPausePlayback( inputdata_t &&inputdata );
+	void InputResumePlayback( inputdata_t &&inputdata );
+	void InputCancelPlayback( inputdata_t &&inputdata );
+	void InputCancelAtNextInterrupt( inputdata_t &&inputdata );
+	void InputPitchShiftPlayback( inputdata_t &&inputdata );
+	void InputTriggerEvent( inputdata_t &&inputdata );
 
 	// If the scene is playing, finds an actor in the scene who can respond to the specified concept token
-	void InputInterjectResponse( inputdata_t &inputdata );
+	void InputInterjectResponse( inputdata_t &&inputdata );
 
 	// If this scene is waiting on an actor, give up and quit trying.
-	void InputStopWaitingForActor( inputdata_t &inputdata );
+	void InputStopWaitingForActor( inputdata_t &&inputdata );
 
 	virtual void StartPlayback( void );
 	virtual void PausePlayback( void );
@@ -195,7 +195,7 @@ public:
 
 	void					SetCurrentTime( float t, bool forceClientSync );
 
-	void					InputScriptPlayerDeath( inputdata_t &inputdata );
+	void					InputScriptPlayerDeath( inputdata_t &&inputdata );
 
 	void					AddBroadcastTeamTarget( Team_t nTeamIndex );
 	void					RemoveBroadcastTeamTarget( Team_t nTeamIndex );
@@ -218,14 +218,14 @@ public:
 	string_t				m_iszTarget8;
 
 	void					SetTarget(int nTarget, string_t pTargetName, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL);
-	void					InputSetTarget1(inputdata_t &inputdata);
-	void					InputSetTarget2(inputdata_t &inputdata);
-	void					InputSetTarget3(inputdata_t &inputdata);
-	void					InputSetTarget4(inputdata_t &inputdata);
-	void					InputSetTarget5(inputdata_t &inputdata);
-	void					InputSetTarget6(inputdata_t &inputdata);
-	void					InputSetTarget7(inputdata_t &inputdata);
-	void					InputSetTarget8(inputdata_t &inputdata);
+	void					InputSetTarget1( inputdata_t &&inputdata );
+	void					InputSetTarget2( inputdata_t &&inputdata );
+	void					InputSetTarget3( inputdata_t &&inputdata );
+	void					InputSetTarget4( inputdata_t &&inputdata );
+	void					InputSetTarget5( inputdata_t &&inputdata );
+	void					InputSetTarget6( inputdata_t &&inputdata );
+	void					InputSetTarget7( inputdata_t &&inputdata );
+	void					InputSetTarget8( inputdata_t &&inputdata );
 
 	EHANDLE					m_hTarget1;
 	EHANDLE					m_hTarget2;

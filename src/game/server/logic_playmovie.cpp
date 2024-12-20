@@ -23,8 +23,8 @@ public:
 	
 private:
 
-	void		InputPlayMovie( inputdata_t &data );
-	void		InputMovieFinished( inputdata_t &data );
+	void		InputPlayMovie( inputdata_t &&inputdata );
+	void		InputMovieFinished( inputdata_t &&inputdata );
 
 	string_t	m_strMovieFilename;
 	bool		m_bAllowUserSkip;
@@ -36,8 +36,8 @@ LINK_ENTITY_TO_CLASS( logic_playmovie, CLogicPlayMovie );
 
 BEGIN_MAPENTITY( CLogicPlayMovie )
 
-	DEFINE_KEYFIELD( m_strMovieFilename, FIELD_STRING, "MovieFilename" ),
-	DEFINE_KEYFIELD( m_bAllowUserSkip, FIELD_BOOLEAN, "allowskip" ),
+	DEFINE_KEYFIELD_AUTO( m_strMovieFilename, "MovieFilename" ),
+	DEFINE_KEYFIELD_AUTO( m_bAllowUserSkip, "allowskip" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "PlayMovie", InputPlayMovie ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "__MovieFinished", InputMovieFinished ),
@@ -63,7 +63,7 @@ void CLogicPlayMovie::Spawn( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CLogicPlayMovie::InputPlayMovie( inputdata_t &data )
+void CLogicPlayMovie::InputPlayMovie( inputdata_t &&inputdata )
 {
 	const char *szVideoCommand = ( m_bAllowUserSkip ) ? "playvideo_exitcommand" : "playvideo_exitcommand_nointerrupt";
 	// Build the hacked string
@@ -82,7 +82,7 @@ void CLogicPlayMovie::InputPlayMovie( inputdata_t &data )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CLogicPlayMovie::InputMovieFinished( inputdata_t &data )
+void CLogicPlayMovie::InputMovieFinished( inputdata_t &&inputdata )
 {
 	// Simply fire our output
 	m_OnPlaybackFinished.FireOutput( this, this );

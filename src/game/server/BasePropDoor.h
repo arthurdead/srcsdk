@@ -174,14 +174,14 @@ private:
 	void DisableAreaPortalThink( void );
 
 	// Input handlers
-	void InputClose(inputdata_t &inputdata);
-	void InputLock(inputdata_t &inputdata);
-	void InputOpen(inputdata_t &inputdata);
-	void InputOpenAwayFrom(inputdata_t &inputdata);
-	void InputToggle(inputdata_t &inputdata);
-	void InputUnlock(inputdata_t &inputdata);
-	void InputAllowPlayerUse(inputdata_t &inputdata);
-	void InputDisallowPlayerUse(inputdata_t &inputdata);
+	void InputClose( inputdata_t &&inputdata );
+	void InputLock( inputdata_t &&inputdata );
+	void InputOpen( inputdata_t &&inputdata );
+	void InputOpenAwayFrom( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputUnlock( inputdata_t &&inputdata );
+	void InputAllowPlayerUse( inputdata_t &&inputdata );
+	void InputDisallowPlayerUse( inputdata_t &&inputdata );
 
 	void SetDoorBlocker( CBaseEntity *pBlocker );
 

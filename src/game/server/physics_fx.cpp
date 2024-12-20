@@ -173,7 +173,7 @@ void PhysicsSplash( IPhysicsFluidController *pFluid, IPhysicsObject *pObject, CB
 	data.m_vNormal = normal;
 	VectorAngles( normal, data.m_vAngles );
 	data.m_flScale = size + random_valve->RandomFloat( 0, 2 );
-	if ( pEntity->GetWaterType() & CONTENTS_SLIME )
+	if ( pEntity->GetWaterType() & WT_Slime )
 	{
 		data.m_fFlags |= FX_WATER_IN_SLIME;
 	}
@@ -203,7 +203,7 @@ void PhysicsSplash( IPhysicsFluidController *pFluid, IPhysicsObject *pObject, CB
 			data.m_vNormal = normal;
 			VectorAngles( normal, data.m_vAngles );
 			data.m_flScale = size + random_valve->RandomFloat( -3, 1 );
- 			if ( pEntity->GetWaterType() & CONTENTS_SLIME )
+ 			if ( pEntity->GetWaterType() & WT_Slime )
 			{
 				data.m_fFlags |= FX_WATER_IN_SLIME;
 			}

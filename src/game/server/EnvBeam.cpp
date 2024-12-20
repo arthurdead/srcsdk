@@ -44,13 +44,13 @@ public:
 
 	bool	PassesTouchFilters(CBaseEntity *pOther);
 
-	void InputTurnOn( inputdata_t &inputdata );
-	void InputTurnOff( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
-	void InputStrikeOnce( inputdata_t &inputdata );
-	void InputAmplitude( inputdata_t &inputdata );
-	void InputSetStartEntity( inputdata_t &inputdata ) { m_iszStartEntity = inputdata.value.StringID(); BeamUpdateVars(); }
-	void InputSetEndEntity( inputdata_t &inputdata ) { m_iszEndEntity = inputdata.value.StringID(); BeamUpdateVars(); }
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputStrikeOnce( inputdata_t &&inputdata );
+	void InputAmplitude( inputdata_t &&inputdata );
+	void InputSetStartEntity( inputdata_t &&inputdata ) { m_iszStartEntity = inputdata.value.StringID(); BeamUpdateVars(); }
+	void InputSetEndEntity( inputdata_t &&inputdata ) { m_iszEndEntity = inputdata.value.StringID(); BeamUpdateVars(); }
 
 	void TurnOn( void );
 	void TurnOff( void );
@@ -111,21 +111,21 @@ LINK_ENTITY_TO_CLASS( env_beam, CEnvBeam );
 
 BEGIN_MAPENTITY( CEnvBeam )
 
-	DEFINE_KEYFIELD( m_iszStartEntity, FIELD_STRING, "LightningStart" ),
-	DEFINE_KEYFIELD( m_iszEndEntity, FIELD_STRING, "LightningEnd" ),
-	DEFINE_KEYFIELD( m_vEndPointWorld, FIELD_VECTOR, "targetpoint" ),
-	DEFINE_KEYFIELD( m_life, FIELD_FLOAT, "life" ),
-	DEFINE_KEYFIELD( m_boltWidth, FIELD_FLOAT, "BoltWidth" ),
-	DEFINE_KEYFIELD( m_noiseAmplitude, FIELD_FLOAT, "NoiseAmplitude" ),
-	DEFINE_KEYFIELD( m_speed, FIELD_INTEGER, "TextureScroll" ),
-	DEFINE_KEYFIELD( m_restrike, FIELD_FLOAT, "StrikeTime" ),
-	DEFINE_KEYFIELD( m_iszSpriteName, FIELD_STRING, "texture" ),
-	DEFINE_KEYFIELD( m_frameStart, FIELD_INTEGER, "framestart" ),
-	DEFINE_KEYFIELD( m_radius, FIELD_FLOAT, "Radius" ),
-	DEFINE_KEYFIELD( m_TouchType, FIELD_INTEGER, "TouchType" ),
-	DEFINE_KEYFIELD( m_iFilterName,	FIELD_STRING,	"filtername" ),
-	DEFINE_KEYFIELD( m_iszDecal, FIELD_STRING, "decalname" ),
-	DEFINE_KEYFIELD( m_nClipStyle, FIELD_INTEGER, "ClipStyle" ),
+	DEFINE_KEYFIELD_AUTO( m_iszStartEntity, "LightningStart" ),
+	DEFINE_KEYFIELD_AUTO( m_iszEndEntity, "LightningEnd" ),
+	DEFINE_KEYFIELD_AUTO( m_vEndPointWorld, "targetpoint" ),
+	DEFINE_KEYFIELD_AUTO( m_life, "life" ),
+	DEFINE_KEYFIELD_AUTO( m_boltWidth, "BoltWidth" ),
+	DEFINE_KEYFIELD_AUTO( m_noiseAmplitude, "NoiseAmplitude" ),
+	DEFINE_KEYFIELD_AUTO( m_speed, "TextureScroll" ),
+	DEFINE_KEYFIELD_AUTO( m_restrike, "StrikeTime" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSpriteName, "texture" ),
+	DEFINE_KEYFIELD_AUTO( m_frameStart, "framestart" ),
+	DEFINE_KEYFIELD_AUTO( m_radius, "Radius" ),
+	DEFINE_KEYFIELD_AUTO( m_TouchType, "TouchType" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterName, "filtername" ),
+	DEFINE_KEYFIELD_AUTO( m_iszDecal, "decalname" ),
+	DEFINE_KEYFIELD_AUTO( m_nClipStyle, "ClipStyle" ),
 
 	// Input functions
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
@@ -260,7 +260,7 @@ void CEnvBeam::Activate( void )
 // Purpose: Input handler to turn the lightning on either continually or for
 //			interval refiring.
 //-----------------------------------------------------------------------------
-void CEnvBeam::InputTurnOn( inputdata_t &inputdata )
+void CEnvBeam::InputTurnOn( inputdata_t &&inputdata )
 {
 	if ( !m_active )
 	{
@@ -272,7 +272,7 @@ void CEnvBeam::InputTurnOn( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler to turn the lightning off.
 //-----------------------------------------------------------------------------
-void CEnvBeam::InputTurnOff( inputdata_t &inputdata )
+void CEnvBeam::InputTurnOff( inputdata_t &&inputdata )
 {
 	if ( m_active )
 	{
@@ -284,7 +284,7 @@ void CEnvBeam::InputTurnOff( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler to toggle the lightning on/off.
 //-----------------------------------------------------------------------------
-void CEnvBeam::InputToggle( inputdata_t &inputdata )
+void CEnvBeam::InputToggle( inputdata_t &&inputdata )
 {
 	if ( m_active )
 	{
@@ -302,7 +302,7 @@ void CEnvBeam::InputToggle( inputdata_t &inputdata )
 //			any interval refiring that might be going on. If the lifetime is set
 //			to zero (infinite) it will turn on and stay on.
 //-----------------------------------------------------------------------------
-void CEnvBeam::InputStrikeOnce( inputdata_t &inputdata )
+void CEnvBeam::InputStrikeOnce( inputdata_t &&inputdata )
 {
 	Strike();
 }
@@ -310,7 +310,7 @@ void CEnvBeam::InputStrikeOnce( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for amplitude
 //-----------------------------------------------------------------------------
-void CEnvBeam::InputAmplitude( inputdata_t &inputdata )
+void CEnvBeam::InputAmplitude( inputdata_t &&inputdata )
 {
 	m_noiseAmplitude = inputdata.value.Float();
 }

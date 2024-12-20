@@ -29,10 +29,10 @@ private:
 	void SetRemoteTarget ( const char *pName );				// Entity's orientation/location from which to offset the movement target (ex. portal 2)
 	void SetDrawingSurface ( const char *pName );
 
-	void InputSetMirrorTarget( inputdata_t &inputdata );
-	void InputSetTarget( inputdata_t &inputdata );
-	void InputSetRemoteTarget ( inputdata_t &inputdata );
-	void InputSetMirrorRelative ( inputdata_t &inputdata );
+	void InputSetMirrorTarget( inputdata_t &&inputdata );
+	void InputSetTarget( inputdata_t &&inputdata );
+	void InputSetRemoteTarget ( inputdata_t &&inputdata );
+	void InputSetMirrorRelative ( inputdata_t &&inputdata );
 
 	void Think();
 	virtual void Activate();
@@ -53,9 +53,9 @@ LINK_ENTITY_TO_CLASS( logic_mirror_movement, CLogicMirrorMovement );
 
 BEGIN_MAPENTITY( CLogicMirrorMovement )
 
-DEFINE_KEYFIELD( m_strMirrorTarget, FIELD_STRING, "MirrorTarget" ),
-DEFINE_KEYFIELD( m_strRemoteTarget, FIELD_STRING, "RemoteTarget" ),
-DEFINE_KEYFIELD( m_strMirrorRelative, FIELD_STRING, "MirrorRelative" ),
+DEFINE_KEYFIELD_AUTO( m_strMirrorTarget, "MirrorTarget" ),
+DEFINE_KEYFIELD_AUTO( m_strRemoteTarget, "RemoteTarget" ),
+DEFINE_KEYFIELD_AUTO( m_strMirrorRelative, "MirrorRelative" ),
 
 DEFINE_INPUTFUNC( FIELD_STRING, "SetMirrorTarget", InputSetMirrorTarget ),
 DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget", InputSetTarget ),
@@ -118,25 +118,25 @@ void CLogicMirrorMovement::SetMirrorRelative(const char* pName )
 	}
 }
 
-void CLogicMirrorMovement::InputSetMirrorTarget( inputdata_t &inputdata )
+void CLogicMirrorMovement::InputSetMirrorTarget( inputdata_t &&inputdata )
 {
 	m_strMirrorTarget = AllocPooledString( inputdata.value.String() );
 	SetMirrorTarget( inputdata.value.String() );
 }
 
-void CLogicMirrorMovement::InputSetTarget( inputdata_t &inputdata )
+void CLogicMirrorMovement::InputSetTarget( inputdata_t &&inputdata )
 {
 	m_target = AllocPooledString( inputdata.value.String() );
 	SetTarget( inputdata.value.String() );
 }
 
-void CLogicMirrorMovement::InputSetRemoteTarget(inputdata_t &inputdata )
+void CLogicMirrorMovement::InputSetRemoteTarget( inputdata_t &&inputdata )
 {
 	m_strRemoteTarget = AllocPooledString( inputdata.value.String() );
 	SetRemoteTarget( inputdata.value.String() );
 }
 
-void CLogicMirrorMovement::InputSetMirrorRelative(inputdata_t &inputdata )
+void CLogicMirrorMovement::InputSetMirrorRelative( inputdata_t &&inputdata )
 {
 	m_strMirrorRelative = AllocPooledString ( inputdata.value.String() );
 	SetMirrorRelative( inputdata.value.String() );

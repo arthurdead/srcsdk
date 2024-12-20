@@ -580,10 +580,10 @@ public:
 	DECLARE_CLASS( CPointClientCommand, CPointEntity );
 	DECLARE_MAPENTITY();
 
-	void InputCommand( inputdata_t& inputdata );
+	void InputCommand( inputdata_t &&inputdata );
 };
 
-void CPointClientCommand::InputCommand( inputdata_t& inputdata )
+void CPointClientCommand::InputCommand( inputdata_t &&inputdata )
 {
 	if ( !inputdata.value.String()[0] )
 		return;
@@ -623,14 +623,14 @@ class CPointServerCommand : public CPointEntity
 public:
 	DECLARE_CLASS( CPointServerCommand, CPointEntity );
 	DECLARE_MAPENTITY();
-	void InputCommand( inputdata_t& inputdata );
+	void InputCommand( inputdata_t &&inputdata );
 };
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : inputdata - 
 //-----------------------------------------------------------------------------
-void CPointServerCommand::InputCommand( inputdata_t& inputdata )
+void CPointServerCommand::InputCommand( inputdata_t &&inputdata )
 {
 	if ( !inputdata.value.String()[0] )
 		return;
@@ -665,14 +665,14 @@ class CPointBroadcastClientCommand : public CPointEntity
 public:
 	DECLARE_CLASS( CPointBroadcastClientCommand, CPointEntity );
 	DECLARE_MAPENTITY();
-	void InputCommand( inputdata_t& inputdata );
+	void InputCommand( inputdata_t &&inputdata );
 };
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : inputdata - 
 //-----------------------------------------------------------------------------
-void CPointBroadcastClientCommand::InputCommand( inputdata_t& inputdata )
+void CPointBroadcastClientCommand::InputCommand( inputdata_t &&inputdata )
 {
 	if ( !inputdata.value.String()[0] )
 		return;

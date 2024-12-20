@@ -79,9 +79,9 @@ edict_t *UTIL_FindRTCameraInEntityPVS( edict_t *pEdict )
 }
 
 // These are already built into CBaseEntity
-//	DEFINE_KEYFIELD( m_iName, FIELD_STRING, "targetname" ),
-//	DEFINE_KEYFIELD( m_iParent, FIELD_STRING, "parentname" ),
-//	DEFINE_KEYFIELD( m_target, FIELD_STRING, "target" ),
+//	DEFINE_KEYFIELD_AUTO( m_iName, "targetname" ),
+//	DEFINE_KEYFIELD_AUTO( m_iParent, "parentname" ),
+//	DEFINE_KEYFIELD_AUTO( m_target, "target" ),
 
 LINK_ENTITY_TO_CLASS( point_camera, CPointCamera );
 
@@ -131,7 +131,7 @@ void CPointCamera::Spawn( void )
 // Purpose: Override ShouldTransmit since we want to be sent even though we don't have a model, etc.
 //			All that matters is if we are in the pvs.
 //-----------------------------------------------------------------------------
-int CPointCamera::UpdateTransmitState()
+EdictStateFlags_t CPointCamera::UpdateTransmitState()
 {
 	if ( m_bActive )
 	{
@@ -165,7 +165,7 @@ void CPointCamera::SetActive( bool bActive )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointCamera::InputChangeFOV( inputdata_t &inputdata )
+void CPointCamera::InputChangeFOV( inputdata_t &&inputdata )
 {
 	// Parse the keyvalue data
 	char parseString[255];
@@ -237,7 +237,7 @@ void CPointCamera::ChangeFOVThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: Turn this camera on, and turn all other cameras off
 //-----------------------------------------------------------------------------
-void CPointCamera::InputSetOnAndTurnOthersOff( inputdata_t &inputdata )
+void CPointCamera::InputSetOnAndTurnOthersOff( inputdata_t &&inputdata )
 {
 	CBaseEntity *pEntity = NULL;
 	while ((pEntity = gEntList.FindEntityByClassname( pEntity, "point_camera" )) != NULL)
@@ -258,7 +258,7 @@ void CPointCamera::InputSetOnAndTurnOthersOff( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointCamera::InputSetOn( inputdata_t &inputdata )
+void CPointCamera::InputSetOn( inputdata_t &&inputdata )
 {
 	m_bIsOn = true;
 }
@@ -266,7 +266,7 @@ void CPointCamera::InputSetOn( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointCamera::InputSetOff( inputdata_t &inputdata )
+void CPointCamera::InputSetOff( inputdata_t &&inputdata )
 {
 	m_bIsOn = false;
 	SetActive( false );
@@ -275,7 +275,7 @@ void CPointCamera::InputSetOff( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointCamera::InputForceActive( inputdata_t &inputdata )
+void CPointCamera::InputForceActive( inputdata_t &&inputdata )
 {
 	CBaseEntity *pEntity = NULL;
 	while ((pEntity = gEntList.FindEntityByClassname( pEntity, "point_camera" )) != NULL)
@@ -295,7 +295,7 @@ void CPointCamera::InputForceActive( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointCamera::InputForceInactive( inputdata_t &inputdata )
+void CPointCamera::InputForceInactive( inputdata_t &&inputdata )
 {
 	m_bIsOn = false;
 	SetActive( false );
@@ -305,14 +305,14 @@ void CPointCamera::InputForceInactive( inputdata_t &inputdata )
 BEGIN_MAPENTITY( CPointCamera )
 
 	// Save/restore Keyvalue fields
-	DEFINE_KEYFIELD( m_FOV,			FIELD_FLOAT, "FOV" ),
-	DEFINE_KEYFIELD( m_Resolution,	FIELD_FLOAT, "resolution" ),
-	DEFINE_KEYFIELD( m_bFogEnable,	FIELD_BOOLEAN, "fogEnable" ),
-	DEFINE_KEYFIELD( m_FogColor,	FIELD_COLOR32,	"fogColor" ),
-	DEFINE_KEYFIELD( m_flFogStart,	FIELD_FLOAT, "fogStart" ),
-	DEFINE_KEYFIELD( m_flFogEnd,	FIELD_FLOAT, "fogEnd" ),
-	DEFINE_KEYFIELD( m_flFogMaxDensity,	FIELD_FLOAT, "fogMaxDensity" ),
-	DEFINE_KEYFIELD( m_bUseScreenAspectRatio, FIELD_BOOLEAN, "UseScreenAspectRatio" ),
+	DEFINE_KEYFIELD_AUTO( m_FOV, "FOV" ),
+	DEFINE_KEYFIELD_AUTO( m_Resolution, "resolution" ),
+	DEFINE_KEYFIELD_AUTO( m_bFogEnable, "fogEnable" ),
+	DEFINE_KEYFIELD_AUTO( m_FogColor, "fogColor" ),
+	DEFINE_KEYFIELD_AUTO( m_flFogStart, "fogStart" ),
+	DEFINE_KEYFIELD_AUTO( m_flFogEnd, "fogEnd" ),
+	DEFINE_KEYFIELD_AUTO( m_flFogMaxDensity, "fogMaxDensity" ),
+	DEFINE_KEYFIELD_AUTO( m_bUseScreenAspectRatio, "UseScreenAspectRatio" ),
 
 	// Input
 	DEFINE_INPUTFUNC( FIELD_STRING, "ChangeFOV", InputChangeFOV ),
@@ -322,8 +322,8 @@ BEGIN_MAPENTITY( CPointCamera )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputForceActive ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Deactivate", InputForceInactive ),
 
-	DEFINE_KEYFIELD( m_iSkyMode, FIELD_INTEGER, "SkyMode" ),
-	DEFINE_KEYFIELD( m_iszRenderTarget, FIELD_STRING, "RenderTarget" ),
+	DEFINE_KEYFIELD_AUTO( m_iSkyMode, "SkyMode" ),
+	DEFINE_KEYFIELD_AUTO( m_iszRenderTarget, "RenderTarget" ),
 
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetSkyMode", InputSetSkyMode ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetRenderTarget", InputSetRenderTarget ),
@@ -352,7 +352,7 @@ END_SEND_TABLE()
 
 BEGIN_MAPENTITY( CPointCameraOrtho )
 
-	DEFINE_KEYFIELD( m_bOrtho, FIELD_BOOLEAN, "IsOrtho" ),
+	DEFINE_KEYFIELD_AUTO( m_bOrtho, "IsOrtho" ),
 
 	// Input
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "SetOrthoEnabled", InputSetOrthoEnabled ),
@@ -469,7 +469,7 @@ void CPointCameraOrtho::ChangeOrtho( int iType, const char *szChange )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointCameraOrtho::InputScaleOrtho( inputdata_t &inputdata )
+void CPointCameraOrtho::InputScaleOrtho( inputdata_t &&inputdata )
 {
 	// Parse the keyvalue data
 	char parseString[255];

@@ -44,9 +44,9 @@ public:
 	virtual void OnActivate() {}
 	virtual void OnDeactivate() {}
 	
-	virtual void 	InputActivate( inputdata_t &inputdata );
-	virtual void 	InputUpdateActors( inputdata_t &inputdata );
-	virtual void 	InputDeactivate( inputdata_t &inputdata );
+	virtual void 	InputActivate( inputdata_t &&inputdata );
+	virtual void 	InputUpdateActors( inputdata_t &&inputdata );
+	virtual void 	InputDeactivate( inputdata_t &&inputdata );
 	
 	// Goal entities can become Dormant if they're left behind on previous maps.
 	// Transitioning back to the map with cause a dormant goal entity to reactivate itself.

@@ -38,15 +38,15 @@ public:
 	CBaseEntity *CreateProjectile( Vector &vecOrigin, QAngle &angAngles, Vector &vecDir, CBaseEntity *pOwner );
 
 	// Inputs
-	void InputFire( inputdata_t &inputdata );
-	void InputFireAtEntity( inputdata_t &inputdata );
-	void InputFireAtPosition( inputdata_t &inputdata );
+	void InputFire( inputdata_t &&inputdata );
+	void InputFireAtEntity( inputdata_t &&inputdata );
+	void InputFireAtPosition( inputdata_t &&inputdata );
 
-	void InputSetDamage( inputdata_t &inputdata ) { m_flDamage = inputdata.value.Float(); }
-	void InputSetOwner( inputdata_t &inputdata ) { m_iszOwner = inputdata.value.StringID(); SetOwnerEntity(NULL); }
-	void InputSetSpeed( inputdata_t &inputdata ) { m_flSpeed = inputdata.value.Float(); }
+	void InputSetDamage( inputdata_t &&inputdata ) { m_flDamage = inputdata.value.Float(); }
+	void InputSetOwner( inputdata_t &&inputdata ) { m_iszOwner = inputdata.value.StringID(); SetOwnerEntity(NULL); }
+	void InputSetSpeed( inputdata_t &&inputdata ) { m_flSpeed = inputdata.value.Float(); }
 
-	void InputSetTarget( inputdata_t &inputdata ) { BaseClass::InputSetTarget(inputdata); UTIL_PrecacheOther(inputdata.value.String()); }
+	void InputSetTarget( inputdata_t &&inputdata ) { BaseClass::InputSetTarget(inputdata); UTIL_PrecacheOther(inputdata.value.String()); }
 
 	COutputEHANDLE m_OnFire;
 };
@@ -56,10 +56,10 @@ LINK_ENTITY_TO_CLASS(point_projectile, CPointProjectile);
 BEGIN_DATADESC( CPointProjectile )
 
 	// Keys
-	DEFINE_KEYFIELD( m_iszOwner, FIELD_STRING, "Owner" ),
-	DEFINE_KEYFIELD( m_flDamage, FIELD_FLOAT, "Damage" ),
-	DEFINE_KEYFIELD( m_flSpeed, FIELD_FLOAT, "Speed" ),
-	DEFINE_KEYFIELD( m_bFireProjectilesFromOwner, FIELD_BOOLEAN, "FireFromOwner" ),
+	DEFINE_KEYFIELD_AUTO( m_iszOwner, "Owner" ),
+	DEFINE_KEYFIELD_AUTO( m_flDamage, "Damage" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpeed, "Speed" ),
+	DEFINE_KEYFIELD_AUTO( m_bFireProjectilesFromOwner, "FireFromOwner" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Fire", InputFire ),
@@ -134,7 +134,7 @@ inline CBaseEntity *CPointProjectile::CreateProjectile( Vector &vecOrigin, QAngl
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointProjectile::InputFire( inputdata_t &inputdata )
+void CPointProjectile::InputFire( inputdata_t &&inputdata )
 {
 	Vector vecOrigin = GetAbsOrigin();
 	QAngle angAngles = GetAbsAngles();
@@ -152,7 +152,7 @@ void CPointProjectile::InputFire( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointProjectile::InputFireAtEntity( inputdata_t &inputdata )
+void CPointProjectile::InputFireAtEntity( inputdata_t &&inputdata )
 {
 	CBaseEntity *pTarget = inputdata.value.Entity();
 	if (!pTarget)
@@ -176,7 +176,7 @@ void CPointProjectile::InputFireAtEntity( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointProjectile::InputFireAtPosition( inputdata_t &inputdata )
+void CPointProjectile::InputFireAtPosition( inputdata_t &&inputdata )
 {
 	Vector vecInput;
 	inputdata.value.Vector3D(vecInput);

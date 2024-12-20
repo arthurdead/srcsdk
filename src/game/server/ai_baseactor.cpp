@@ -30,9 +30,9 @@ static ConVar scene_showfaceto( "scene_showfaceto", "0", FCVAR_ARCHIVE, "When pl
 
 BEGIN_MAPENTITY( CAI_BaseActor, MAPENT_NPCCLASS )
 
-	DEFINE_KEYFIELD( m_bDontUseSemaphore, FIELD_BOOLEAN, "DontUseSpeechSemaphore" ),
+	DEFINE_KEYFIELD_AUTO( m_bDontUseSemaphore, "DontUseSpeechSemaphore" ),
 
-	DEFINE_KEYFIELD( m_iszExpressionOverride, FIELD_STRING, "ExpressionOverride" ),
+	DEFINE_KEYFIELD_AUTO( m_iszExpressionOverride, "ExpressionOverride" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING,	"SetExpressionOverride",	InputSetExpressionOverride ),
 
@@ -332,7 +332,7 @@ bool CAI_BaseActor::StartSceneEvent( CSceneEventInfo *info, CChoreoScene *scene,
 							}
 						}
 
-						pEnt->AcceptInput(sInput, this, this, variant, 0);
+						pEnt->AcceptInput(sInput, this, this, Move(variant), 0);
 						return true;
 					}
 					else
@@ -1352,7 +1352,7 @@ bool CAI_BaseActor::PickRandomLookTarget( AILookTargetArgs_t *pArgs )
 	CBaseEntity *pEntity = NULL;
 	int iHighestImportance = 0;
 	int iConsidered = 0;
-	for ( CEntitySphereQuery sphere( GetAbsOrigin(), 30 * 12, 0 ); (pEntity = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity() )
+	for ( CEntitySphereQuery sphere( GetAbsOrigin(), 30 * 12, CONTENTS_EMPTY ); (pEntity = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity() )
 	{
 		if (pEntity == this)
 		{
@@ -2026,7 +2026,7 @@ const char *CAI_BaseActor::GetExpression()
 
 //-----------------------------------------------------------------------------
 
-void CAI_BaseActor::InputSetExpressionOverride( inputdata_t &inputdata )
+void CAI_BaseActor::InputSetExpressionOverride( inputdata_t &&inputdata )
 {
 	bool fHadOverride = ( m_iszExpressionOverride != NULL_STRING );
 	m_iszExpressionOverride = inputdata.value.StringID();

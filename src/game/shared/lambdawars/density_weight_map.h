@@ -27,7 +27,7 @@ class C_BaseEntity;
 typedef C_BaseEntity CSharedBaseEntity;
 #endif
 
-enum density_type_t
+enum density_type_t : unsigned char
 {
 	DENSITY_GAUSSIAN = 0, // Use a 2d gaussian function. Sigma based on BoundingRadius.
 	DENSITY_GAUSSIANECLIPSE, // Uses mins/maxs, for rectangle shaped objects (buildings).
@@ -41,13 +41,11 @@ public:
 	DensityWeightsMap();
 	~DensityWeightsMap();
 
-	DECLARE_NETWORKVAR_CHAIN();
-
 	void Init( CSharedBaseEntity *pOuter );
 	void Destroy();
 	void Clear();
-	void SetType( int iType );
-	int GetType();
+	void SetType( density_type_t iType );
+	density_type_t GetType();
 	void OnCollisionSizeChanged();
 	float Get( const Vector &vPos );
 	int GetSizeX() { return m_iSizeX; }
@@ -62,7 +60,7 @@ public:
 private:
 	CSharedBaseEntity *m_pOuter;
 	Vector m_vMins, m_vMaxs;
-	int m_iType;
+	density_type_t m_iType;
 
 	float **m_pWeights;
 	int m_iSizeX, m_iSizeY;
@@ -76,7 +74,7 @@ inline void DensityWeightsMap::Clear()
 	m_vMaxs = vec3_origin;
 }
 
-inline int DensityWeightsMap::GetType()
+inline density_type_t DensityWeightsMap::GetType()
 {
 	return m_iType;
 }

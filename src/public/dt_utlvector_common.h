@@ -21,13 +21,13 @@ void UtlVector_InitializeAllocatedElements( T *pBase, int count )
 	memset( reinterpret_cast<void*>( pBase ), 0, count * sizeof( T ) );
 }
 
-template< class T, class A >
+template< class T >
 class UtlVectorTemplate
 {
 public:
 	static void ResizeUtlVector( void *pStruct, int offsetToUtlVector, int len )
 	{
-		CUtlVector<T,A> *pVec = (CUtlVector<T,A>*)((char*)pStruct + offsetToUtlVector);
+		T *pVec = (T*)((char*)pStruct + offsetToUtlVector);
 		if ( pVec->Count() < len )
 			pVec->AddMultipleToTail( len - pVec->Count() );
 		else if ( pVec->Count() > len )
@@ -46,7 +46,7 @@ public:
 
 	static void EnsureCapacity( void *pStruct, int offsetToUtlVector, int len )
 	{
-		CUtlVector<T,A> *pVec = (CUtlVector<T,A>*)((char*)pStruct + offsetToUtlVector);
+		T *pVec = (T*)((char*)pStruct + offsetToUtlVector);
 
 		pVec->EnsureCapacity( len );
 		
@@ -59,28 +59,28 @@ public:
 	}
 };
 
-template< class T, class A >
-inline ResizeUtlVectorFn GetResizeUtlVectorTemplate( CUtlVector<T,A> &vec )
+template< class T >
+inline ResizeUtlVectorFn GetResizeUtlVectorTemplate( T &vec )
 {
-	return &UtlVectorTemplate<T,A>::ResizeUtlVector;
+	return &UtlVectorTemplate<T>::ResizeUtlVector;
 }
 
-template< class T, class A, class H >
-inline ResizeUtlVectorFn GetResizeUtlVectorTemplate( CNetworkUtlVectorBaseImpl< CUtlVector<T,A>, H > &vec )
+template< class T, class H >
+inline ResizeUtlVectorFn GetResizeUtlVectorTemplate( CNetworkUtlVectorBaseImpl< T, H > &vec )
 {
-	return &UtlVectorTemplate<T,A>::ResizeUtlVector;
+	return &UtlVectorTemplate<T>::ResizeUtlVector;
 }
 
-template< class T, class A >
-inline EnsureCapacityFn GetEnsureCapacityTemplate( CUtlVector<T,A> &vec )
+template< class T >
+inline EnsureCapacityFn GetEnsureCapacityTemplate( T &vec )
 {
-	return &UtlVectorTemplate<T,A>::EnsureCapacity;
+	return &UtlVectorTemplate<T>::EnsureCapacity;
 }
 
-template< class T, class A, class H >
-inline EnsureCapacityFn GetEnsureCapacityTemplate( CNetworkUtlVectorBaseImpl< CUtlVector<T,A>, H > &vec )
+template< class T, class H >
+inline EnsureCapacityFn GetEnsureCapacityTemplate( CNetworkUtlVectorBaseImpl< T, H > &vec )
 {
-	return &UtlVectorTemplate<T,A>::EnsureCapacity;
+	return &UtlVectorTemplate<T>::EnsureCapacity;
 }
 
 

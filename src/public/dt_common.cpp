@@ -9,8 +9,8 @@
 
 #include "tier0/memdbgon.h"
 
-static CUtlDict<int,int> *g_STDict = 0;
-static CUtlDict<int,int> *g_RTDict = 0;
+static CUtlDict<const char *,int> *g_STDict = 0;
+static CUtlDict<const char *,int> *g_RTDict = 0;
 
 const char *DVariant::ToString()
 {
@@ -26,16 +26,16 @@ const char *DVariant::ToString()
 		break;
 	case DPT_Vector :
 		Q_snprintf( text, sizeof(text), "(%.3f,%.3f,%.3f)", 
-			m_Vector[0], m_Vector[1], m_Vector[2] );
+			m_Vector.x, m_Vector.y, m_Vector.z );
 		break;
 	case DPT_VectorXY :
 		Q_snprintf( text, sizeof(text), "(%.3f,%.3f)", 
-			m_Vector[0], m_Vector[1] );
+			m_Vector.x, m_Vector.y );
 		break;
 #ifdef DT_QUATERNION_SUPPORTED
 	case DPT_Quaternion :
 		Q_snprintf( text, sizeof(text), "(%.3f,%.3f,%.3f %.3f)", 
-			m_Vector[0], m_Vector[1], m_Vector[2], m_Vector[3] );
+			m_Quaternion.x, m_Quaternion.y, m_Quaternion.z, m_Quaternion.w );
 		break;
 #endif
 	case DPT_String : 
@@ -102,11 +102,11 @@ char* AllocateUniqueDataTableName( bool bSendTable, const char *pFormat, ... )
 	// their constructors won't have been called yet by the time we get in here.
 	if ( !g_STDict )
 	{
-		g_STDict = new CUtlDict<int,int>;
-		g_RTDict = new CUtlDict<int,int>;
+		g_STDict = new CUtlDict<const char *,int>;
+		g_RTDict = new CUtlDict<const char *,int>;
 	}
 
-	CUtlDict<int,int> *pDict = bSendTable ? g_STDict : g_RTDict;
+	CUtlDict<const char *,int> *pDict = bSendTable ? g_STDict : g_RTDict;
 	if ( pDict->Find( pRet ) != pDict->InvalidIndex() )
 	{
 		// If it hits this, then they have 2 utlvectors in different data tables with the same name and the

@@ -71,6 +71,6 @@ LINK_ENTITY_TO_CLASS( info_remarkable, CInfoRemarkable );
 
 //--------------------------------------------------------------------------------------------------------
 BEGIN_MAPENTITY( CInfoRemarkable, MAPENT_POINTCLASS )
-DEFINE_KEYFIELD( m_szRemarkContext,	FIELD_STRING, "contextsubject" ),
+DEFINE_KEYFIELD_AUTO( m_szRemarkContext, "contextsubject" ),
 
 END_MAPENTITY()

@@ -161,7 +161,7 @@ END_MAPENTITY()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamplayRoundBasedRulesProxy::InputSetStalemateOnTimelimit( inputdata_t &inputdata )
+void CTeamplayRoundBasedRulesProxy::InputSetStalemateOnTimelimit( inputdata_t &&inputdata )
 {
 	TeamplayRoundBasedRules()->SetStalemateOnTimelimit( inputdata.value.Bool() );
 }
@@ -806,11 +806,11 @@ void CTeamplayRoundBasedRules::SetOvertime( bool bOvertime )
 		// tell train watchers that we've transitioned to overtime
 
 #ifndef CSTRIKE_DLL
+		variant_t emptyVariant;
 		CTeamTrainWatcher *pWatcher = dynamic_cast<CTeamTrainWatcher*>( gEntList.FindEntityByClassname( NULL, "team_train_watcher" ) );
 		while ( pWatcher )
 		{
-			variant_t emptyVariant;
-			pWatcher->AcceptInput( "OnStartOvertime", NULL, NULL, emptyVariant, 0 );
+			pWatcher->AcceptInput( "OnStartOvertime", NULL, NULL, Move(emptyVariant), 0 );
 
 			pWatcher = dynamic_cast<CTeamTrainWatcher*>( gEntList.FindEntityByClassname( pWatcher, "team_train_watcher" ) );
 		}
@@ -848,7 +848,7 @@ void CTeamplayRoundBasedRules::CheckWaitingForPlayers( void )
 			{
 				variant_t sVariant;
 				sVariant.SetInt( m_flWaitingForPlayersTimeEnds - gpGlobals->curtime );
-				m_hWaitingForPlayersTimer->AcceptInput( "SetTime", NULL, NULL, sVariant, 0 );
+				m_hWaitingForPlayersTimer->AcceptInput( "SetTime", NULL, NULL, Move(sVariant), 0 );
 			}
 		}
 		else
@@ -2074,7 +2074,7 @@ void CTeamplayRoundBasedRules::RestoreActiveTimer( void )
 	{
 		variant_t sVariant;
 		sVariant.SetInt( true );
-		m_hPreviousActiveTimer->AcceptInput( "ShowInHUD", NULL, NULL, sVariant, 0 );
+		m_hPreviousActiveTimer->AcceptInput( "ShowInHUD", NULL, NULL, Move(sVariant), 0 );
 		m_hPreviousActiveTimer = NULL;
 	}
 }
@@ -2157,7 +2157,7 @@ void CTeamplayRoundBasedRules::State_Think_STALEMATE( void )
 			{
 				variant_t sVariant;
 				sVariant.SetInt( iAliveTeam );
-				pMaster->AcceptInput( "SetWinnerAndForceCaps", NULL, NULL, sVariant, 0 );
+				pMaster->AcceptInput( "SetWinnerAndForceCaps", NULL, NULL, Move(sVariant), 0 );
 				bMasterHandled = true;
 			}
 		}

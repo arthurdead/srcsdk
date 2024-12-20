@@ -73,7 +73,7 @@ public:
 		}
 	}
 
-	virtual void InputActivate( inputdata_t &inputdata )		
+	virtual void InputActivate( inputdata_t &&inputdata )		
 	{ 
 		if ( !m_fActive )
 		{
@@ -86,7 +86,7 @@ public:
 		}
 	}
 	
-	virtual void InputDeactivate( inputdata_t &inputdata )	
+	virtual void InputDeactivate( inputdata_t &&inputdata )	
 	{ 
 		if ( m_fActive )
 		{
@@ -157,9 +157,9 @@ private:
 LINK_ENTITY_TO_CLASS( ai_battle_line, CAI_BattleLine );
 
 BEGIN_MAPENTITY( CAI_BattleLine )
-	DEFINE_KEYFIELD(	m_iszActor,				FIELD_STRING, 	"Actor"					),
-	DEFINE_KEYFIELD(	m_fActive,				FIELD_BOOLEAN,  "Active"				),
-	DEFINE_KEYFIELD(	m_fStrict,				FIELD_BOOLEAN,  "Strict"				),
+	DEFINE_KEYFIELD_AUTO( m_iszActor, "Actor" ),
+	DEFINE_KEYFIELD_AUTO( m_fActive, "Active" ),
+	DEFINE_KEYFIELD_AUTO( m_fStrict, "Strict" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", 		InputActivate ),
@@ -1170,19 +1170,19 @@ public:
 		SetBehaviorParams( pBehavior);
 	}
 
-	void InputActivate( inputdata_t &inputdata )
+	void InputActivate( inputdata_t &&inputdata )
 	{
 		ValidateAggression();
 		BaseClass::InputActivate( inputdata );
 	}
 	
-	void InputDeactivate( inputdata_t &inputdata ) 	
+	void InputDeactivate( inputdata_t &&inputdata ) 	
 	{
 		ValidateAggression();
 		BaseClass::InputDeactivate( inputdata );
 	}
 	
-	void InputSetAggressiveness( inputdata_t &inputdata )
+	void InputSetAggressiveness( inputdata_t &&inputdata )
 	{
 		int newVal = inputdata.value.Int();
 		
@@ -1268,12 +1268,12 @@ private:
 LINK_ENTITY_TO_CLASS( ai_goal_standoff, CAI_StandoffGoal );
 
 BEGIN_MAPENTITY( CAI_StandoffGoal, MAPENT_POINTCLASS )
-	DEFINE_KEYFIELD( m_aggressiveness,				FIELD_INTEGER, 	"Aggressiveness" ),
+	DEFINE_KEYFIELD_AUTO( m_aggressiveness, "Aggressiveness" ),
 
-	DEFINE_KEYFIELD( m_TactChangeReaction,			FIELD_INTEGER, 	"TactChangeReaction" ),
-	DEFINE_KEYFIELD( m_fPlayerIsBattleline,			FIELD_BOOLEAN,	"PlayerBattleline" ),
-	DEFINE_KEYFIELD( m_fStayAtCover,				FIELD_BOOLEAN,	"StayAtCover" ),
-	DEFINE_KEYFIELD( m_bAbandonIfEnemyHides,		FIELD_BOOLEAN, 	"AbandonIfEnemyHides" ),
+	DEFINE_KEYFIELD_AUTO( m_TactChangeReaction, "TactChangeReaction" ),
+	DEFINE_KEYFIELD_AUTO( m_fPlayerIsBattleline, "PlayerBattleline" ),
+	DEFINE_KEYFIELD_AUTO( m_fStayAtCover, "StayAtCover" ),
+	DEFINE_KEYFIELD_AUTO( m_bAbandonIfEnemyHides, "AbandonIfEnemyHides" ),
 	DEFINE_KEYFIELD( m_customParams.fCoverOnReload,	FIELD_BOOLEAN, 	"CustomCoverOnReload" ),
 	DEFINE_KEYFIELD( m_customParams.minTimeShots,	FIELD_FLOAT, 	"CustomMinTimeShots" ),
 	DEFINE_KEYFIELD( m_customParams.maxTimeShots,	FIELD_FLOAT, 	"CustomMaxTimeShots" ),

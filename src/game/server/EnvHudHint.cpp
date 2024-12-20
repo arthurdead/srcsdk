@@ -30,9 +30,9 @@ public:
 private:
 	inline	bool	AllPlayers( void ) { return HasSpawnFlags(SF_HUDHINT_ALLPLAYERS); }
 
-	void InputShowHudHint( inputdata_t &inputdata );
-	void InputHideHudHint( inputdata_t &inputdata );
-	void InputSetHudHint( inputdata_t &inputdata );
+	void InputShowHudHint( inputdata_t &&inputdata );
+	void InputHideHudHint( inputdata_t &&inputdata );
+	void InputSetHudHint( inputdata_t &&inputdata );
 	string_t m_iszMessage;
 	DECLARE_MAPENTITY();
 };
@@ -41,7 +41,7 @@ LINK_ENTITY_TO_CLASS( env_hudhint, CEnvHudHint );
 
 BEGIN_MAPENTITY( CEnvHudHint )
 
-	DEFINE_KEYFIELD( m_iszMessage, FIELD_STRING, "message" ),
+	DEFINE_KEYFIELD_AUTO( m_iszMessage, "message" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "ShowHudHint", InputShowHudHint ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "HideHudHint", InputHideHudHint ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetHudHint", InputSetHudHint ),
@@ -72,7 +72,7 @@ void CEnvHudHint::Precache( void )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for showing the message and/or playing the sound.
 //-----------------------------------------------------------------------------
-void CEnvHudHint::InputShowHudHint( inputdata_t &inputdata )
+void CEnvHudHint::InputShowHudHint( inputdata_t &&inputdata )
 {
 	if ( AllPlayers() )
 	{
@@ -108,14 +108,14 @@ void CEnvHudHint::InputShowHudHint( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CEnvHudHint::InputSetHudHint( inputdata_t &inputdata )
+void CEnvHudHint::InputSetHudHint( inputdata_t &&inputdata )
 {
 	m_iszMessage = inputdata.value.StringID();
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CEnvHudHint::InputHideHudHint( inputdata_t &inputdata )
+void CEnvHudHint::InputHideHudHint( inputdata_t &&inputdata )
 {
 	if ( AllPlayers() )
 	{

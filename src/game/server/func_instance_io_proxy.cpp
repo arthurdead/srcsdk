@@ -16,22 +16,22 @@ public:
 	DECLARE_CLASS( CFuncInstanceIoProxy, CBaseEntity );
 
 	// Input handlers
-	void InputProxyRelay1( inputdata_t &inputdata );
-	void InputProxyRelay2( inputdata_t &inputdata );
-	void InputProxyRelay3( inputdata_t &inputdata );
-	void InputProxyRelay4( inputdata_t &inputdata );
-	void InputProxyRelay5( inputdata_t &inputdata );
-	void InputProxyRelay6( inputdata_t &inputdata );
-	void InputProxyRelay7( inputdata_t &inputdata );
-	void InputProxyRelay8( inputdata_t &inputdata );
-	void InputProxyRelay9( inputdata_t &inputdata );
-	void InputProxyRelay10( inputdata_t &inputdata );
-	void InputProxyRelay11( inputdata_t &inputdata );
-	void InputProxyRelay12( inputdata_t &inputdata );
-	void InputProxyRelay13( inputdata_t &inputdata );
-	void InputProxyRelay14( inputdata_t &inputdata );
-	void InputProxyRelay15( inputdata_t &inputdata );
-	void InputProxyRelay16( inputdata_t &inputdata );
+	void InputProxyRelay1( inputdata_t &&inputdata );
+	void InputProxyRelay2( inputdata_t &&inputdata );
+	void InputProxyRelay3( inputdata_t &&inputdata );
+	void InputProxyRelay4( inputdata_t &&inputdata );
+	void InputProxyRelay5( inputdata_t &&inputdata );
+	void InputProxyRelay6( inputdata_t &&inputdata );
+	void InputProxyRelay7( inputdata_t &&inputdata );
+	void InputProxyRelay8( inputdata_t &&inputdata );
+	void InputProxyRelay9( inputdata_t &&inputdata );
+	void InputProxyRelay10( inputdata_t &&inputdata );
+	void InputProxyRelay11( inputdata_t &&inputdata );
+	void InputProxyRelay12( inputdata_t &&inputdata );
+	void InputProxyRelay13( inputdata_t &&inputdata );
+	void InputProxyRelay14( inputdata_t &&inputdata );
+	void InputProxyRelay15( inputdata_t &&inputdata );
+	void InputProxyRelay16( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -101,82 +101,82 @@ END_MAPENTITY()
 //------------------------------------------------------------------------------
 // Purpose : Route the incomming to the outgoing proxy messages. 
 //------------------------------------------------------------------------------
-void CFuncInstanceIoProxy::InputProxyRelay1( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay1( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay1.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay2( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay2( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay2.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay3( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay3( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay3.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay4( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay4( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay4.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay5( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay5( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay5.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay6( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay6( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay6.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay7( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay7( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay7.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay8( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay8( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay8.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay9( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay9( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay9.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay10( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay10( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay10.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay11( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay11( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay11.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay12( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay12( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay12.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay13( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay13( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay13.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay14( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay14( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay14.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay15( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay15( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay15.FireOutput( this, this );
 }
 
-void CFuncInstanceIoProxy::InputProxyRelay16( inputdata_t &inputdata )
+void CFuncInstanceIoProxy::InputProxyRelay16( inputdata_t &&inputdata )
 {
 	m_OnProxyRelay16.FireOutput( this, this );
 	DevWarning( "Maximun Proxy Messages used - ask a programmer for more.\n" );

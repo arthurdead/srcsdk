@@ -26,11 +26,11 @@ public:
 	virtual void	Activate();
 
 	// Input handlers
-	void InputTurnOn( inputdata_t &inputdata );
-	void InputTurnOff( inputdata_t &inputdata );
-	void InputSetColor( inputdata_t &inputdata );
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
+	void InputSetColor( inputdata_t &&inputdata );
 
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 
 public:
 	CNetworkVector( m_vDirection );
@@ -68,20 +68,20 @@ LINK_ENTITY_TO_CLASS( env_sun, CSun );
 
 BEGIN_MAPENTITY( CSun )
 
-	DEFINE_KEYFIELD( m_bUseAngles, FIELD_INTEGER, "use_angles" ),
-	DEFINE_KEYFIELD( m_flPitch, FIELD_FLOAT, "pitch" ),
-	DEFINE_KEYFIELD( m_flYaw, FIELD_FLOAT, "angle" ),
-	DEFINE_KEYFIELD( m_nSize, FIELD_INTEGER, "size" ),
-	DEFINE_KEYFIELD( m_clrOverlay, FIELD_COLOR32, "overlaycolor" ),
-	DEFINE_KEYFIELD( m_nOverlaySize, FIELD_INTEGER, "overlaysize" ),
-	DEFINE_KEYFIELD( m_strMaterial, FIELD_STRING, "material" ),
-	DEFINE_KEYFIELD( m_strOverlayMaterial, FIELD_STRING, "overlaymaterial" ),
+	DEFINE_KEYFIELD_AUTO( m_bUseAngles, "use_angles" ),
+	DEFINE_KEYFIELD_AUTO( m_flPitch, "pitch" ),
+	DEFINE_KEYFIELD_AUTO( m_flYaw, "angle" ),
+	DEFINE_KEYFIELD_AUTO( m_nSize, "size" ),
+	DEFINE_KEYFIELD_AUTO( m_clrOverlay, "overlaycolor" ),
+	DEFINE_KEYFIELD_AUTO( m_nOverlaySize, "overlaysize" ),
+	DEFINE_KEYFIELD_AUTO( m_strMaterial, "material" ),
+	DEFINE_KEYFIELD_AUTO( m_strOverlayMaterial, "overlaymaterial" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_COLOR32, "SetColor", InputSetColor ),
 
-	DEFINE_KEYFIELD( m_flHDRColorScale,		FIELD_FLOAT,	"HDRColorScale" ),
+	DEFINE_KEYFIELD_AUTO( m_flHDRColorScale, "HDRColorScale" ),
 END_MAPENTITY()
 
 CSun::CSun()
@@ -165,7 +165,7 @@ void CSun::Activate()
 	m_nOverlayMaterial = PrecacheModel( STRING( m_strOverlayMaterial ) );
 }
 
-void CSun::InputTurnOn( inputdata_t &inputdata )
+void CSun::InputTurnOn( inputdata_t &&inputdata )
 {
 	if( !m_bOn )
 	{
@@ -173,7 +173,7 @@ void CSun::InputTurnOn( inputdata_t &inputdata )
 	}
 }
 
-void CSun::InputTurnOff( inputdata_t &inputdata )
+void CSun::InputTurnOff( inputdata_t &&inputdata )
 {
 	if ( m_bOn )
 	{
@@ -181,14 +181,14 @@ void CSun::InputTurnOff( inputdata_t &inputdata )
 	}
 }
 
-void CSun::InputSetColor( inputdata_t &inputdata )
+void CSun::InputSetColor( inputdata_t &&inputdata )
 {
 	color32 clrRender = inputdata.value.Color32();
 	SetRenderColor( clrRender.r(), clrRender.g(), clrRender.b() );
 	SetRenderAlpha( clrRender.a() );
 }
 
-int CSun::UpdateTransmitState()
+EdictStateFlags_t CSun::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }

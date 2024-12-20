@@ -93,9 +93,9 @@ public:
 	void ActivateForce( void );
 
 	// Input handlers
-	void InputActivate( inputdata_t &inputdata );
-	void InputDeactivate( inputdata_t &inputdata );
-	void InputForceScale( inputdata_t &inputdata );
+	void InputActivate( inputdata_t &&inputdata );
+	void InputDeactivate( inputdata_t &&inputdata );
+	void InputForceScale( inputdata_t &&inputdata );
 
 	void SaveForce( void );
 	void ScaleForce( float scale );
@@ -120,9 +120,9 @@ protected:
 
 BEGIN_MAPENTITY( CPhysForce )
 
-	DEFINE_KEYFIELD( m_nameAttach, FIELD_STRING, "attach1" ),
-	DEFINE_KEYFIELD( m_force, FIELD_FLOAT, "force" ),
-	DEFINE_KEYFIELD( m_forceTime, FIELD_FLOAT, "forcetime" ),
+	DEFINE_KEYFIELD_AUTO( m_nameAttach, "attach1" ),
+	DEFINE_KEYFIELD_AUTO( m_force, "force" ),
+	DEFINE_KEYFIELD_AUTO( m_forceTime, "forcetime" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Deactivate", InputDeactivate ),
@@ -186,7 +186,7 @@ void CPhysForce::Activate( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPhysForce::InputActivate( inputdata_t &inputdata )
+void CPhysForce::InputActivate( inputdata_t &&inputdata )
 {
 	ForceOn();
 }
@@ -195,7 +195,7 @@ void CPhysForce::InputActivate( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPhysForce::InputDeactivate( inputdata_t &inputdata )
+void CPhysForce::InputDeactivate( inputdata_t &&inputdata )
 {
 	ForceOff();
 }
@@ -204,7 +204,7 @@ void CPhysForce::InputDeactivate( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPhysForce::InputForceScale( inputdata_t &inputdata )
+void CPhysForce::InputForceScale( inputdata_t &&inputdata )
 {
 	ScaleForce( inputdata.value.Float() );
 }
@@ -387,7 +387,7 @@ private:
 
 BEGIN_MAPENTITY( CPhysTorque )
 
-	DEFINE_KEYFIELD( m_axis, FIELD_VECTOR, "axis" ),
+	DEFINE_KEYFIELD_AUTO( m_axis, "axis" ),
 
 END_MAPENTITY()
 
@@ -447,8 +447,8 @@ public:
 
 BEGIN_SIMPLE_MAPEMBEDDED( CMotorController )
 
-	DEFINE_KEYFIELD( m_axis,				FIELD_VECTOR, "axis" ),
-	DEFINE_KEYFIELD( m_inertiaFactor,		FIELD_FLOAT, "inertiafactor" ),
+	DEFINE_KEYFIELD_AUTO( m_axis, "axis" ),
+	DEFINE_KEYFIELD_AUTO( m_inertiaFactor, "inertiafactor" ),
 
 END_MAPEMBEDDED()
 
@@ -547,9 +547,9 @@ public:
 	void TurnOn( void );
 	void TargetSpeedChanged( void );
 
-	void InputSetTargetSpeed( inputdata_t &inputdata );
-	void InputTurnOn( inputdata_t &inputdata );
-	void InputTurnOff( inputdata_t &inputdata );
+	void InputSetTargetSpeed( inputdata_t &&inputdata );
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
 	void CalculateAcceleration();
 
 	string_t	m_nameAttach;
@@ -569,10 +569,10 @@ public:
 
 BEGIN_MAPENTITY( CPhysMotor )
 
-	DEFINE_KEYFIELD( m_nameAttach, FIELD_STRING, "attach1" ),
+	DEFINE_KEYFIELD_AUTO( m_nameAttach, "attach1" ),
 
-	DEFINE_KEYFIELD( m_spinUp, FIELD_FLOAT, "spinup" ),
-	DEFINE_KEYFIELD( m_additionalAcceleration, FIELD_FLOAT, "addangaccel" ),
+	DEFINE_KEYFIELD_AUTO( m_spinUp, "spinup" ),
+	DEFINE_KEYFIELD_AUTO( m_additionalAcceleration, "addangaccel" ),
 
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpeed", InputSetTargetSpeed ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
@@ -598,7 +598,7 @@ void CPhysMotor::CalculateAcceleration()
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that sets a speed to spin up or down to.
 //-----------------------------------------------------------------------------
-void CPhysMotor::InputSetTargetSpeed( inputdata_t &inputdata )
+void CPhysMotor::InputSetTargetSpeed( inputdata_t &&inputdata )
 {
 	if ( m_flSpeed == inputdata.value.Float() )
 		return;
@@ -620,7 +620,7 @@ void CPhysMotor::TargetSpeedChanged( void )
 //------------------------------------------------------------------------------
 // Purpose: Input handler that turns the motor on.
 //------------------------------------------------------------------------------
-void CPhysMotor::InputTurnOn( inputdata_t &inputdata )
+void CPhysMotor::InputTurnOn( inputdata_t &&inputdata )
 {
 	TurnOn();
 }
@@ -629,7 +629,7 @@ void CPhysMotor::InputTurnOn( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Input handler that turns the motor off.
 //------------------------------------------------------------------------------
-void CPhysMotor::InputTurnOff( inputdata_t &inputdata )
+void CPhysMotor::InputTurnOff( inputdata_t &&inputdata )
 {
 	m_motor.m_speed = 0;
 	SetNextThink( TICK_NEVER_THINK );
@@ -792,16 +792,16 @@ public:
 	virtual simresult_e	Simulate( IPhysicsMotionController *pController, IPhysicsObject *pObject, float deltaTime, Vector &linear, AngularImpulse &angular );
 
 	// Inputs
-	void InputTurnOn( inputdata_t &inputdata )
+	void InputTurnOn( inputdata_t &&inputdata )
 	{
 		m_bActive = true;
 	}
-	void InputTurnOff( inputdata_t &inputdata )
+	void InputTurnOff( inputdata_t &&inputdata )
 	{
 		m_bActive = false;
 	}
 
-	void InputSetAngularLimit( inputdata_t &inputdata )
+	void InputSetAngularLimit( inputdata_t &&inputdata )
 	{
 		m_angularLimit = inputdata.value.Float();
 	}
@@ -825,8 +825,8 @@ LINK_ENTITY_TO_CLASS( phys_keepupright, CKeepUpright );
 
 BEGIN_MAPENTITY( CKeepUpright )
 
-	DEFINE_KEYFIELD( m_nameAttach, FIELD_STRING, "attach1" ),
-	DEFINE_KEYFIELD( m_angularLimit, FIELD_FLOAT, "angularlimit" ),
+	DEFINE_KEYFIELD_AUTO( m_nameAttach, "attach1" ),
+	DEFINE_KEYFIELD_AUTO( m_angularLimit, "angularlimit" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),

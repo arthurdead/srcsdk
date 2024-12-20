@@ -57,7 +57,7 @@ LINK_ENTITY_TO_CLASS( generic_actor, CGenericActor );
 
 BEGIN_MAPENTITY( CGenericActor )
 
-	DEFINE_KEYFIELD(m_strHullName,			FIELD_STRING, "hull_name" ),
+	DEFINE_KEYFIELD_AUTO( m_strHullName, "hull_name" ),
 	DEFINE_INPUT(m_iClassify,			FIELD_INTEGER, "SetClassify" ),
 
 END_MAPENTITY()
@@ -379,7 +379,7 @@ public:
 
 BEGIN_MAPENTITY( CFlextalkActor )
 
-	DEFINE_KEYFIELD( m_iszSentence, FIELD_STRING, "Sentence" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSentence, "Sentence" ),
 
 END_MAPENTITY()
 

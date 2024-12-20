@@ -514,8 +514,8 @@ BEGIN_MAPENTITY( CFishPool )
 
 	DEFINE_INPUT( m_nSkin, FIELD_INTEGER, "skin" ),
 
-	DEFINE_KEYFIELD( m_flLoudPanicRange, FIELD_FLOAT, "LoudPanicRange" ),
-	DEFINE_KEYFIELD( m_flQuietPanicRange, FIELD_FLOAT, "QuietPanicRange" ),
+	DEFINE_KEYFIELD_AUTO( m_flLoudPanicRange, "LoudPanicRange" ),
+	DEFINE_KEYFIELD_AUTO( m_flQuietPanicRange, "QuietPanicRange" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "SpawnFish", InputSpawnFish ),
 	DEFINE_INPUTFUNC( FIELD_VECTOR, "PanicLoudFromPoint", InputPanicLoudFromPoint ),
@@ -730,7 +730,7 @@ void CFishPool::Update( void )
 /**
  * Inputs
  */
-void CFishPool::InputSpawnFish( inputdata_t &inputdata )
+void CFishPool::InputSpawnFish( inputdata_t &&inputdata )
 {
 	QAngle heading( 0.0f, RandomFloat( 0, 360.0f ), 0.0f );
 
@@ -746,7 +746,7 @@ void CFishPool::InputSpawnFish( inputdata_t &inputdata )
 	}
 }
 
-void CFishPool::InputPanicLoudFromPoint( inputdata_t &inputdata )
+void CFishPool::InputPanicLoudFromPoint( inputdata_t &&inputdata )
 {
 	// Make the fish panic from this point
 	Vector vecPoint;
@@ -764,7 +764,7 @@ void CFishPool::InputPanicLoudFromPoint( inputdata_t &inputdata )
 	}
 }
 
-void CFishPool::InputPanicQuietFromPoint( inputdata_t &inputdata )
+void CFishPool::InputPanicQuietFromPoint( inputdata_t &&inputdata )
 {
 	// Make the fish panic from this point
 	Vector vecPoint;

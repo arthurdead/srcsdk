@@ -128,8 +128,8 @@ public:
 #endif
 
 #ifdef GAME_DLL
-	void				InputSetDamage( inputdata_t &inputdata );
-	void				InputDetonate( inputdata_t &inputdata );
+	void				InputSetDamage( inputdata_t &&inputdata );
+	void				InputDetonate( inputdata_t &&inputdata );
 #endif
 
 public:

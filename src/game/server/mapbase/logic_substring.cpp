@@ -16,11 +16,11 @@ public:
 
 	CLogicSubstring( void ) { }
 	
-	void InputDisable( inputdata_t &inputData );
-	void InputEnable( inputdata_t &inputData );
-	void InputInValue( inputdata_t &inputData );
-	void InputSetLength( inputdata_t &inputData );
-	void InputSetStartPos( inputdata_t &inputData );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputInValue( inputdata_t &&inputdata );
+	void InputSetLength( inputdata_t &&inputdata );
+	void InputSetStartPos( inputdata_t &&inputdata );
 	
 	void Spawn(void);
 
@@ -39,8 +39,8 @@ BEGIN_DATADESC( CLogicSubstring )
 	
 	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
 
-	DEFINE_KEYFIELD(m_nLength, FIELD_INTEGER, "length" ),
-	DEFINE_KEYFIELD(m_nStartPos, FIELD_INTEGER, "startPos" ),
+	DEFINE_KEYFIELD_AUTO( m_nLength, "length" ),
+	DEFINE_KEYFIELD_AUTO( m_nStartPos, "startPos" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -55,14 +55,14 @@ END_DATADESC()
 //-----------------------------------------------------------------------------
 // Purpose: Disable or enable the entity (disabling prevents any input functions from running)
 //-----------------------------------------------------------------------------
-void CLogicSubstring::InputDisable( inputdata_t &inputData ) { m_bEnabled = false; }
-void CLogicSubstring::InputEnable ( inputdata_t &inputData ) { m_bEnabled = true ; }
+void CLogicSubstring::InputDisable( inputdata_t &&inputdata ) { m_bEnabled = false; }
+void CLogicSubstring::InputEnable ( inputdata_t &&inputdata ) { m_bEnabled = true ; }
 
 //-----------------------------------------------------------------------------
 // Purpose: Trim substring from input
 // Output: Substring
 //-----------------------------------------------------------------------------
-void CLogicSubstring::InputInValue( inputdata_t &inputData )
+void CLogicSubstring::InputInValue( inputdata_t &&inputdata )
 {
 	if( !m_bEnabled ) return;
 
@@ -87,14 +87,14 @@ void CLogicSubstring::InputInValue( inputdata_t &inputData )
 //-----------------------------------------------------------------------------
 // Purpose: Setter methods for keyvalues
 //-----------------------------------------------------------------------------
-void CLogicSubstring::InputSetLength( inputdata_t &inputData )
+void CLogicSubstring::InputSetLength( inputdata_t &&inputdata )
 {
 	if( !m_bEnabled ) return;
 
 	m_nLength = inputData.value.Int();
 }
 
-void CLogicSubstring::InputSetStartPos( inputdata_t &inputData )
+void CLogicSubstring::InputSetStartPos( inputdata_t &&inputdata )
 {
 	if( !m_bEnabled ) return;
 

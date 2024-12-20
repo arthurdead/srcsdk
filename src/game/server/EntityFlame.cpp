@@ -21,7 +21,7 @@
 
 BEGIN_MAPENTITY( CEntityFlame )
 
-	DEFINE_KEYFIELD( m_flLifetime, FIELD_FLOAT, "lifetime" ),
+	DEFINE_KEYFIELD_AUTO( m_flLifetime, "lifetime" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Ignite", InputIgnite ),
 
@@ -115,7 +115,7 @@ void CEntityFlame::UseCheapEffect( bool bCheap )
 // Purpose: 
 // Input  : inputdata - 
 //-----------------------------------------------------------------------------
-void CEntityFlame::InputIgnite( inputdata_t &inputdata )
+void CEntityFlame::InputIgnite( inputdata_t &&inputdata )
 {
 	if (m_target != NULL_STRING)
 	{
@@ -375,14 +375,14 @@ public:
 	virtual void Precache();
 
 protected:
-	void InputIgnite( inputdata_t &inputdata );
+	void InputIgnite( inputdata_t &&inputdata );
 	float m_flLifetime;
 };
 
 
 BEGIN_MAPENTITY( CEnvEntityIgniter )
 
-	DEFINE_KEYFIELD( m_flLifetime, FIELD_FLOAT, "lifetime" ),
+	DEFINE_KEYFIELD_AUTO( m_flLifetime, "lifetime" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Ignite", InputIgnite ),
 
 END_MAPENTITY()
@@ -404,7 +404,7 @@ void CEnvEntityIgniter::Precache()
 //-----------------------------------------------------------------------------
 // Purpose: Ignites entities
 //-----------------------------------------------------------------------------
-void CEnvEntityIgniter::InputIgnite( inputdata_t &inputdata )
+void CEnvEntityIgniter::InputIgnite( inputdata_t &&inputdata )
 {
 	if ( m_target == NULL_STRING )
 		return;

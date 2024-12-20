@@ -15,6 +15,8 @@
 #include "tier0/dbg.h"
 #include "const.h"
 #include "bitvec.h"
+#include "datamap.h"
+#include "coordsize.h"
 
 DECLARE_LOGGING_CHANNEL( LOG_SENDPROP );
 
@@ -201,14 +203,32 @@ class CSendTablePrecalc;
 #define DATATABLE_PROXY_INDEX_NOPROXY	255
 #define DATATABLE_PROXY_INDEX_INVALID	254
 
-#define SENDPROP_DEFAULT_PRIORITY ((byte)128)
-#define SENDPROP_CHANGES_OFTEN_PRIORITY ((byte)64)
+enum DTPriority_t : unsigned char;
+
+#define SENDPROP_DEFAULT_PRIORITY ((DTPriority_t)128)
+#define SENDPROP_CHANGES_OFTEN_PRIORITY ((DTPriority_t)64)
+
+class CSendPropExtra_Base
+{
+public:
+	virtual ~CSendPropExtra_Base() {}
+
+#ifndef DT_PRIORITY_SUPPORTED
+	byte m_priority;
+#endif
+};
 
 class SendProp
 {
 public:
-						SendProp();
-	virtual				~SendProp();
+	SendProp();
+	virtual ~SendProp();
+
+	SendProp(SendProp &&other);
+	SendProp &operator=(SendProp &&other);
+
+	SendProp(const SendProp &other) = delete;
+	SendProp &operator=(const SendProp &other) = delete;
 
 	void				Clear();
 
@@ -258,12 +278,15 @@ public:
 
 	SendPropType		GetType() const;
 
-	int					GetFlags() const;
-	void				SetFlags( int flags );	
+	DTFlags_t					GetFlags() const;
+	void				SetFlags( DTFlags_t flags );	
 
 	// Some property types bind more data to the SendProp in here.
-	const void*			GetExtraData() const;
-	void				SetExtraData( const void *pData );
+	CSendPropExtra_Base*			GetExtraData() const;
+	void				SetExtraData( CSendPropExtra_Base *pData );
+
+	DTPriority_t 				GetPriority() const;
+	void				SetPriority( DTPriority_t priority );
 
 public:
 
@@ -286,12 +309,16 @@ public:
 
 	const char		*m_pVarName;
 	float			m_fHighLowMul;
+
+#ifdef DT_PRIORITY_SUPPORTED
+	byte			m_priority;
+#endif
 	
 public:
 
-	int					m_Flags;				// SPROP_ flags.
+	DTFlags_t					m_Flags;				// SPROP_ flags.
 
-private:
+public:
 
 	SendVarProxyFn		m_ProxyFn;				// NULL for DPT_DataTable.
 	SendTableProxyFn	m_DataTableProxyFn;		// Valid for DPT_DataTable.
@@ -303,9 +330,46 @@ private:
 	int					m_Offset;
 
 	// Extra data bound to this property.
-	const void			*m_pExtraData;
+	CSendPropExtra_Base			*m_pExtraData;
 };
 
+class SendPropEx : public SendProp
+{
+public:
+	using SendProp::SendProp;
+	using SendProp::operator=;
+};
+
+inline DTPriority_t SendProp::GetPriority() const
+{
+#ifdef DT_PRIORITY_SUPPORTED
+	return (DTPriority_t)m_priority;
+#else
+	if((m_Flags & SPROP_ALLOCATED_EXTRADATA) != 0) {
+		if(m_pExtraData) {
+			return (DTPriority_t)m_pExtraData->m_priority;
+		}
+	}
+
+	return SENDPROP_DEFAULT_PRIORITY;
+#endif
+}
+
+inline void	SendProp::SetPriority( DTPriority_t priority )
+{
+#ifdef DT_PRIORITY_SUPPORTED
+	m_priority = (byte)priority;
+#else
+	if(!m_pExtraData) {
+		m_pExtraData = new CSendPropExtra_Base;
+		m_Flags |= SPROP_ALLOCATED_EXTRADATA;
+	}
+
+	if((m_Flags & SPROP_ALLOCATED_EXTRADATA) != 0) {
+		m_pExtraData->m_priority = (byte)priority;
+	}
+#endif
+}
 
 inline int SendProp::GetOffset() const
 {
@@ -431,25 +495,31 @@ inline SendPropType SendProp::GetType() const
 	return m_Type; 
 }
 
-inline int SendProp::GetFlags() const
+inline DTFlags_t SendProp::GetFlags() const
 {
 	return m_Flags;
 }
 
-inline void SendProp::SetFlags( int flags )
+inline void SendProp::SetFlags( DTFlags_t flags )
 {
 	// Make sure they're using something from the valid set of flags.
-	Assert( !( flags & ~((1 << SPROP_NUMFLAGBITS) - 1) ) );
+	Assert( !( flags & ~((1 << GAME_SPROP_NUMFLAGBITS) - 1) ) );
 	m_Flags = flags;
 }
 
-inline const void* SendProp::GetExtraData() const
+inline CSendPropExtra_Base* SendProp::GetExtraData() const
 {
 	return m_pExtraData;
 }
 
-inline void SendProp::SetExtraData( const void *pData )
+inline void SendProp::SetExtraData( CSendPropExtra_Base *pData )
 {
+	if((m_Flags & SPROP_ALLOCATED_EXTRADATA) != 0) {
+		if(m_pExtraData) {
+			delete m_pExtraData;
+		}
+	}
+
 	m_pExtraData = pData;
 }
 
@@ -464,9 +534,14 @@ public:
 
 	typedef SendProp PropType;
 
-				SendTable();
-				SendTable( SendProp *pProps, int nProps, const char *pNetTableName );
-				~SendTable();
+	SendTable();
+	SendTable( SendProp *pProps, int nProps, const char *pNetTableName );
+	~SendTable();
+
+	SendTable(const SendTable &) = delete;
+	SendTable &operator=(const SendTable &) = delete;
+	SendTable(SendTable &&) = delete;
+	SendTable &operator=(SendTable &&) = delete;
 
 	void		Construct( SendProp *pProps, int nProps, const char *pNetTableName );
 
@@ -608,29 +683,29 @@ inline void SendTable::SetHasPropsEncodedAgainstTickcount( bool bState )
 // Note: currentSendDTClass::MakeANetworkVar_##varName equates to currentSendDTClass. It's
 // there as a check to make sure all networked variables use the CNetworkXXXX macros in network_var.h.
 #define SENDINFO(varName) \
-	DT_VARNAME(varName), offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName), sizeof(((currentSendDTClass*)0)->varName)
+	DT_VARNAME(varName), currentSendDTClass::GetOffset_##varName##_memory(), sizeof(((currentSendDTClass*)0)->varName)
 #define SENDINFO_ARRAY(varName) \
-	DT_VARNAME(varName), offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName), sizeof(((currentSendDTClass*)0)->varName[0])
+	DT_VARNAME(varName), currentSendDTClass::GetOffset_##varName##_memory(), sizeof(((currentSendDTClass*)0)->varName[0])
 #define SENDINFO_ARRAY3(varName) \
-	DT_VARNAME(varName), offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName), sizeof(((currentSendDTClass*)0)->varName[0]), (sizeof(((currentSendDTClass*)0)->varName)/sizeof(((currentSendDTClass*)0)->varName[0]))
+	DT_VARNAME(varName), currentSendDTClass::GetOffset_##varName##_memory(), sizeof(((currentSendDTClass*)0)->varName[0]), (sizeof(((currentSendDTClass*)0)->varName)/sizeof(((currentSendDTClass*)0)->varName[0]))
 #define SENDINFO_ARRAYELEM(varName, i) \
-	DT_VARNAME_ARRAYELEM(varName, i), (offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName) + (sizeof(((currentSendDTClass*)0)->varName[i]) * i)), sizeof(((currentSendDTClass*)0)->varName[i])
+	DT_VARNAME_ARRAYELEM(varName, i), (currentSendDTClass::GetOffset_##varName##_memory() + (sizeof(((currentSendDTClass*)0)->varName[i]) * i)), sizeof(((currentSendDTClass*)0)->varName[i])
 #define SENDINFO_NETWORKARRAYELEM(varName, i) \
-	DT_VARNAME_ARRAYELEM(varName, i), (offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName) + (sizeof(((currentSendDTClass*)0)->varName[i]) * i)), sizeof(((currentSendDTClass*)0)->varName[i])
+	DT_VARNAME_ARRAYELEM(varName, i), (currentSendDTClass::GetOffset_##varName##_memory() + (sizeof(((currentSendDTClass*)0)->varName[i]) * i)), sizeof(((currentSendDTClass*)0)->varName[i])
 
 // NOTE: Be VERY careful to specify any other vector elems for the same vector IN ORDER and 
 // right after each other, otherwise it might miss the Y or Z component in SP.
 //
 // Note: this macro specifies a negative offset so the engine can detect it and setup m_pNext
 #define SENDINFO_VECTORELEM(varName, i) \
-	DT_VARNAME_VECTORELEM(varName, i), -(int)(offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName) + (sizeof(((currentSendDTClass*)0)->varName[i]) * i)), sizeof(((currentSendDTClass*)0)->varName[i])
+	DT_VARNAME_VECTORELEM(varName, i), -(int)(currentSendDTClass::GetOffset_##varName##_memory() + (sizeof(((currentSendDTClass*)0)->varName[i]) * i)), sizeof(((currentSendDTClass*)0)->varName[i])
 
 #define SENDINFO_STRUCTELEM(structVarName, varName) \
-	DT_VARNAME_STRUCTELEM(structVarName, varName), (offsetof(currentSendDTClass::MakeANetworkVar_##structVarName, structVarName) + offsetof(currentSendDTClass::NetworkVar_##structVarName::MakeANetworkVar_##varName, varName)), sizeof(((currentSendDTClass*)0)->structVarName.varName)
+	DT_VARNAME_STRUCTELEM(structVarName, varName), (currentSendDTClass::GetOffset_##structVarName##_memory() + currentSendDTClass::NetworkVar_##structVarName::GetOffset_##varName##_memory()), sizeof(((currentSendDTClass*)0)->structVarName.varName)
 #define SENDINFO_NESTEDSTRUCTELEM(structVarName, structVarName2, varName) \
-	DT_VARNAME_NESTEDSTRUCTELEM(structVarName, structVarName2, varName), (offsetof(currentSendDTClass::MakeANetworkVar_##structVarName, structVarName) + offsetof(currentSendDTClass::NetworkVar_##structVarName::MakeANetworkVar_##structVarName2, structVarName2) + offsetof(currentSendDTClass::NetworkVar_##structVarName::NetworkVar_##structVarName2::MakeANetworkVar_##varName, varName)), sizeof(((currentSendDTClass*)0)->structVarName.structVarName2.varName)
+	DT_VARNAME_NESTEDSTRUCTELEM(structVarName, structVarName2, varName), (currentSendDTClass::GetOffset_##structVarName##_memory() + currentSendDTClass::NetworkVar_##structVarName::GetOffset_##structVarName2##_memory() + currentSendDTClass::NetworkVar_##structVarName::NetworkVar_##structVarName2::GetOffset_##varName##_memory()), sizeof(((currentSendDTClass*)0)->structVarName.structVarName2.varName)
 #define SENDINFO_STRUCTARRAYELEM(structVarName, varName, i) \
-	DT_VARNAME_STRUCTELEM_ARRAYELEM(structVarName, varName, i), (offsetof(currentSendDTClass::MakeANetworkVar_##structVarName, structVarName) + offsetof(currentSendDTClass::NetworkVar_##structVarName::MakeANetworkVar_##varName, varName) + (sizeof(((currentSendDTClass*)0)->structVarName.varName[i]) * i)), sizeof(((currentSendDTClass*)0)->structVarName.varName[i])
+	DT_VARNAME_STRUCTELEM_ARRAYELEM(structVarName, varName, i), (currentSendDTClass::GetOffset_##structVarName##_memory() + currentSendDTClass::NetworkVar_##structVarName::GetOffset_##varName##_memory( i )), sizeof(((currentSendDTClass*)0)->structVarName.varName[i])
 
 // Use this when you're not using a CNetworkVar to represent the data you're sending.
 #define SENDINFO_NOCHECK(varName) \
@@ -667,11 +742,16 @@ void SendProxy_VectorXY( const SendProp *pProp, const void *pStruct, const void 
 void SendProxy_Vector2D( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_Quaternion( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 
-void SendProxy_Int8		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_Int16		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_Int32		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Bool( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+void SendProxy_UChar( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+void SendProxy_UShort( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+void SendProxy_UInt( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+void SendProxy_UInt64( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+void SendProxy_SChar		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Short		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Int		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_Int64		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_String	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_CString	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_Color32	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_Color32E	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_Color24	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
@@ -688,154 +768,831 @@ void* SendProxy_DataTablePtrToDataTable( const SendProp *pProp, const void *pStr
 // Used on player entities - only sends the data to the local player (objectID-1).
 void* SendProxy_SendLocalDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
 
+float AssignRangeMultiplier( int nBits, double range );
+
+#define SendPropAuto( varName, ... ) \
+	SendPropAuto_impl<typename NetworkVarType<currentSendDTClass::NetworkVar_##varName##_BaseClass>::type>( DT_VARNAME(varName), CNativeFieldInfo<currentSendDTClass::NetworkVar_##varName##_BaseClass>::FIELDTYPE, currentSendDTClass::GetOffset_##varName##_prop(), __VA_ARGS__ )
+#define SendPropAuto_NoCheck( varName, ... ) \
+	SendPropAuto_impl<decltype(currentSendDTClass::varName)>( DT_VARNAME(varName), CNativeFieldInfo<decltype(currentSendDTClass::varName)>::FIELDTYPE, offsetof(currentSendDTClass, varName), __VA_ARGS__ )
+
+void SendPropAuto_impl(
+	SendPropEx &ret,
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int sizeofVar,
+	int nBits,
+	DTFlags_t flags,
+	SendVarProxyFn varProxy,
+	DTPriority_t priority
+);
+
+template <typename T>
+class CHandle;
+
+template <typename T> struct dt_base_type_ { using type = T; };
+template<> struct dt_base_type_<Vector> { using type = float; };
+template<> struct dt_base_type_<QAngle> { using type = float; };
+template<> struct dt_base_type_<Vector2D> { using type = float; };
+template<> struct dt_base_type_<Vector4D> { using type = float; };
+template<> struct dt_base_type_<Quaternion> { using type = float; };
+template<> struct dt_base_type_<matrix3x4_t> { using type = float; };
+template<> struct dt_base_type_<VMatrix> { using type = float; };
+template<> struct dt_base_type_<CPredictableId> { using type = unsigned int; };
+template<> struct dt_base_type_<CBaseHandle> { using type = unsigned long; };
+template<typename U> struct dt_base_type_<CHandle<U>> { using type = unsigned long; };
+template <typename T>
+using dt_base_type_t = typename dt_base_type_<T>::type;
+
+template <typename T> struct is_ehandle_ { static constexpr inline const bool value = false; };
+template<> struct is_ehandle_<CBaseHandle> { static constexpr inline const bool value = true; };
+template<typename U> struct is_ehandle_<CHandle<U>> { static constexpr inline const bool value = true; };
+template <typename T>
+constexpr inline const bool is_ehandle_v = is_ehandle_<T>::value;
+
+#define TIME_BITS 24
+#define PREDICTABLE_ID_BITS 31
+#define ANGLE_BITS 13
+#define DISTANCE_BITS 12
+#define SCALE_BITS 8
+
+#define ANIMATION_SEQUENCE_BITS			12	// 4096 sequences
+#define ANIMATION_SKIN_BITS				10	// 1024 body skin selections FIXME: this seems way high
+#define ANIMATION_BODY_BITS				32	// body combinations
+#define ANIMATION_HITBOXSET_BITS		2	// hit box sets 
+#define ANIMATION_POSEPARAMETER_BITS	11	// pose parameter resolution
+#define ANIMATION_PLAYBACKRATE_BITS		8	// default playback rate, only used on leading edge detect sequence changes
+
+template <typename T>
+inline int DT_BitsOrTypeBits_impl(int nBits, fieldtype_t type, DTFlags_t flags)
+{
+	if(flags & SPROP_NOSCALE) {
+		nBits = (sizeof(T) * 8);
+		return nBits;
+	} else if(flags & SPROP_NORMAL) {
+		if constexpr(is_integral_v<dt_base_type_t<T>>) {
+			return 1;
+		} else if constexpr(is_floating_point_v<dt_base_type_t<T>>) {
+			return NORMAL_FRACTIONAL_BITS;
+		}
+	} else if(flags & SPROP_COORD_MP_LOWPRECISION) {
+		if constexpr(is_integral_v<dt_base_type_t<T>>) {
+			return COORD_INTEGER_BITS_MP;
+		} else if constexpr(is_floating_point_v<dt_base_type_t<T>>) {
+			return (COORD_INTEGER_BITS_MP + COORD_FRACTIONAL_BITS_MP_LOWPRECISION);
+		}
+	} else if(flags & (SPROP_COORD_MP|SPROP_COORD_MP_INTEGRAL)) {
+		if constexpr(is_integral_v<dt_base_type_t<T>>) {
+			return COORD_INTEGER_BITS_MP;
+		} else if constexpr(is_floating_point_v<dt_base_type_t<T>>) {
+			return (COORD_INTEGER_BITS_MP + COORD_FRACTIONAL_BITS);
+		}
+	} else if(flags & SPROP_COORD) {
+		if constexpr(is_integral_v<dt_base_type_t<T>>) {
+			return COORD_INTEGER_BITS;
+		} else if constexpr(is_floating_point_v<dt_base_type_t<T>>) {
+			return (COORD_INTEGER_BITS + COORD_FRACTIONAL_BITS);
+		}
+	} else if constexpr(is_same_v<dt_base_type_t<T>, bool>) {
+		return 1;
+	} else if constexpr(is_same_v<T, QAngle>) {
+		return ANGLE_BITS;
+	} else if constexpr(is_ehandle_v<T>) {
+		return NUM_NETWORKED_EHANDLE_BITS;
+	} else if constexpr(is_same_v<T, CPredictableId>) {
+		return PREDICTABLE_ID_BITS;
+	}
+
+	switch(type) {
+	case FIELD_TIME:
+		return TIME_BITS;
+	case FIELD_DISTANCE:
+		return DISTANCE_BITS;
+	case FIELD_SCALE:
+		return SCALE_BITS;
+	default:
+		break;
+	}
+
+	if(nBits <= 0) {
+		return -2;
+	} else {
+		return nBits;
+	}
+}
+
+template <typename T>
+inline int DT_BitsOrTypeBits(int nBits, fieldtype_t type, DTFlags_t flags)
+{
+	nBits = DT_BitsOrTypeBits_impl<T>(nBits, type, flags);
+	if(nBits == -2) {
+		nBits = (sizeof(T) * 8);
+	}
+	return nBits;
+}
+
+template <typename T>
+inline dt_base_type_t<T> DT_LowValue(fieldtype_t type, DTFlags_t flags)
+{
+	if(flags & SPROP_NOSCALE) {
+		return static_cast<dt_base_type_t<T>>(0);
+	} else if(flags & SPROP_UNSIGNED) {
+		return static_cast<dt_base_type_t<T>>(0);
+	} else if(flags & SPROP_NORMAL) {
+		return static_cast<dt_base_type_t<T>>(-1);
+	} else if(flags & SPROP_COORD_MP_INTEGRAL) {
+		return static_cast<dt_base_type_t<T>>(INT_MIN);
+	} else if(flags & (SPROP_COORD|SPROP_COORD_MP|SPROP_COORD_MP_LOWPRECISION)) {
+		if constexpr(is_integral_v<dt_base_type_t<T>>) {
+			return static_cast<dt_base_type_t<T>>(MIN_COORD_INTEGER);
+		} else {
+			return static_cast<dt_base_type_t<T>>(MIN_COORD_FLOAT);
+		}
+	} else if constexpr(is_same_v<T, QAngle>) {
+		return static_cast<dt_base_type_t<T>>(-360.0f);
+	} else if constexpr(is_unsigned_v<dt_base_type_t<T>>) {
+		return static_cast<dt_base_type_t<T>>(0);
+	} else {
+		return static_cast<dt_base_type_t<T>>(0);
+	}
+}
+
+template <typename T>
+inline dt_base_type_t<T> DT_HighValue(int nBits, fieldtype_t type, DTFlags_t flags)
+{
+	if(flags & SPROP_NOSCALE) {
+		return static_cast<dt_base_type_t<T>>(0);
+	} else if(flags & SPROP_NORMAL) {
+		return static_cast<dt_base_type_t<T>>(1);
+	} else if(flags & SPROP_COORD_MP_INTEGRAL) {
+		return static_cast<dt_base_type_t<T>>(INT_MAX);
+	} else if(flags & (SPROP_COORD|SPROP_COORD_MP|SPROP_COORD_MP_LOWPRECISION)) {
+		if constexpr(is_integral_v<dt_base_type_t<T>>) {
+			return static_cast<dt_base_type_t<T>>(MAX_COORD_INTEGER);
+		} else {
+			return static_cast<dt_base_type_t<T>>(MAX_COORD_FLOAT);
+		}
+	} else if constexpr(is_same_v<T, QAngle>) {
+		return static_cast<dt_base_type_t<T>>(360.0f);
+	}
+
+	switch(type) {
+	case FIELD_DISTANCE:
+		return MAX_TRACE_LENGTH;
+	case FIELD_SCALE:
+		return 1.0f;
+	default:
+		break;
+	}
+
+	return static_cast<dt_base_type_t<T>>(1 << DT_BitsOrTypeBits<T>(nBits, type, flags));
+}
+
+template <typename T>
+inline int DT_BitsOrTypeBits(int nBits, fieldtype_t type, DTFlags_t flags, dt_base_type_t<T> HighValue)
+{
+	nBits = DT_BitsOrTypeBits_impl<T>(nBits, type, flags);
+	if(nBits == -2) {
+		if constexpr(is_integral_v<dt_base_type_t<T>>) {
+			return UTIL_CountNumBitsSet(HighValue);
+		} else {
+			nBits = (sizeof(T) * 8);
+		}
+	}
+	return nBits;
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits,
+	dt_base_type_t<T> LowValue,
+	dt_base_type_t<T> HighValue,
+	DTFlags_t flags,
+	SendVarProxyFn varProxy,
+	DTPriority_t priority
+)
+{
+	SendPropEx ret;
+
+	int tmpBits = DT_BitsOrTypeBits<T>(nBits, type, flags, HighValue);
+
+	dt_base_type_t<T> preRoundLowValue = LowValue;
+	dt_base_type_t<T> preRoundHighValue = HighValue;
+
+	if(flags & SPROP_ROUNDDOWN) {
+		HighValue = preRoundHighValue - ((preRoundHighValue - preRoundLowValue) / (1 << tmpBits));
+	}
+
+	if(flags & SPROP_ROUNDUP) {
+		LowValue = preRoundLowValue + ((preRoundHighValue - preRoundLowValue) / (1 << tmpBits));
+	}
+
+	if(LowValue == static_cast<dt_base_type_t<T>>(-1) && HighValue == static_cast<dt_base_type_t<T>>(1)) {
+		flags |= SPROP_NORMAL;
+	}
+
+	if(LowValue == static_cast<dt_base_type_t<T>>(0) || LowValue > static_cast<dt_base_type_t<T>>(0)) {
+		flags |= SPROP_UNSIGNED;
+	}
+
+	SendPropAuto_impl(
+		ret,
+		pVarName,
+		type,
+		offset,
+		sizeof(T),
+		nBits,
+		flags,
+		varProxy,
+		priority
+	);
+
+	ret.m_fLowValue = static_cast<float>(LowValue);
+	ret.m_fHighValue = static_cast<float>(HighValue);
+	ret.m_fHighLowMul = AssignRangeMultiplier( ret.m_nBits, static_cast<double>( HighValue - LowValue ) );
+
+	return ret;
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits,
+	dt_base_type_t<T> LowValue,
+	dt_base_type_t<T> HighValue,
+	DTFlags_t flags,
+	SendVarProxyFn varProxy
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		nBits,
+		LowValue,
+		HighValue,
+		flags,
+		varProxy,
+		SENDPROP_DEFAULT_PRIORITY
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits,
+	dt_base_type_t<T> LowValue,
+	dt_base_type_t<T> HighValue,
+	DTFlags_t flags
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		nBits,
+		LowValue,
+		HighValue,
+		flags,
+		NULL
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits,
+	dt_base_type_t<T> LowValue,
+	dt_base_type_t<T> HighValue
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		nBits,
+		LowValue,
+		HighValue,
+		SPROP_NONE
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	dt_base_type_t<T> LowValue,
+	dt_base_type_t<T> HighValue,
+	DTFlags_t flags
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		0,
+		LowValue,
+		HighValue,
+		flags
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	dt_base_type_t<T> LowValue,
+	dt_base_type_t<T> HighValue
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		0,
+		LowValue,
+		HighValue,
+		SPROP_NONE
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits,
+	dt_base_type_t<T> LowValue,
+	DTFlags_t flags,
+	SendVarProxyFn varProxy,
+	DTPriority_t priority
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		nBits,
+		LowValue,
+		DT_HighValue<T>(nBits, type),
+		flags,
+		varProxy,
+		priority
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits,
+	dt_base_type_t<T> LowValue,
+	DTFlags_t flags
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		nBits,
+		LowValue,
+		flags,
+		NULL,
+		SENDPROP_DEFAULT_PRIORITY
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits,
+	dt_base_type_t<T> LowValue,
+	dt_highdefault_t,
+	DTFlags_t flags
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		nBits,
+		LowValue,
+		DT_HighValue<T>(nBits, type),
+		flags,
+		NULL,
+		SENDPROP_DEFAULT_PRIORITY
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits,
+	DTFlags_t flags,
+	SendVarProxyFn varProxy,
+	DTPriority_t priority
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		nBits,
+		DT_LowValue<T>(type),
+		DT_HighValue<T>(nBits, type),
+		flags,
+		varProxy,
+		priority
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits,
+	DTFlags_t flags,
+	DTPriority_t priority
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		nBits,
+		flags,
+		NULL,
+		priority
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		nBits,
+		SPROP_NONE,
+		NULL,
+		SENDPROP_DEFAULT_PRIORITY
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits,
+	DTFlags_t flags
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		nBits,
+		flags,
+		NULL,
+		SENDPROP_DEFAULT_PRIORITY
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits,
+	DTPriority_t priority
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		nBits,
+		SPROP_NONE,
+		NULL,
+		priority
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	int nBits,
+	DTFlags_t flags,
+	SendVarProxyFn varProxy
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		nBits,
+		flags,
+		varProxy,
+		SENDPROP_DEFAULT_PRIORITY
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	DTFlags_t flags,
+	SendVarProxyFn varProxy,
+	DTPriority_t priority
+)
+{
+	SendPropEx ret;
+
+	ret.m_fLowValue = 0.0f;
+	ret.m_fHighValue = 0.0f;
+	ret.m_fHighLowMul = 0.0f;
+
+	SendPropAuto_impl(
+		ret,
+		pVarName,
+		type,
+		offset,
+		sizeof(T),
+		0,
+		flags|SPROP_NOSCALE,
+		varProxy,
+		priority
+	);
+
+	return ret;
+}
+
+template <>
+inline SendPropEx SendPropAuto_impl<QAngle>(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	DTFlags_t flags,
+	SendVarProxyFn varProxy,
+	DTPriority_t priority
+)
+{
+	return SendPropAuto_impl<QAngle>(
+		pVarName,
+		type,
+		offset,
+		0,
+		-360.0f,
+		360.0f,
+		flags,
+		varProxy ? varProxy : SendProxy_QAngles,
+		priority
+	);
+}
+
+template <>
+inline SendPropEx SendPropAuto_impl<bool>(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	DTFlags_t flags,
+	SendVarProxyFn varProxy,
+	DTPriority_t priority
+)
+{
+	return SendPropAuto_impl<bool>(
+		pVarName,
+		type,
+		offset,
+		1,
+		false,
+		true,
+		flags|SPROP_UNSIGNED,
+		varProxy ? varProxy : SendProxy_Bool,
+		priority
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	DTFlags_t flags
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		flags,
+		NULL,
+		SENDPROP_DEFAULT_PRIORITY
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		SPROP_NONE,
+		NULL,
+		SENDPROP_DEFAULT_PRIORITY
+	);
+}
+
+template <typename T>
+SendPropEx SendPropAuto_impl(
+	const char *pVarName,
+	fieldtype_t type,
+	int offset,
+	DTPriority_t priority
+)
+{
+	return SendPropAuto_impl<T>(
+		pVarName,
+		type,
+		offset,
+		SPROP_NONE,
+		NULL,
+		priority
+	);
+}
 
 // ------------------------------------------------------------------------ //
 // Use these functions to setup your data tables.
 // ------------------------------------------------------------------------ //
-SendProp SendPropFloat(
+SendPropEx SendPropFloat(
 	const char *pVarName,		// Variable name.
 	int offset,					// Offset into container structure.
 	int sizeofVar=SIZEOF_IGNORE,
 	int nBits=32,				// Number of bits to use when encoding.
-	int flags=0,
+	DTFlags_t flags=SPROP_NONE,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT,	// High value. If HIGH_DEFAULT, it's (1<<nBits).
 	SendVarProxyFn varProxy=SendProxy_Float,
-	byte priority = SENDPROP_DEFAULT_PRIORITY
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
-SendProp SendPropVector(
+SendPropEx SendPropVector(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,
 	int nBits=32,					// Number of bits (for each floating-point component) to use when encoding.
-	int flags=SPROP_NOSCALE,
+	DTFlags_t flags=SPROP_NOSCALE,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT,	// High value. If HIGH_DEFAULT, it's (1<<nBits).
 	SendVarProxyFn varProxy=SendProxy_Vector,
-	byte priority = SENDPROP_DEFAULT_PRIORITY
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
-SendProp SendPropVectorXY(
+SendPropEx SendPropVectorXY(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,
 	int nBits=32,					// Number of bits (for each floating-point component) to use when encoding.
-	int flags=SPROP_NOSCALE,
+	DTFlags_t flags=SPROP_NOSCALE,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT,	// High value. If HIGH_DEFAULT, it's (1<<nBits).
 	SendVarProxyFn varProxy=SendProxy_VectorXY,
-	byte priority = SENDPROP_DEFAULT_PRIORITY
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
-SendProp SendPropQuaternion(
+SendPropEx SendPropQuaternion(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,
 	int nBits=32,					// Number of bits (for each floating-point component) to use when encoding.
-	int flags=SPROP_NOSCALE,
+	DTFlags_t flags=SPROP_NOSCALE,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT,	// High value. If HIGH_DEFAULT, it's (1<<nBits).
-	SendVarProxyFn varProxy=SendProxy_Quaternion
+	SendVarProxyFn varProxy=SendProxy_Quaternion,
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
-SendProp SendPropAngle(
+SendPropEx SendPropAngle(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,
 	int nBits=32,
-	int flags=0,
+	DTFlags_t flags=SPROP_NONE,
 	SendVarProxyFn varProxy=SendProxy_FloatAngle,
-	byte priority = SENDPROP_DEFAULT_PRIORITY
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
-SendProp SendPropQAngles(
+SendPropEx SendPropQAngles(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,
 	int nBits=32,
-	int flags=0,
+	DTFlags_t flags=SPROP_NONE,
 	SendVarProxyFn varProxy=SendProxy_QAngles,
-	byte priority = SENDPROP_DEFAULT_PRIORITY
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
-SendProp SendPropInt(
+SendPropEx SendPropInt(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by SENDINFO macro.
 	int nBits=-1,					// Set to -1 to automatically pick (max) number of bits based on size of element.
-	int flags=0,
+	DTFlags_t flags=SPROP_NONE,
 	SendVarProxyFn varProxy=0,
-	byte priority = SENDPROP_DEFAULT_PRIORITY
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
-inline SendProp SendPropColor32(
+SendPropEx SendPropColor32(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by SENDINFO macro.
-	byte priority = SENDPROP_DEFAULT_PRIORITY
-	)
-{
-	return SendPropInt( pVarName, offset, sizeofVar, 32, SPROP_UNSIGNED, SendProxy_Color32, priority );
-}
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
+	);
 
-inline SendProp SendPropColor32E(
+SendPropEx SendPropColor32E(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by SENDINFO macro.
-	byte priority = SENDPROP_DEFAULT_PRIORITY
-	)
-{
-	return SendPropInt( pVarName, offset, sizeofVar, 32, SPROP_UNSIGNED, SendProxy_Color32E, priority );
-}
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
+	);
 
-inline SendProp SendPropColor24(
+SendPropEx SendPropColor24(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by SENDINFO macro.
-	byte priority = SENDPROP_DEFAULT_PRIORITY
-	)
-{
-	return SendPropInt( pVarName, offset, sizeofVar, 24, SPROP_UNSIGNED, SendProxy_Color24, priority );
-}
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
+	);
 
-SendProp SendPropBool(
+SendPropEx SendPropBool(
 	const char *pVarName,
 	int offset,
-	int sizeofVar );
+	int sizeofVar,	// Handled by SENDINFO macro.
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY );
 
-SendProp SendPropIntWithMinusOneFlag(
+SendPropEx SendPropIntWithMinusOneFlag(
 	const char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,
 	int bits=-1,
 	SendVarProxyFn proxyFn=SendProxy_IntAddOne );
 
-SendProp SendPropString(
+SendPropEx SendPropString(
 	const char *pVarName,
 	int offset,
 	int bufferLen,
-	int flags=0,
-	SendVarProxyFn varProxy=SendProxy_String,
-	byte priority = SENDPROP_DEFAULT_PRIORITY);
+	DTFlags_t flags=SPROP_NONE,
+	SendVarProxyFn varProxy=SendProxy_CString,
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY);
 
 // The data table encoder looks at DVariant::m_pData.
-SendProp SendPropDataTable(
+SendPropEx SendPropDataTable(
 	const char *pVarName,
 	int offset,
 	SendTable *pTable, 
 	SendTableProxyFn varProxy=SendProxy_DataTableToDataTable,
-	byte priority = SENDPROP_DEFAULT_PRIORITY
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
-SendProp SendPropArray3(
+SendPropEx SendPropArray3(
 	const char *pVarName,
 	int offset,
 	int sizeofVar,
 	int elements,
-	SendProp pArrayProp,
+	SendPropEx pArrayProp,
 	SendTableProxyFn varProxy=SendProxy_DataTableToDataTable,
-	byte priority = SENDPROP_DEFAULT_PRIORITY
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
 //
@@ -866,12 +1623,12 @@ SendProp SendPropArray3(
 // Use the macro to let it automatically generate a table name. You shouldn't 
 // ever need to reference the table name. If you want to exclude this array, then
 // reference the name of the variable in varTemplate.
-SendProp InternalSendPropArray(
+SendPropEx InternalSendPropArray(
 	const int elementCount,
 	const int elementStride,
 	const char *pName,
 	ArrayLengthSendProxyFn proxy,
-	byte priority = SENDPROP_DEFAULT_PRIORITY
+	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
 
@@ -920,7 +1677,7 @@ SendProp InternalSendPropArray(
 
 // Use these to create properties that exclude other properties. This is useful if you want to use most of 
 // a base class's datatable data, but you want to override some of its variables.
-SendProp SendPropExclude(
+SendPropEx SendPropExclude(
 	const char *pDataTableName,	// Data table name (given to BEGIN_SEND_TABLE and BEGIN_RECV_TABLE).
 	const char *pPropName		// Name of the property to exclude.
 	);

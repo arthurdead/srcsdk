@@ -381,7 +381,7 @@ void CSharedFuncLadder::FindNearbyDismountPoints( const Vector& origin, float ra
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CSharedFuncLadder::InputEnable( inputdata_t &inputdata )
+void CSharedFuncLadder::InputEnable( inputdata_t &&inputdata )
 {
 	m_bDisabled = false;
 }
@@ -390,7 +390,7 @@ void CSharedFuncLadder::InputEnable( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CSharedFuncLadder::InputDisable( inputdata_t &inputdata )
+void CSharedFuncLadder::InputDisable( inputdata_t &&inputdata )
 {
 	m_bDisabled = true;
 }
@@ -400,7 +400,7 @@ void CSharedFuncLadder::InputDisable( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CSharedFuncLadder::InputForcePlayerOn( inputdata_t &inputdata )
+void CSharedFuncLadder::InputForcePlayerOn( inputdata_t &&inputdata )
 {
 	//TODO Arthurdead!!!!
 	//static_cast<CGameMovement*>(g_pGameMovement)->ForcePlayerOntoLadder(this);
@@ -410,7 +410,7 @@ void CSharedFuncLadder::InputForcePlayerOn( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CSharedFuncLadder::InputCheckPlayerOn( inputdata_t &inputdata )
+void CSharedFuncLadder::InputCheckPlayerOn( inputdata_t &&inputdata )
 {
 	//TODO Arthurdead!!!!
 	//static_cast<CGameMovement*>(g_pGameMovement)->MountPlayerOntoLadder(this);
@@ -481,13 +481,13 @@ LINK_ENTITY_TO_SERVERCLASS( func_useableladder, CFuncLadder );
 // Save/Restore
 //---------------------------------------------------------
 BEGIN_MAPENTITY( CSharedFuncLadder )
-	DEFINE_KEYFIELD( m_vecPlayerMountPositionTop,	FIELD_VECTOR, "point0" ),
-	DEFINE_KEYFIELD( m_vecPlayerMountPositionBottom,	FIELD_VECTOR, "point1" ),
+	DEFINE_KEYFIELD_AUTO( m_vecPlayerMountPositionTop, "point0" ),
+	DEFINE_KEYFIELD_AUTO( m_vecPlayerMountPositionBottom, "point1" ),
 
-	DEFINE_KEYFIELD( m_bDisabled,	FIELD_BOOLEAN,	"StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
 #if !defined( CLIENT_DLL )
-	DEFINE_KEYFIELD( m_surfacePropName,FIELD_STRING,	"ladderSurfaceProperties" ),
+	DEFINE_KEYFIELD_AUTO( m_surfacePropName, "ladderSurfaceProperties" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
@@ -516,7 +516,7 @@ void CSharedInfoLadderDismount::DrawDebugGeometryOverlays()
 }
 
 #if defined( GAME_DLL )
-int CSharedFuncLadder::UpdateTransmitState()
+EdictStateFlags_t CSharedFuncLadder::UpdateTransmitState()
 {
 	// transmit if in PVS for clientside prediction
 	return SetTransmitState( FL_EDICT_PVSCHECK );

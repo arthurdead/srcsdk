@@ -31,8 +31,8 @@ protected:
 	int		m_iDisabled;
 
 	// Input handlers
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 };

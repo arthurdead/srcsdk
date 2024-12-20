@@ -410,20 +410,20 @@ public:
 	void		OnStartSpeaking();
 
 	// Inputs
-	virtual void InputIdleRespond( inputdata_t &inputdata ) {};
-	void InputSpeakResponseConcept( inputdata_t &inputdata );
+	virtual void InputIdleRespond( inputdata_t &&inputdata ) {};
+	void InputSpeakResponseConcept( inputdata_t &&inputdata );
 	virtual bool SpeakMapmakerInterruptConcept( string_t iszConcept );
 
 	void			DisplayDeathMessage( void );
 	virtual const char		*GetDeathMessageText( void ) { return "GAMEOVER_ALLY"; }
-	void			InputMakeGameEndAlly( inputdata_t &inputdata );
-	void			InputMakeRegularAlly( inputdata_t &inputdata );
+	void			InputMakeGameEndAlly( inputdata_t &&inputdata );
+	void			InputMakeRegularAlly( inputdata_t &&inputdata );
 	bool			AskQuestionNow( CBaseEntity *pSpeechTarget = NULL, int iQARandomNumber = -1, const char *concept = TLK_QUESTION );
-	void			InputAskQuestion( inputdata_t &inputdata );
-	void			InputAnswerQuestion( inputdata_t &inputdata );
-	void			InputAnswerQuestionHello( inputdata_t &inputdata );
-	void			InputEnableSpeakWhileScripting( inputdata_t &inputdata );
-	void			InputDisableSpeakWhileScripting( inputdata_t &inputdata );
+	void			InputAskQuestion( inputdata_t &&inputdata );
+	void			InputAnswerQuestion( inputdata_t &&inputdata );
+	void			InputAnswerQuestionHello( inputdata_t &&inputdata );
+	void			InputEnableSpeakWhileScripting( inputdata_t &&inputdata );
+	void			InputDisableSpeakWhileScripting( inputdata_t &&inputdata );
 	
 	void			AnswerQuestion( CAI_PlayerAlly *pQuestioner, int iQARandomNum, bool bAnsweringHello );
 

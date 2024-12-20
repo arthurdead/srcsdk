@@ -37,8 +37,8 @@ public:
 // Input handles.
 public:
 	
-	void InputTurnOn( inputdata_t &inputdata );
-	void InputTurnOff( inputdata_t &inputdata );
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
 
 
 // FGD properties.
@@ -103,16 +103,16 @@ END_SEND_TABLE()
 
 BEGIN_MAPENTITY( CFunc_Dust )
 
-	DEFINE_KEYFIELD( m_Color,		FIELD_COLOR32,	"Color" ),
-	DEFINE_KEYFIELD( m_SpawnRate,	FIELD_INTEGER,	"SpawnRate" ),
-	DEFINE_KEYFIELD( m_flSizeMin,	FIELD_FLOAT,	"SizeMin" ),
-	DEFINE_KEYFIELD( m_flSizeMax,	FIELD_FLOAT,	"SizeMax" ),
-	DEFINE_KEYFIELD( m_SpeedMax,		FIELD_INTEGER,	"SpeedMax" ),
-	DEFINE_KEYFIELD( m_LifetimeMin,	FIELD_INTEGER,	"LifetimeMin" ),
-	DEFINE_KEYFIELD( m_LifetimeMax,	FIELD_INTEGER,	"LifetimeMax" ),
-	DEFINE_KEYFIELD( m_DistMax,		FIELD_INTEGER,	"DistMax" ),
+	DEFINE_KEYFIELD_AUTO( m_Color, "Color" ),
+	DEFINE_KEYFIELD_AUTO( m_SpawnRate, "SpawnRate" ),
+	DEFINE_KEYFIELD_AUTO( m_flSizeMin, "SizeMin" ),
+	DEFINE_KEYFIELD_AUTO( m_flSizeMax, "SizeMax" ),
+	DEFINE_KEYFIELD_AUTO( m_SpeedMax, "SpeedMax" ),
+	DEFINE_KEYFIELD_AUTO( m_LifetimeMin, "LifetimeMin" ),
+	DEFINE_KEYFIELD_AUTO( m_LifetimeMax, "LifetimeMax" ),
+	DEFINE_KEYFIELD_AUTO( m_DistMax, "DistMax" ),
 
-	DEFINE_KEYFIELD( m_FallSpeed,	FIELD_FLOAT,	"FallSpeed" ),
+	DEFINE_KEYFIELD_AUTO( m_FallSpeed, "FallSpeed" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn",  InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff )
@@ -211,7 +211,7 @@ bool CFunc_Dust::KeyValue( const char *szKeyName, const char *szValue )
 }
 
 
-void CFunc_Dust::InputTurnOn( inputdata_t &inputdata )
+void CFunc_Dust::InputTurnOn( inputdata_t &&inputdata )
 {
 	if( !(m_DustFlags & DUSTFLAGS_ON) )
 	{
@@ -220,7 +220,7 @@ void CFunc_Dust::InputTurnOn( inputdata_t &inputdata )
 }
 
 
-void CFunc_Dust::InputTurnOff( inputdata_t &inputdata )
+void CFunc_Dust::InputTurnOff( inputdata_t &&inputdata )
 {
 	if( m_DustFlags & DUSTFLAGS_ON )
 	{
@@ -297,7 +297,7 @@ public:
 protected:
 
 	// Input handlers
-	void InputSpawnDust( inputdata_t &inputdata );
+	void InputSpawnDust( inputdata_t &&inputdata );
 
 	float		m_flScale;
 	color32		m_rgbaColor;
@@ -307,8 +307,8 @@ LINK_ENTITY_TO_CLASS( env_dustpuff, CEnvDustPuff );
 
 BEGIN_MAPENTITY( CEnvDustPuff )
 
-	DEFINE_KEYFIELD( m_flScale, FIELD_FLOAT, "scale" ),
-	DEFINE_KEYFIELD( m_rgbaColor, FIELD_COLOR32, "color" ),
+	DEFINE_KEYFIELD_AUTO( m_flScale, "scale" ),
+	DEFINE_KEYFIELD_AUTO( m_rgbaColor, "color" ),
 
 	// Function Pointers
 	DEFINE_INPUTFUNC( FIELD_VOID, "SpawnDust", InputSpawnDust ),
@@ -320,7 +320,7 @@ END_MAPENTITY()
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CEnvDustPuff::InputSpawnDust( inputdata_t &inputdata )
+void CEnvDustPuff::InputSpawnDust( inputdata_t &&inputdata )
 {
 	Vector dir;
 	AngleVectors( GetAbsAngles(), &dir );

@@ -138,14 +138,14 @@ public:
 	void HandleAnimEvent( animevent_t *pEvent );
 
 	// Inputs
-	void InputEnterVehicleImmediate( inputdata_t &inputdata );
-	void InputEnterVehicle( inputdata_t &inputdata );
-	void InputExitVehicle( inputdata_t &inputdata );
-	void InputLock( inputdata_t &inputdata );
-	void InputUnlock( inputdata_t &inputdata );
-	void InputOpen( inputdata_t &inputdata );
-	void InputClose( inputdata_t &inputdata );
-	void InputViewlock( inputdata_t &inputdata );
+	void InputEnterVehicleImmediate( inputdata_t &&inputdata );
+	void InputEnterVehicle( inputdata_t &&inputdata );
+	void InputExitVehicle( inputdata_t &&inputdata );
+	void InputLock( inputdata_t &&inputdata );
+	void InputUnlock( inputdata_t &&inputdata );
+	void InputOpen( inputdata_t &&inputdata );
+	void InputClose( inputdata_t &&inputdata );
+	void InputViewlock( inputdata_t &&inputdata );
 
 	bool ShouldIgnoreParent( void ) { return m_bIgnoreMoveParent; }
 
@@ -228,14 +228,14 @@ BEGIN_MAPENTITY( CPropVehicleChoreoGeneric )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Close", InputClose ),
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "Viewlock", InputViewlock ),
 
-	DEFINE_KEYFIELD( m_vehicleScript, FIELD_STRING, "vehiclescript" ),
-	DEFINE_KEYFIELD( m_bLocked, FIELD_BOOLEAN, "vehiclelocked" ),
+	DEFINE_KEYFIELD_AUTO( m_vehicleScript, "vehiclescript" ),
+	DEFINE_KEYFIELD_AUTO( m_bLocked, "vehiclelocked" ),
 
-	DEFINE_KEYFIELD( m_bIgnoreMoveParent, FIELD_BOOLEAN, "ignoremoveparent" ),
-	DEFINE_KEYFIELD( m_bIgnorePlayerCollisions, FIELD_BOOLEAN, "ignoreplayer" ),
-	DEFINE_KEYFIELD( m_bForcePlayerEyePoint, FIELD_BOOLEAN, "useplayereyes" ),
+	DEFINE_KEYFIELD_AUTO( m_bIgnoreMoveParent, "ignoremoveparent" ),
+	DEFINE_KEYFIELD_AUTO( m_bIgnorePlayerCollisions, "ignoreplayer" ),
+	DEFINE_KEYFIELD_AUTO( m_bForcePlayerEyePoint, "useplayereyes" ),
 
-	DEFINE_KEYFIELD( m_bAllowStandardWeapons, FIELD_BOOLEAN, "AllowStandardWeapons" ),
+	DEFINE_KEYFIELD_AUTO( m_bAllowStandardWeapons, "AllowStandardWeapons" ),
 
 	DEFINE_OUTPUT( m_playerOn, "PlayerOn" ),
 	DEFINE_OUTPUT( m_playerOff, "PlayerOff" ),
@@ -408,7 +408,7 @@ void CPropVehicleChoreoGeneric::Think(void)
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CPropVehicleChoreoGeneric::InputOpen( inputdata_t &inputdata )
+void CPropVehicleChoreoGeneric::InputOpen( inputdata_t &&inputdata )
 {
 	int nSequence = LookupSequence( "open" );
 
@@ -432,7 +432,7 @@ void CPropVehicleChoreoGeneric::InputOpen( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CPropVehicleChoreoGeneric::InputClose( inputdata_t &inputdata )
+void CPropVehicleChoreoGeneric::InputClose( inputdata_t &&inputdata )
 {
 	if ( m_bLocked || m_bEnterAnimOn )
 		return;
@@ -460,7 +460,7 @@ void CPropVehicleChoreoGeneric::InputClose( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CPropVehicleChoreoGeneric::InputViewlock( inputdata_t &inputdata )
+void CPropVehicleChoreoGeneric::InputViewlock( inputdata_t &&inputdata )
 {
 	if (inputdata.value.Bool()) // lock
 	{
@@ -671,7 +671,7 @@ CBaseEntity *CPropVehicleChoreoGeneric::GetDriver( void )
 //-----------------------------------------------------------------------------
 // Purpose: Prevent the player from entering / exiting the vehicle
 //-----------------------------------------------------------------------------
-void CPropVehicleChoreoGeneric::InputLock( inputdata_t &inputdata )
+void CPropVehicleChoreoGeneric::InputLock( inputdata_t &&inputdata )
 {
 	m_bLocked = true;
 }
@@ -680,7 +680,7 @@ void CPropVehicleChoreoGeneric::InputLock( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Allow the player to enter / exit the vehicle
 //-----------------------------------------------------------------------------
-void CPropVehicleChoreoGeneric::InputUnlock( inputdata_t &inputdata )
+void CPropVehicleChoreoGeneric::InputUnlock( inputdata_t &&inputdata )
 {
 	m_bLocked = false;
 }
@@ -689,7 +689,7 @@ void CPropVehicleChoreoGeneric::InputUnlock( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Force the player to enter the vehicle.
 //-----------------------------------------------------------------------------
-void CPropVehicleChoreoGeneric::InputEnterVehicle( inputdata_t &inputdata )
+void CPropVehicleChoreoGeneric::InputEnterVehicle( inputdata_t &&inputdata )
 {
 	if ( m_bEnterAnimOn )
 		return;
@@ -719,7 +719,7 @@ void CPropVehicleChoreoGeneric::InputEnterVehicle( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CPropVehicleChoreoGeneric::InputEnterVehicleImmediate( inputdata_t &inputdata )
+void CPropVehicleChoreoGeneric::InputEnterVehicleImmediate( inputdata_t &&inputdata )
 {
 	if ( m_bEnterAnimOn )
 		return;
@@ -749,7 +749,7 @@ void CPropVehicleChoreoGeneric::InputEnterVehicleImmediate( inputdata_t &inputda
 //-----------------------------------------------------------------------------
 // Purpose: Force the player to exit the vehicle.
 //-----------------------------------------------------------------------------
-void CPropVehicleChoreoGeneric::InputExitVehicle( inputdata_t &inputdata )
+void CPropVehicleChoreoGeneric::InputExitVehicle( inputdata_t &&inputdata )
 {
 	m_bForcedExit = true;
 }

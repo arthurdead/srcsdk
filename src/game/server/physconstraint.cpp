@@ -109,7 +109,7 @@ public:
 };
 
 BEGIN_MAPENTITY( CConstraintAnchor )
-	DEFINE_KEYFIELD( m_massScale, FIELD_FLOAT, "massScale" ),
+	DEFINE_KEYFIELD_AUTO( m_massScale, "massScale" ),
 END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( info_constraint_anchor, CConstraintAnchor );
@@ -131,7 +131,7 @@ private:
 
 BEGIN_MAPENTITY( CPhysConstraintSystem )
 
-	DEFINE_KEYFIELD( m_additionalIterations, FIELD_INTEGER, "additionaliterations" ),
+	DEFINE_KEYFIELD_AUTO( m_additionalIterations, "additionaliterations" ),
 	
 END_MAPENTITY()
 
@@ -317,7 +317,7 @@ void CPhysConstraint::OnBreak( void )
 	PhysCallbackRemove( this );
 }
 
-void CPhysConstraint::InputBreak( inputdata_t &inputdata )
+void CPhysConstraint::InputBreak( inputdata_t &&inputdata )
 {
 	if ( m_pConstraint ) 
 		m_pConstraint->Deactivate();
@@ -325,12 +325,12 @@ void CPhysConstraint::InputBreak( inputdata_t &inputdata )
 	OnBreak();
 }
 
-void CPhysConstraint::InputOnBreak( inputdata_t &inputdata )
+void CPhysConstraint::InputOnBreak( inputdata_t &&inputdata )
 {
 	OnBreak();
 }
 
-void CPhysConstraint::InputTurnOn( inputdata_t &inputdata )
+void CPhysConstraint::InputTurnOn( inputdata_t &&inputdata )
 {
 	if ( HasSpawnFlags( SF_CONSTRAINT_NO_CONNECT_UNTIL_ACTIVATED ) )
 	{
@@ -345,7 +345,7 @@ void CPhysConstraint::InputTurnOn( inputdata_t &inputdata )
 	m_pConstraint->GetAttachedObject()->Wake();
 }
 
-void CPhysConstraint::InputTurnOff( inputdata_t &inputdata )
+void CPhysConstraint::InputTurnOff( inputdata_t &&inputdata )
 {
 	Deactivate();
 }
@@ -390,13 +390,13 @@ void CPhysConstraint::GetBreakParams( constraint_breakableparams_t &params, cons
 
 BEGIN_MAPENTITY( CPhysConstraint )
 
-	DEFINE_KEYFIELD( m_nameSystem, FIELD_STRING, "constraintsystem" ),
-	DEFINE_KEYFIELD( m_nameAttach1, FIELD_STRING, "attach1" ),
-	DEFINE_KEYFIELD( m_nameAttach2, FIELD_STRING, "attach2" ),
-	DEFINE_KEYFIELD( m_breakSound, FIELD_SOUNDNAME, "breaksound" ),
-	DEFINE_KEYFIELD( m_forceLimit, FIELD_FLOAT, "forcelimit" ),
-	DEFINE_KEYFIELD( m_torqueLimit, FIELD_FLOAT, "torquelimit" ),
-	DEFINE_KEYFIELD( m_minTeleportDistance, FIELD_FLOAT, "teleportfollowdistance" ),
+	DEFINE_KEYFIELD_AUTO( m_nameSystem, "constraintsystem" ),
+	DEFINE_KEYFIELD_AUTO( m_nameAttach1, "attach1" ),
+	DEFINE_KEYFIELD_AUTO( m_nameAttach2, "attach2" ),
+	DEFINE_KEYFIELD_AUTO( m_breakSound, "breaksound" ),
+	DEFINE_KEYFIELD_AUTO( m_forceLimit, "forcelimit" ),
+	DEFINE_KEYFIELD_AUTO( m_torqueLimit, "torquelimit" ),
+	DEFINE_KEYFIELD_AUTO( m_minTeleportDistance, "teleportfollowdistance" ),
 
 	DEFINE_OUTPUT( m_OnBreak, "OnBreak" ),
 
@@ -736,7 +736,7 @@ public:
 		BaseClass::DrawDebugGeometryOverlays();
 	}
 
-	void InputSetVelocity( inputdata_t &inputdata )
+	void InputSetVelocity( inputdata_t &&inputdata )
 	{
 		if ( !m_pConstraint || !m_pConstraint->GetReferenceObject() || !m_pConstraint->GetAttachedObject() )
 			return;
@@ -765,7 +765,7 @@ public:
 		m_pConstraint->SetAngularMotor( speed, speed * loadscale * massLoad * loadscale * (1.0/TICK_INTERVAL) );
 	}
 
-	void InputSetHingeFriction( inputdata_t &inputdata )
+	void InputSetHingeFriction( inputdata_t &&inputdata )
 	{
 		m_hingeFriction = inputdata.value.Float();
 		Msg("Setting hinge friction to %f\n", m_hingeFriction );
@@ -862,10 +862,10 @@ private:
 
 BEGIN_MAPENTITY( CPhysHinge )
 
-	DEFINE_KEYFIELD( m_hingeFriction, FIELD_FLOAT, "hingefriction" ),
+	DEFINE_KEYFIELD_AUTO( m_hingeFriction, "hingefriction" ),
 
 	DEFINE_KEYFIELD( m_hinge.worldAxisDirection, FIELD_VECTOR, "hingeaxis" ),
-	DEFINE_KEYFIELD( m_systemLoadScale, FIELD_FLOAT, "systemloadscale" ),
+	DEFINE_KEYFIELD_AUTO( m_systemLoadScale, "systemloadscale" ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetAngularVelocity", InputSetVelocity ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetHingeFriction", InputSetHingeFriction ),
 
@@ -1044,7 +1044,7 @@ public:
 
 	DECLARE_MAPENTITY();
 	IPhysicsConstraint *CreateConstraint( IPhysicsConstraintGroup *pGroup, const hl_constraint_info_t &info );
-	void InputSetVelocity( inputdata_t &inputdata )
+	void InputSetVelocity( inputdata_t &&inputdata )
 	{
 		if ( !m_pConstraint || !m_pConstraint->GetReferenceObject() || !m_pConstraint->GetAttachedObject() )
 			return;
@@ -1160,9 +1160,9 @@ LINK_ENTITY_TO_CLASS( phys_slideconstraint, CPhysSlideConstraint );
 
 BEGIN_MAPENTITY( CPhysSlideConstraint )
 
-	DEFINE_KEYFIELD( m_axisEnd, FIELD_POSITION_VECTOR, "slideaxis" ),
-	DEFINE_KEYFIELD( m_slideFriction, FIELD_FLOAT, "slidefriction" ),
-	DEFINE_KEYFIELD( m_systemLoadScale, FIELD_FLOAT, "systemloadscale" ),
+	DEFINE_KEYFIELD_AUTO( m_axisEnd, "slideaxis" ),
+	DEFINE_KEYFIELD_AUTO( m_slideFriction, "slidefriction" ),
+	DEFINE_KEYFIELD_AUTO( m_systemLoadScale, "systemloadscale" ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetVelocity", InputSetVelocity ),
 #ifdef HINGE_NOTIFY
 	DEFINE_KEYFIELD( m_soundInfo.m_soundProfile.m_keyPoints[SimpleConstraintSoundProfile::kMIN_THRESHOLD] , FIELD_FLOAT, "minSoundThreshold" ),
@@ -1353,10 +1353,10 @@ private:
 
 BEGIN_MAPENTITY( CPhysPulley )
 
-	DEFINE_KEYFIELD( m_position2, FIELD_POSITION_VECTOR, "position2" ),
+	DEFINE_KEYFIELD_AUTO( m_position2, "position2" ),
 
-	DEFINE_KEYFIELD( m_addLength, FIELD_FLOAT, "addlength" ),
-	DEFINE_KEYFIELD( m_gearRatio, FIELD_FLOAT, "gearratio" ),
+	DEFINE_KEYFIELD_AUTO( m_addLength, "addlength" ),
+	DEFINE_KEYFIELD_AUTO( m_gearRatio, "gearratio" ),
 
 END_MAPENTITY()
 
@@ -1463,9 +1463,9 @@ private:
 
 BEGIN_MAPENTITY( CPhysLength )
 
-	DEFINE_KEYFIELD( m_addLength, FIELD_FLOAT, "addlength" ),
-	DEFINE_KEYFIELD( m_minLength, FIELD_FLOAT, "minlength" ),
-	DEFINE_KEYFIELD( m_vecAttach, FIELD_POSITION_VECTOR, "attachpoint" ),
+	DEFINE_KEYFIELD_AUTO( m_addLength, "addlength" ),
+	DEFINE_KEYFIELD_AUTO( m_minLength, "minlength" ),
+	DEFINE_KEYFIELD_AUTO( m_vecAttach, "attachpoint" ),
 
 END_MAPENTITY()
 
@@ -1538,15 +1538,15 @@ private:
 
 BEGIN_MAPENTITY( CRagdollConstraint )
 
-	DEFINE_KEYFIELD( m_xmin, FIELD_FLOAT, "xmin" ),
-	DEFINE_KEYFIELD( m_xmax, FIELD_FLOAT, "xmax" ),
-	DEFINE_KEYFIELD( m_ymin, FIELD_FLOAT, "ymin" ),
-	DEFINE_KEYFIELD( m_ymax, FIELD_FLOAT, "ymax" ),
-	DEFINE_KEYFIELD( m_zmin, FIELD_FLOAT, "zmin" ),
-	DEFINE_KEYFIELD( m_zmax, FIELD_FLOAT, "zmax" ),
-	DEFINE_KEYFIELD( m_xfriction, FIELD_FLOAT, "xfriction" ),
-	DEFINE_KEYFIELD( m_yfriction, FIELD_FLOAT, "yfriction" ),
-	DEFINE_KEYFIELD( m_zfriction, FIELD_FLOAT, "zfriction" ),
+	DEFINE_KEYFIELD_AUTO( m_xmin, "xmin" ),
+	DEFINE_KEYFIELD_AUTO( m_xmax, "xmax" ),
+	DEFINE_KEYFIELD_AUTO( m_ymin, "ymin" ),
+	DEFINE_KEYFIELD_AUTO( m_ymax, "ymax" ),
+	DEFINE_KEYFIELD_AUTO( m_zmin, "zmin" ),
+	DEFINE_KEYFIELD_AUTO( m_zmax, "zmax" ),
+	DEFINE_KEYFIELD_AUTO( m_xfriction, "xfriction" ),
+	DEFINE_KEYFIELD_AUTO( m_yfriction, "yfriction" ),
+	DEFINE_KEYFIELD_AUTO( m_zfriction, "zfriction" ),
 
 END_MAPENTITY()
 
@@ -1602,7 +1602,7 @@ class CPhysConstraintEvents : public IPhysicsConstraintEvent
 			else
 			{
 				variant_t emptyVariant;
-				pEntity->AcceptInput( "ConstraintBroken", NULL, NULL, emptyVariant, 0 );
+				pEntity->AcceptInput( "ConstraintBroken", NULL, NULL, Move(emptyVariant), 0 );
 			}
 		}
 	}

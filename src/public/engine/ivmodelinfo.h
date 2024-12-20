@@ -40,7 +40,7 @@ class IClientRenderable;
 //-----------------------------------------------------------------------------
 // Indicates the type of translucency of an unmodulated renderable
 //-----------------------------------------------------------------------------
-enum RenderableTranslucencyType_t
+enum RenderableTranslucencyType_t : unsigned int
 {
 	RENDERABLE_IS_OPAQUE = 0,
 	RENDERABLE_IS_TRANSLUCENT,
@@ -61,10 +61,7 @@ protected:
 	~IModelLoadCallback();
 };
 
-enum class modelindex_t : int
-{
-};
-
+enum modelindex_t : int;
 inline const modelindex_t INVALID_MODEL_INDEX = (modelindex_t)-1;
 
 // MODEL INDEX RULES

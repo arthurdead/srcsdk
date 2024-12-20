@@ -782,7 +782,7 @@ public:
 		}
 	}
 
-	void InputActivate(inputdata_t &inputdata)
+	void InputActivate( inputdata_t &&inputdata )
 	{
 		LoadManifestFile();
 	}

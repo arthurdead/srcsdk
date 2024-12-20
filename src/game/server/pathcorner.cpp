@@ -23,8 +23,8 @@ public:
 	void	DrawDebugGeometryOverlays(void);
 
 	// Input handlers	
-	void InputSetNextPathCorner( inputdata_t &inputdata );
-	void InputInPass( inputdata_t &inputdata );
+	void InputSetNextPathCorner( inputdata_t &&inputdata );
+	void InputInPass( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -47,7 +47,7 @@ LINK_ENTITY_TO_CLASS( path_corner_crash, CPathCornerCrash );
 
 BEGIN_MAPENTITY( CPathCorner )
 
-	DEFINE_KEYFIELD( m_flWait, FIELD_FLOAT, "wait" ),
+	DEFINE_KEYFIELD_AUTO( m_flWait, "wait" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetNextPathCorner", InputSetNextPathCorner),
@@ -74,7 +74,7 @@ void CPathCorner::Spawn( void )
 // Purpose: Sets the next path corner by name.
 // Input  : String ID name of next path corner.
 //-----------------------------------------------------------------------------
-void CPathCorner::InputSetNextPathCorner( inputdata_t &inputdata )
+void CPathCorner::InputSetNextPathCorner( inputdata_t &&inputdata )
 {
 	m_target = inputdata.value.StringID();
 }
@@ -83,7 +83,7 @@ void CPathCorner::InputSetNextPathCorner( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Fired by path followers as they pass the path corner.
 //-----------------------------------------------------------------------------
-void CPathCorner::InputInPass( inputdata_t &inputdata )
+void CPathCorner::InputInPass( inputdata_t &&inputdata )
 {
 	m_OnPass.FireOutput( inputdata.pActivator, inputdata.pCaller, 0);
 }

@@ -159,7 +159,7 @@ public:
 		}
 	}
 
-	void *GetDataObject( int type, const CSharedBaseEntity *instance )
+	void *GetDataObject( DataObject_t type, const CSharedBaseEntity *instance )
 	{
 		if ( !IsValidType( type ) )
 		{
@@ -169,7 +169,7 @@ public:
 		return m_Accessors[ type ]->GetDataObject( instance );
 	}
 
-	void *CreateDataObject( int type, CSharedBaseEntity *instance )
+	void *CreateDataObject( DataObject_t type, CSharedBaseEntity *instance )
 	{
 		if ( !IsValidType( type ) )
 		{
@@ -180,7 +180,7 @@ public:
 		return m_Accessors[ type ]->CreateDataObject( instance );
 	}
 
-	void DestroyDataObject( int type, CSharedBaseEntity *instance )
+	void DestroyDataObject( DataObject_t type, CSharedBaseEntity *instance )
 	{
 		if ( !IsValidType( type ) )
 		{
@@ -193,7 +193,7 @@ public:
 
 private:
 
-	bool IsValidType( int type ) const
+	bool IsValidType( DataObject_t type ) const
 	{
 		if ( type < 0 || type >= MAX_ACCESSORS )
 			return false;
@@ -203,7 +203,7 @@ private:
 		return true;
 	}
 
-	void AddDataAccessor( int type, IEntityDataInstantiator *instantiator )
+	void AddDataAccessor( DataObject_t type, IEntityDataInstantiator *instantiator )
 	{
 		if ( type < 0 || type >= MAX_ACCESSORS )
 		{
@@ -227,25 +227,25 @@ private:
 
 static CDataObjectAccessSystem g_DataObjectAccessSystem;
 
-bool CSharedBaseEntity::HasDataObjectType( int type ) const
+bool CSharedBaseEntity::HasDataObjectType( DataObject_t type ) const
 {
 	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
 	return ( m_fDataObjectTypes	& (1<<type) ) ? true : false;
 }
 
-void CSharedBaseEntity::AddDataObjectType( int type )
+void CSharedBaseEntity::AddDataObjectType( DataObject_t type )
 {
 	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
 	m_fDataObjectTypes |= (1<<type);
 }
 
-void CSharedBaseEntity::RemoveDataObjectType( int type )
+void CSharedBaseEntity::RemoveDataObjectType( DataObject_t type )
 {
 	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
 	m_fDataObjectTypes &= ~(1<<type);
 }
 
-void *CSharedBaseEntity::GetDataObject( int type )
+void *CSharedBaseEntity::GetDataObject( DataObject_t type )
 {
 	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
 	if ( !HasDataObjectType( type ) )
@@ -253,14 +253,14 @@ void *CSharedBaseEntity::GetDataObject( int type )
 	return g_DataObjectAccessSystem.GetDataObject( type, this );
 }
 
-void *CSharedBaseEntity::CreateDataObject( int type )
+void *CSharedBaseEntity::CreateDataObject( DataObject_t type )
 {
 	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
 	AddDataObjectType( type );
 	return g_DataObjectAccessSystem.CreateDataObject( type, this );
 }
 
-void CSharedBaseEntity::DestroyDataObject( int type )
+void CSharedBaseEntity::DestroyDataObject( DataObject_t type )
 {
 	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
 	if ( !HasDataObjectType( type ) )
@@ -375,7 +375,7 @@ void CWatcherList::AddToList( CSharedBaseEntity *pWatcher )
 	}
 }
 
-static void AddWatcherToEntity( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pEntity, int watcherType )
+static void AddWatcherToEntity( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pEntity, DataObject_t watcherType )
 {
 	CWatcherList *pList = (CWatcherList *)pEntity->GetDataObject(watcherType);
 	if ( !pList )
@@ -390,7 +390,7 @@ static void AddWatcherToEntity( CSharedBaseEntity *pWatcher, CSharedBaseEntity *
 	pList->AddToList( pWatcher );
 }
 
-static void RemoveWatcherFromEntity( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pEntity, int watcherType )
+static void RemoveWatcherFromEntity( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pEntity, DataObject_t watcherType )
 {
 	CWatcherList *pList = (CWatcherList *)pEntity->GetDataObject(watcherType);
 	if ( pList )
@@ -445,9 +445,9 @@ void CSharedBaseEntity::DestroyAllDataObjects( void )
 	int i;
 	for ( i = 0; i < NUM_DATAOBJECT_TYPES; i++ )
 	{
-		if ( HasDataObjectType( i ) )
+		if ( HasDataObjectType( (DataObject_t)i ) )
 		{
-			DestroyDataObject( i );
+			DestroyDataObject( (DataObject_t)i );
 		}
 	}
 }
@@ -1149,9 +1149,9 @@ unsigned int CSharedBaseEntity::PhysicsSolidMaskForEntity( void ) const
 	return MASK_SOLID;
 }
 
-static inline int GetWaterContents( const Vector &point )
+static inline ContentsFlags_t GetWaterContents( const Vector &point )
 {
-	return UTIL_PointContents(point, MASK_WATER);
+	return UTIL_PointContents(point, MASK_WATER|MASK_CURRENT);
 }
 
 //-----------------------------------------------------------------------------
@@ -1167,20 +1167,20 @@ void CSharedBaseEntity::UpdateWaterState()
 	Vector	point;
 	CollisionProp()->NormalizedToWorldSpace( Vector( 0.5f, 0.5f, 0.0f ), &point );
 
-	SetWaterLevel( 0 );
-	SetWaterType( CONTENTS_EMPTY );
-	int cont = GetWaterContents (point);
+	SetWaterLevel( WL_NotInWater );
+	SetWaterType( WT_None );
+	ContentsFlags_t cont = GetWaterContents (point);
 
 	if (( cont & MASK_WATER ) == 0)
 		return;
 
-	SetWaterType( cont );
-	SetWaterLevel( 1 );
+	SetWaterType( WaterTypeFromContents( cont ) );
+	SetWaterLevel( WL_Feet );
 
 	// point sized entities are always fully submerged
 	if ( IsPointSized() )
 	{
-		SetWaterLevel( 3 );
+		SetWaterLevel( WL_Eyes );
 	}
 	else
 	{
@@ -1191,13 +1191,13 @@ void CSharedBaseEntity::UpdateWaterState()
 		if ( midcont & MASK_WATER )
 		{
 			// Now check where the eyes are...
-			SetWaterLevel( 2 );
+			SetWaterLevel( WL_Waist );
 			point[2] = EyePosition().z;
 
 			int eyecont = GetWaterContents (point);
 			if ( eyecont & MASK_WATER )
 			{
-				SetWaterLevel( 3 );
+				SetWaterLevel( WL_Eyes );
 			}
 		}
 	}
@@ -1212,37 +1212,37 @@ void CSharedBaseEntity::UpdateWaterState()
 bool CSharedBaseEntity::PhysicsCheckWater( void )
 {
 	if (GetMoveParent())
-		return GetWaterLevel() > 1;
+		return GetWaterLevel() > WL_Feet;
 
-	int cont = GetWaterType();
+	WaterType_t cont = GetWaterType();
 
 	// If we're not in water + don't have a current, we're done
-	if ( ( cont & (MASK_WATER | MASK_CURRENT) ) != (MASK_WATER | MASK_CURRENT) )
-		return GetWaterLevel() > 1;
+	if ( ( cont & (WT_mask_water | WT_mask_current) ) != (WT_mask_water | WT_mask_current) )
+		return GetWaterLevel() > WL_Feet;
 
 	// Compute current direction
 	Vector v( 0, 0, 0 );
-	if ( cont & CONTENTS_CURRENT_0 )
+	if ( cont & WT_current_0 )
 	{
 		v[0] += 1;
 	}
-	if ( cont & CONTENTS_CURRENT_90 )
+	if ( cont & WT_current_90 )
 	{
 		v[1] += 1;
 	}
-	if ( cont & CONTENTS_CURRENT_180 )
+	if ( cont & WT_current_180 )
 	{
 		v[0] -= 1;
 	}
-	if ( cont & CONTENTS_CURRENT_270 )
+	if ( cont & WT_current_270 )
 	{
 		v[1] -= 1;
 	}
-	if ( cont & CONTENTS_CURRENT_UP )
+	if ( cont & WT_current_up )
 	{
 		v[2] += 1;
 	}
-	if ( cont & CONTENTS_CURRENT_DOWN )
+	if ( cont & WT_current_down )
 	{
 		v[2] -= 1;
 	}
@@ -1252,7 +1252,7 @@ bool CSharedBaseEntity::PhysicsCheckWater( void )
 	VectorMA (GetBaseVelocity(), 50.0*GetWaterLevel(), v, newBaseVelocity);
 	SetBaseVelocity( newBaseVelocity );
 	
-	return GetWaterLevel() > 1;
+	return GetWaterLevel() > WL_Feet;
 }
 
 
@@ -1602,17 +1602,17 @@ void CSharedBaseEntity::PerformFlyCollisionResolution( trace_t &trace, Vector &m
 //-----------------------------------------------------------------------------
 void CSharedBaseEntity::PhysicsCheckWaterTransition( void )
 {
-	int oldcont = GetWaterType();
+	WaterType_t oldcont = GetWaterType();
 	UpdateWaterState();
-	int cont = GetWaterType();
+	WaterType_t cont = GetWaterType();
 
 	// We can exit right out if we're a child... don't bother with this...
 	if (GetMoveParent())
 		return;
 
-	if ( cont & MASK_WATER )
+	if ( cont & WT_Water )
 	{
-		if (oldcont == CONTENTS_EMPTY)
+		if (oldcont == WT_None)
 		{
 #ifndef CLIENT_DLL
 			Splash();
@@ -1631,7 +1631,7 @@ void CSharedBaseEntity::PhysicsCheckWaterTransition( void )
 	}
 	else
 	{
-		if ( oldcont != CONTENTS_EMPTY )
+		if ( oldcont != WT_None )
 		{	
 			// just crossed out of water
 			EmitSound( "BaseEntity.ExitWater" );

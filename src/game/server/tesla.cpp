@@ -17,12 +17,12 @@ LINK_ENTITY_TO_CLASS( point_tesla, CTesla );
 
 BEGIN_MAPENTITY( CTesla )
 
-	DEFINE_KEYFIELD( m_SourceEntityName,FIELD_STRING,	"m_SourceEntityName" ),
-	DEFINE_KEYFIELD( m_SoundName,		FIELD_STRING,	"m_SoundName" ),
-	DEFINE_KEYFIELD( m_iszSpriteName,	FIELD_STRING,	"texture" ),
+	DEFINE_KEYFIELD_AUTO( m_SourceEntityName, "m_SourceEntityName" ),
+	DEFINE_KEYFIELD_AUTO( m_SoundName, "m_SoundName" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSpriteName, "texture" ),
 
-	DEFINE_KEYFIELD( m_Color,			FIELD_COLOR32,	"m_Color" ),
-	DEFINE_KEYFIELD( m_flRadius,		FIELD_FLOAT,	"m_flRadius" ),
+	DEFINE_KEYFIELD_AUTO( m_Color, "m_Color" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "m_flRadius" ),
 
 	DEFINE_KEYFIELD( m_flThickness[0],	FIELD_FLOAT,	"thick_min" ),
 	DEFINE_KEYFIELD( m_flThickness[1],	FIELD_FLOAT,	"thick_max" ),
@@ -36,7 +36,7 @@ BEGIN_MAPENTITY( CTesla )
 	DEFINE_KEYFIELD( m_NumBeams[0],		FIELD_INTEGER,	"beamcount_min" ),
 	DEFINE_KEYFIELD( m_NumBeams[1],		FIELD_INTEGER,	"beamcount_max" ),
 
-	DEFINE_KEYFIELD( m_bOn,				FIELD_BOOLEAN,	"m_bOn" ),
+	DEFINE_KEYFIELD_AUTO( m_bOn, "m_bOn" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn",  InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
@@ -153,20 +153,20 @@ void CTesla::DoSpark()
 }
 
 
-void CTesla::InputDoSpark( inputdata_t &inputdata )
+void CTesla::InputDoSpark( inputdata_t &&inputdata )
 {
 	DoSpark();
 }
 
 
-void CTesla::InputTurnOn( inputdata_t &inputdata )
+void CTesla::InputTurnOn( inputdata_t &&inputdata )
 {
 	m_bOn = true;
 	SetupForNextArc();
 }
 
 
-void CTesla::InputTurnOff( inputdata_t &inputdata )
+void CTesla::InputTurnOff( inputdata_t &&inputdata )
 {
 	m_bOn = false;
 	SetupForNextArc();

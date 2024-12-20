@@ -246,7 +246,7 @@ float ReadDamageTable( impactentry_t *pTable, int tableCount, float impulse, boo
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-float CalculatePhysicsImpactDamage( int index, gamevcollisionevent_t *pEvent, const impactdamagetable_t &table, float energyScale, bool allowStaticDamage, int &damageType, bool bDamageFromHeldObjects )
+float CalculatePhysicsImpactDamage( int index, gamevcollisionevent_t *pEvent, const impactdamagetable_t &table, float energyScale, bool allowStaticDamage, uint64 &damageType, bool bDamageFromHeldObjects )
 {
 	damageType = DMG_CRUSH;
 	int otherIndex = !index;
@@ -490,7 +490,7 @@ float CalculatePhysicsImpactDamage( int index, gamevcollisionevent_t *pEvent, co
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-float CalculateDefaultPhysicsDamage( int index, gamevcollisionevent_t *pEvent, float energyScale, bool allowStaticDamage, int &damageType, string_t iszDamageTableName, bool bDamageFromHeldObjects )
+float CalculateDefaultPhysicsDamage( int index, gamevcollisionevent_t *pEvent, float energyScale, bool allowStaticDamage, uint64 &damageType, string_t iszDamageTableName, bool bDamageFromHeldObjects )
 {
 	// If we have a specified damage table, find it and use it instead
 	if ( iszDamageTableName != NULL_STRING )

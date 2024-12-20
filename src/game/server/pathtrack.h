@@ -106,16 +106,16 @@ public:
 
 	bool IsDisabled( void ){ return HasSpawnFlags( SF_PATH_DISABLED ); }
 
-	void InputPass( inputdata_t &inputdata );
-	void InputTeleport( inputdata_t &inputdata );
+	void InputPass( inputdata_t &&inputdata );
+	void InputTeleport( inputdata_t &&inputdata );
 
-	void InputToggleAlternatePath( inputdata_t &inputdata );
-	void InputEnableAlternatePath( inputdata_t &inputdata );
-	void InputDisableAlternatePath( inputdata_t &inputdata );
+	void InputToggleAlternatePath( inputdata_t &&inputdata );
+	void InputEnableAlternatePath( inputdata_t &&inputdata );
+	void InputDisableAlternatePath( inputdata_t &&inputdata );
 
-	void InputTogglePath( inputdata_t &inputdata );
-	void InputEnablePath( inputdata_t &inputdata );
-	void InputDisablePath( inputdata_t &inputdata );
+	void InputTogglePath( inputdata_t &&inputdata );
+	void InputEnablePath( inputdata_t &&inputdata );
+	void InputDisablePath( inputdata_t &&inputdata );
 
 private:
 	void		Project( CPathTrack *pstart, CPathTrack *pend, Vector &origin, float dist );

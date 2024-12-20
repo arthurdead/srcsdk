@@ -69,7 +69,7 @@ extern int GetAttachTypeFromString( const char *pszString );
 //-----------------------------------------------------------------------------
 // Encapsulates particle handling for an entity
 //-----------------------------------------------------------------------------
-class CParticleProperty 
+class CParticleProperty : public INetworkableObject
 {
 	DECLARE_CLASS_NOBASE( CParticleProperty );
 	DECLARE_EMBEDDED_NETWORKVAR();

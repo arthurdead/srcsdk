@@ -28,41 +28,6 @@
 // CSave
 //
 // --------------------------------------------------------------
-static const char *g_FieldTypes[ FIELD_TYPECOUNT ] = 
-{
-	"FIELD_VOID",			// FIELD_VOID
-	"FIELD_FLOAT",			// FIELD_FLOAT
-	"FIELD_STRING",			// FIELD_STRING
-	"FIELD_VECTOR",			// FIELD_VECTOR
-	"FIELD_QUATERNION",		// FIELD_QUATERNION
-	"FIELD_INTEGER",		// FIELD_INTEGER
-	"FIELD_BOOLEAN",		// FIELD_BOOLEAN
-	"FIELD_SHORT",			// FIELD_SHORT
-	"FIELD_CHARACTER",		// FIELD_CHARACTER
-	"FIELD_COLOR32",		// FIELD_COLOR32
-	"FIELD_COLOR24",		// FIELD_COLOR24
-	"FIELD_EMBEDDED",		// FIELD_EMBEDDED	(handled specially)
-	"FIELD_CUSTOM",			// FIELD_CUSTOM		(handled specially)
-	"FIELD_CLASSPTR",		// FIELD_CLASSPTR
-	"FIELD_EHANDLE",		// FIELD_EHANDLE
-	"FIELD_EDICT",			// FIELD_EDICT
-	"FIELD_POSITION_VECTOR",// FIELD_POSITION_VECTOR
-	"FIELD_TIME",			// FIELD_TIME
-	"FIELD_TICK",			// FIELD_TICK
-	"FIELD_MODELNAME",		// FIELD_MODELNAME
-	"FIELD_SOUNDNAME",		// FIELD_SOUNDNAME
-	"FIELD_INPUT",			// FIELD_INPUT		(uses custom type)
-	"FIELD_FUNCTION",		// FIELD_FUNCTION
-	"FIELD_VMATRIX",			
-	"FIELD_VMATRIX_WORLDSPACE",
-	"FIELD_MATRIX3X4_WORLDSPACE",
-	"FIELD_INTERVAL",		// FIELD_INTERVAL
-	"FIELD_MODELINDEX",		// FIELD_MODELINDEX
-	"FIELD_MATERIALINDEX",		// FIELD_MATERIALINDEX
-	"FIELD_VECTOR2D",		// FIELD_VECTOR2D
-	"FIELD_INTEGER64",		// FIELD_INTEGER64
-	"FIELD_VECTOR4D",		// FIELD_VECTOR4D
-};
 
 CPredictionCopy::CPredictionCopy( int type, void *dest, bool dest_packed, void const *src, bool src_packed, 
 	bool counterrors /*= false*/, bool reporterrors /*= false*/, bool performcopy /*= true*/,
@@ -174,7 +139,7 @@ void CPredictionCopy::DescribeFields( difftype_t dt, const char *fmt, ... )
 	( *m_FieldCompareFunc )( 
 		m_pCurrentClassName,
 		fieldname,
-		g_FieldTypes[ m_pCurrentField->fieldType ],
+		g_FieldNames[ m_pCurrentField->fieldType ],
 		isnetworked,
 		isnoterrorchecked,
 		dt != IDENTICAL ? true : false,
@@ -1213,9 +1178,6 @@ void CPredictionCopy::CopyFields( int chain_count, datamap_t *pRootMap, typedesc
 			break;
 
 		case FIELD_POSITION_VECTOR:
-			Assert( 0 );
-			break;
-
 		case FIELD_VECTOR:
 			{
 				difftype = CompareVector( (Vector *)pOutputData, (Vector const *)pInputData, fieldSize );
@@ -1581,7 +1543,7 @@ void CPredictionDescribeData::Describe( const char *fmt, ... )
 		(*m_FieldDescFunc)( 
 			m_pCurrentClassName, 
 			m_pCurrentField->fieldName, 
-			g_FieldTypes[ m_pCurrentField->fieldType ],
+			g_FieldNames[ m_pCurrentField->fieldType ],
 			isnetworked,
 			data );
 	}
@@ -1801,8 +1763,6 @@ void CPredictionDescribeData::DescribeFields_R( int chain_count, datamap_t *pRoo
 		case FIELD_EDICT:
 			break;
 		case FIELD_POSITION_VECTOR:
-			Assert( 0 );
-			break;
 		case FIELD_VECTOR:
 			DescribeVector( (const Vector *)pInputData, fieldSize );
 			break;

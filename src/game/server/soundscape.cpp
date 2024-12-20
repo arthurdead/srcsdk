@@ -69,7 +69,7 @@ LINK_ENTITY_TO_CLASS( env_soundscape, CEnvSoundscape );
 
 BEGIN_MAPENTITY( CEnvSoundscape )
 
-	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "radius" ),
 
 	DEFINE_KEYFIELD( m_positionNames[0], FIELD_STRING, "position0" ),
 	DEFINE_KEYFIELD( m_positionNames[1], FIELD_STRING, "position1" ),
@@ -80,7 +80,7 @@ BEGIN_MAPENTITY( CEnvSoundscape )
 	DEFINE_KEYFIELD( m_positionNames[6], FIELD_STRING, "position6" ),
 	DEFINE_KEYFIELD( m_positionNames[7], FIELD_STRING, "position7" ),
 
-	DEFINE_KEYFIELD( m_bDisabled,	FIELD_BOOLEAN,	"StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -105,7 +105,7 @@ CEnvSoundscape::~CEnvSoundscape()
 	g_SoundscapeSystem.RemoveSoundscapeEntity( this );
 }
 
-void CEnvSoundscape::InputEnable( inputdata_t &inputdata )
+void CEnvSoundscape::InputEnable( inputdata_t &&inputdata )
 {
 	if (!IsEnabled())
 	{
@@ -113,7 +113,7 @@ void CEnvSoundscape::InputEnable( inputdata_t &inputdata )
 	}
 }
 
-void CEnvSoundscape::InputDisable( inputdata_t &inputdata )
+void CEnvSoundscape::InputDisable( inputdata_t &&inputdata )
 {
 	if (IsEnabled())
 	{
@@ -121,7 +121,7 @@ void CEnvSoundscape::InputDisable( inputdata_t &inputdata )
 	}
 }
 
-void CEnvSoundscape::InputToggleEnabled( inputdata_t &inputdata )
+void CEnvSoundscape::InputToggleEnabled( inputdata_t &&inputdata )
 {
 	if ( IsEnabled() )
 	{
@@ -201,7 +201,7 @@ bool CEnvSoundscape::InRangeOfPlayer( CBasePlayer *pTarget )
 	return false;
 }
 
-int CEnvSoundscape::UpdateTransmitState()
+EdictStateFlags_t CEnvSoundscape::UpdateTransmitState()
 {
 	// Always transmit all soundscapes to the player.
 	return SetTransmitState( FL_EDICT_ALWAYS );
@@ -489,7 +489,7 @@ private:
 LINK_ENTITY_TO_CLASS( trigger_soundscape, CTriggerSoundscape );
 
 BEGIN_MAPENTITY( CTriggerSoundscape )
-	DEFINE_KEYFIELD( m_SoundscapeName, FIELD_STRING, "soundscape" ),
+	DEFINE_KEYFIELD_AUTO( m_SoundscapeName, "soundscape" ),
 END_MAPENTITY()
 
 

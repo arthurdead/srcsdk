@@ -11,12 +11,12 @@
 #include "team_control_point_round.h"
 
 BEGIN_MAPENTITY( CTeamControlPointRound )
-	DEFINE_KEYFIELD( m_bDisabled,			FIELD_BOOLEAN,	"StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
-	DEFINE_KEYFIELD( m_iszCPNames,			FIELD_STRING,	"cpr_cp_names" ),
-	DEFINE_KEYFIELD( m_nPriority,			FIELD_INTEGER,	"cpr_priority" ),
-	DEFINE_KEYFIELD( m_iInvalidCapWinner,	FIELD_INTEGER,	"cpr_restrict_team_cap_win" ),
-	DEFINE_KEYFIELD( m_iszPrintName,		FIELD_STRING,	"cpr_printname" ),
+	DEFINE_KEYFIELD_AUTO( m_iszCPNames, "cpr_cp_names" ),
+	DEFINE_KEYFIELD_AUTO( m_nPriority, "cpr_priority" ),
+	DEFINE_KEYFIELD_AUTO( m_iInvalidCapWinner, "cpr_restrict_team_cap_win" ),
+	DEFINE_KEYFIELD_AUTO( m_iszPrintName, "cpr_printname" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -253,7 +253,7 @@ bool CTeamControlPointRound::WouldNewCPOwnerWinGame( CTeamControlPoint *pPoint, 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPointRound::InputEnable( inputdata_t &input )
+void CTeamControlPointRound::InputEnable( inputdata_t &&inputdata )
 { 
 	m_bDisabled = false;
 }
@@ -261,7 +261,7 @@ void CTeamControlPointRound::InputEnable( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPointRound::InputDisable( inputdata_t &input )
+void CTeamControlPointRound::InputDisable( inputdata_t &&inputdata )
 { 
 	m_bDisabled = true;
 }
@@ -269,7 +269,7 @@ void CTeamControlPointRound::InputDisable( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPointRound::InputRoundSpawn( inputdata_t &input )
+void CTeamControlPointRound::InputRoundSpawn( inputdata_t &&inputdata )
 {
 	// clear out old control points
 	m_ControlPoints.RemoveAll();

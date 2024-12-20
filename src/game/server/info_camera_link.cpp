@@ -29,8 +29,8 @@ public:
 	virtual void Activate();
 
 private:
-	void InputSetCamera(inputdata_t &inputdata);
-	void InputSetTargetEntity(inputdata_t &inputdata);
+	void InputSetCamera( inputdata_t &&inputdata );
+	void InputSetTargetEntity( inputdata_t &&inputdata );
 	void SetCameraByName(const char *szName);
 
 	CHandle<CPointCamera> m_hCamera;
@@ -53,7 +53,7 @@ CUtlFixedLinkedList<CInfoCameraLink *> g_InfoCameraLinkList;
 //-----------------------------------------------------------------------------
 BEGIN_MAPENTITY( CInfoCameraLink )
 
-	DEFINE_KEYFIELD( m_strPointCamera, FIELD_STRING, "PointCamera" ),
+	DEFINE_KEYFIELD_AUTO( m_strPointCamera, "PointCamera" ),
 
 	// Outputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetCamera", InputSetCamera ),
@@ -115,7 +115,7 @@ void CInfoCameraLink::SetCameraByName(const char *szName)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CInfoCameraLink::InputSetCamera(inputdata_t &inputdata)
+void CInfoCameraLink::InputSetCamera( inputdata_t &&inputdata )
 {
 	SetCameraByName( inputdata.value.String() );
 }

@@ -86,7 +86,7 @@ public:
 	};
 
 	virtual void	Spawn( void );
-	virtual int		UpdateTransmitState( void );
+	virtual EdictStateFlags_t UpdateTransmitState( void );
 	virtual bool	IsVoteSystemEnabled( void );
 
 	bool			SetupVote( int iEntIndex );	// This creates a list of issues for the UI

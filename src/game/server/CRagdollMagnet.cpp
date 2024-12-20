@@ -16,11 +16,11 @@ ConVar ai_debug_ragdoll_magnets( "ai_debug_ragdoll_magnets", "0");
 
 LINK_ENTITY_TO_CLASS( phys_ragdollmagnet, CRagdollMagnet );
 BEGIN_MAPENTITY( CRagdollMagnet )
-	DEFINE_KEYFIELD( m_radius,		FIELD_FLOAT, "radius" ),
-	DEFINE_KEYFIELD( m_force,		FIELD_FLOAT, "force" ),
-	DEFINE_KEYFIELD( m_axis,		FIELD_VECTOR, "axis" ),
-	DEFINE_KEYFIELD( m_bDisabled,	FIELD_BOOLEAN,	"StartDisabled" ),
-	DEFINE_KEYFIELD( m_BoneTarget,	FIELD_STRING, "BoneTarget" ),
+	DEFINE_KEYFIELD_AUTO( m_radius, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_force, "force" ),
+	DEFINE_KEYFIELD_AUTO( m_axis, "axis" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_BoneTarget, "BoneTarget" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -33,7 +33,7 @@ END_MAPENTITY()
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CRagdollMagnet::InputEnable( inputdata_t &inputdata )
+void CRagdollMagnet::InputEnable( inputdata_t &&inputdata )
 {
 	Enable( true );
 }
@@ -42,7 +42,7 @@ void CRagdollMagnet::InputEnable( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CRagdollMagnet::InputDisable( inputdata_t &inputdata )
+void CRagdollMagnet::InputDisable( inputdata_t &&inputdata )
 {
 	Enable( false );
 }

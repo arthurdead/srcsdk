@@ -21,10 +21,10 @@ class CEnvZoom : public CPointEntity
 public:
 	DECLARE_CLASS( CEnvZoom, CPointEntity );
 
-	void	InputZoom( inputdata_t &inputdata );
-	void	InputUnZoom( inputdata_t &inputdata );
-	void	InputUnZoomWithRate( inputdata_t &inputdata );
-	void	InputSetZoomRate( inputdata_t &inputdata );
+	void	InputZoom( inputdata_t &&inputdata );
+	void	InputUnZoom( inputdata_t &&inputdata );
+	void	InputUnZoomWithRate( inputdata_t &&inputdata );
+	void	InputSetZoomRate( inputdata_t &&inputdata );
 
 	int	GetFOV( void ) { return m_nFOV;	}
 	float GetSpeed( void ) { return m_flSpeed;	}
@@ -40,8 +40,8 @@ LINK_ENTITY_TO_CLASS( env_zoom, CEnvZoom );
 
 BEGIN_MAPENTITY( CEnvZoom )
 
-	DEFINE_KEYFIELD( m_flSpeed, FIELD_FLOAT, "Rate" ),
-	DEFINE_KEYFIELD( m_nFOV, FIELD_INTEGER, "FOV" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpeed, "Rate" ),
+	DEFINE_KEYFIELD_AUTO( m_nFOV, "FOV" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Zoom", InputZoom ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "UnZoom", InputUnZoom ),
@@ -76,7 +76,7 @@ float GetZoomOwnerDesiredFOV( CBaseEntity *pZoomOwner )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CEnvZoom::InputZoom( inputdata_t &inputdata )
+void CEnvZoom::InputZoom( inputdata_t &&inputdata )
 {
 	CBasePlayer *pPlayer; 
 		
@@ -112,7 +112,7 @@ void CEnvZoom::InputZoom( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CEnvZoom::InputUnZoom( inputdata_t &inputdata )
+void CEnvZoom::InputUnZoom( inputdata_t &&inputdata )
 {
 	CBasePlayer *pPlayer;
 	if ( inputdata.pActivator && inputdata.pActivator->IsPlayer() ) 
@@ -131,7 +131,7 @@ void CEnvZoom::InputUnZoom( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CEnvZoom::InputUnZoomWithRate( inputdata_t &inputdata )
+void CEnvZoom::InputUnZoomWithRate( inputdata_t &&inputdata )
 {
 	CBasePlayer *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin());
 
@@ -146,7 +146,7 @@ void CEnvZoom::InputUnZoomWithRate( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CEnvZoom::InputSetZoomRate( inputdata_t &inputdata )
+void CEnvZoom::InputSetZoomRate( inputdata_t &&inputdata )
 {
 	m_flSpeed = inputdata.value.Float();
 }

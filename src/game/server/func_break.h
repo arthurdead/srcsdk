@@ -52,11 +52,11 @@ public:
 	void Break( CBaseEntity *pBreaker );
 
 	// Input handlers
-	void InputAddHealth( inputdata_t &inputdata );
-	void InputBreak( inputdata_t &inputdata );
-	void InputRemoveHealth( inputdata_t &inputdata );
-	void InputSetHealth( inputdata_t &inputdata );
-	void InputSetMass( inputdata_t &inputdata );
+	void InputAddHealth( inputdata_t &&inputdata );
+	void InputBreak( inputdata_t &&inputdata );
+	void InputRemoveHealth( inputdata_t &&inputdata );
+	void InputSetHealth( inputdata_t &&inputdata );
+	void InputSetMass( inputdata_t &&inputdata );
 
 
 	// breakables use an overridden takedamage

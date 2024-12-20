@@ -195,7 +195,7 @@ public:
 	virtual int	 FIdleHello( void );
 
 	// Inputs
-	void InputIdleRespond( inputdata_t &inputdata );
+	void InputIdleRespond( inputdata_t &&inputdata );
 
 	// Conversations / communication
 	void			IdleRespond( void );

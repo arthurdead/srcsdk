@@ -45,7 +45,6 @@ typedef CBaseEntity CServerBaseEntity;
 #else
 class CServerBaseEntity;
 #endif
-class	variant_t;
 struct	vcollide_t;
 class	IRecipientFilter;
 class	ITraceFilter;
@@ -60,6 +59,7 @@ class CSteamID;
 class IReplayFactory;
 class IReplaySystem;
 class IServer;
+class CPlayerStateEngine;
 
 struct con_nprint_s;
 
@@ -800,7 +800,7 @@ public:
 	virtual void			PostClientMessagesSent( void ) = 0;
 
 	// For players, looks up the CPlayerState structure corresponding to the player
-	virtual CPlayerState	*GetPlayerState( edict_t *player ) = 0;
+	virtual CPlayerStateEngine	*GetPlayerState( edict_t *player ) = 0;
 
 	// Get the ear position for a specified client
 	virtual void			ClientEarPosition( edict_t *pEntity, Vector *pEarOrigin ) = 0;

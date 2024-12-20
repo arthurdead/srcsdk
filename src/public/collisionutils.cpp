@@ -33,7 +33,7 @@ static void Collision_ClearTrace( const Vector &vecRayStart, const Vector &vecRa
 	pTrace->startsolid = false;
 	pTrace->allsolid = false;
 	pTrace->fraction = 1.0f;
-	pTrace->contents = 0;
+	pTrace->contents = CONTENTS_EMPTY;
 }
 
 

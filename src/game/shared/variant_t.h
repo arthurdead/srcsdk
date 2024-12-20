@@ -29,10 +29,13 @@ typedef C_BaseEntity CSharedBaseEntity;
 //
 class variant_t
 {
+private:
 	union
 	{
 		bool bVal;
 		string_t iszVal;
+		interval_t interVal;
+		char *szVal;
 		modelindex_t mdlVal;
 		int iVal;
 		unsigned int uVal;
@@ -45,68 +48,154 @@ class variant_t
 		unsigned char ucVal;
 		float flVal;
 		Vector vecVal;
+		Vector2D vec2dVal;
+		Vector4D vec4dval;
 		QAngle angVal;
+		Quaternion quatVal;
+		VMatrix vmatVal;
+		matrix3x4_t matVal;
 		color24 rgbVal;
 		color32 rgbaVal;
+		ColorRGBExp32 rgbeVal;
 		EHANDLE ehVal;
+		edict_t *edpVal;
 		CSharedBaseEntity *epVal;
+		inputfunc_t fpVal;
 	};
 
-	fieldtype_t fieldType;
-	fieldflags_t fieldFlags;
+	fieldtype_t fieldType_;
+
+	void dealloc();
+
+	void assign_plain(const variant_t &other);
 
 public:
-
 	// constructor
-	variant_t() : fieldType(FIELD_VOID), iVal64(0) {}
+	variant_t()
+		: fieldType_(FIELD_VOID),
+			uVal64(0)
+	{
+	}
 
-	variant_t(const variant_t &rhs)
-	{ operator=(rhs); }
-	variant_t &operator=(const variant_t &rhs);
+	variant_t(variant_t &&other);
+	variant_t &operator=(variant_t &&other);
 
-	inline bool Bool( void ) const						{ return( fieldType == FIELD_BOOLEAN ) ? bVal : false; }
-	inline const char *String( void ) const				{ return( fieldType == FIELD_STRING ) ? STRING(iszVal) : ToString(); }
-	inline string_t StringID( void ) const				{ return( fieldType == FIELD_STRING ) ? iszVal : NULL_STRING; }
-	inline int Int( void ) const						{ return( fieldType == FIELD_INTEGER ) ? iVal : 0; }
-	inline int64 Int64( void ) const					{ return( fieldType == FIELD_INTEGER64 ) ? iVal64 : 0; }
-	inline float Float( void ) const					{ return( fieldType == FIELD_FLOAT ) ? flVal : 0; }
-	inline const EHANDLE &Entity(void) const;
-	inline color32 Color32(void) const					{ return rgbaVal; }
-	inline void Vector3D(Vector &vec) const;
+	variant_t(const variant_t &other);
+	variant_t &operator=(const variant_t &other);
+
+	~variant_t();
+
+	bool operator==(const variant_t &other) const = delete;
+	bool operator!=(const variant_t &other) const = delete;
+
+	bool operator>(const variant_t &other) const = delete;
+	bool operator>=(const variant_t &other) const = delete;
+	bool operator<(const variant_t &other) const = delete;
+	bool operator<=(const variant_t &other) const = delete;
+
+	bool Bool( void ) const;
+	const char *String( void ) const;
+	string_t StringID( void ) const;
+	char Char( void ) const;
+	signed char SChar( void ) const;
+	unsigned char UChar( void ) const;
+	int Int( void ) const;
+	unsigned int UInt( void ) const;
+	short Short( void ) const;
+	unsigned short UShort( void ) const;
+	int64 Int64( void ) const;
+	uint64 UInt64( void ) const;
+	float Float( void ) const;
+	CSharedBaseEntity *EntityP(void) const;
+	const EHANDLE &EntityH(void) const;
+	color24 Color24(void) const;
+	color32 Color32(void) const;
+	ColorRGBExp32 Color32E(void) const;
+	Vector Vector3D() const;
 	// Gets angles from a vector
-	inline void Angle3D(QAngle &ang) const;
+	QAngle Angle3D() const;
 
-	fieldtype_t FieldType( void ) const { return fieldType; }
+	fieldtype_t baseFieldType( void ) const
+	{ return (fieldtype_t)((unsigned short)fieldType_ & (unsigned short)FIELD_TYPE_MASK); }
+	fieldtype_t rawFieldType( void ) const
+	{ return fieldType_; }
 
-	void SetBool( bool b ) { bVal = b; fieldType = FIELD_BOOLEAN; }
-	void SetString( string_t str ) { iszVal = str, fieldType = FIELD_STRING; }
-	void SetInt( int val ) { iVal = val, fieldType = FIELD_INTEGER; }
-	void SetInt64( int64 val ) { iVal64 = val, fieldType = FIELD_INTEGER64; }
-	void SetFloat( float val ) { flVal = val, fieldType = FIELD_FLOAT; }
-	void SetEntity( CSharedBaseEntity *val );
-	void SetVector3D( const Vector &val ) { vecVal = val; fieldType = FIELD_VECTOR; }
-	void SetPositionVector3D( const Vector &val ) { vecVal = val; fieldType = FIELD_POSITION_VECTOR; }
+	void Parse(const char *value);
+
+	void SetVoid()
+	{ dealloc(); uVal64 = 0; fieldType_ = FIELD_VOID; }
+
+	void SetBool( bool b )
+	{ dealloc(); bVal = b; fieldType_ = FIELD_BOOLEAN; }
+	void SetStringT( string_t str )
+	{ dealloc(); iszVal = str; fieldType_ = FIELD_POOLED_STRING; }
+	void SetModelnameT( string_t str )
+	{ dealloc(); iszVal = str; fieldType_ = FIELD_POOLED_MODELNAME; }
+	void SetSoundnameT( string_t str )
+	{ dealloc(); iszVal = str; fieldType_ = FIELD_POOLED_SOUNDNAME; }
+	void SetSpritenameT( string_t str )
+	{ dealloc(); iszVal = str; fieldType_ = FIELD_POOLED_SPRITENAME; }
+	void SetChar( char val )
+	{ dealloc(); cVal = val; fieldType_ = FIELD_CHARACTER; }
+	void SetSChar( signed char val )
+	{ dealloc(); scVal = val; fieldType_ = FIELD_SCHARACTER; }
+	void SetUChar( unsigned char val )
+	{ dealloc(); ucVal = val; fieldType_ = FIELD_UCHARACTER; }
+	void SetInt( int val )
+	{ dealloc(); iVal = val; fieldType_ = FIELD_INTEGER; }
+	void SetUInt( unsigned int val )
+	{ dealloc(); iVal = val; fieldType_ = FIELD_UINTEGER; }
+	void SetShort( short val )
+	{ dealloc(); hVal = val; fieldType_ = FIELD_SHORT; }
+	void SetUShort( unsigned short val )
+	{ dealloc(); uhVal = val; fieldType_ = FIELD_USHORT; }
+	void SetInt64( int64 val )
+	{ dealloc(); iVal64 = val; fieldType_ = FIELD_INTEGER64; }
+	void SetUInt64( int64 val )
+	{ dealloc(); iVal64 = val; fieldType_ = FIELD_UINTEGER64; }
+	void SetFloat( float val )
+	{ dealloc(); flVal = val; fieldType_ = FIELD_FLOAT; }
+	void SetEntityH( EHANDLE val )
+	{ dealloc(); ehVal = val; fieldType_ = FIELD_EHANDLE; }
+	void SetEntityH( CSharedBaseEntity *val );
+	void SetVector3D( const Vector &val )
+	{ dealloc(); vecVal = val; fieldType_ = FIELD_VECTOR; }
+	void SetPositionVector3D( const Vector &val )
+	{ dealloc(); vecVal = val; fieldType_ = FIELD_VECTOR_WORLDSPACE; }
 	// Passes in angles as a vector
-	void SetAngle3D( const QAngle &val ) { angVal = val; fieldType = FIELD_VECTOR; }
+	void SetAngle3D( const QAngle &val )
+	{ dealloc(); angVal = val; fieldType_ = FIELD_QANGLE; }
 
-	void SetColor32( color32 val ) { rgbaVal = val; fieldType = FIELD_COLOR32; }
-	void SetColor32( unsigned char r, unsigned char g, unsigned char b, unsigned char a ) { rgbaVal.SetColor( r, g, b, a ); fieldType = FIELD_COLOR32; }
-	void Set( fieldtype_t ftype, void *data );
-	void SetOther( void *data );
-	bool Convert( fieldtype_t newType );
-	// Special conversion specifically for FIELD_EHANDLE with !activator, etc.
-	bool Convert( fieldtype_t newType, CSharedBaseEntity *pSelf, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller );
+	void SetModelindex( modelindex_t val )
+	{ dealloc(); mdlVal = val; fieldType_ = FIELD_MODELINDEX; }
+	void SetBrushModelindex( modelindex_t val )
+	{ dealloc(); mdlVal = val; fieldType_ = FIELD_BRUSH_MODELIDNEX; }
+	void SetStudioModelindex( modelindex_t val )
+	{ dealloc(); mdlVal = val; fieldType_ = FIELD_STUDIO_MODELIDNEX; }
+	void SetSpriteModelindex( modelindex_t val )
+	{ dealloc(); mdlVal = val; fieldType_ = FIELD_SPRITE_MODELINDEX; }
+
+	void SetColor32( color32 val )
+	{ dealloc(); rgbaVal = val; fieldType_ = FIELD_COLOR32; }
+	void SetColor32( unsigned char r, unsigned char g, unsigned char b, unsigned char a )
+	{ dealloc(); rgbaVal.SetColor( r, g, b, a ); fieldType_ = FIELD_COLOR32; }
+
+	void SetColor32E( ColorRGBExp32 val )
+	{ dealloc(); rgbeVal = val; fieldType_ = FIELD_COLOR32E; }
+	void SetColor32E( unsigned char r, unsigned char g, unsigned char b, signed char e )
+	{ dealloc(); rgbeVal.SetColor( r, g, b, e ); fieldType_ = FIELD_COLOR32E; }
+
+	void SetColor24( color32 val )
+	{ dealloc(); rgbVal = val; fieldType_ = FIELD_COLOR24; }
+	void SetColor24( unsigned char r, unsigned char g, unsigned char b )
+	{ dealloc(); rgbVal.SetColor( r, g, b ); fieldType_ = FIELD_COLOR24; }
+
 	// Hands over the value + the field type.
 	// ex: "Otis (String)", "3 (Integer)", or "npc_combine_s (Entity)"
-	const char *GetDebug();
-
-protected:
-
-	//
-	// Returns a string representation of the value without modifying the variant.
-	//
-	const char *ToString( void ) const;
+	const char *GetDebug() const;
 };
+
+DECLARE_FIELD_INFO( FIELD_VARIANT,		 variant_t ) 
 
 //
 // Structure passed to input handlers.
@@ -118,72 +207,5 @@ struct inputdata_t
 	variant_t value;				// The data parameter for this output.
 	int nOutputID;					// The unique ID of the output that was fired.
 };
-
-//-----------------------------------------------------------------------------
-// Purpose: Returns this variant as a vector.
-//-----------------------------------------------------------------------------
-inline void variant_t::Vector3D(Vector &vec) const
-{
-	if (( fieldType == FIELD_VECTOR ) || ( fieldType == FIELD_POSITION_VECTOR ))
-	{
-		vec[0] =  vecVal[0];
-		vec[1] =  vecVal[1];
-		vec[2] =  vecVal[2];
-	}
-	else
-	{
-		vec = vec3_origin;
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Returns this variant as angles.
-//-----------------------------------------------------------------------------
-inline void variant_t::Angle3D(QAngle &ang) const
-{
-	if (( fieldType == FIELD_VECTOR ) || ( fieldType == FIELD_POSITION_VECTOR ))
-	{
-		ang[0] =  angVal[0];
-		ang[1] =  angVal[1];
-		ang[2] =  angVal[2];
-	}
-	else
-	{
-		ang = vec3_angle;
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Returns this variant as an EHANDLE.
-//-----------------------------------------------------------------------------
-inline const EHANDLE &variant_t::Entity(void) const
-{
-	if ( fieldType == FIELD_EHANDLE )
-		return ehVal;
-
-	return NULL_EHANDLE;
-}
-
-// Most of these are defined in variant_t.cpp.
-
-// Creates a variant_t from the given string.
-// It could return as a String or a Float.
-variant_t Variant_Parse(const char *szValue);
-
-// Intended to convert FIELD_INPUT I/O parameters to other values, like integers, floats, or even entities.
-// This only changes FIELD_STRING variants. Other data like FIELD_EHANDLE or FIELD_INTEGER are not affected.
-variant_t Variant_ParseInput(const inputdata_t &inputdata);
-
-// A simpler version of Variant_ParseInput that does not allow FIELD_EHANDLE.
-variant_t Variant_ParseString(const variant_t &value);
-
-// val1 == val2
-bool Variant_Equal(const variant_t &val1, const variant_t &val2, bool bLenAllowed = true);
-
-// val1 > val2
-bool Variant_Greater(const variant_t &val1, const variant_t &val2, bool bLenAllowed = true);
-
-// val1 >= val2
-bool Variant_GreaterOrEqual(const variant_t &val1, const variant_t &val2, bool bLenAllowed = true);
 
 #endif // VARIANT_T_H

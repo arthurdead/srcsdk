@@ -73,7 +73,7 @@ public:
 #if !defined( CLIENT_DLL )
 	int		ObjectCaps( void );
 	void	SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
-	int		UpdateTransmitState( void );
+	EdictStateFlags_t UpdateTransmitState( void );
 	int		ShouldTransmit( const CCheckTransmitInfo *pInfo );
 #endif
 
@@ -231,11 +231,11 @@ protected:
 
 private:
 #if !defined( CLIENT_DLL )
-	void InputNoise( inputdata_t &inputdata );
- 	void InputWidth( inputdata_t &inputdata );
-	void InputColorRedValue( inputdata_t &inputdata );
-	void InputColorBlueValue( inputdata_t &inputdata );
-	void InputColorGreenValue( inputdata_t &inputdata );
+	void InputNoise( inputdata_t &&inputdata );
+ 	void InputWidth( inputdata_t &&inputdata );
+	void InputColorRedValue( inputdata_t &&inputdata );
+	void InputColorBlueValue( inputdata_t &&inputdata );
+	void InputColorGreenValue( inputdata_t &&inputdata );
 #endif
 
 	// Beam Data Elements

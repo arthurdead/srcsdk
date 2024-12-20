@@ -14,7 +14,6 @@
 #include "mathlib/mathlib.h"
 #include "ivmodelinfo.h"
 
-enum SolidType_t;
 class IHandleEntity;
 struct Ray_t;
 struct model_t;
@@ -62,13 +61,13 @@ public:
 
 	// Return a SOLID_ define.
 	virtual SolidType_t		GetSolid() const = 0;
-	virtual int				GetSolidFlags() const = 0;
+	virtual SolidFlags_t				GetSolidFlags() const = 0;
 
 	// Gets at the containing class...
 	virtual IClientUnknown*	GetIClientUnknown() = 0;
 	
 	// We can filter out collisions based on collision group
-	virtual int				GetCollisionGroup() const = 0;
+	virtual Collision_Group_t				GetCollisionGroup() const = 0;
 
 	// Returns a world-aligned box guaranteed to surround *everything* in the collision representation
 	// Note that this will surround hitboxes, trigger bounds, physics.

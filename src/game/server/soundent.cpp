@@ -743,19 +743,19 @@ public:
 	string_t	m_iszProxyEntityName;
 
 	// Input handlers
-	void InputInsertSound( inputdata_t &inputdata );
-	void InputEmitAISound( inputdata_t &inputdata );
+	void InputInsertSound( inputdata_t &&inputdata );
+	void InputEmitAISound( inputdata_t &&inputdata );
 };
 
 LINK_ENTITY_TO_CLASS( ai_sound, CAISound );
 
 BEGIN_MAPENTITY( CAISound )
 
-	DEFINE_KEYFIELD( m_iSoundType, FIELD_INTEGER, "soundtype" ),
-	DEFINE_KEYFIELD( m_iSoundContext, FIELD_INTEGER, "soundcontext" ),
-	DEFINE_KEYFIELD( m_iVolume, FIELD_INTEGER, "volume" ),
-	DEFINE_KEYFIELD( m_flDuration, FIELD_FLOAT, "duration" ),
-	DEFINE_KEYFIELD( m_iszProxyEntityName, FIELD_STRING, "locationproxy" ),
+	DEFINE_KEYFIELD_AUTO( m_iSoundType, "soundtype" ),
+	DEFINE_KEYFIELD_AUTO( m_iSoundContext, "soundcontext" ),
+	DEFINE_KEYFIELD_AUTO( m_iVolume, "volume" ),
+	DEFINE_KEYFIELD_AUTO( m_flDuration, "duration" ),
+	DEFINE_KEYFIELD_AUTO( m_iszProxyEntityName, "locationproxy" ),
 
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "InsertSound", InputInsertSound ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "EmitAISound", InputEmitAISound ),
@@ -765,7 +765,7 @@ END_MAPENTITY()
 //-----------------------------------------------------------------------------
 // Purpose: *** OBSOLETE **** Here for legacy support only!
 //-----------------------------------------------------------------------------
-void CAISound::InputInsertSound( inputdata_t &inputdata )
+void CAISound::InputInsertSound( inputdata_t &&inputdata )
 {
 	int iVolume;
 
@@ -805,7 +805,7 @@ void CAISound::InputInsertSound( inputdata_t &inputdata )
 	g_pSoundEnt->InsertSound( m_iSoundType | m_iSoundContext, vecLocation, iVolume, m_flDuration, hOwner );
 }
 
-void CAISound::InputEmitAISound( inputdata_t &inputdata )
+void CAISound::InputEmitAISound( inputdata_t &&inputdata )
 {
 	Vector vecLocation = GetAbsOrigin();
 

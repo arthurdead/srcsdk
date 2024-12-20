@@ -16,8 +16,8 @@
 
 #pragma once
 
-
 #include "mathlib/mathlib.h"
+#include "bspflags.h"
 
 // Note: These flags need to match the bspfile.h DISPTRI_TAG_* flags.
 #define DISPSURF_FLAG_SURFACE		(1<<0)
@@ -51,7 +51,7 @@ public:
 
 	float			fraction;				// time completed, 1.0 = didn't hit anything
 
-	int				contents;				// contents on other side of surface hit
+	ContentsFlags_t				contents;				// contents on other side of surface hit
 	unsigned short	dispFlags;				// displacement flags for marking surfaces with data
 
 	bool			allsolid;				// if true, plane is not valid

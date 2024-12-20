@@ -39,35 +39,35 @@ public:
 	//bool m_bDisabled;
 
 	// Inputs
-	void InputSetInflictor( inputdata_t &inputdata ) { m_iszInflictor = inputdata.value.StringID(); } //{ m_info.SetInflictor(inputdata.value.Entity()); }
-	void InputSetAttacker( inputdata_t &inputdata ) { m_iszAttacker = inputdata.value.StringID(); } //{ m_info.SetAttacker(inputdata.value.Entity()); }
-	void InputSetWeapon( inputdata_t &inputdata ) { m_iszWeapon = inputdata.value.StringID(); } //{ m_info.SetWeapon(inputdata.value.Entity()); }
+	void InputSetInflictor( inputdata_t &&inputdata ) { m_iszInflictor = inputdata.value.StringID(); } //{ m_info.SetInflictor(inputdata.value.Entity()); }
+	void InputSetAttacker( inputdata_t &&inputdata ) { m_iszAttacker = inputdata.value.StringID(); } //{ m_info.SetAttacker(inputdata.value.Entity()); }
+	void InputSetWeapon( inputdata_t &&inputdata ) { m_iszWeapon = inputdata.value.StringID(); } //{ m_info.SetWeapon(inputdata.value.Entity()); }
 
-	void InputSetDamage( inputdata_t &inputdata ) { m_info.SetDamage(inputdata.value.Float()); }
-	void InputSetMaxDamage( inputdata_t &inputdata ) { m_info.SetMaxDamage(inputdata.value.Float()); }
-	void InputSetDamageBonus( inputdata_t &inputdata ) { m_info.SetDamageBonus(inputdata.value.Float()); }
+	void InputSetDamage( inputdata_t &&inputdata ) { m_info.SetDamage(inputdata.value.Float()); }
+	void InputSetMaxDamage( inputdata_t &&inputdata ) { m_info.SetMaxDamage(inputdata.value.Float()); }
+	void InputSetDamageBonus( inputdata_t &&inputdata ) { m_info.SetDamageBonus(inputdata.value.Float()); }
 
-	void InputSetDamageType( inputdata_t &inputdata ) { m_info.SetDamageType(inputdata.value.Int()); }
-	void InputSetDamageCustom( inputdata_t &inputdata ) { m_info.SetDamageCustom(inputdata.value.Int()); }
-	void InputSetDamageStats( inputdata_t &inputdata ) { m_info.SetDamageStats(inputdata.value.Int()); }
-	void InputSetForceFriendlyFire( inputdata_t &inputdata ) { m_info.SetForceFriendlyFire(inputdata.value.Bool()); }
+	void InputSetDamageType( inputdata_t &&inputdata ) { m_info.SetDamageType(inputdata.value.Int()); }
+	void InputSetDamageCustom( inputdata_t &&inputdata ) { m_info.SetDamageCustom(inputdata.value.Int()); }
+	void InputSetDamageStats( inputdata_t &&inputdata ) { m_info.SetDamageStats(inputdata.value.Int()); }
+	void InputSetForceFriendlyFire( inputdata_t &&inputdata ) { m_info.SetForceFriendlyFire(inputdata.value.Bool()); }
 
-	void InputSetAmmoType( inputdata_t &inputdata ) { m_info.SetAmmoType(inputdata.value.Int()); }
+	void InputSetAmmoType( inputdata_t &&inputdata ) { m_info.SetAmmoType(inputdata.value.Int()); }
 
-	void InputSetPlayerPenetrationCount( inputdata_t &inputdata ) { m_info.SetPlayerPenetrationCount( inputdata.value.Int() ); }
-	void InputSetDamagedOtherPlayers( inputdata_t &inputdata ) { m_info.SetDamagedOtherPlayers( inputdata.value.Int() ); }
+	void InputSetPlayerPenetrationCount( inputdata_t &&inputdata ) { m_info.SetPlayerPenetrationCount( inputdata.value.Int() ); }
+	void InputSetDamagedOtherPlayers( inputdata_t &&inputdata ) { m_info.SetDamagedOtherPlayers( inputdata.value.Int() ); }
 
-	void InputSetDamageForce( inputdata_t &inputdata ) { Vector vec; inputdata.value.Vector3D(vec); m_info.SetDamageForce(vec); }
-	void InputSetDamagePosition( inputdata_t &inputdata ) { Vector vec; inputdata.value.Vector3D(vec); m_info.SetDamagePosition(vec); }
-	void InputSetReportedPosition( inputdata_t &inputdata ) { Vector vec; inputdata.value.Vector3D(vec); m_info.SetReportedPosition(vec); }
+	void InputSetDamageForce( inputdata_t &&inputdata ) { Vector vec; inputdata.value.Vector3D(vec); m_info.SetDamageForce(vec); }
+	void InputSetDamagePosition( inputdata_t &&inputdata ) { Vector vec; inputdata.value.Vector3D(vec); m_info.SetDamagePosition(vec); }
+	void InputSetReportedPosition( inputdata_t &&inputdata ) { Vector vec; inputdata.value.Vector3D(vec); m_info.SetReportedPosition(vec); }
 
 	void HandleDamage(CBaseEntity *pTarget);
 
 	void ApplyDamage( const char *target, inputdata_t &inputdata );
 	void ApplyDamage( CBaseEntity *target, inputdata_t &inputdata );
 
-	void InputApplyDamage( inputdata_t &inputdata );
-	void InputApplyDamageToEntity( inputdata_t &inputdata );
+	void InputApplyDamage( inputdata_t &&inputdata );
+	void InputApplyDamageToEntity( inputdata_t &&inputdata );
 
 	// Outputs
 	COutputEvent m_OnApplyDamage;
@@ -82,12 +82,12 @@ BEGIN_DATADESC( CPointDamageInfo )
 	DEFINE_EMBEDDED( m_info ),
 
 	// Keys
-	DEFINE_KEYFIELD( m_iszInflictor, FIELD_STRING, "Inflictor" ),
-	DEFINE_KEYFIELD( m_iszAttacker, FIELD_STRING, "Attacker" ),
-	DEFINE_KEYFIELD( m_iszWeapon, FIELD_STRING, "Weapon" ),
+	DEFINE_KEYFIELD_AUTO( m_iszInflictor, "Inflictor" ),
+	DEFINE_KEYFIELD_AUTO( m_iszAttacker, "Attacker" ),
+	DEFINE_KEYFIELD_AUTO( m_iszWeapon, "Weapon" ),
 
-	DEFINE_KEYFIELD( m_iMaxEnts, FIELD_INTEGER, "MaxEnts" ),
-	DEFINE_KEYFIELD( m_bSuppressDeathSound, FIELD_BOOLEAN, "SuppressDeathSound" ),
+	DEFINE_KEYFIELD_AUTO( m_iMaxEnts, "MaxEnts" ),
+	DEFINE_KEYFIELD_AUTO( m_bSuppressDeathSound, "SuppressDeathSound" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetInflictor", InputSetInflictor ),
@@ -378,7 +378,7 @@ void CPointDamageInfo::ApplyDamage( CBaseEntity *target, inputdata_t &inputdata 
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CPointDamageInfo::InputApplyDamage( inputdata_t &inputdata )
+void CPointDamageInfo::InputApplyDamage( inputdata_t &&inputdata )
 {
 	ApplyDamage(STRING(m_target), inputdata);
 }
@@ -388,7 +388,7 @@ void CPointDamageInfo::InputApplyDamage( inputdata_t &inputdata )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CPointDamageInfo::InputApplyDamageToEntity( inputdata_t &inputdata )
+void CPointDamageInfo::InputApplyDamageToEntity( inputdata_t &&inputdata )
 {
 	ApplyDamage(inputdata.value.Entity(), inputdata);
 }

@@ -35,7 +35,7 @@ public:
 	virtual void OnEntityEvent( EntityEvent_t event, void *pEventData );
 
 private:
-	int 	UpdateTransmitState();
+	EdictStateFlags_t UpdateTransmitState();
 	void	SpotlightThink(void);
 	void	SpotlightUpdate(void);
 	Vector	SpotlightCurrentPos(void);
@@ -45,12 +45,12 @@ private:
 	// ------------------------------
 	//  Inputs
 	// ------------------------------
-	void InputLightOn( inputdata_t &inputdata );
-	void InputLightOff( inputdata_t &inputdata );
-	void InputLightToggle( inputdata_t &inputdata ) { m_bSpotlightOn ? InputLightOff(inputdata) : InputLightOn(inputdata); }
+	void InputLightOn( inputdata_t &&inputdata );
+	void InputLightOff( inputdata_t &&inputdata );
+	void InputLightToggle( inputdata_t &&inputdata ) { m_bSpotlightOn ? InputLightOff(inputdata) : InputLightOn(inputdata); }
 
-	void InputSetColor( inputdata_t &inputdata );
-	void InputForceUpdate( inputdata_t &inputdata );
+	void InputSetColor( inputdata_t &&inputdata );
+	void InputForceUpdate( inputdata_t &&inputdata );
 
 	// Creates the efficient spotlight 
 	void CreateEfficientSpotlight();
@@ -85,14 +85,14 @@ public:
 
 BEGIN_MAPENTITY( CPointSpotlight )
 
-	DEFINE_KEYFIELD( m_bIgnoreSolid, FIELD_BOOLEAN, "IgnoreSolid" ),
-	DEFINE_KEYFIELD( m_flSpotlightMaxLength,FIELD_FLOAT, "SpotlightLength"),
-	DEFINE_KEYFIELD( m_flSpotlightGoalWidth,FIELD_FLOAT, "SpotlightWidth"),
-	DEFINE_KEYFIELD( m_flHDRColorScale, FIELD_FLOAT, "HDRColorScale" ),
-	DEFINE_KEYFIELD( m_nMinDXLevel, FIELD_INTEGER, "mindxlevel" ),
-	DEFINE_KEYFIELD( m_flHaloScale, FIELD_FLOAT, "HaloScale" ),
-	DEFINE_KEYFIELD( m_iszHaloMaterial, FIELD_STRING, "HaloMaterial" ),
-	DEFINE_KEYFIELD( m_iszSpotlightMaterial, FIELD_STRING, "SpotlightMaterial" ),
+	DEFINE_KEYFIELD_AUTO( m_bIgnoreSolid, "IgnoreSolid" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpotlightMaxLength, "SpotlightLength" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpotlightGoalWidth, "SpotlightWidth" ),
+	DEFINE_KEYFIELD_AUTO( m_flHDRColorScale, "HDRColorScale" ),
+	DEFINE_KEYFIELD_AUTO( m_nMinDXLevel, "mindxlevel" ),
+	DEFINE_KEYFIELD_AUTO( m_flHaloScale, "HaloScale" ),
+	DEFINE_KEYFIELD_AUTO( m_iszHaloMaterial, "HaloMaterial" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSpotlightMaterial, "SpotlightMaterial" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID,		"LightOn",		InputLightOn ),
@@ -316,7 +316,7 @@ void CPointSpotlight::OnEntityEvent( EntityEvent_t event, void *pEventData )
 // Input   :
 // Output  :
 //-------------------------------------------------------------------------------------
-int CPointSpotlight::UpdateTransmitState()
+EdictStateFlags_t CPointSpotlight::UpdateTransmitState()
 {
 	if ( m_bEfficientSpotlight )
 		return SetTransmitState( FL_EDICT_DONTSEND );
@@ -521,7 +521,7 @@ void CPointSpotlight::SpotlightUpdate(void)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointSpotlight::InputLightOn( inputdata_t &inputdata )
+void CPointSpotlight::InputLightOn( inputdata_t &&inputdata )
 {
 	if ( !m_bSpotlightOn )
 	{
@@ -536,7 +536,7 @@ void CPointSpotlight::InputLightOn( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointSpotlight::InputLightOff( inputdata_t &inputdata )
+void CPointSpotlight::InputLightOff( inputdata_t &&inputdata )
 {
 	if ( m_bSpotlightOn )
 	{
@@ -551,7 +551,7 @@ void CPointSpotlight::InputLightOff( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Set the beam's color
 //-----------------------------------------------------------------------------
-void CPointSpotlight::InputSetColor( inputdata_t &inputdata )
+void CPointSpotlight::InputSetColor( inputdata_t &&inputdata )
 {
 	if ( m_hSpotlight )
 	{
@@ -563,7 +563,7 @@ void CPointSpotlight::InputSetColor( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Force update the spotlight
 //-----------------------------------------------------------------------------
-void CPointSpotlight::InputForceUpdate( inputdata_t &inputdata )
+void CPointSpotlight::InputForceUpdate( inputdata_t &&inputdata )
 {
 	SpotlightUpdate();
 }

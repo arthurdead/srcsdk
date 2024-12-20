@@ -3,7 +3,7 @@
 
 #pragma once
 
-enum Disposition_t 
+enum Disposition_t : unsigned char
 {
 	D_ER,		// Undefined - error
 	D_HT,		// Hate
@@ -19,11 +19,17 @@ enum Disposition_t
 	D_NEUTRAL = D_NU,	// Neutral
 };
 
-enum
+enum WeaponSwitchResult_t : unsigned char
 {
 	WEAPON_SWITCH_FAILED,
 	WEAPON_SWITCH_HOLSTERED,
 	WEAPON_SWITCH_DEPLOYED,
+};
+
+enum FieldOfViewCheckType : unsigned char
+{
+	USE_FOV,
+	DISREGARD_FOV
 };
 
 #endif

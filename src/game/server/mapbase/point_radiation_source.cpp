@@ -23,8 +23,8 @@ public:
 
 	void RadiationThink();
 
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
 	bool m_bTestPVS;
 	float m_flRadius;
@@ -39,10 +39,10 @@ BEGIN_DATADESC( CPointRadiationSource )
 	DEFINE_FUNCTION( RadiationThink ),
 
 	// Fields
-	DEFINE_KEYFIELD( m_bTestPVS, FIELD_BOOLEAN, "TestPVS" ),
+	DEFINE_KEYFIELD_AUTO( m_bTestPVS, "TestPVS" ),
 	DEFINE_INPUT( m_flRadius, FIELD_FLOAT, "SetRadius" ),
 	DEFINE_INPUT( m_flIntensity, FIELD_FLOAT, "SetIntensity" ),
-	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -71,7 +71,7 @@ void CPointRadiationSource::Spawn( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointRadiationSource::InputEnable( inputdata_t &inputdata )
+void CPointRadiationSource::InputEnable( inputdata_t &&inputdata )
 {
 	m_bDisabled = false;
 
@@ -82,7 +82,7 @@ void CPointRadiationSource::InputEnable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointRadiationSource::InputDisable( inputdata_t &inputdata )
+void CPointRadiationSource::InputDisable( inputdata_t &&inputdata )
 {
 	m_bDisabled = true;
 

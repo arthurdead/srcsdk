@@ -30,8 +30,8 @@ public:
 
 private:
 	void	PlayerSurfaceChanged( CBasePlayer *pPlayer, char gameMaterial );
-	void	InputDisable( inputdata_t &inputdata );
-	void	InputEnable( inputdata_t &inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
 
 private:
 	int		m_iTargetGameMaterial;

@@ -46,7 +46,7 @@ IMPLEMENT_CLIENTCLASS_DT(C_SceneEntity, DT_SceneEntity, CSceneEntity)
 	RecvPropUtlVector( 
 		RECVINFO_UTLVECTOR( m_hActorList ), 
 		MAX_ACTORS_IN_SCENE,
-		RecvPropEHandle(NULL, 0, 0)),
+		RecvPropEHandle(NULL, 0, sizeof(CHandle< C_BaseFlex >) ) ),
 END_RECV_TABLE()
 
 LINK_ENTITY_TO_CLASS(scene_clientside, C_ClientScene);

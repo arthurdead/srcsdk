@@ -219,7 +219,7 @@ private:
 	void					UpdateLatchedValues( void );
 
 	// Input handlers.
-	void InputSetExpressionOverride( inputdata_t &inputdata );
+	void InputSetExpressionOverride( inputdata_t &&inputdata );
 
 	//---------------------------------
 

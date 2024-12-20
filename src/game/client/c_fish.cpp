@@ -45,7 +45,7 @@ private:
 	Vector m_vel;						///< local velocity
 	QAngle m_angles;					///< local angles
 
-	int m_localLifeState;				///< our version of m_lifeState
+	Lifestate_t m_localLifeState;				///< our version of m_lifeState
 
 	float m_deathDepth;					///< water depth when we died
 	float m_deathAngle;					///< angle to float at when dead

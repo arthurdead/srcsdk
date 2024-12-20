@@ -40,7 +40,7 @@ public:
 	virtual void Spawn();
 	void Think( void );
 	virtual int OnTakeDamage( const CTakeDamageInfo &info ); //< stubbed out, does nothing, flexexpressers are immortal
-	void InputSpeakResponseConcept( inputdata_t &inputdata );
+	void InputSpeakResponseConcept( inputdata_t &&inputdata );
 
 	/// given a pointer to a CBaseEntity, return a CFlexExpresser * if that base entity is a prop_talker, NULL otherwise
 	/// (hopefully faster than dynamic_cast). Passing NULL is safe.

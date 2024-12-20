@@ -54,45 +54,45 @@ BEGIN_MAPENTITY( CAI_ScriptConditions )
 	//---------------------------------
 
 	// Inputs
-	DEFINE_KEYFIELD(m_fDisabled, 					FIELD_BOOLEAN, 	"StartDisabled" 			),
+	DEFINE_KEYFIELD_AUTO( m_fDisabled, "StartDisabled" ),
 
 	DEFINE_FIELD( m_hTarget, FIELD_EHANDLE ),
-	DEFINE_KEYFIELD(m_Actor,						FIELD_STRING,	"Actor"						),
+	DEFINE_KEYFIELD_AUTO( m_Actor, "Actor" ),
 
-	DEFINE_KEYFIELD(m_flRequiredTime, 				FIELD_FLOAT, 	"RequiredTime" 				),
+	DEFINE_KEYFIELD_AUTO( m_flRequiredTime, "RequiredTime" ),
 
-	DEFINE_KEYFIELD(m_fMinState, 					FIELD_INTEGER,	"MinimumState" 				),
-	DEFINE_KEYFIELD(m_fMaxState, 					FIELD_INTEGER,	"MaximumState" 				),
+	DEFINE_KEYFIELD_AUTO( m_fMinState, "MinimumState" ),
+	DEFINE_KEYFIELD_AUTO( m_fMaxState, "MaximumState" ),
 
-	DEFINE_KEYFIELD(m_fScriptStatus, 				FIELD_INTEGER,	"ScriptStatus" 				),
-	DEFINE_KEYFIELD(m_fActorSeePlayer,				FIELD_INTEGER,	"ActorSeePlayer"			),
+	DEFINE_KEYFIELD_AUTO( m_fScriptStatus, "ScriptStatus" ),
+	DEFINE_KEYFIELD_AUTO( m_fActorSeePlayer, "ActorSeePlayer" ),
 
 
-	DEFINE_KEYFIELD(m_flPlayerActorProximity,		FIELD_FLOAT, 	"PlayerActorProximity" 		),
+	DEFINE_KEYFIELD_AUTO( m_flPlayerActorProximity, "PlayerActorProximity" ),
 
-	DEFINE_KEYFIELD(m_flPlayerActorFOV, 			FIELD_FLOAT, 	"PlayerActorFOV" 			),
-	DEFINE_KEYFIELD(m_bPlayerActorFOVTrueCone,		FIELD_BOOLEAN,	"PlayerActorFOVTrueCone"	),
+	DEFINE_KEYFIELD_AUTO( m_flPlayerActorFOV, "PlayerActorFOV" ),
+	DEFINE_KEYFIELD_AUTO( m_bPlayerActorFOVTrueCone, "PlayerActorFOVTrueCone" ),
 
-	DEFINE_KEYFIELD(m_fPlayerActorLOS, 				FIELD_INTEGER, 	"PlayerActorLOS" 			),
-	DEFINE_KEYFIELD(m_fActorSeeTarget,				FIELD_INTEGER,	"ActorSeeTarget" 			),
+	DEFINE_KEYFIELD_AUTO( m_fPlayerActorLOS, "PlayerActorLOS" ),
+	DEFINE_KEYFIELD_AUTO( m_fActorSeeTarget, "ActorSeeTarget" ),
 
-	DEFINE_KEYFIELD(m_flActorTargetProximity,		FIELD_FLOAT, 	"ActorTargetProximity" 		),
+	DEFINE_KEYFIELD_AUTO( m_flActorTargetProximity, "ActorTargetProximity" ),
 
-	DEFINE_KEYFIELD(m_flPlayerTargetProximity, 		FIELD_FLOAT, 	"PlayerTargetProximity"		),
+	DEFINE_KEYFIELD_AUTO( m_flPlayerTargetProximity, "PlayerTargetProximity" ),
 
-	DEFINE_KEYFIELD(m_flPlayerTargetFOV, 			FIELD_FLOAT,	"PlayerTargetFOV"			),
-	DEFINE_KEYFIELD(m_bPlayerTargetFOVTrueCone,		FIELD_BOOLEAN,	"PlayerTargetFOVTrueCone"	),
+	DEFINE_KEYFIELD_AUTO( m_flPlayerTargetFOV, "PlayerTargetFOV" ),
+	DEFINE_KEYFIELD_AUTO( m_bPlayerTargetFOVTrueCone, "PlayerTargetFOVTrueCone" ),
 
-	DEFINE_KEYFIELD(m_fPlayerTargetLOS, 			FIELD_INTEGER,	"PlayerTargetLOS"			),
-	DEFINE_KEYFIELD(m_fPlayerBlockingActor,			FIELD_INTEGER,  "PlayerBlockingActor"		),
+	DEFINE_KEYFIELD_AUTO( m_fPlayerTargetLOS, "PlayerTargetLOS" ),
+	DEFINE_KEYFIELD_AUTO( m_fPlayerBlockingActor, "PlayerBlockingActor" ),
 
-	DEFINE_KEYFIELD(m_flMinTimeout, 				FIELD_FLOAT,	"MinTimeout"				),
-	DEFINE_KEYFIELD(m_flMaxTimeout, 				FIELD_FLOAT,	"MaxTimeout"				),
+	DEFINE_KEYFIELD_AUTO( m_flMinTimeout, "MinTimeout" ),
+	DEFINE_KEYFIELD_AUTO( m_flMaxTimeout, "MaxTimeout" ),
 
-	DEFINE_KEYFIELD(m_fActorInPVS,					FIELD_INTEGER,  "ActorInPVS"		),
+	DEFINE_KEYFIELD_AUTO( m_fActorInPVS, "ActorInPVS" ),
 
-	DEFINE_KEYFIELD(m_fActorInVehicle,				FIELD_INTEGER,	 "ActorInVehicle" ),
-	DEFINE_KEYFIELD(m_fPlayerInVehicle,				FIELD_INTEGER,	 "PlayerInVehicle" ),
+	DEFINE_KEYFIELD_AUTO( m_fActorInVehicle, "ActorInVehicle" ),
+	DEFINE_KEYFIELD_AUTO( m_fPlayerInVehicle, "PlayerInVehicle" ),
 
 END_MAPENTITY()
 
@@ -604,7 +604,7 @@ void CAI_ScriptConditions::Disable( void )
 
 //-----------------------------------------------------------------------------
 
-void CAI_ScriptConditions::InputEnable( inputdata_t &inputdata )
+void CAI_ScriptConditions::InputEnable( inputdata_t &&inputdata )
 {
 	m_bLeaveAsleep = false;
 	Enable();
@@ -612,7 +612,7 @@ void CAI_ScriptConditions::InputEnable( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 
-void CAI_ScriptConditions::InputDisable( inputdata_t &inputdata )
+void CAI_ScriptConditions::InputDisable( inputdata_t &&inputdata )
 {
 	m_bLeaveAsleep = true;
 	Disable();
@@ -620,7 +620,7 @@ void CAI_ScriptConditions::InputDisable( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 
-void CAI_ScriptConditions::InputSatisfyConditions( inputdata_t &inputdata )
+void CAI_ScriptConditions::InputSatisfyConditions( inputdata_t &&inputdata )
 {
 	// This satisfies things.
 	CBaseEntity *pActivator = HasSpawnFlags(SF_ACTOR_AS_ACTIVATOR) ? inputdata.value.Entity() : this;

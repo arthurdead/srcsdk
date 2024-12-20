@@ -83,7 +83,7 @@ private:
 
 public:
 	CUtlVector< CTeamSpawnPoint * > m_aSpawnPoints;
-	CUtlVector< CBasePlayer * >		m_aPlayers;
+	CNetworkUtlVector( CBasePlayer *,		m_aPlayers );
 
 	// Data
 	CNetworkString( m_szTeamname, MAX_TEAM_NAME_LENGTH );

@@ -16,12 +16,12 @@
 //-----------------------------------------------------------------------------
 // Purpose: Return a pointer to the Ammo at the Index passed in
 //-----------------------------------------------------------------------------
-Ammo_t *CAmmoDef::GetAmmoOfIndex(int nAmmoIndex)
+Ammo_t *CAmmoDef::GetAmmoOfIndex(AmmoIndex_t nAmmoIndex)
 {
-	if ( nAmmoIndex >= m_nAmmoIndex )
+	if ( (unsigned int)nAmmoIndex >= m_nAmmoIndex )
 		return NULL;
 
-	return &m_AmmoType[ nAmmoIndex ];
+	return &m_AmmoType[ (unsigned int)nAmmoIndex ];
 }
 
 //-----------------------------------------------------------------------------
@@ -29,12 +29,12 @@ Ammo_t *CAmmoDef::GetAmmoOfIndex(int nAmmoIndex)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-const char* CAmmoDef::Name(int nAmmoIndex)
+const char* CAmmoDef::Name(AmmoIndex_t nAmmoIndex)
 {
-	if ( nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex )
+	if ( (unsigned int)nAmmoIndex >= m_nAmmoIndex )
 		return NULL;
 
-	return m_AmmoType[nAmmoIndex].pName;
+	return m_AmmoType[(unsigned int)nAmmoIndex].pName;
 }
 
 //-----------------------------------------------------------------------------
@@ -42,20 +42,20 @@ const char* CAmmoDef::Name(int nAmmoIndex)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-int CAmmoDef::Index(const char *psz)
+AmmoIndex_t CAmmoDef::Index(const char *psz)
 {
-	int i;
+	unsigned int i;
 
 	if (!psz)
-		return -1;
+		return AMMO_INVALID_INDEX;
 
-	for (i = 1; i < m_nAmmoIndex; i++)
+	for (i = 0; i < m_nAmmoIndex; i++)
 	{
 		if (stricmp( psz, m_AmmoType[i].pName ) == 0)
-			return i;
+			return (AmmoIndex_t)i;
 	}
 
-	return -1;
+	return AMMO_INVALID_INDEX;
 }
 
 //-----------------------------------------------------------------------------
@@ -63,23 +63,23 @@ int CAmmoDef::Index(const char *psz)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-int	CAmmoDef::PlrDamage(int nAmmoIndex)
+int	CAmmoDef::PlrDamage(AmmoIndex_t nAmmoIndex)
 {
-	if ( nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex )
+	if ( (unsigned int)nAmmoIndex >= m_nAmmoIndex )
 		return 0;
 
-	if ( m_AmmoType[nAmmoIndex].pPlrDmg == USE_CVAR )
+	if ( m_AmmoType[(unsigned int)nAmmoIndex].pPlrDmg == USE_CVAR )
 	{
-		if ( m_AmmoType[nAmmoIndex].pPlrDmgCVar )
+		if ( m_AmmoType[(unsigned int)nAmmoIndex].pPlrDmgCVar )
 		{
-			return m_AmmoType[nAmmoIndex].pPlrDmgCVar->GetFloat();
+			return m_AmmoType[(unsigned int)nAmmoIndex].pPlrDmgCVar->GetFloat();
 		}
 
 		return 0;
 	}
 	else
 	{
-		return m_AmmoType[nAmmoIndex].pPlrDmg;
+		return m_AmmoType[(unsigned int)nAmmoIndex].pPlrDmg;
 	}
 }
 
@@ -88,23 +88,23 @@ int	CAmmoDef::PlrDamage(int nAmmoIndex)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-int	CAmmoDef::NPCDamage(int nAmmoIndex)
+int	CAmmoDef::NPCDamage(AmmoIndex_t nAmmoIndex)
 {
-	if ( nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex )
+	if ( (unsigned int)nAmmoIndex >= m_nAmmoIndex )
 		return 0;
 
-	if ( m_AmmoType[nAmmoIndex].pNPCDmg == USE_CVAR )
+	if ( m_AmmoType[(unsigned int)nAmmoIndex].pNPCDmg == USE_CVAR )
 	{
-		if ( m_AmmoType[nAmmoIndex].pNPCDmgCVar )
+		if ( m_AmmoType[(unsigned int)nAmmoIndex].pNPCDmgCVar )
 		{
-			return m_AmmoType[nAmmoIndex].pNPCDmgCVar->GetFloat();
+			return m_AmmoType[(unsigned int)nAmmoIndex].pNPCDmgCVar->GetFloat();
 		}
 
 		return 0;
 	}
 	else
 	{
-		return m_AmmoType[nAmmoIndex].pNPCDmg;
+		return m_AmmoType[(unsigned int)nAmmoIndex].pNPCDmg;
 	}
 }
 
@@ -113,35 +113,35 @@ int	CAmmoDef::NPCDamage(int nAmmoIndex)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-int	CAmmoDef::MaxCarry(int nAmmoIndex, const CSharedBaseCombatCharacter *owner)
+int	CAmmoDef::MaxCarry(AmmoIndex_t nAmmoIndex, const CSharedBaseCombatCharacter *owner)
 {
-	if ( nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex )
+	if ( (unsigned int)nAmmoIndex >= m_nAmmoIndex )
 		return 0;
 
-	if ( m_AmmoType[nAmmoIndex].pMaxCarry == USE_CVAR )
+	if ( m_AmmoType[(unsigned int)nAmmoIndex].pMaxCarry == USE_CVAR )
 	{
-		if ( m_AmmoType[nAmmoIndex].pMaxCarryCVar )
-			return m_AmmoType[nAmmoIndex].pMaxCarryCVar->GetInt();
+		if ( m_AmmoType[(unsigned int)nAmmoIndex].pMaxCarryCVar )
+			return m_AmmoType[(unsigned int)nAmmoIndex].pMaxCarryCVar->GetInt();
 
 		return 0;
 	}
 	else
 	{
-		return m_AmmoType[nAmmoIndex].pMaxCarry;
+		return m_AmmoType[(unsigned int)nAmmoIndex].pMaxCarry;
 	}
 }
 
-bool CAmmoDef::CanCarryInfiniteAmmo(int nAmmoIndex)
+bool CAmmoDef::CanCarryInfiniteAmmo(AmmoIndex_t nAmmoIndex)
 {
-	if ( nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex )
+	if ( (unsigned int)nAmmoIndex >= m_nAmmoIndex )
 		return false;
 
-	int maxCarry = m_AmmoType[nAmmoIndex].pMaxCarry;
+	int maxCarry = m_AmmoType[(unsigned int)nAmmoIndex].pMaxCarry;
 	if ( maxCarry == USE_CVAR )
 	{
-		if ( m_AmmoType[nAmmoIndex].pMaxCarryCVar )
+		if ( m_AmmoType[(unsigned int)nAmmoIndex].pMaxCarryCVar )
 		{
-			maxCarry = m_AmmoType[nAmmoIndex].pMaxCarryCVar->GetInt();
+			maxCarry = m_AmmoType[(unsigned int)nAmmoIndex].pMaxCarryCVar->GetInt();
 		}
 	}
 	return maxCarry == INFINITE_AMMO ? true : false;
@@ -152,24 +152,24 @@ bool CAmmoDef::CanCarryInfiniteAmmo(int nAmmoIndex)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-uint64	CAmmoDef::DamageType(int nAmmoIndex)
+DamageTypes_t	CAmmoDef::DamageType(AmmoIndex_t nAmmoIndex)
 {
-	if (nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex)
-		return 0;
+	if ((unsigned int)nAmmoIndex >= m_nAmmoIndex)
+		return DMG_GENERIC;
 
-	return m_AmmoType[nAmmoIndex].nDamageType;
+	return m_AmmoType[(unsigned int)nAmmoIndex].nDamageType;
 }
 
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-int CAmmoDef::Flags(int nAmmoIndex)
+AmmoFlags_t CAmmoDef::Flags(AmmoIndex_t nAmmoIndex)
 {
-	if (nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex)
-		return 0;
+	if ((unsigned int)nAmmoIndex >= m_nAmmoIndex)
+		return AMMO_NONE;
 
-	return m_AmmoType[nAmmoIndex].nFlags;
+	return m_AmmoType[(unsigned int)nAmmoIndex].nFlags;
 }
 
 
@@ -178,12 +178,12 @@ int CAmmoDef::Flags(int nAmmoIndex)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-int	CAmmoDef::MinSplashSize(int nAmmoIndex)
+int	CAmmoDef::MinSplashSize(AmmoIndex_t nAmmoIndex)
 {
-	if (nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex)
+	if ((unsigned int)nAmmoIndex >= m_nAmmoIndex)
 		return 4;
 
-	return m_AmmoType[nAmmoIndex].nMinSplashSize;
+	return m_AmmoType[(unsigned int)nAmmoIndex].nMinSplashSize;
 }
 
 //-----------------------------------------------------------------------------
@@ -191,12 +191,12 @@ int	CAmmoDef::MinSplashSize(int nAmmoIndex)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-int	CAmmoDef::MaxSplashSize(int nAmmoIndex)
+int	CAmmoDef::MaxSplashSize(AmmoIndex_t nAmmoIndex)
 {
-	if (nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex)
+	if ((unsigned int)nAmmoIndex >= m_nAmmoIndex)
 		return 8;
 
-	return m_AmmoType[nAmmoIndex].nMaxSplashSize;
+	return m_AmmoType[(unsigned int)nAmmoIndex].nMaxSplashSize;
 }
 
 //-----------------------------------------------------------------------------
@@ -204,20 +204,20 @@ int	CAmmoDef::MaxSplashSize(int nAmmoIndex)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-int	CAmmoDef::TracerType(int nAmmoIndex)
+AmmoTracer_t	CAmmoDef::TracerType(AmmoIndex_t nAmmoIndex)
 {
-	if (nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex)
-		return 0;
+	if ((unsigned int)nAmmoIndex >= m_nAmmoIndex)
+		return TRACER_NONE;
 
-	return m_AmmoType[nAmmoIndex].eTracerType;
+	return m_AmmoType[(unsigned int)nAmmoIndex].eTracerType;
 }
 
-float CAmmoDef::DamageForce(int nAmmoIndex)
+float CAmmoDef::DamageForce(AmmoIndex_t nAmmoIndex)
 {
-	if ( nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex )
+	if ( (unsigned int)nAmmoIndex >= m_nAmmoIndex )
 		return 0;
 
-	return m_AmmoType[nAmmoIndex].physicsForceImpulse;
+	return m_AmmoType[(unsigned int)nAmmoIndex].physicsForceImpulse;
 }
 
 //-----------------------------------------------------------------------------
@@ -225,10 +225,12 @@ float CAmmoDef::DamageForce(int nAmmoIndex)
 // Does not increment m_nAmmoIndex because the functions below do so and 
 //  are the only entry point.
 //-----------------------------------------------------------------------------
-bool CAmmoDef::AddAmmoType(char const* name, uint64 damageType, int tracerType, int nFlags, int minSplashSize, int maxSplashSize )
+bool CAmmoDef::AddAmmoType(char const* name, DamageTypes_t damageType, AmmoTracer_t tracerType, AmmoFlags_t nFlags, int minSplashSize, int maxSplashSize )
 {
-	if (m_nAmmoIndex == MAX_AMMO_TYPES)
+	if (m_nAmmoIndex+1 == MAX_AMMO_TYPES)
 		return false;
+
+	++m_nAmmoIndex;
 
 	int len = strlen(name);
 	m_AmmoType[m_nAmmoIndex].pName = new char[len+1];
@@ -245,9 +247,9 @@ bool CAmmoDef::AddAmmoType(char const* name, uint64 damageType, int tracerType, 
 //-----------------------------------------------------------------------------
 // Purpose: Add an ammo type with it's damage & carrying capability specified via cvars
 //-----------------------------------------------------------------------------
-void CAmmoDef::AddAmmoType(char const* name, uint64 damageType, int tracerType, 
+void CAmmoDef::AddAmmoType(char const* name, DamageTypes_t damageType, AmmoTracer_t tracerType, 
 	char const* plr_cvar, char const* npc_cvar, char const* carry_cvar, 
-	float physicsForceImpulse, int nFlags, int minSplashSize, int maxSplashSize)
+	float physicsForceImpulse, AmmoFlags_t nFlags, int minSplashSize, int maxSplashSize)
 {
 	if ( AddAmmoType( name, damageType, tracerType, nFlags, minSplashSize, maxSplashSize ) == false )
 		return;
@@ -280,15 +282,14 @@ void CAmmoDef::AddAmmoType(char const* name, uint64 damageType, int tracerType,
 		m_AmmoType[m_nAmmoIndex].pMaxCarry = USE_CVAR;
 	}
 	m_AmmoType[m_nAmmoIndex].physicsForceImpulse = physicsForceImpulse;
-	m_nAmmoIndex++;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Add an ammo type with it's damage & carrying capability specified via integers
 //-----------------------------------------------------------------------------
-void CAmmoDef::AddAmmoType(char const* name, uint64 damageType, int tracerType, 
+void CAmmoDef::AddAmmoType(char const* name, DamageTypes_t damageType, AmmoTracer_t tracerType, 
 	int plr_dmg, int npc_dmg, int carry, float physicsForceImpulse, 
-	int nFlags, int minSplashSize, int maxSplashSize )
+	AmmoFlags_t nFlags, int minSplashSize, int maxSplashSize )
 {
 	if ( AddAmmoType( name, damageType, tracerType, nFlags, minSplashSize, maxSplashSize ) == false )
 		return;
@@ -297,8 +298,6 @@ void CAmmoDef::AddAmmoType(char const* name, uint64 damageType, int tracerType,
 	m_AmmoType[m_nAmmoIndex].pNPCDmg = npc_dmg;
 	m_AmmoType[m_nAmmoIndex].pMaxCarry = carry;
 	m_AmmoType[m_nAmmoIndex].physicsForceImpulse = physicsForceImpulse;
-
-	m_nAmmoIndex++;
 }
 
 //-----------------------------------------------------------------------------
@@ -308,14 +307,13 @@ void CAmmoDef::AddAmmoType(char const* name, uint64 damageType, int tracerType,
 //-----------------------------------------------------------------------------
 CAmmoDef::CAmmoDef(void)
 {
-	// Start with an index of 1.  Client assumes 0 is an invalid ammo type
-	m_nAmmoIndex = 1;
+	m_nAmmoIndex = -1;
 	memset( m_AmmoType, 0, sizeof( m_AmmoType ) );
 }
 
 CAmmoDef::~CAmmoDef( void )
 {
-	for ( int i = 1; i < MAX_AMMO_TYPES; i++ )
+	for ( int i = 0; i < MAX_AMMO_TYPES; i++ )
 	{
 		delete[] m_AmmoType[ i ].pName;
 	}

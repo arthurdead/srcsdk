@@ -15,11 +15,11 @@
 // CSmokeStack
 //==================================================
 
-class CSmokeStackLightInfo
+class CSmokeStackLightInfo : public INetworkableObject
 {
 public:
 	DECLARE_CLASS_NOBASE( CSmokeStackLightInfo );
-	DECLARE_NETWORKVAR_CHAIN();
+	DECLARE_EMBEDDED_NETWORKVAR();
 
 	CNetworkVector( m_vPos );
 	CNetworkVector( m_vColor );
@@ -45,9 +45,9 @@ public:
 protected:
 
 	// Input handlers.
-	void	InputTurnOn(inputdata_t &data);
-	void	InputTurnOff(inputdata_t &data);
-	void	InputToggle(inputdata_t &data);
+	void	InputTurnOn( inputdata_t &&inputdata );
+	void	InputTurnOff( inputdata_t &&inputdata );
+	void	InputToggle( inputdata_t &&inputdata );
 
 	void	RecalcWindVector();
 

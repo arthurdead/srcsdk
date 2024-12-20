@@ -15,36 +15,36 @@ LINK_ENTITY_TO_CLASS( env_projectedtexture, CEnvProjectedTexture );
 
 BEGIN_MAPENTITY( CEnvProjectedTexture )
 
-	DEFINE_KEYFIELD( m_flLightFOV, FIELD_FLOAT, "lightfov" ),
-	DEFINE_KEYFIELD( m_bEnableShadows, FIELD_BOOLEAN, "enableshadows" ),
-	DEFINE_KEYFIELD( m_bLightOnlyTarget, FIELD_BOOLEAN, "lightonlytarget" ),
-	DEFINE_KEYFIELD( m_bLightWorld, FIELD_BOOLEAN, "lightworld" ),
-	DEFINE_KEYFIELD( m_bCameraSpace, FIELD_BOOLEAN, "cameraspace" ),
-	DEFINE_KEYFIELD( m_flAmbient, FIELD_FLOAT, "ambient" ),
-	DEFINE_KEYFIELD( m_bFlicker, FIELD_BOOLEAN, "flicker" ),
+	DEFINE_KEYFIELD_AUTO( m_flLightFOV, "lightfov" ),
+	DEFINE_KEYFIELD_AUTO( m_bEnableShadows, "enableshadows" ),
+	DEFINE_KEYFIELD_AUTO( m_bLightOnlyTarget, "lightonlytarget" ),
+	DEFINE_KEYFIELD_AUTO( m_bLightWorld, "lightworld" ),
+	DEFINE_KEYFIELD_AUTO( m_bCameraSpace, "cameraspace" ),
+	DEFINE_KEYFIELD_AUTO( m_flAmbient, "ambient" ),
+	DEFINE_KEYFIELD_AUTO( m_bFlicker, "flicker" ),
 	DEFINE_AUTO_ARRAY_KEYFIELD( m_SpotlightTextureName, FIELD_CHARACTER, "texturename" ),
-	DEFINE_KEYFIELD( m_nSpotlightTextureFrame, FIELD_INTEGER, "textureframe" ),
-	DEFINE_KEYFIELD( m_flNearZ, FIELD_FLOAT, "nearz" ),
-	DEFINE_KEYFIELD( m_flFarZ, FIELD_FLOAT, "farz" ),
-	DEFINE_KEYFIELD( m_nShadowQuality, FIELD_INTEGER, "shadowquality" ),
+	DEFINE_KEYFIELD_AUTO( m_nSpotlightTextureFrame, "textureframe" ),
+	DEFINE_KEYFIELD_AUTO( m_flNearZ, "nearz" ),
+	DEFINE_KEYFIELD_AUTO( m_flFarZ, "farz" ),
+	DEFINE_KEYFIELD_AUTO( m_nShadowQuality, "shadowquality" ),
 
-	DEFINE_KEYFIELD( m_bEnableVolumetricsLOD, FIELD_BOOLEAN, "volumetricslod" ),
-	DEFINE_KEYFIELD( m_flVolumetricsFadeDistance, FIELD_FLOAT, "volumetricsfadedistance" ),
-	DEFINE_KEYFIELD( m_iVolumetricsQuality, FIELD_INTEGER, "volumetricsquality" ),
-	DEFINE_KEYFIELD( m_flVolumetricsQualityBias, FIELD_FLOAT, "volumetricsqualitybias" ),
-	DEFINE_KEYFIELD( m_flVolumetricsMultiplier, FIELD_FLOAT, "volumetricsmultiplier" ),
+	DEFINE_KEYFIELD_AUTO( m_bEnableVolumetricsLOD, "volumetricslod" ),
+	DEFINE_KEYFIELD_AUTO( m_flVolumetricsFadeDistance, "volumetricsfadedistance" ),
+	DEFINE_KEYFIELD_AUTO( m_iVolumetricsQuality, "volumetricsquality" ),
+	DEFINE_KEYFIELD_AUTO( m_flVolumetricsQualityBias, "volumetricsqualitybias" ),
+	DEFINE_KEYFIELD_AUTO( m_flVolumetricsMultiplier, "volumetricsmultiplier" ),
 
-	DEFINE_KEYFIELD( m_fNearEdge, FIELD_FLOAT, "uberlight_near" ),
-	DEFINE_KEYFIELD( m_fFarEdge, FIELD_FLOAT, "uberlight_far" ),
-	DEFINE_KEYFIELD( m_fCutOn, FIELD_FLOAT, "uberlight_cuton" ),
-	DEFINE_KEYFIELD( m_fCutOff, FIELD_FLOAT, "uberlight_cutoff" ),
-	DEFINE_KEYFIELD( m_fShearx, FIELD_FLOAT, "uberlight_shearx" ),
-	DEFINE_KEYFIELD( m_fSheary, FIELD_FLOAT, "uberlight_sheary" ),
-	DEFINE_KEYFIELD( m_fWidth, FIELD_FLOAT, "uberlight_width" ),
-	DEFINE_KEYFIELD( m_fWedge, FIELD_FLOAT, "uberlight_wedge" ),
-	DEFINE_KEYFIELD( m_fHeight, FIELD_FLOAT, "uberlight_height" ),
-	DEFINE_KEYFIELD( m_fHedge, FIELD_FLOAT, "uberlight_hedge" ),
-	DEFINE_KEYFIELD( m_fRoundness, FIELD_FLOAT, "uberlight_roundness" ),
+	DEFINE_KEYFIELD_AUTO( m_fNearEdge, "uberlight_near" ),
+	DEFINE_KEYFIELD_AUTO( m_fFarEdge, "uberlight_far" ),
+	DEFINE_KEYFIELD_AUTO( m_fCutOn, "uberlight_cuton" ),
+	DEFINE_KEYFIELD_AUTO( m_fCutOff, "uberlight_cutoff" ),
+	DEFINE_KEYFIELD_AUTO( m_fShearx, "uberlight_shearx" ),
+	DEFINE_KEYFIELD_AUTO( m_fSheary, "uberlight_sheary" ),
+	DEFINE_KEYFIELD_AUTO( m_fWidth, "uberlight_width" ),
+	DEFINE_KEYFIELD_AUTO( m_fWedge, "uberlight_wedge" ),
+	DEFINE_KEYFIELD_AUTO( m_fHeight, "uberlight_height" ),
+	DEFINE_KEYFIELD_AUTO( m_fHedge, "uberlight_hedge" ),
+	DEFINE_KEYFIELD_AUTO( m_fRoundness, "uberlight_roundness" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
@@ -196,57 +196,57 @@ bool CEnvProjectedTexture::GetKeyValue( const char *szKeyName, char *szValue, in
 	return BaseClass::GetKeyValue( szKeyName, szValue, iMaxLen );
 }
 
-void CEnvProjectedTexture::InputTurnOn( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputTurnOn( inputdata_t &&inputdata )
 {
 	m_bState = true;
 }
 
-void CEnvProjectedTexture::InputTurnOff( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputTurnOff( inputdata_t &&inputdata )
 {
 	m_bState = false;
 }
 
-void CEnvProjectedTexture::InputSetFOV( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputSetFOV( inputdata_t &&inputdata )
 {
 	m_flLightFOV = inputdata.value.Float();
 }
 
-void CEnvProjectedTexture::InputSetTarget( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputSetTarget( inputdata_t &&inputdata )
 {
 	m_hTargetEntity = inputdata.value.Entity();
 }
 
-void CEnvProjectedTexture::InputSetCameraSpace( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputSetCameraSpace( inputdata_t &&inputdata )
 {
 	m_bCameraSpace = inputdata.value.Bool();
 }
 
-void CEnvProjectedTexture::InputSetLightOnlyTarget( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputSetLightOnlyTarget( inputdata_t &&inputdata )
 {
 	m_bLightOnlyTarget = inputdata.value.Bool();
 }
 
-void CEnvProjectedTexture::InputSetLightWorld( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputSetLightWorld( inputdata_t &&inputdata )
 {
 	m_bLightWorld = inputdata.value.Bool();
 }
 
-void CEnvProjectedTexture::InputSetEnableShadows( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputSetEnableShadows( inputdata_t &&inputdata )
 {
 	m_bEnableShadows = inputdata.value.Bool();
 }
 
-void CEnvProjectedTexture::InputSetLightColor( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputSetLightColor( inputdata_t &&inputdata )
 {
 	m_LightColor = inputdata.value.Color32();
 }
 
-void CEnvProjectedTexture::InputSetAmbient( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputSetAmbient( inputdata_t &&inputdata )
 {
 	m_flAmbient = inputdata.value.Float();
 }
 
-void CEnvProjectedTexture::InputSetSpotlightTexture( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputSetSpotlightTexture( inputdata_t &&inputdata )
 {
 	Q_strcpy( m_SpotlightTextureName.GetForModify(), inputdata.value.String() );
 }
@@ -291,37 +291,37 @@ void CEnvProjectedTexture::FlickerThink( void )
 {
 }
 
-int CEnvProjectedTexture::UpdateTransmitState()
+EdictStateFlags_t CEnvProjectedTexture::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
 
-void CEnvProjectedTexture::InputSetEnableVolumetrics( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputSetEnableVolumetrics( inputdata_t &&inputdata )
 {
 	m_bEnableVolumetrics = inputdata.value.Bool();
 }
 
-void CEnvProjectedTexture::InputEnableUberLight( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputEnableUberLight( inputdata_t &&inputdata )
 {
 	m_bUberlight = true;
 }
 
-void CEnvProjectedTexture::InputDisableUberLight( inputdata_t &inputdata )
+void CEnvProjectedTexture::InputDisableUberLight( inputdata_t &&inputdata )
 {
 	m_bUberlight = false;
 }
 
-void CEnvProjectedTexture::InputSetNearZ(inputdata_t &inputdata)
+void CEnvProjectedTexture::InputSetNearZ( inputdata_t &&inputdata )
 {
 	m_flNearZ = inputdata.value.Float();
 }
 
-void CEnvProjectedTexture::InputSetFarZ(inputdata_t &inputdata)
+void CEnvProjectedTexture::InputSetFarZ( inputdata_t &&inputdata )
 {
 	m_flFarZ = inputdata.value.Float();
 }
 
-void CEnvProjectedTexture::InputSetBrightnessScale(inputdata_t &inputdata)
+void CEnvProjectedTexture::InputSetBrightnessScale( inputdata_t &&inputdata )
 {
 	m_flBrightnessScale = inputdata.value.Float();
 }

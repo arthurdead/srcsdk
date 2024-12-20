@@ -13,6 +13,7 @@
 #include "networkvar.h"
 #include "ai_activity.h"
 #include "recast/recast_imgr.h"
+#include "shareddefs.h"
 
 class CAI_BaseNPC;
 class CAI_Enemies;
@@ -104,12 +105,12 @@ protected:
 	void				SetActivity( Activity NewActivity );
 	float				GetIdealSpeed() const;
 	float				GetIdealAccel() const;
-	int					GetSequence();
+	sequence_t					GetSequence();
 
-	int					GetEntFlags() const;
-	void				AddEntFlag( int flags );
-	void				RemoveEntFlag( int flagsToRemove );
-	void				ToggleEntFlag( int flagToToggle );
+	EntityBehaviorFlags_t					GetEntFlags() const;
+	void				AddEntFlag( EntityBehaviorFlags_t flags );
+	void				RemoveEntFlag( EntityBehaviorFlags_t flagsToRemove );
+	void				ToggleEntFlag( EntityBehaviorFlags_t flagToToggle );
 
 	void				SetGroundEntity( CBaseEntity *ground );
 
@@ -129,25 +130,16 @@ protected:
 	float				GetLastThink( const char *szContext = NULL );
 
 public:
-#if defined(new)
-#error
-#endif
+	#pragma push_macro("new")
+	#pragma push_macro("delete")
+	#undef new
+	#undef delete
 
-	void *operator new( size_t nBytes )
-	{
-		MEM_ALLOC_CREDIT();
-		void *pResult = MemAlloc_Alloc( nBytes );
-		memset( pResult, 0, nBytes );
-		return pResult;
-	};
+	void *operator new( size_t nBytes );
+	void *operator new( size_t nBytes, int nBlockUse, const char *pFileName, int nLine );
 
-	void *operator new( size_t nBytes, int nBlockUse, const char *pFileName, int nLine )
-	{
-		MEM_ALLOC_CREDIT();
-		void *pResult = MemAlloc_Alloc( nBytes, pFileName, nLine );
-		memset( pResult, 0, nBytes );
-		return pResult;
-	}
+	#pragma pop_macro("delete")
+	#pragma pop_macro("new")
 
 private:
 	CAI_BaseNPC *m_pOuter;

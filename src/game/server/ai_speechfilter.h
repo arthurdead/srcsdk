@@ -24,9 +24,9 @@ public:
 	void	UpdateOnRemove( void );
 
 	void	Enable( bool bEnable );
-	void	InputEnable( inputdata_t &inputdata );
-	void	InputDisable( inputdata_t &inputdata );
-	void	InputSetIdleModifier( inputdata_t &inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
+	void	InputSetIdleModifier( inputdata_t &&inputdata );
 
 	void	PopulateSubjectList( bool purge = false );
 

@@ -158,13 +158,13 @@ public:
 	Disposition_t	IRelationType( CBaseEntity *pTarget );
 
 	// Inputs
-	void			InputSetDriversMaxSpeed( inputdata_t &inputdata );
-	void			InputSetDriversMinSpeed( inputdata_t &inputdata );
-	void			InputStartForward( inputdata_t &inputdata );
-	void			InputStop( inputdata_t &inputdata );
-	void			InputStartFiring( inputdata_t &inputdata );
-	void			InputStopFiring( inputdata_t &inputdata );
-	void			InputGotoPathCorner( inputdata_t &inputdata );
+	void			InputSetDriversMaxSpeed( inputdata_t &&inputdata );
+	void			InputSetDriversMinSpeed( inputdata_t &&inputdata );
+	void			InputStartForward( inputdata_t &&inputdata );
+	void			InputStop( inputdata_t &&inputdata );
+	void			InputStartFiring( inputdata_t &&inputdata );
+	void			InputStopFiring( inputdata_t &&inputdata );
+	void			InputGotoPathCorner( inputdata_t &&inputdata );
 
 public:
 	string_t		m_iszVehicleName;

@@ -24,24 +24,24 @@ public:
 	CEnvTonemapController();
 
 	void	Spawn( void );
-	int		UpdateTransmitState( void );
+	EdictStateFlags_t		UpdateTransmitState( void );
 	void	UpdateTonemapScaleBlend( void );
 	void	UpdateTonemapScaleBlendMultiplayer( void );
 
 	bool	IsMaster( void ) const					{ return HasSpawnFlags( SF_TONEMAP_MASTER ); }
 
 	// Inputs
-	void	InputSetTonemapScale( inputdata_t &inputdata );
-	void	InputBlendTonemapScale( inputdata_t &inputdata );
-	void	InputSetTonemapRate( inputdata_t &inputdata );
-	void	InputSetAutoExposureMin( inputdata_t &inputdata );
-	void	InputSetAutoExposureMax( inputdata_t &inputdata );
-	void	InputUseDefaultAutoExposure( inputdata_t &inputdata );
-	void	InputSetBloomScale( inputdata_t &inputdata );
-	void	InputUseDefaultBloomScale( inputdata_t &inputdata );
-	void	InputSetBloomScaleRange( inputdata_t &inputdata );
-	void	InputSetBloomExponent( inputdata_t &inputdata );
-	void	InputSetBloomSaturation( inputdata_t &inputdata );
+	void	InputSetTonemapScale( inputdata_t &&inputdata );
+	void	InputBlendTonemapScale( inputdata_t &&inputdata );
+	void	InputSetTonemapRate( inputdata_t &&inputdata );
+	void	InputSetAutoExposureMin( inputdata_t &&inputdata );
+	void	InputSetAutoExposureMax( inputdata_t &&inputdata );
+	void	InputUseDefaultAutoExposure( inputdata_t &&inputdata );
+	void	InputSetBloomScale( inputdata_t &&inputdata );
+	void	InputUseDefaultBloomScale( inputdata_t &&inputdata );
+	void	InputSetBloomScaleRange( inputdata_t &&inputdata );
+	void	InputSetBloomExponent( inputdata_t &&inputdata );
+	void	InputSetBloomSaturation( inputdata_t &&inputdata );
 
 	bool UseCustomAutoExposureMin() const { return m_bUseCustomAutoExposureMin; }
 	bool UseCustomAutoExposureMax() const { return m_bUseCustomAutoExposureMax; }

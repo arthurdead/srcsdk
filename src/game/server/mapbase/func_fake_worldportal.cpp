@@ -49,12 +49,12 @@ public:
 	}
 
 	// Input handlers
-	void InputSetTargetPlane( inputdata_t &inputdata ) { m_hTargetPlane = inputdata.value.Entity(); if (m_hTargetPlane) { m_target = m_hTargetPlane->GetEntityName(); } }
-	void InputSetTargetPlaneAngle( inputdata_t &inputdata ) { Vector vec; inputdata.value.Vector3D(vec); m_PlaneAngles.Init(vec.x, vec.y, vec.z); }
-	void InputSetSkyMode( inputdata_t &inputdata ) { m_iSkyMode = inputdata.value.Int(); }
-	void InputSetRenderTarget( inputdata_t &inputdata ) { m_iszRenderTarget = inputdata.value.StringID(); }
-	void InputSetFogController( inputdata_t &inputdata ) { m_hFogController = inputdata.value.Entity(); if (m_hFogController) { m_iszFogController = m_hFogController->GetEntityName(); } }
-	void InputSetScale( inputdata_t &inputdata ) { m_flScale = inputdata.value.Float(); }
+	void InputSetTargetPlane( inputdata_t &&inputdata ) { m_hTargetPlane = inputdata.value.Entity(); if (m_hTargetPlane) { m_target = m_hTargetPlane->GetEntityName(); } }
+	void InputSetTargetPlaneAngle( inputdata_t &&inputdata ) { Vector vec; inputdata.value.Vector3D(vec); m_PlaneAngles.Init(vec.x, vec.y, vec.z); }
+	void InputSetSkyMode( inputdata_t &&inputdata ) { m_iSkyMode = inputdata.value.Int(); }
+	void InputSetRenderTarget( inputdata_t &&inputdata ) { m_iszRenderTarget = inputdata.value.StringID(); }
+	void InputSetFogController( inputdata_t &&inputdata ) { m_hFogController = inputdata.value.Entity(); if (m_hFogController) { m_iszFogController = m_hFogController->GetEntityName(); } }
+	void InputSetScale( inputdata_t &&inputdata ) { m_flScale = inputdata.value.Float(); }
 
 private:
 
@@ -71,11 +71,11 @@ private:
 // automatically hooks in the system's callbacks
 BEGIN_MAPENTITY( CFuncFakeWorldPortal )
 
-	DEFINE_KEYFIELD( m_PlaneAngles, FIELD_VECTOR, "PlaneAngles" ),
-	DEFINE_KEYFIELD( m_iSkyMode, FIELD_INTEGER, "SkyMode" ),
-	DEFINE_KEYFIELD( m_flScale, FIELD_FLOAT, "scale" ),
-	DEFINE_KEYFIELD( m_iszRenderTarget, FIELD_STRING, "RenderTarget" ),
-	DEFINE_KEYFIELD( m_iszFogController, FIELD_STRING, "FogController" ),
+	DEFINE_KEYFIELD_AUTO( m_PlaneAngles, "PlaneAngles" ),
+	DEFINE_KEYFIELD_AUTO( m_iSkyMode, "SkyMode" ),
+	DEFINE_KEYFIELD_AUTO( m_flScale, "scale" ),
+	DEFINE_KEYFIELD_AUTO( m_iszRenderTarget, "RenderTarget" ),
+	DEFINE_KEYFIELD_AUTO( m_iszFogController, "FogController" ),
 
 	DEFINE_INPUTFUNC( FIELD_EHANDLE, "SetTargetPlane", InputSetTargetPlane ),
 	DEFINE_INPUTFUNC( FIELD_VECTOR, "SetTargetPlaneAngle", InputSetTargetPlaneAngle ),

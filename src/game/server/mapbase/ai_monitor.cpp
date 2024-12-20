@@ -51,38 +51,38 @@ public:
 
 	CAI_BaseNPC *GetFirstTarget();
 
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
-	void InputSetTarget( inputdata_t &inputdata ) { BaseClass::InputSetTarget(inputdata); PopulateNPCs(&inputdata); }
-	void InputPopulateNPCs( inputdata_t &inputdata );
-	void InputTest( inputdata_t &inputdata );
-	void InputTestNPC( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputSetTarget( inputdata_t &&inputdata ) { BaseClass::InputSetTarget(inputdata); PopulateNPCs(&inputdata); }
+	void InputPopulateNPCs( inputdata_t &&inputdata );
+	void InputTest( inputdata_t &&inputdata );
+	void InputTestNPC( inputdata_t &&inputdata );
 
 	// Allows mappers to get condition/schedule names from ID
-	void InputGetConditionName( inputdata_t &inputdata ) { m_OutConditionName.Set(AllocPooledString(ConditionName(inputdata.value.Int())), inputdata.pActivator, this); }
-	void InputGetScheduleName( inputdata_t &inputdata ) { m_OutScheduleName.Set(AllocPooledString(ScheduleName(inputdata.value.Int())), inputdata.pActivator, this); }
+	void InputGetConditionName( inputdata_t &&inputdata ) { m_OutConditionName.Set(AllocPooledString(ConditionName(inputdata.value.Int())), inputdata.pActivator, this); }
+	void InputGetScheduleName( inputdata_t &&inputdata ) { m_OutScheduleName.Set(AllocPooledString(ScheduleName(inputdata.value.Int())), inputdata.pActivator, this); }
 	COutputString m_OutConditionName;
 	COutputString m_OutScheduleName;
 
-	void InputSetCondition( inputdata_t &inputdata ) { SetCondition(TranslateConditionString(inputdata.value.String())); }
-	void InputClearCondition( inputdata_t &inputdata ) { ClearCondition(TranslateConditionString(inputdata.value.String())); }
+	void InputSetCondition( inputdata_t &&inputdata ) { SetCondition(TranslateConditionString(inputdata.value.String())); }
+	void InputClearCondition( inputdata_t &&inputdata ) { ClearCondition(TranslateConditionString(inputdata.value.String())); }
 #if AI_MONITOR_USE_UTLVECTOR
-	void InputClearAllConditions( inputdata_t &inputdata ) { m_Conditions.RemoveAll(); }
+	void InputClearAllConditions( inputdata_t &&inputdata ) { m_Conditions.RemoveAll(); }
 #else
-	void InputClearAllConditions( inputdata_t &inputdata ) { m_Conditions.ClearAll(); }
+	void InputClearAllConditions( inputdata_t &&inputdata ) { m_Conditions.ClearAll(); }
 #endif
 
-	void InputSetSchedule( inputdata_t &inputdata ) { SetSchedule(TranslateScheduleString(inputdata.value.String())); }
-	void InputClearSchedule( inputdata_t &inputdata ) { ClearSchedule(TranslateScheduleString(inputdata.value.String())); }
+	void InputSetSchedule( inputdata_t &&inputdata ) { SetSchedule(TranslateScheduleString(inputdata.value.String())); }
+	void InputClearSchedule( inputdata_t &&inputdata ) { ClearSchedule(TranslateScheduleString(inputdata.value.String())); }
 #if AI_MONITOR_USE_UTLVECTOR
-	void InputClearAllSchedules( inputdata_t &inputdata ) { m_Schedules.RemoveAll(); }
+	void InputClearAllSchedules( inputdata_t &&inputdata ) { m_Schedules.RemoveAll(); }
 #else
-	void InputClearAllSchedules( inputdata_t &inputdata ) { m_Schedules.ClearAll(); }
+	void InputClearAllSchedules( inputdata_t &&inputdata ) { m_Schedules.ClearAll(); }
 #endif
 
-	void InputSetHint( inputdata_t &inputdata ) { SetHint(inputdata.value.Int()); }
-	void InputClearHint( inputdata_t &inputdata ) { ClearHint(inputdata.value.Int()); }
-	void InputClearAllHints( inputdata_t &inputdata ) { m_Hints.RemoveAll(); }
+	void InputSetHint( inputdata_t &&inputdata ) { SetHint(inputdata.value.Int()); }
+	void InputClearHint( inputdata_t &&inputdata ) { ClearHint(inputdata.value.Int()); }
+	void InputClearAllHints( inputdata_t &&inputdata ) { m_Hints.RemoveAll(); }
 
 public:
 
@@ -199,16 +199,16 @@ BEGIN_DATADESC( CAI_Monitor )
 	DEFINE_UTLVECTOR( m_Hints, FIELD_INTEGER ),
 
 	// Keys
-	DEFINE_KEYFIELD( m_bStartDisabled, FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bStartDisabled, "StartDisabled" ),
 	DEFINE_INPUT( m_flThinkTime, FIELD_FLOAT, "SetMonitorInterval" ),
 	DEFINE_INPUT( m_flCooldownTime, FIELD_FLOAT, "SetCooldownTime" ),
-	DEFINE_KEYFIELD( m_bCooldownAtFirstSuccess, FIELD_BOOLEAN, "CooldownAt" ),
+	DEFINE_KEYFIELD_AUTO( m_bCooldownAtFirstSuccess, "CooldownAt" ),
 
-	DEFINE_KEYFIELD( m_iMaxEnts, FIELD_INTEGER, "MaxEnts" ),
+	DEFINE_KEYFIELD_AUTO( m_iMaxEnts, "MaxEnts" ),
 
-	DEFINE_KEYFIELD( m_bTranslateSchedules, FIELD_BOOLEAN, "TranslateSchedules" ),
+	DEFINE_KEYFIELD_AUTO( m_bTranslateSchedules, "TranslateSchedules" ),
 
-	DEFINE_KEYFIELD( m_flDistanceFromHint, FIELD_FLOAT, "HintDistance" ),
+	DEFINE_KEYFIELD_AUTO( m_flDistanceFromHint, "HintDistance" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -278,7 +278,7 @@ void CAI_Monitor::Activate( void )
 //-----------------------------------------------------------------------------
 // Enable, disable
 //-----------------------------------------------------------------------------
-void CAI_Monitor::InputEnable( inputdata_t &inputdata )
+void CAI_Monitor::InputEnable( inputdata_t &&inputdata )
 {
 	PopulateNPCs(&inputdata);
 
@@ -286,17 +286,17 @@ void CAI_Monitor::InputEnable( inputdata_t &inputdata )
 	SetNextThink( gpGlobals->curtime + GetThinkTime() );
 }
 
-void CAI_Monitor::InputDisable( inputdata_t &inputdata )
+void CAI_Monitor::InputDisable( inputdata_t &&inputdata )
 {
 	SetThink( NULL );
 }
 
-void CAI_Monitor::InputPopulateNPCs( inputdata_t &inputdata )
+void CAI_Monitor::InputPopulateNPCs( inputdata_t &&inputdata )
 {
 	PopulateNPCs(&inputdata);
 }
 
-void CAI_Monitor::InputTest( inputdata_t &inputdata )
+void CAI_Monitor::InputTest( inputdata_t &&inputdata )
 {
 	bool bFoundResults = false;
 	for (int i = 0; i < pNPCs.Count(); i++)
@@ -320,7 +320,7 @@ void CAI_Monitor::InputTest( inputdata_t &inputdata )
 	}
 }
 
-void CAI_Monitor::InputTestNPC( inputdata_t &inputdata )
+void CAI_Monitor::InputTestNPC( inputdata_t &&inputdata )
 {
 	CAI_BaseNPC *pNPC = inputdata.value.Entity()->MyNPCPointer();
 	if (!inputdata.value.Entity() || !pNPC)

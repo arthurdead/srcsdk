@@ -266,8 +266,8 @@ public:
 	virtual bool				CanSetSoundMixer( void );
 	// return the entity used for soundscape radius checks
 	virtual C_BaseEntity		*GetSoundscapeListener();
-	virtual int					GetVisionFilterFlags();
-	bool						HasVisionFilterFlags( int nFlags ) { return ( GetVisionFilterFlags() & nFlags ) == nFlags; }
+	virtual vision_filter_t					GetVisionFilterFlags();
+	bool						HasVisionFilterFlags( vision_filter_t nFlags ) { return ( GetVisionFilterFlags() & nFlags ) == nFlags; }
 	virtual void				CalculateVisionUsingCurrentFlags( void );
 	void						BuildFirstPersonMeathookTransformations( CStudioHdr *hdr, Vector *pos, Quaternion q[], const matrix3x4_t& cameraTransform, int boneMask, CBoneBitList &boneComputed, const char *pchHeadBoneName );
 
@@ -308,7 +308,7 @@ public:
 	virtual void				Weapon_SetLast( C_BaseCombatWeapon *pWeapon );
 	virtual bool				Weapon_ShouldSetLast( C_BaseCombatWeapon *pOldWeapon, C_BaseCombatWeapon *pNewWeapon ) { return true; }
 	virtual bool				Weapon_ShouldSelectItem( C_BaseCombatWeapon *pWeapon );
-	virtual	int				Weapon_Switch( C_BaseCombatWeapon *pWeapon, int viewmodelindex = VIEWMODEL_WEAPON, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
+	virtual	WeaponSwitchResult_t				Weapon_Switch( C_BaseCombatWeapon *pWeapon, int viewmodelindex = VIEWMODEL_WEAPON, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
 	virtual C_BaseCombatWeapon *GetLastWeapon( void ) { return m_hLastWeapon.Get(); }
 	void						ResetAutoaim( void );
 	virtual void 				SelectItem( const char *pstr, int iSubType = 0 ) final;
@@ -690,8 +690,8 @@ protected:
 
 	float			m_flNextAchievementAnnounceTime;
 
-	int				m_nForceVisionFilterFlags; // Force our vision filter to a specific setting
-	int				m_nLocalPlayerVisionFlags;
+	vision_filter_t				m_nForceVisionFilterFlags; // Force our vision filter to a specific setting
+	vision_filter_t				m_nLocalPlayerVisionFlags;
 
 	bool					m_bIsLocalPlayer;
 

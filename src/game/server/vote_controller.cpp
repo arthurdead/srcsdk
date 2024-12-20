@@ -313,7 +313,7 @@ void CVoteController::Spawn( void )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-int CVoteController::UpdateTransmitState( void )
+EdictStateFlags_t CVoteController::UpdateTransmitState( void )
 {
 	// ALWAYS transmit to all clients.
 	return SetTransmitState( FL_EDICT_ALWAYS );

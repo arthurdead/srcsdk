@@ -792,8 +792,8 @@ private:
 
 	void UpdateMaxPieces();
 
-	void InputSetMaxPieces( inputdata_t &inputdata );
-	void InputSetMaxPiecesDX8( inputdata_t &inputdata );
+	void InputSetMaxPieces( inputdata_t &&inputdata );
+	void InputSetMaxPiecesDX8( inputdata_t &&inputdata );
 
 	typedef CHandle<CBaseAnimating> CGibHandle;
 	CUtlLinkedList< CGibHandle > m_LRU; 
@@ -823,9 +823,9 @@ CGameGibManager::~CGameGibManager()
 
 BEGIN_MAPENTITY( CGameGibManager )
 
-	DEFINE_KEYFIELD( m_iMaxPieces, FIELD_INTEGER, "maxpieces" ),
-	DEFINE_KEYFIELD( m_iMaxPiecesDX8, FIELD_INTEGER, "maxpiecesdx8" ),
-	DEFINE_KEYFIELD( m_bAllowNewGibs, FIELD_BOOLEAN, "allownewgibs" ),
+	DEFINE_KEYFIELD_AUTO( m_iMaxPieces, "maxpieces" ),
+	DEFINE_KEYFIELD_AUTO( m_iMaxPiecesDX8, "maxpiecesdx8" ),
+	DEFINE_KEYFIELD_AUTO( m_bAllowNewGibs, "allownewgibs" ),
 
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMaxPieces", InputSetMaxPieces ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMaxPiecesDX8", InputSetMaxPiecesDX8 ),
@@ -893,13 +893,13 @@ bool CGameGibManager::AllowedToSpawnGib( void )
 	return true;
 }
 
-void CGameGibManager::InputSetMaxPieces( inputdata_t &inputdata )
+void CGameGibManager::InputSetMaxPieces( inputdata_t &&inputdata )
 {
 	m_iMaxPieces = inputdata.value.Int();
 	UpdateMaxPieces();
 }
 
-void CGameGibManager::InputSetMaxPiecesDX8( inputdata_t &inputdata )
+void CGameGibManager::InputSetMaxPiecesDX8( inputdata_t &&inputdata )
 {
 	m_iMaxPiecesDX8 = inputdata.value.Int();
 	UpdateMaxPieces();

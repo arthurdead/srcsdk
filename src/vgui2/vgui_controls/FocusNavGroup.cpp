@@ -48,7 +48,7 @@ FocusNavGroup::~FocusNavGroup()
 //-----------------------------------------------------------------------------
 bool FocusNavGroup::RequestFocusPrev(VPANEL panel)
 {
-	if(panel==0)
+	if(panel==INVALID_VPANEL)
 		return false;
 
 	_currentFocus = NULL;
@@ -308,14 +308,14 @@ void FocusNavGroup::SetCurrentDefaultButton(VPANEL panel, bool sendCurrentDefaul
 	if (panel == _currentDefaultButton.Get())
 		return;
 
-	if ( sendCurrentDefaultButtonMessage && _currentDefaultButton.Get() != 0)
+	if ( sendCurrentDefaultButtonMessage && _currentDefaultButton.Get() != INVALID_VPANEL)
 	{
 		ivgui()->PostMessage(_currentDefaultButton, new KeyValues("SetAsCurrentDefaultButton", "state", 0), INVALID_VPANEL);
 	}
 
 	_currentDefaultButton = panel;
 
-	if ( sendCurrentDefaultButtonMessage && _currentDefaultButton.Get() != 0)
+	if ( sendCurrentDefaultButtonMessage && _currentDefaultButton.Get() != INVALID_VPANEL)
 	{
 		ivgui()->PostMessage(_currentDefaultButton, new KeyValues("SetAsCurrentDefaultButton", "state", 1), INVALID_VPANEL);
 	}
@@ -396,7 +396,7 @@ VPANEL FocusNavGroup::SetCurrentFocus(VPANEL focus, VPANEL defaultPanel)
 	_currentFocus = focus;
 
     // if we haven't found a default panel yet, let's see if we know of one
-    if (defaultPanel == 0)
+    if (defaultPanel == INVALID_VPANEL)
     {
         // can this focus itself by the default
         if (CanButtonBeDefault(focus))
@@ -418,7 +418,7 @@ VPANEL FocusNavGroup::SetCurrentFocus(VPANEL focus, VPANEL defaultPanel)
 //-----------------------------------------------------------------------------
 bool FocusNavGroup::CanButtonBeDefault(VPANEL panel)
 {
-	if( panel == 0 )
+	if( panel == INVALID_VPANEL )
 		return false;
 
 	KeyValues *data = new KeyValues("CanBeDefaultButton");

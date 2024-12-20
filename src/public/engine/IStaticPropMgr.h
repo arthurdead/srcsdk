@@ -23,7 +23,7 @@ typedef CGameTrace trace_t;
 class IVPhysicsKeyHandler;
 class IPhysicsEnvironment;
 class ICollideable;
-enum class ShadowHandle_t : unsigned short;
+enum ShadowHandle_t : unsigned short;
 struct RenderableInstance_t;
 
 //-----------------------------------------------------------------------------

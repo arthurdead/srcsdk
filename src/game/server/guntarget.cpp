@@ -38,9 +38,9 @@ public:
 	virtual Vector BodyTarget( const Vector &posSrc, bool bNoisy = true ) { return GetAbsOrigin(); }
 
 	// Input handlers
-	void InputStart( inputdata_t &inputdata );
-	void InputStop( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
+	void InputStart( inputdata_t &&inputdata );
+	void InputStop( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -166,7 +166,7 @@ void CGunTarget::Wait( void )
 	}
 
 	variant_t emptyVariant;
-	pTarget->AcceptInput( "InPass", this, this, emptyVariant, 0 );
+	pTarget->AcceptInput( "InPass", this, this, Move(emptyVariant), 0 );
 		
 	m_flWait = pTarget->GetDelay();
 
@@ -211,7 +211,7 @@ int	CGunTarget::OnTakeDamage( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that starts the target moving.
 //-----------------------------------------------------------------------------
-void CGunTarget::InputStart( inputdata_t &inputdata )
+void CGunTarget::InputStart( inputdata_t &&inputdata )
 {
 	Start();
 }
@@ -220,7 +220,7 @@ void CGunTarget::InputStart( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that stops the target from moving.
 //-----------------------------------------------------------------------------
-void CGunTarget::InputStop( inputdata_t &inputdata )
+void CGunTarget::InputStop( inputdata_t &&inputdata )
 {
 	Stop();
 }
@@ -229,7 +229,7 @@ void CGunTarget::InputStop( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that toggles the start/stop state of the target.
 //-----------------------------------------------------------------------------
-void CGunTarget::InputToggle( inputdata_t &inputdata )
+void CGunTarget::InputToggle( inputdata_t &&inputdata )
 {
 	if ( m_on )
 	{

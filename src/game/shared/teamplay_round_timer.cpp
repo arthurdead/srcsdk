@@ -143,15 +143,15 @@ END_NETWORK_TABLE()
 
 #ifndef CLIENT_DLL
 BEGIN_MAPENTITY(CTeamRoundTimer)
-	DEFINE_KEYFIELD( m_nTimerInitialLength,		FIELD_INTEGER,	"timer_length" ),
-	DEFINE_KEYFIELD( m_nTimerMaxLength,			FIELD_INTEGER,	"max_length" ),
-	DEFINE_KEYFIELD( m_bShowInHUD,				FIELD_BOOLEAN,	"show_in_hud" ),
-	DEFINE_KEYFIELD( m_bIsDisabled,				FIELD_BOOLEAN,	"StartDisabled" ),
-	DEFINE_KEYFIELD( m_bAutoCountdown,			FIELD_BOOLEAN,	"auto_countdown" ),
-	DEFINE_KEYFIELD( m_nSetupTimeLength,		FIELD_INTEGER,	"setup_length" ),
-	DEFINE_KEYFIELD( m_bResetTimeOnRoundStart,	FIELD_BOOLEAN,	"reset_time" ),
-	DEFINE_KEYFIELD( m_bStartPaused,			FIELD_BOOLEAN,	"start_paused" ),
-	DEFINE_KEYFIELD( m_bShowTimeRemaining,			FIELD_BOOLEAN,	"show_time_remaining" ),
+	DEFINE_KEYFIELD_AUTO( m_nTimerInitialLength, "timer_length" ),
+	DEFINE_KEYFIELD_AUTO( m_nTimerMaxLength, "max_length" ),
+	DEFINE_KEYFIELD_AUTO( m_bShowInHUD, "show_in_hud" ),
+	DEFINE_KEYFIELD_AUTO( m_bIsDisabled, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bAutoCountdown, "auto_countdown" ),
+	DEFINE_KEYFIELD_AUTO( m_nSetupTimeLength, "setup_length" ),
+	DEFINE_KEYFIELD_AUTO( m_bResetTimeOnRoundStart, "reset_time" ),
+	DEFINE_KEYFIELD_AUTO( m_bStartPaused, "start_paused" ),
+	DEFINE_KEYFIELD_AUTO( m_bShowTimeRemaining, "show_time_remaining" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID,		"Enable",			InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID,		"Disable",			InputDisable ),
@@ -1012,7 +1012,7 @@ void CTeamRoundTimer::RoundTimerThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputRoundSpawn( inputdata_t &input )
+void CTeamRoundTimer::InputRoundSpawn( inputdata_t &&inputdata )
 {
 	if ( !m_bResetTimeOnRoundStart && ( m_nState == RT_STATE_NORMAL ) )
 	{
@@ -1211,7 +1211,7 @@ void CTeamRoundTimer::AddTimerSeconds( int iSecondsToAdd, int iTeamResponsible /
 //-----------------------------------------------------------------------------
 // Purpose: The timer is always transmitted to clients
 //-----------------------------------------------------------------------------
-int CTeamRoundTimer::UpdateTransmitState()
+EdictStateFlags_t CTeamRoundTimer::UpdateTransmitState()
 {
 	// ALWAYS transmit to all clients.
 	return SetTransmitState( FL_EDICT_ALWAYS );
@@ -1220,7 +1220,7 @@ int CTeamRoundTimer::UpdateTransmitState()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputPause( inputdata_t &input )
+void CTeamRoundTimer::InputPause( inputdata_t &&inputdata )
 {
 	PauseTimer();
 }
@@ -1228,7 +1228,7 @@ void CTeamRoundTimer::InputPause( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputResume( inputdata_t &input )
+void CTeamRoundTimer::InputResume( inputdata_t &&inputdata )
 {
 	ResumeTimer();
 }
@@ -1236,7 +1236,7 @@ void CTeamRoundTimer::InputResume( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputSetTime( inputdata_t &input )
+void CTeamRoundTimer::InputSetTime( inputdata_t &&inputdata )
 {
 	if ( IsStopWatchTimer() == true && IsWatchingTimeStamps() == true )
 	{
@@ -1252,7 +1252,7 @@ void CTeamRoundTimer::InputSetTime( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputSetMaxTime( inputdata_t &input )
+void CTeamRoundTimer::InputSetMaxTime( inputdata_t &&inputdata )
 {
 	int nSeconds = input.value.Int();
 	m_nTimerMaxLength = nSeconds;
@@ -1270,7 +1270,7 @@ void CTeamRoundTimer::InputSetMaxTime( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputAddTime( inputdata_t &input )
+void CTeamRoundTimer::InputAddTime( inputdata_t &&inputdata )
 {
 	int nSeconds = input.value.Int();
 	AddTimerSeconds( nSeconds );
@@ -1279,7 +1279,7 @@ void CTeamRoundTimer::InputAddTime( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputAddTeamTime( inputdata_t &input )
+void CTeamRoundTimer::InputAddTeamTime( inputdata_t &&inputdata )
 {
 	char		token[128];
 	const char	*p = STRING( input.value.StringID() );
@@ -1309,7 +1309,7 @@ void CTeamRoundTimer::InputAddTeamTime( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputRestart( inputdata_t &input )
+void CTeamRoundTimer::InputRestart( inputdata_t &&inputdata )
 {
 	SetTimeRemaining( m_nTimerInitialLength );
 }
@@ -1317,7 +1317,7 @@ void CTeamRoundTimer::InputRestart( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputEnable( inputdata_t &input )
+void CTeamRoundTimer::InputEnable( inputdata_t &&inputdata )
 { 
 	m_bIsDisabled = false;
 	ResumeTimer();
@@ -1336,7 +1336,7 @@ void CTeamRoundTimer::InputEnable( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputDisable( inputdata_t &input )
+void CTeamRoundTimer::InputDisable( inputdata_t &&inputdata )
 { 
 	PauseTimer();
 	m_bIsDisabled = true;
@@ -1350,7 +1350,7 @@ void CTeamRoundTimer::InputDisable( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputShowInHUD( inputdata_t &input )
+void CTeamRoundTimer::InputShowInHUD( inputdata_t &&inputdata )
 { 
 	int nShow = input.value.Int();
 
@@ -1370,7 +1370,7 @@ void CTeamRoundTimer::InputShowInHUD( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputAutoCountdown( inputdata_t &input )
+void CTeamRoundTimer::InputAutoCountdown( inputdata_t &&inputdata )
 { 
 	int nAuto = input.value.Int();
 	SetAutoCountdown( nAuto == 1 ); 
@@ -1379,7 +1379,7 @@ void CTeamRoundTimer::InputAutoCountdown( inputdata_t &input )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamRoundTimer::InputSetSetupTime( inputdata_t &input )
+void CTeamRoundTimer::InputSetSetupTime( inputdata_t &&inputdata )
 { 
 	int nSetupTime = input.value.Int();
 	if ( nSetupTime >= 0 )

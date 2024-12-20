@@ -11,6 +11,7 @@
 #pragma once
 
 #include "tier0/dbg.h"
+#include "tier1/bittools.h"
 
 // the command line param that tells the engine to use steam
 #define STEAM_PARM					"-steam"
@@ -29,7 +30,7 @@
 #define CLIENTNAME_TIMED_OUT "%s timed out"
 
 // This is the default, see shareddefs.h for mod-specific value, which can override this
-#define DEFAULT_TICK_INTERVAL	(1.0f / 60.0f)				// 16.666667 msec is the default
+#define DEFAULT_TICK_INTERVAL	(1.0f / 128.0f)
 #define MINIMUM_TICK_INTERVAL   (0.001)
 #define MAXIMUM_TICK_INTERVAL	(0.1)
 
@@ -122,7 +123,7 @@ enum player_Stance
 };
 
 // edict->movetype values
-enum MoveType_t
+enum MoveType_t : unsigned char
 {
 	MOVETYPE_NONE		= 0,	// never moves
 	MOVETYPE_ISOMETRIC,			// For players -- in TF2 commander view, etc.
@@ -140,11 +141,11 @@ enum MoveType_t
 	// should always be defined as the last item in the list
 	MOVETYPE_LAST		= MOVETYPE_CUSTOM,
 
-	MOVETYPE_MAX_BITS	= 4
+	MOVETYPE_MAX_BITS	= MINIMUM_BITS_NEEDED(MOVETYPE_LAST),
 };
 
 // edict->movecollide values
-enum MoveCollide_t
+enum MoveCollide_t : unsigned char
 {
 	MOVECOLLIDE_DEFAULT = 0,
 
@@ -156,7 +157,7 @@ enum MoveCollide_t
 	MOVECOLLIDE_COUNT,		// Number of different movecollides
 
 	// When adding new movecollide types, make sure this is correct
-	MOVECOLLIDE_MAX_BITS = 3
+	MOVECOLLIDE_MAX_BITS = MINIMUM_BITS_NEEDED(MOVECOLLIDE_COUNT),
 };
 
 // edict->solid values
@@ -166,7 +167,7 @@ enum MoveCollide_t
 // Solid type basically describes how the bounding volume of the object is represented
 // NOTE: SOLID_BBOX MUST BE 2, and SOLID_VPHYSICS MUST BE 6
 // NOTE: These numerical values are used in the FGD by the prop code (see prop_dynamic)
-enum SolidType_t
+enum SolidType_t : unsigned int
 {
 	SOLID_NONE			= 0,	// no solid model
 	SOLID_BSP			= 1,	// a BSP tree
@@ -176,10 +177,13 @@ enum SolidType_t
 	SOLID_CUSTOM		= 5,	// Always call into the entity for tests
 	SOLID_VPHYSICS		= 6,	// solid vphysics object, get vcollide from the model and collide with that
 	SOLID_LAST,
+
+	SOLID_MAX_BITS = MINIMUM_BITS_NEEDED(SOLID_LAST),
 };
 
-enum SolidFlags_t
+enum SolidFlags_t : unsigned int
 {
+	FSOLID_NONE = 0,
 	FSOLID_CUSTOMRAYTEST		= 0x0001,	// Ignore solid type + always call into the entity for ray tests
 	FSOLID_CUSTOMBOXTEST		= 0x0002,	// Ignore solid type + always call into the entity for swept box tests
 	FSOLID_NOT_SOLID			= 0x0004,	// Are we currently not solid?
@@ -197,28 +201,37 @@ enum SolidFlags_t
 	// From https://developer.valvesoftware.com/wiki/Owner
 	FSOLID_COLLIDE_WITH_OWNER	= 0X1000,
 
-	FSOLID_MAX_BITS	= 12
+	FSOLID_LAST_FLAG = FSOLID_COLLIDE_WITH_OWNER,
+
+	FSOLID_MAX_BITS	= MINIMUM_BITS_NEEDED(FSOLID_LAST_FLAG),
 };
+
+FLAGENUM_OPERATORS( SolidFlags_t, unsigned int )
 
 //-----------------------------------------------------------------------------
 // A couple of inline helper methods
 //-----------------------------------------------------------------------------
-inline bool IsSolid( SolidType_t solidType, int nSolidFlags )
+inline bool IsSolid( SolidType_t solidType, SolidFlags_t nSolidFlags )
 {
 	return (solidType != SOLID_NONE) && ((nSolidFlags & FSOLID_NOT_SOLID) == 0);
 }
 
 
 // m_lifeState values
-#define	LIFE_ALIVE				0 // alive
-#define	LIFE_DYING				1 // playing death animation or still falling off of a ledge waiting to hit ground
-#define	LIFE_DEAD				2 // dead. lying still.
-#define LIFE_RESPAWNABLE		3
-#define LIFE_DISCARDBODY		4
+enum Lifestate_t : unsigned char
+{
+	LIFE_ALIVE =				0, // alive
+	LIFE_DYING =				1, // playing death animation or still falling off of a ledge waiting to hit ground
+	LIFE_DEAD =				2, // dead. lying still.
+	LIFE_RESPAWNABLE =		3,
+	LIFE_DISCARDBODY =		4,
+};
 
 // entity effects
-enum
+enum Effects_t : unsigned short
 {
+	EF_NONE                 = 0,
+
 	EF_BONEMERGE			= 0x001,	// Performs bone merge on client side
 	EF_BRIGHTLIGHT 			= 0x002,	// DLIGHT centered at entity origin
 	EF_DIMLIGHT 			= 0x004,	// player flashlight
@@ -237,10 +250,14 @@ enum
 	EF_NOFLASHLIGHT			= 0x400,	// Cast projected shadows, but don't receive them
 	EF_SHADOWDEPTH_NOCACHE  = 0x800,
 
+	EF_LAST_FLAG = EF_SHADOWDEPTH_NOCACHE,
+
 	EF_DEPRECATED_NOINTERP				= 0x008,	// don't interpolate the next frame
 
-	EF_MAX_BITS = 13
+	EF_MAX_BITS = MINIMUM_BITS_NEEDED(EF_LAST_FLAG),
 };
+
+FLAGENUM_OPERATORS( Effects_t, unsigned short )
 
 #define EF_PARITY_BITS	3
 #define EF_PARITY_MASK  ((1<<EF_PARITY_BITS)-1)
@@ -292,7 +309,7 @@ enum
 
 // Rendering constants
 // if this is changed, update common/MaterialSystem/Sprite.cpp
-enum RenderMode_t
+enum RenderMode_t : unsigned char
 {	
 	kRenderNormal = 0,		// src
 	kRenderTransColor,		// c*a+dest*(1-a)
@@ -307,9 +324,11 @@ enum RenderMode_t
 	kRenderNone,			// Don't render.
 
 	kRenderModeCount,		// must be last
+
+	kRenderModeBits = MINIMUM_BITS_NEEDED(kRenderModeCount),
 };
 
-enum RenderFx_t
+enum RenderFx_t : unsigned char
 {	
 	kRenderFxNone = 0, 
 	kRenderFxPulseSlow, 
@@ -337,10 +356,13 @@ enum RenderFx_t
 	kRenderFxPulseFastWider,
 	kRenderFxFadeOut,
 	kRenderFxFadeIn,
-	kRenderFxMax
+
+	kRenderFxMax,
+
+	kRenderFxBits = MINIMUM_BITS_NEEDED(kRenderFxMax),
 };
 
-enum Collision_Group_t
+enum Collision_Group_t : unsigned int
 {
 	COLLISION_GROUP_NONE  = 0,
 	COLLISION_GROUP_DEBRIS,			// Collides with nothing but world and static stuff
@@ -367,14 +389,16 @@ enum Collision_Group_t
 
 	COLLISION_GROUP_DEBRIS_BLOCK_PROJECTILE, // Only collides with bullets
 
-	LAST_SHARED_COLLISION_GROUP
+	LAST_SHARED_COLLISION_GROUP,
+
+	COLLISION_GROUP_BITS = 6,
 };
 
 //-----------------------------------------------------------------------------
 // Base light indices to avoid index collision
 //-----------------------------------------------------------------------------
 
-enum
+enum LightIndex_t : unsigned int
 {
 	LIGHT_INDEX_TE_DYNAMIC = 0x10000000,
 	LIGHT_INDEX_PLAYER_BRIGHT = 0x20000000,

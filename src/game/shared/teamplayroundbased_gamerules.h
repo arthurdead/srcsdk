@@ -144,7 +144,7 @@ public:
 
 #ifdef GAME_DLL
 	DECLARE_MAPENTITY();
-	void	InputSetStalemateOnTimelimit( inputdata_t &inputdata );
+	void	InputSetStalemateOnTimelimit( inputdata_t &&inputdata );
 #endif
 
 	//----------------------------------------------------------------------------------
@@ -568,8 +568,8 @@ protected:
 	CNetworkVar( int,			m_iWinReason );
 	CNetworkVar( bool,			m_bInWaitingForPlayers );
 	CNetworkVar( bool,			m_bAwaitingReadyRestart );
-	CNetworkVar( float,			m_flRestartRoundTime );
-	CNetworkVar( float,			m_flMapResetTime );						// Time that the map was reset
+	CNetworkTime( 			m_flRestartRoundTime );
+	CNetworkTime( 			m_flMapResetTime );						// Time that the map was reset
 	CNetworkArray( float,		m_flNextRespawnWave, MAX_TEAMS );		// Minor waste, but cleaner code
 	CNetworkArray( bool,		m_bTeamReady, MAX_TEAMS );
 	CNetworkVar( bool,			m_bStopWatch );

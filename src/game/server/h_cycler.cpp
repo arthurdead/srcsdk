@@ -186,7 +186,7 @@ int CCycler::OnTakeDamage( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 // Purpose: Input that sets the sequence of the cycler
 //-----------------------------------------------------------------------------
-void CCycler::InputSetSequence( inputdata_t &inputdata )
+void CCycler::InputSetSequence( inputdata_t &&inputdata )
 {
 	if (m_animate)
 	{
@@ -354,7 +354,7 @@ void CWreckage::Spawn( void )
 {
 	SetSolid( SOLID_NONE );
 	SetMoveType( MOVETYPE_NONE );
-	m_takedamage		= 0;
+	m_takedamage		= DAMAGE_NO;
 
 	SetCycle( 0 );
 	SetNextThink( gpGlobals->curtime + 0.1f );

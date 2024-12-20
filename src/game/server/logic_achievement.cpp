@@ -85,10 +85,10 @@ public:
 protected:
 
 	// Inputs
-	void InputFireEvent( inputdata_t &inputdata );
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
+	void InputFireEvent( inputdata_t &&inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
 	
 	bool			m_bDisabled;
 	string_t		m_iszAchievementEventID;				// Which achievement event this entity marks
@@ -104,8 +104,8 @@ LINK_ENTITY_TO_CLASS( logic_achievement, CLogicAchievement );
 
 BEGIN_MAPENTITY( CLogicAchievement )
 
-	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
-	DEFINE_KEYFIELD( m_iszAchievementEventID, FIELD_STRING, "AchievementEvent" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_iszAchievementEventID, "AchievementEvent" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "FireEvent", InputFireEvent ),
@@ -133,7 +133,7 @@ CLogicAchievement::CLogicAchievement(void)
 //-----------------------------------------------------------------------------
 // Purpose: Sends the achievement event to the achievement marking system.
 //-----------------------------------------------------------------------------
-void CLogicAchievement::InputFireEvent( inputdata_t &inputdata )
+void CLogicAchievement::InputFireEvent( inputdata_t &&inputdata )
 {
 	// If we're active, and our string matched a valid achievement ID
 	if ( !m_bDisabled  && m_iszAchievementEventID != NULL_STRING)
@@ -159,7 +159,7 @@ void CLogicAchievement::InputFireEvent( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Turns on the relay, allowing it to fire outputs.
 //------------------------------------------------------------------------------
-void CLogicAchievement::InputEnable( inputdata_t &inputdata )
+void CLogicAchievement::InputEnable( inputdata_t &&inputdata )
 {
 	m_bDisabled = false;
 }
@@ -167,7 +167,7 @@ void CLogicAchievement::InputEnable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Turns off the relay, preventing it from firing outputs.
 //------------------------------------------------------------------------------
-void CLogicAchievement::InputDisable( inputdata_t &inputdata )
+void CLogicAchievement::InputDisable( inputdata_t &&inputdata )
 { 
 	m_bDisabled = true;
 }
@@ -176,7 +176,7 @@ void CLogicAchievement::InputDisable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Toggles the enabled/disabled state of the relay.
 //------------------------------------------------------------------------------
-void CLogicAchievement::InputToggle( inputdata_t &inputdata )
+void CLogicAchievement::InputToggle( inputdata_t &&inputdata )
 { 
 	m_bDisabled = !m_bDisabled;
 }

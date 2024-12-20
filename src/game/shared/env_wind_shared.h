@@ -139,7 +139,7 @@ inline const T &CTimedEventQueue<T,I>::GetEventData( I i ) const
 //-----------------------------------------------------------------------------
 // Implementation of the class that computes windspeed
 //-----------------------------------------------------------------------------
-class CEnvWindShared
+class CEnvWindShared : public INetworkableObject
 {
 public:
 	DECLARE_CLASS_NOBASE( CEnvWindShared );

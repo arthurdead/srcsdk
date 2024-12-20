@@ -129,7 +129,7 @@ public:
 		return m_count;
 	}
 
-	int m_lifeState;
+	Lifestate_t m_lifeState;
 	int m_team;
 	bool m_includeBots;
 	int m_count;

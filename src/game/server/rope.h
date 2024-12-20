@@ -80,19 +80,19 @@ public:
 	// Kill myself when I next come to rest
 	void			DieAtNextRest( void );
 
-	virtual int		UpdateTransmitState(void);
+	virtual EdictStateFlags_t UpdateTransmitState(void);
 	virtual void	SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
 	virtual void	SetParent( CBaseEntity *pParentEntity, int iAttachment );
 
 // Input functions.
 public:
 
-	void InputSetScrollSpeed( inputdata_t &inputdata );
-	void InputSetForce( inputdata_t &inputdata );
-	void InputBreak( inputdata_t &inputdata );
-	void InputSetSlack( inputdata_t &inputdata );
-	void InputSetWidth( inputdata_t &inputdata );
-	void InputSetSubdivision( inputdata_t &inputdata );
+	void InputSetScrollSpeed( inputdata_t &&inputdata );
+	void InputSetForce( inputdata_t &&inputdata );
+	void InputBreak( inputdata_t &&inputdata );
+	void InputSetSlack( inputdata_t &&inputdata );
+	void InputSetWidth( inputdata_t &&inputdata );
+	void InputSetSubdivision( inputdata_t &&inputdata );
 
 public:
 

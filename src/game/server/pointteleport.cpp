@@ -23,9 +23,9 @@ class CPointTeleport : public CBaseEntity
 public:
 	void	Activate( void );
 
-	void InputTeleport( inputdata_t &inputdata );
-	void InputTeleportEntity( inputdata_t &inputdata );
-	void InputTeleportToCurrentPos( inputdata_t &inputdata );
+	void InputTeleport( inputdata_t &&inputdata );
+	void InputTeleportEntity( inputdata_t &&inputdata );
+	void InputTeleportToCurrentPos( inputdata_t &&inputdata );
 
 	int	ObjectCaps( void )
 	{ 
@@ -117,7 +117,7 @@ void CPointTeleport::Activate( void )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CPointTeleport::InputTeleport( inputdata_t &inputdata )
+void CPointTeleport::InputTeleport( inputdata_t &&inputdata )
 {
 	DoTeleport( inputdata, m_vSaveOrigin, m_vSaveAngles );
 }
@@ -126,7 +126,7 @@ void CPointTeleport::InputTeleport( inputdata_t &inputdata )
 // Purpose: Teleport the specified entity instead of the Teleporter's pre
 //			determined entity.
 //------------------------------------------------------------------------------
-void CPointTeleport::InputTeleportEntity( inputdata_t &inputdata )
+void CPointTeleport::InputTeleportEntity( inputdata_t &&inputdata )
 {
 	DoTeleport( inputdata, m_vSaveOrigin, m_vSaveAngles, true );
 }
@@ -136,7 +136,7 @@ void CPointTeleport::InputTeleportEntity( inputdata_t &inputdata )
 // input teleports to the initial position of the point_teleport, so this input
 // was added to avoid breaking old content.
 //------------------------------------------------------------------------------
-void CPointTeleport::InputTeleportToCurrentPos( inputdata_t &inputdata )
+void CPointTeleport::InputTeleportToCurrentPos( inputdata_t &&inputdata )
 {
 	if ( HasSpawnFlags( SF_TELEPORT_TO_SPAWN_POS ) )
 	{

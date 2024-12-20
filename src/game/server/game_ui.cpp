@@ -36,9 +36,9 @@ public:
 	DECLARE_MAPENTITY();
 
 	// Input handlers
-	void InputDeactivate( inputdata_t &inputdata );
-	void InputActivate( inputdata_t &inputdata );
-	void InputGetButtons( inputdata_t &inputdata );
+	void InputDeactivate( inputdata_t &&inputdata );
+	void InputActivate( inputdata_t &&inputdata );
+	void InputGetButtons( inputdata_t &&inputdata );
 
 	void Think( void );
 	void Deactivate( CBaseEntity *pActivator );
@@ -93,7 +93,7 @@ public:
 
 BEGIN_MAPENTITY( CGameInputRedirect )
 
-	DEFINE_KEYFIELD( m_flFieldOfView, FIELD_FLOAT, "FieldOfView" ),
+	DEFINE_KEYFIELD_AUTO( m_flFieldOfView, "FieldOfView" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Deactivate", InputDeactivate ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "Activate", InputActivate ),
@@ -146,7 +146,7 @@ LINK_ENTITY_TO_CLASS( game_ui, CGameInputRedirect );
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameInputRedirect::InputDeactivate( inputdata_t &inputdata )
+void CGameInputRedirect::InputDeactivate( inputdata_t &&inputdata )
 {
 	Deactivate( inputdata.pActivator );
 }
@@ -211,7 +211,7 @@ void CGameInputRedirect::Deactivate( CBaseEntity *pActivator )
 //------------------------------------------------------------------------------
 // Purpose :
 //------------------------------------------------------------------------------
-void CGameInputRedirect::InputActivate( inputdata_t &inputdata )
+void CGameInputRedirect::InputActivate( inputdata_t &&inputdata )
 {
 	CBasePlayer *pPlayer;
 
@@ -548,7 +548,7 @@ void CGameInputRedirect::Think( void )
 //------------------------------------------------------------------------------
 // Purpose: Gets and outputs the player's current buttons
 //------------------------------------------------------------------------------
-void CGameInputRedirect::InputGetButtons( inputdata_t &inputdata )
+void CGameInputRedirect::InputGetButtons( inputdata_t &&inputdata )
 {
 	m_OutButtons.Set(m_player ? m_player->m_nButtons : m_nLastButtonState, m_player, this);
 }

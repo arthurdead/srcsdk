@@ -23,10 +23,10 @@ BEGIN_MAPENTITY( CFogVolume )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
-	DEFINE_KEYFIELD( m_fogName, FIELD_STRING, "FogName" ),
-	DEFINE_KEYFIELD( m_postProcessName, FIELD_STRING, "PostProcessName" ),
-	DEFINE_KEYFIELD( m_colorCorrectionName, FIELD_STRING, "ColorCorrectionName" ),
-	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN,	"StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_fogName, "FogName" ),
+	DEFINE_KEYFIELD_AUTO( m_postProcessName, "PostProcessName" ),
+	DEFINE_KEYFIELD_AUTO( m_colorCorrectionName, "ColorCorrectionName" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
 END_MAPENTITY()
 
@@ -122,7 +122,7 @@ void CFogVolume::RemoveFromGlobalList()
 
 
 //----------------------------------------------------------------------------
-void CFogVolume::InputEnable( inputdata_t &data )
+void CFogVolume::InputEnable( inputdata_t &&inputdata )
 {
 	m_bDisabled = false;
 	AddToGlobalList();
@@ -130,7 +130,7 @@ void CFogVolume::InputEnable( inputdata_t &data )
 
 
 //----------------------------------------------------------------------------
-void CFogVolume::InputDisable( inputdata_t &data )
+void CFogVolume::InputDisable( inputdata_t &&inputdata )
 {
 	m_bDisabled = true;
 	RemoveFromGlobalList();

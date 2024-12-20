@@ -43,11 +43,11 @@ protected:
 	virtual void Unlock();
 
 	// Input handlers
-	void InputLock( inputdata_t &inputdata );
-	void InputUnlock( inputdata_t &inputdata );
-	void InputPress( inputdata_t &inputdata );
-	void InputPressIn( inputdata_t &inputdata );
-	void InputPressOut( inputdata_t &inputdata );
+	void InputLock( inputdata_t &&inputdata );
+	void InputUnlock( inputdata_t &&inputdata );
+	void InputPress( inputdata_t &&inputdata );
+	void InputPressIn( inputdata_t &&inputdata );
+	void InputPressOut( inputdata_t &&inputdata );
 
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );
 	
@@ -133,13 +133,13 @@ public:
 	virtual void Unlock();
 
 	// Input handlers
-	void InputSetPosition( inputdata_t &inputdata );
-	void InputSetPositionImmediately( inputdata_t &inputdata );
-	void InputDisableUpdateTarget( inputdata_t &inputdata );
-	void InputEnableUpdateTarget( inputdata_t &inputdata );
+	void InputSetPosition( inputdata_t &&inputdata );
+	void InputSetPositionImmediately( inputdata_t &&inputdata );
+	void InputDisableUpdateTarget( inputdata_t &&inputdata );
+	void InputEnableUpdateTarget( inputdata_t &&inputdata );
 
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
 	virtual void Enable( void );
 	virtual void Disable( void );

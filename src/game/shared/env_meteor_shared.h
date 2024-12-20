@@ -12,6 +12,7 @@
 #include "vstdlib/random.h"
 #include "mathlib/vector.h"
 #include "utlvector.h"
+#include "networkvar.h"
 
 //=============================================================================
 //
@@ -128,7 +129,7 @@ public:
 //
 // Shared Meteor Spawner Class
 //
-class CEnvMeteorSpawnerShared
+class CEnvMeteorSpawnerShared : public INetworkableObject
 {
 public:
 	DECLARE_CLASS_NOBASE( CEnvMeteorSpawnerShared );

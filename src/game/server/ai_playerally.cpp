@@ -334,7 +334,7 @@ CAI_AllySpeechManager *GetAllySpeechManager()
 
 BEGIN_MAPENTITY( CAI_PlayerAlly, MAPENT_NPCCLASS )
 
-	DEFINE_KEYFIELD( m_bGameEndAlly, FIELD_BOOLEAN, "GameEndAlly" ),
+	DEFINE_KEYFIELD_AUTO( m_bGameEndAlly, "GameEndAlly" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "IdleRespond", InputIdleRespond ),
@@ -351,12 +351,12 @@ END_MAPENTITY()
 
 ConVar npc_ally_deathmessage( "npc_ally_deathmessage", "1", FCVAR_CHEAT );
 
-void CAI_PlayerAlly::InputMakeGameEndAlly( inputdata_t &inputdata )
+void CAI_PlayerAlly::InputMakeGameEndAlly( inputdata_t &&inputdata )
 {
 	m_bGameEndAlly = true;
 }
 
-void CAI_PlayerAlly::InputMakeRegularAlly( inputdata_t &inputdata )
+void CAI_PlayerAlly::InputMakeRegularAlly( inputdata_t &&inputdata )
 {
 	m_bGameEndAlly = false;
 }
@@ -862,7 +862,7 @@ bool CAI_PlayerAlly::AskQuestionNow( CBaseEntity *pSpeechTarget, int iQARandomNu
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CAI_PlayerAlly::InputAskQuestion( inputdata_t &inputdata )
+void CAI_PlayerAlly::InputAskQuestion( inputdata_t &&inputdata )
 {
 	CBaseEntity *pSpeechTarget = NULL;
 	int iQARandomNumber = 0;
@@ -901,7 +901,7 @@ void CAI_PlayerAlly::InputAskQuestion( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CAI_PlayerAlly::InputAnswerQuestion( inputdata_t &inputdata )
+void CAI_PlayerAlly::InputAnswerQuestion( inputdata_t &&inputdata )
 {
 	AnswerQuestion( dynamic_cast<CAI_PlayerAlly *>(inputdata.pActivator), inputdata.value.Int(), false );
 }
@@ -909,7 +909,7 @@ void CAI_PlayerAlly::InputAnswerQuestion( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CAI_PlayerAlly::InputAnswerQuestionHello( inputdata_t &inputdata )
+void CAI_PlayerAlly::InputAnswerQuestionHello( inputdata_t &&inputdata )
 {
 	AnswerQuestion( dynamic_cast<CAI_PlayerAlly *>(inputdata.pActivator), inputdata.value.Int(), true );
 }
@@ -1278,7 +1278,7 @@ void CAI_PlayerAlly::Event_Killed( const CTakeDamageInfo &info )
 		{
 			variant_t variant;
 			variant.SetEntity(this);
-			player->AcceptInput( "OnSquadMemberKilled", info.GetAttacker(), this, variant, 0 );
+			player->AcceptInput( "OnSquadMemberKilled", info.GetAttacker(), this, Move(variant), 0 );
 		}
 	}
 
@@ -1807,7 +1807,7 @@ void CAI_PlayerAlly::OnStartSpeaking()
 //-----------------------------------------------------------------------------
 // Purpose: Mapmaker input to force this NPC to speak a response rules concept
 //-----------------------------------------------------------------------------
-void CAI_PlayerAlly::InputSpeakResponseConcept( inputdata_t &inputdata )
+void CAI_PlayerAlly::InputSpeakResponseConcept( inputdata_t &&inputdata )
 {
 	SpeakMapmakerInterruptConcept( inputdata.value.StringID() );
 }
@@ -1816,12 +1816,12 @@ void CAI_PlayerAlly::InputSpeakResponseConcept( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Allows mapmakers to override NPC_STATE_SCRIPT or IsScripting() for responses.
 //-----------------------------------------------------------------------------
-void CAI_PlayerAlly::InputEnableSpeakWhileScripting( inputdata_t &inputdata )
+void CAI_PlayerAlly::InputEnableSpeakWhileScripting( inputdata_t &&inputdata )
 {
 	m_bCanSpeakWhileScripting = true;
 }
 
-void CAI_PlayerAlly::InputDisableSpeakWhileScripting( inputdata_t &inputdata )
+void CAI_PlayerAlly::InputDisableSpeakWhileScripting( inputdata_t &&inputdata )
 {
 	m_bCanSpeakWhileScripting = false;
 }

@@ -37,14 +37,12 @@ bool ParseKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields, c
 	{
 		pField = &pFields[i];
 
-		int fieldOffset = pField->fieldOffset[ TD_OFFSET_NORMAL ];
-
 		// Check the nested classes, but only if they aren't in array form.
-		if ((pField->fieldType == FIELD_EMBEDDED) && (pField->fieldSize == 1))
+		if ((pField->baseType() == FIELD_EMBEDDED) && (pField->fieldSize == 1))
 		{
+			void *pEmbeddedObject = GetField<void>(pObject, *pField);
 			for ( datamap_t *dmap = pField->td; dmap != NULL; dmap = dmap->baseMap )
 			{
-				void *pEmbeddedObject = (void*)((char*)pObject + fieldOffset);
 				if ( ParseKeyvalue( pEmbeddedObject, dmap->dataDesc, dmap->dataNumFields, szKeyName, szValue) )
 					return true;
 			}
@@ -52,63 +50,94 @@ bool ParseKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields, c
 
 		if ( (pField->flags & FTYPEDESC_KEY) && !stricmp(pField->externalName, szKeyName) )
 		{
-			switch( pField->fieldType )
+			switch( pField->baseType() )
 			{
-			case FIELD_MODELNAME:
-			case FIELD_SOUNDNAME:
-			case FIELD_STRING:
-				(*(string_t *)((char *)pObject + fieldOffset)) = AllocPooledString( szValue );
+			case FIELD_POOLED_STRING:
+				*GetField<string_t>(pObject, *pField) = AllocPooledString( szValue );
 				return true;
 
-			case FIELD_TIME:
 			case FIELD_FLOAT:
-				(*(float *)((char *)pObject + fieldOffset)) = atof( szValue );
+				*GetField<float>(pObject, *pField) = atof( szValue );
 				return true;
 
 			case FIELD_BOOLEAN:
-				(*(bool *)((char *)pObject + fieldOffset)) = (bool)(atoi( szValue ) != 0);
+				*GetField<bool>(pObject, *pField) = (bool)(atoi( szValue ) != 0);
 				return true;
 
 			case FIELD_CHARACTER:
-				(*(char *)((char *)pObject + fieldOffset)) = (char)atoi( szValue );
+				*GetField<char>(pObject, *pField) = (char)atoi( szValue );
+				return true;
+			case FIELD_SCHARACTER:
+				*GetField<signed char>(pObject, *pField) = (signed char)atoi( szValue );
+				return true;
+			case FIELD_UCHARACTER:
+				*GetField<unsigned char>(pObject, *pField) = (unsigned char)atoi( szValue );
 				return true;
 
 			case FIELD_SHORT:
-				(*(short *)((char *)pObject + fieldOffset)) = (short)atoi( szValue );
+				*GetField<short>(pObject, *pField) = (short)atoi( szValue );
+				return true;
+			case FIELD_USHORT:
+				*GetField<unsigned short>(pObject, *pField) = (unsigned short)atoi( szValue );
 				return true;
 
 			case FIELD_INTEGER64:
-				(*(int64 *)((char *)pObject + fieldOffset)) = strtoull( szValue, NULL, 10 );
+				*GetField<int64>(pObject, *pField) = strtoll( szValue, NULL, 10 );
+				return true;
+			case FIELD_UINTEGER64:
+				*GetField<uint64>(pObject, *pField) = strtoull( szValue, NULL, 10 );
 				return true;
 
 			case FIELD_INTEGER:
-			case FIELD_TICK:
-				(*(int *)((char *)pObject + fieldOffset)) = atoi( szValue );
+				*GetField<int>(pObject, *pField) = atoi( szValue );
+				return true;
+			case FIELD_UINTEGER:
+				*GetField<unsigned int>(pObject, *pField) = atoi( szValue );
 				return true;
 
-			case FIELD_POSITION_VECTOR:
 			case FIELD_VECTOR:
-				UTIL_StringToVector( (float *)((char *)pObject + fieldOffset), szValue );
+				UTIL_StringToVector( *GetField<Vector>(pObject, *pField), szValue );
 				return true;
 
-			case FIELD_VMATRIX:
-			case FIELD_VMATRIX_WORLDSPACE:
-				UTIL_StringToFloatArray( (float *)((char *)pObject + fieldOffset), 16, szValue );
+			case FIELD_QANGLE:
+				UTIL_StringToQAngle( *GetField<QAngle>(pObject, *pField), szValue );
 				return true;
 
-			case FIELD_MATRIX3X4_WORLDSPACE:
-				UTIL_StringToFloatArray( (float *)((char *)pObject + fieldOffset), 12, szValue );
-				return true;
+			case FIELD_VMATRIX: {
+				VMatrix &mat = *GetField<VMatrix>(pObject, *pField);
+				UTIL_StringToFloatArray( mat.Base(), 16, szValue );
+			} return true;
+
+			case FIELD_MATRIX3X4: {
+				matrix3x4_t &mat = *GetField<matrix3x4_t>(pObject, *pField);
+				UTIL_StringToFloatArray( mat.Base(), 12, szValue );
+			} return true;
 
 			case FIELD_COLOR32:
-				UTIL_StringToColor32( (color32 *) ((char *)pObject + fieldOffset), szValue );
+				UTIL_StringToColor32( *GetField<color32>(pObject, *pField), szValue );
+				return true;
+
+			case FIELD_COLOR32E:
+				UTIL_StringToColor32( *GetField<ColorRGBExp32>(pObject, *pField), szValue );
+				return true;
+
+			case FIELD_COLOR24:
+				UTIL_StringToColor24( *GetField<color24>(pObject, *pField), szValue );
+				return true;
+
+			case FIELD_MODELINDEX:
+			#ifdef GAME_DLL
+				*GetField<modelindex_t>(pObject, *pField) = engine->PrecacheModel( szValue );
+			#else
+				*GetField<modelindex_t>(pObject, *pField) = modelinfo->GetModelIndex( szValue );
+			#endif
 				return true;
 
 			case FIELD_CUSTOM:
 			{
 				FieldInfo_t fieldInfo =
 				{
-					(char *)pObject + fieldOffset,
+					GetField<void>(pObject, *pField),
 					pObject,
 					pField
 				};
@@ -117,11 +146,6 @@ bool ParseKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields, c
 			}
 
 			default:
-			case FIELD_INTERVAL: // Fixme, could write this if needed
-			case FIELD_CLASSPTR:
-			case FIELD_MODELINDEX:
-			case FIELD_MATERIALINDEX:
-			case FIELD_EDICT:
 				Warning( "Bad field in entity!!\n" );
 				Assert(0);
 				break;
@@ -151,14 +175,12 @@ bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields,
 	{
 		pField = &pFields[i];
 
-		int fieldOffset = pField->fieldOffset[ TD_OFFSET_NORMAL ];
-
 		// Check the nested classes, but only if they aren't in array form.
-		if ((pField->fieldType == FIELD_EMBEDDED) && (pField->fieldSize == 1))
+		if ((pField->baseType() == FIELD_EMBEDDED) && (pField->fieldSize == 1))
 		{
+			void *pEmbeddedObject = GetField<void>(pObject, *pField);
 			for ( datamap_t *dmap = pField->td; dmap != NULL; dmap = dmap->baseMap )
 			{
-				void *pEmbeddedObject = (void*)((char*)pObject + fieldOffset);
 				if ( ExtractKeyvalue( pEmbeddedObject, dmap->dataDesc, dmap->dataNumFields, szKeyName, szValue, iMaxLen ) )
 					return true;
 			}
@@ -166,66 +188,106 @@ bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields,
 
 		if ( (pField->flags & FTYPEDESC_KEY) && !stricmp(pField->externalName, szKeyName) )
 		{
-			switch( pField->fieldType )
+			switch( pField->baseType() )
 			{
-			case FIELD_MODELNAME:
-			case FIELD_SOUNDNAME:
-			case FIELD_STRING:
-				Q_strncpy( szValue, ((char *)pObject + fieldOffset), iMaxLen );
+			case FIELD_POOLED_STRING:
+				Q_strncpy( szValue, STRING( *GetField<string_t>(pObject, *pField) ), iMaxLen );
 				return true;
 
-			case FIELD_TIME:
 			case FIELD_FLOAT:
-				Q_snprintf( szValue, iMaxLen, "%f", (*(float *)((char *)pObject + fieldOffset)) );
+				Q_snprintf( szValue, iMaxLen, "%f", *GetField<float>(pObject, *pField) );
 				return true;
 
 			case FIELD_BOOLEAN:
-				Q_snprintf( szValue, iMaxLen, "%d", (*(bool *)((char *)pObject + fieldOffset)) != 0);
+				Q_snprintf( szValue, iMaxLen, "%hhu", *GetField<bool>(pObject, *pField) );
 				return true;
 
 			case FIELD_CHARACTER:
-				Q_snprintf( szValue, iMaxLen, "%d", (*(char *)((char *)pObject + fieldOffset)) );
+				Q_snprintf( szValue, iMaxLen, "%c", *GetField<char>(pObject, *pField) );
+				return true;
+			case FIELD_SCHARACTER:
+				Q_snprintf( szValue, iMaxLen, "%hhi", *GetField<signed char>(pObject, *pField) );
+				return true;
+			case FIELD_UCHARACTER:
+				Q_snprintf( szValue, iMaxLen, "%hhu", *GetField<unsigned char>(pObject, *pField) );
 				return true;
 
 			case FIELD_SHORT:
-				Q_snprintf( szValue, iMaxLen, "%d", (*(short *)((char *)pObject + fieldOffset)) );
+				Q_snprintf( szValue, iMaxLen, "%hi", *GetField<short>(pObject, *pField) );
+				return true;
+			case FIELD_USHORT:
+				Q_snprintf( szValue, iMaxLen, "%hu", *GetField<unsigned short>(pObject, *pField) );
 				return true;
 
 			case FIELD_INTEGER64:
-				Q_snprintf( szValue, iMaxLen, "%lli", (*(int64 *)((char *)pObject + fieldOffset)) );
+				Q_snprintf( szValue, iMaxLen, "%lli", *GetField<int64>(pObject, *pField) );
+				return true;
+			case FIELD_UINTEGER64:
+				Q_snprintf( szValue, iMaxLen, "%llu", *GetField<uint64>(pObject, *pField) );
 				return true;
 
 			case FIELD_INTEGER:
-			case FIELD_TICK:
-				Q_snprintf( szValue, iMaxLen, "%d", (*(int *)((char *)pObject + fieldOffset)) );
+				Q_snprintf( szValue, iMaxLen, "%i", *GetField<int>(pObject, *pField) );
+				return true;
+			case FIELD_UINTEGER:
+				Q_snprintf( szValue, iMaxLen, "%u", *GetField<unsigned int>(pObject, *pField) );
 				return true;
 
-			case FIELD_POSITION_VECTOR:
-			case FIELD_VECTOR:
-				Q_snprintf( szValue, iMaxLen, "%f %f %f", 
-					((float *)((char *)pObject + fieldOffset))[0],
-					((float *)((char *)pObject + fieldOffset))[1],
-					((float *)((char *)pObject + fieldOffset))[2] );
+			case FIELD_MODELINDEX:
+				Q_strncpy( szValue, modelinfo->GetModelName( modelinfo->GetModel( *GetField<modelindex_t>(pObject, *pField) ) ), iMaxLen);
 				return true;
+
+			case FIELD_VECTOR: {
+				const Vector &vec = *GetField<Vector>(pObject, *pField);
+				Q_snprintf( szValue, iMaxLen, "%f %f %f", 
+					vec.x,
+					vec.y,
+					vec.z );
+			} return true;
+
+			case FIELD_QANGLE: {
+				const QAngle &vec = *GetField<QAngle>(pObject, *pField);
+				Q_snprintf( szValue, iMaxLen, "%f %f %f", 
+					vec.x,
+					vec.y,
+					vec.z );
+			} return true;
 
 			case FIELD_VMATRIX:
-			case FIELD_VMATRIX_WORLDSPACE:
 				Assert(0);
 				//UTIL_StringToFloatArray( (float *)((char *)pObject + fieldOffset), 16, szValue );
 				return false;
 
-			case FIELD_MATRIX3X4_WORLDSPACE:
+			case FIELD_MATRIX3X4:
 				Assert(0);
 				//UTIL_StringToFloatArray( (float *)((char *)pObject + fieldOffset), 12, szValue );
 				return false;
 
-			case FIELD_COLOR32:
-				Q_snprintf( szValue, iMaxLen, "%d %d %d %d", 
-					((char *)pObject + fieldOffset)[0],
-					((char *)pObject + fieldOffset)[1],
-					((char *)pObject + fieldOffset)[2],
-					((char *)pObject + fieldOffset)[3] );
-				return true;
+			case FIELD_COLOR32: {
+				const color32 &clr = *GetField<color32>(pObject, *pField);
+				Q_snprintf( szValue, iMaxLen, "%hhu %hhu %hhu %hhu", 
+					clr.r(),
+					clr.g(),
+					clr.b(),
+					clr.a() );
+			} return true;
+
+			case FIELD_COLOR32E: {
+				const ColorRGBExp32 &clr = *GetField<ColorRGBExp32>(pObject, *pField);
+				Q_snprintf( szValue, iMaxLen, "%hhu %hhu %hhu %hhi", 
+					clr.r(),
+					clr.g(),
+					clr.b(),
+					clr.e() );
+			} return true;
+
+			case FIELD_COLOR24: {
+				const color24 &clr = *GetField<color24>(pObject, *pField);
+				Q_snprintf( szValue, iMaxLen, "%hhu %hhu %hhu", 
+					clr.r(),
+					clr.g(),
+					clr.b() );
+			} return true;
 
 			case FIELD_CUSTOM:
 			{
@@ -243,11 +305,6 @@ bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields,
 			}
 
 			default:
-			case FIELD_INTERVAL: // Fixme, could write this if needed
-			case FIELD_CLASSPTR:
-			case FIELD_MODELINDEX:
-			case FIELD_MATERIALINDEX:
-			case FIELD_EDICT:
 				Warning( "Bad field in entity!!\n" );
 				Assert(0);
 				break;
@@ -385,8 +442,8 @@ static void write_fgd_embedded(datamap_t *pMap, CUtlBuffer &fileBuffer, bool roo
 	for(int i = 0; i < pMap->dataNumFields; ++i) {
 		const typedescription_t &td = pMap->dataDesc[i];
 		if(i == 0 &&
-			td.fieldType == FIELD_VOID &&
-			td.fieldOffset[0] == 0 &&
+			td.rawType() == FIELD_VOID &&
+			td.rawOffset() == 0 &&
 			td.fieldSize == 0 &&
 			td.fieldSizeInBytes == 0 &&
 			td.flags == 0 &&
@@ -394,7 +451,7 @@ static void write_fgd_embedded(datamap_t *pMap, CUtlBuffer &fileBuffer, bool roo
 			continue;
 		}
 
-		if(td.fieldType == FIELD_EMBEDDED) {
+		if(td.baseType() == FIELD_EMBEDDED) {
 			write_fgd_embedded(td.td, fileBuffer, false);
 			continue;
 		}
@@ -415,7 +472,7 @@ static void write_fgd_embedded(datamap_t *pMap, CUtlBuffer &fileBuffer, bool roo
 			fileBuffer.PutString("ERRORNAME");
 		}
 
-		switch(td.fieldType) {
+		switch(td.rawType()) {
 		case FIELD_VOID:
 			fileBuffer.PutString("(void)");
 			break;

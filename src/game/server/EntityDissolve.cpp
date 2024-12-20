@@ -42,8 +42,8 @@ static const char *s_pElectroThinkContext = "ElectroThinkContext";
 //-----------------------------------------------------------------------------
 BEGIN_MAPENTITY( CEntityDissolve )
 
-	DEFINE_KEYFIELD( m_nDissolveType, FIELD_INTEGER, "dissolvetype" ),
-	DEFINE_KEYFIELD( m_nMagnitude, FIELD_INTEGER, "magnitude" ),
+	DEFINE_KEYFIELD_AUTO( m_nDissolveType, "dissolvetype" ),
+	DEFINE_KEYFIELD_AUTO( m_nMagnitude, "magnitude" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "Dissolve", InputDissolve ),
 
@@ -157,7 +157,7 @@ void CEntityDissolve::Spawn()
 // Purpose: 
 // Input  : inputdata - 
 //-----------------------------------------------------------------------------
-void CEntityDissolve::InputDissolve( inputdata_t &inputdata )
+void CEntityDissolve::InputDissolve( inputdata_t &&inputdata )
 {
 	string_t strTarget = inputdata.value.StringID();
 

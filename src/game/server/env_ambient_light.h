@@ -18,7 +18,7 @@ public:
 
 	virtual void Spawn( void );
 
-	void InputSetColor(inputdata_t &inputdata);
+	void InputSetColor( inputdata_t &&inputdata );
 	void SetColor( const Vector &vecColor );
 
 private:

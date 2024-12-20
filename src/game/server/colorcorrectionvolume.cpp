@@ -32,7 +32,7 @@ public:
 
 	void Spawn( void );
 	bool KeyValue( const char *szKeyName, const char *szValue );
-	int  UpdateTransmitState();
+	EdictStateFlags_t  UpdateTransmitState();
 
 	void ThinkFunc();
 
@@ -43,8 +43,8 @@ public:
 	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 	
 	// Inputs
-	void	InputEnable( inputdata_t &inputdata );
-	void	InputDisable( inputdata_t &inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
 
 private:
 
@@ -68,12 +68,12 @@ LINK_ENTITY_TO_CLASS(color_correction_volume, CColorCorrectionVolume);
 
 BEGIN_MAPENTITY( CColorCorrectionVolume )
 
-	DEFINE_KEYFIELD( m_FadeDuration, FIELD_FLOAT, "fadeDuration" ),
-	DEFINE_KEYFIELD( m_MaxWeight,         FIELD_FLOAT,   "maxweight" ),
+	DEFINE_KEYFIELD_AUTO( m_FadeDuration, "fadeDuration" ),
+	DEFINE_KEYFIELD_AUTO( m_MaxWeight, "maxweight" ),
 	DEFINE_AUTO_ARRAY_KEYFIELD( m_lookupFilename,    FIELD_CHARACTER,  "filename" ),
 
-	DEFINE_KEYFIELD( m_bEnabled,		  FIELD_BOOLEAN, "enabled" ),
-	DEFINE_KEYFIELD( m_bStartDisabled,    FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bEnabled, "enabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bStartDisabled, "StartDisabled" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -98,7 +98,7 @@ CColorCorrectionVolume::CColorCorrectionVolume() : BaseClass()
 //------------------------------------------------------------------------------
 // Purpose : Send even though we don't have a model
 //------------------------------------------------------------------------------
-int CColorCorrectionVolume::UpdateTransmitState()
+EdictStateFlags_t CColorCorrectionVolume::UpdateTransmitState()
 {
 	// ALWAYS transmit to all clients.
 	return SetTransmitState( FL_EDICT_ALWAYS );
@@ -217,12 +217,12 @@ void CColorCorrectionVolume::ThinkFunc( )
 //------------------------------------------------------------------------------
 // Purpose : Input handlers
 //------------------------------------------------------------------------------
-void CColorCorrectionVolume::InputEnable( inputdata_t &inputdata )
+void CColorCorrectionVolume::InputEnable( inputdata_t &&inputdata )
 {
 	m_bEnabled = true;
 }
 
-void CColorCorrectionVolume::InputDisable( inputdata_t &inputdata )
+void CColorCorrectionVolume::InputDisable( inputdata_t &&inputdata )
 {
 	m_bEnabled = false;
 }

@@ -88,7 +88,7 @@ enum vehicle_pose_params
 
 BEGIN_MAPEMBEDDED_NO_BASE( CFourWheelVehiclePhysics )
 
-	DEFINE_KEYFIELD( m_actionScale, FIELD_FLOAT, "actionScale" ),
+	DEFINE_KEYFIELD_AUTO( m_actionScale, "actionScale" ),
 
 END_MAPEMBEDDED()
 

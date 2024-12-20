@@ -519,7 +519,6 @@ void CSharedGameMovement::DiffPrint( char const *fmt, ... )
 
 #endif // !PREDICTION_ERROR_CHECK_LEVEL
 
-#ifndef _XBOX
 void COM_Log( const char *pszFile, const char *fmt, ...)
 {
 	va_list		argptr;
@@ -546,7 +545,6 @@ void COM_Log( const char *pszFile, const char *fmt, ...)
 		g_pFullFileSystem->Close(fp);
 	}
 }
-#endif
 
 #ifndef CLIENT_DLL
 //-----------------------------------------------------------------------------
@@ -2465,15 +2463,15 @@ bool CSharedGameMovement::CheckJumpButton( void )
 	}
 
 	// If we are in the water most of the way...
-	if ( player->GetWaterLevel() >= 2 )
+	if ( player->GetWaterLevel() >= WL_Waist )
 	{	
 		// swimming, not jumping
 		SetGroundEntity( NULL );
 
-		if(player->GetWaterType() == CONTENTS_WATER)    // We move up a certain amount
-			mv->m_vecVelocity[2] = 100;
-		else if (player->GetWaterType() == CONTENTS_SLIME)
+		if (player->GetWaterType() & WT_Slime)
 			mv->m_vecVelocity[2] = 80;
+		else if(player->GetWaterType() & WT_Water)    // We move up a certain amount
+			mv->m_vecVelocity[2] = 100;
 		
 		// play swiming sound
 		if ( player->m_flSwimSoundTime <= 0 )
@@ -3711,7 +3709,7 @@ bool CSharedGameMovement::CheckWater( void )
 	
 	// Assume that we are not in water at all.
 	player->SetWaterLevel( WL_NotInWater );
-	player->SetWaterType( CONTENTS_EMPTY );
+	player->SetWaterType( WT_None );
 
 	// Grab point contents.
 	cont = GetWaterContentsForPointCached( point, 0 );	

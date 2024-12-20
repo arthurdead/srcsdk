@@ -84,14 +84,14 @@ public:
 	void SoundEnd();
 
 	// Input handlers
-	void InputPlaySound( inputdata_t &inputdata );
-	void InputStopSound( inputdata_t &inputdata );
-	void InputToggleSound( inputdata_t &inputdata );
-	void InputPitch( inputdata_t &inputdata );
-	void InputVolume( inputdata_t &inputdata );
-	void InputFadeIn( inputdata_t &inputdata );
-	void InputFadeOut( inputdata_t &inputdata );
-	void InputSetSound( inputdata_t &inputdata );
+	void InputPlaySound( inputdata_t &&inputdata );
+	void InputStopSound( inputdata_t &&inputdata );
+	void InputToggleSound( inputdata_t &&inputdata );
+	void InputPitch( inputdata_t &&inputdata );
+	void InputVolume( inputdata_t &&inputdata );
+	void InputFadeIn( inputdata_t &&inputdata );
+	void InputFadeOut( inputdata_t &&inputdata );
+	void InputSetSound( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 

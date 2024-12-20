@@ -55,17 +55,17 @@ public:
 
 BEGIN_MAPENTITY( CBasePlatTrain )
 
-	DEFINE_KEYFIELD( m_NoiseMoving, FIELD_SOUNDNAME, "noise1" ),
-	DEFINE_KEYFIELD( m_NoiseArrived, FIELD_SOUNDNAME, "noise2" ),
+	DEFINE_KEYFIELD_AUTO( m_NoiseMoving, "noise1" ),
+	DEFINE_KEYFIELD_AUTO( m_NoiseArrived, "noise2" ),
 
-	DEFINE_KEYFIELD( m_MoveSound, FIELD_INTEGER, "movesnd" ),
-	DEFINE_KEYFIELD( m_StopSound, FIELD_INTEGER, "stopsnd" ),
+	DEFINE_KEYFIELD_AUTO( m_MoveSound, "movesnd" ),
+	DEFINE_KEYFIELD_AUTO( m_StopSound, "stopsnd" ),
 
-	DEFINE_KEYFIELD( m_volume, FIELD_FLOAT, "volume" ),
+	DEFINE_KEYFIELD_AUTO( m_volume, "volume" ),
 
-	DEFINE_KEYFIELD( m_flLip, FIELD_FLOAT, "lip" ),
-	DEFINE_KEYFIELD( m_flWait, FIELD_FLOAT, "wait" ),
-	DEFINE_KEYFIELD( m_flHeight, FIELD_FLOAT, "height" ),
+	DEFINE_KEYFIELD_AUTO( m_flLip, "lip" ),
+	DEFINE_KEYFIELD_AUTO( m_flWait, "wait" ),
+	DEFINE_KEYFIELD_AUTO( m_flHeight, "height" ),
 
 END_MAPENTITY()
 
@@ -232,9 +232,9 @@ public:
 	virtual void HitTop( void );
 	virtual void HitBottom( void );
 
-	void InputToggle(inputdata_t &data);
-	void InputGoUp(inputdata_t &data);
-	void InputGoDown(inputdata_t &data);
+	void InputToggle( inputdata_t &&inputdata );
+	void InputGoUp( inputdata_t &&inputdata );
+	void InputGoDown( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -421,7 +421,7 @@ void CPlatTrigger::Touch( CBaseEntity *pOther )
 //			useType - 
 //			value - 
 //-----------------------------------------------------------------------------
-void CFuncPlat::InputToggle(inputdata_t &data)
+void CFuncPlat::InputToggle( inputdata_t &&inputdata )
 {
 	if ( IsTogglePlat() )
 	{
@@ -439,13 +439,13 @@ void CFuncPlat::InputToggle(inputdata_t &data)
 	}
 }
 
-void CFuncPlat::InputGoUp(inputdata_t &data)
+void CFuncPlat::InputGoUp( inputdata_t &&inputdata )
 {
 	if ( m_toggle_state == TS_AT_BOTTOM )
 		GoUp();
 }
 
-void CFuncPlat::InputGoDown(inputdata_t &data)
+void CFuncPlat::InputGoDown( inputdata_t &&inputdata )
 {
 	if ( m_toggle_state == TS_AT_TOP )
 		GoDown();
@@ -714,9 +714,9 @@ public:
 	void Next( void );
 
 	//Inputs
-	void InputToggle(inputdata_t &data);
-	void InputStart(inputdata_t &data);
-	void InputStop(inputdata_t &data);
+	void InputToggle( inputdata_t &&inputdata );
+	void InputStart( inputdata_t &&inputdata );
+	void InputStop( inputdata_t &&inputdata );
 
 	void Start( void );
 	void Stop( void );
@@ -739,7 +739,7 @@ LINK_ENTITY_TO_CLASS( func_train, CFuncTrain );
 
 BEGIN_MAPENTITY( CFuncTrain )
 
-	DEFINE_KEYFIELD( m_flBlockDamage, FIELD_FLOAT, "dmg" ),
+	DEFINE_KEYFIELD_AUTO( m_flBlockDamage, "dmg" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
@@ -806,7 +806,7 @@ void CFuncTrain::Wait( void )
 {
 	//If we're moving passed a path track, then trip its output
 	variant_t emptyVariant;
-	m_hCurrentTarget->AcceptInput( "InPass", this, this, emptyVariant, 0 );
+	m_hCurrentTarget->AcceptInput( "InPass", this, this, Move(emptyVariant), 0 );
 
 	// need pointer to LAST target.
 	if ( m_hCurrentTarget->HasSpawnFlags( SF_TRAIN_WAIT_RETRIGGER ) || HasSpawnFlags( SF_TRAIN_WAIT_RETRIGGER ) )
@@ -1043,7 +1043,7 @@ void CFuncTrain::Precache( void )
 }
 
 
-void CFuncTrain::InputToggle( inputdata_t &data )
+void CFuncTrain::InputToggle( inputdata_t &&inputdata )
 {
 	//If we've been waiting to be retriggered, move to the next destination
 	if( HasSpawnFlags( SF_TRAIN_WAIT_RETRIGGER ) )
@@ -1057,13 +1057,13 @@ void CFuncTrain::InputToggle( inputdata_t &data )
 }
 
 
-void CFuncTrain::InputStart( inputdata_t &data )
+void CFuncTrain::InputStart( inputdata_t &&inputdata )
 {
 	Start();
 }
 
 
-void CFuncTrain::InputStop( inputdata_t &data )
+void CFuncTrain::InputStop( inputdata_t &&inputdata )
 {
 	Stop();
 }
@@ -1118,26 +1118,26 @@ void CFuncTrain::Stop( void )
 
 BEGIN_MAPENTITY( CFuncTrackTrain )
 
-	DEFINE_KEYFIELD( m_length, FIELD_FLOAT, "wheels" ),
-	DEFINE_KEYFIELD( m_height, FIELD_FLOAT, "height" ),
-	DEFINE_KEYFIELD( m_maxSpeed, FIELD_FLOAT, "startspeed" ),
-	DEFINE_KEYFIELD( m_flBank, FIELD_FLOAT, "bank" ),
-	DEFINE_KEYFIELD( m_flBlockDamage, FIELD_FLOAT, "dmg" ),
-	DEFINE_KEYFIELD( m_iszSoundMove, FIELD_SOUNDNAME, "MoveSound" ),
-	DEFINE_KEYFIELD( m_iszSoundMovePing, FIELD_SOUNDNAME, "MovePingSound" ),
-	DEFINE_KEYFIELD( m_iszSoundStart, FIELD_SOUNDNAME, "StartSound" ),
-	DEFINE_KEYFIELD( m_iszSoundStop, FIELD_SOUNDNAME, "StopSound" ),
-	DEFINE_KEYFIELD( m_nMoveSoundMinPitch, FIELD_INTEGER, "MoveSoundMinPitch" ),
-	DEFINE_KEYFIELD( m_nMoveSoundMaxPitch, FIELD_INTEGER, "MoveSoundMaxPitch" ),
-	DEFINE_KEYFIELD( m_flMoveSoundMinTime, FIELD_FLOAT, "MoveSoundMinTime" ),
-	DEFINE_KEYFIELD( m_flMoveSoundMaxTime, FIELD_FLOAT, "MoveSoundMaxTime" ),
+	DEFINE_KEYFIELD_AUTO( m_length, "wheels" ),
+	DEFINE_KEYFIELD_AUTO( m_height, "height" ),
+	DEFINE_KEYFIELD_AUTO( m_maxSpeed, "startspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_flBank, "bank" ),
+	DEFINE_KEYFIELD_AUTO( m_flBlockDamage, "dmg" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSoundMove, "MoveSound" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSoundMovePing, "MovePingSound" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSoundStart, "StartSound" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSoundStop, "StopSound" ),
+	DEFINE_KEYFIELD_AUTO( m_nMoveSoundMinPitch, "MoveSoundMinPitch" ),
+	DEFINE_KEYFIELD_AUTO( m_nMoveSoundMaxPitch, "MoveSoundMaxPitch" ),
+	DEFINE_KEYFIELD_AUTO( m_flMoveSoundMinTime, "MoveSoundMinTime" ),
+	DEFINE_KEYFIELD_AUTO( m_flMoveSoundMaxTime, "MoveSoundMaxTime" ),
 	DEFINE_FIELD( m_flNextMoveSoundTime, FIELD_TIME ),
-	DEFINE_KEYFIELD( m_eVelocityType, FIELD_INTEGER, "velocitytype" ),
-	DEFINE_KEYFIELD( m_eOrientationType, FIELD_INTEGER, "orientationtype" ),
+	DEFINE_KEYFIELD_AUTO( m_eVelocityType, "velocitytype" ),
+	DEFINE_KEYFIELD_AUTO( m_eOrientationType, "orientationtype" ),
 
-	DEFINE_KEYFIELD( m_bManualSpeedChanges, FIELD_BOOLEAN, "ManualSpeedChanges" ),
-	DEFINE_KEYFIELD( m_flAccelSpeed, FIELD_FLOAT, "ManualAccelSpeed" ),
-	DEFINE_KEYFIELD( m_flDecelSpeed, FIELD_FLOAT, "ManualDecelSpeed" ),
+	DEFINE_KEYFIELD_AUTO( m_bManualSpeedChanges, "ManualSpeedChanges" ),
+	DEFINE_KEYFIELD_AUTO( m_flAccelSpeed, "ManualAccelSpeed" ),
+	DEFINE_KEYFIELD_AUTO( m_flDecelSpeed, "ManualDecelSpeed" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Stop", InputStop ),
@@ -1263,7 +1263,7 @@ bool CFuncTrackTrain::KeyValue( const char *szKeyName, const char *szValue )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that stops the train.
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputStop( inputdata_t &inputdata )
+void CFuncTrackTrain::InputStop( inputdata_t &&inputdata )
 {
 	Stop();
 }
@@ -1272,7 +1272,7 @@ void CFuncTrackTrain::InputStop( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Input handler that starts the train moving.
 //------------------------------------------------------------------------------
-void CFuncTrackTrain::InputResume( inputdata_t &inputdata )
+void CFuncTrackTrain::InputResume( inputdata_t &&inputdata )
 {
 	m_flSpeed = m_oldSpeed;
 	Start();
@@ -1282,7 +1282,7 @@ void CFuncTrackTrain::InputResume( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Input handler that reverses the trains current direction of motion.
 //------------------------------------------------------------------------------
-void CFuncTrackTrain::InputReverse( inputdata_t &inputdata )
+void CFuncTrackTrain::InputReverse( inputdata_t &&inputdata )
 {
 	SetDirForward( !IsDirForward() );
 	SetSpeed( m_flSpeed );
@@ -1329,7 +1329,7 @@ void CFuncTrackTrain::SetDirForward( bool bForward )
 //------------------------------------------------------------------------------
 // Purpose: Input handler that starts the train moving.
 //------------------------------------------------------------------------------
-void CFuncTrackTrain::InputStartForward( inputdata_t &inputdata )
+void CFuncTrackTrain::InputStartForward( inputdata_t &&inputdata )
 {
 	SetDirForward( true );
 	SetSpeed( m_maxSpeed );
@@ -1339,7 +1339,7 @@ void CFuncTrackTrain::InputStartForward( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Input handler that starts the train moving.
 //------------------------------------------------------------------------------
-void CFuncTrackTrain::InputStartBackward( inputdata_t &inputdata )
+void CFuncTrackTrain::InputStartBackward( inputdata_t &&inputdata )
 {
 	SetDirForward( false );
 	SetSpeed( m_maxSpeed );
@@ -1359,7 +1359,7 @@ void CFuncTrackTrain::Start( void )
 //-----------------------------------------------------------------------------
 // Purpose: Toggles the train between moving and not moving.
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputToggle( inputdata_t &inputdata )
+void CFuncTrackTrain::InputToggle( inputdata_t &&inputdata )
 {
 	if ( m_flSpeed == 0 )
 	{
@@ -1403,7 +1403,7 @@ void CFuncTrackTrain::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TY
 // Purpose: Input handler that sets the speed of the train.
 // Input  : Float speed from 0 to max speed, in units per second.
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputSetSpeedReal( inputdata_t &inputdata )
+void CFuncTrackTrain::InputSetSpeedReal( inputdata_t &&inputdata )
 {
 	SetSpeed( clamp( inputdata.value.Float(), 0.f, m_maxSpeed ) );
 }
@@ -1413,7 +1413,7 @@ void CFuncTrackTrain::InputSetSpeedReal( inputdata_t &inputdata )
 // Purpose: Input handler that sets the speed of the train.
 // Input  : Float speed scale from 0 to 1.
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputSetSpeed( inputdata_t &inputdata )
+void CFuncTrackTrain::InputSetSpeed( inputdata_t &&inputdata )
 {
 	float flScale = clamp( inputdata.value.Float(), 0.f, 1.f );
 	SetSpeed( m_maxSpeed * flScale );
@@ -1426,7 +1426,7 @@ void CFuncTrackTrain::InputSetSpeed( inputdata_t &inputdata )
 // Input  : Float speed scale from -1 to 1. Negatives values indicate a reversed
 //			direction.
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputSetSpeedDir( inputdata_t &inputdata )
+void CFuncTrackTrain::InputSetSpeedDir( inputdata_t &&inputdata )
 {
 	float newSpeed = inputdata.value.Float();
 	SetDirForward( newSpeed >= 0 );
@@ -1441,7 +1441,7 @@ void CFuncTrackTrain::InputSetSpeedDir( inputdata_t &inputdata )
 // Input  : Float speed scale from -1 to 1. Negatives values indicate a reversed
 //			direction.
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputSetSpeedDirAccel( inputdata_t &inputdata )
+void CFuncTrackTrain::InputSetSpeedDirAccel( inputdata_t &&inputdata )
 {
 	SetSpeedDirAccel( inputdata.value.Float() );
 }
@@ -1450,7 +1450,7 @@ void CFuncTrackTrain::InputSetSpeedDirAccel( inputdata_t &inputdata )
 // Purpose: Input handler that sets a target path node to move to.
 // Input  : String name of the destination node
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputMoveToPathNode(inputdata_t &inputdata)
+void CFuncTrackTrain::InputMoveToPathNode( inputdata_t &&inputdata )
 {
 	m_strPathTarget = MAKE_STRING(inputdata.value.String());
 
@@ -1546,7 +1546,7 @@ void CFuncTrackTrain::SetSpeedDirAccel( float flNewSpeed )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputSetSpeedForwardModifier( inputdata_t &inputdata )
+void CFuncTrackTrain::InputSetSpeedForwardModifier( inputdata_t &&inputdata )
 {
 	SetSpeedForwardModifier( inputdata.value.Float() ) ;
 }
@@ -1566,7 +1566,7 @@ void CFuncTrackTrain::SetSpeedForwardModifier( float flModifier )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputTeleportToPathTrack( inputdata_t &inputdata )
+void CFuncTrackTrain::InputTeleportToPathTrack( inputdata_t &&inputdata )
 {
 	const char *pszName = inputdata.value.String();
 	CPathTrack *pTrack = dynamic_cast<CPathTrack*>( gEntList.FindEntityByName( NULL, pszName ) );
@@ -2262,7 +2262,7 @@ void CFuncTrackTrain::DoUpdateOrientation( const QAngle &curAngles, const QAngle
 // Purpose: Input handler that teleports the train to the input path node
 // Input  : path_track
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputTeleportToPathNode(inputdata_t &inputdata)
+void CFuncTrackTrain::InputTeleportToPathNode( inputdata_t &&inputdata )
 {
 	const char *pszName = inputdata.value.String();
 	CPathTrack *pNode = dynamic_cast<CPathTrack*>(gEntList.FindEntityByName(NULL, pszName));
@@ -2304,7 +2304,7 @@ void CFuncTrackTrain::TeleportToPathTrack( CPathTrack *pTeleport )
 	SetLocalAngularVelocity( vec3_angle );
 
 	variant_t emptyVariant;
-	pTeleport->AcceptInput( "InTeleport", this, this, emptyVariant, 0 );
+	pTeleport->AcceptInput( "InTeleport", this, this, Move(emptyVariant), 0 );
 }
 
 
@@ -2456,7 +2456,7 @@ void CFuncTrackTrain::FirePassInputs( CPathTrack *pStart, CPathTrack *pEnd, bool
 	while ( pCurrent && pCurrent != pEnd )
 	{
 		//Msg("Fired pass on %s\n", STRING(pCurrent->GetEntityName()) );
-		pCurrent->AcceptInput( "InPass", this, this, emptyVariant, 0 );
+		pCurrent->AcceptInput( "InPass", this, this, Move(emptyVariant), 0 );
 		pCurrent = forward ? pCurrent->GetNext() : pCurrent->GetPrevious();
 	}
 }
@@ -2501,7 +2501,7 @@ void CFuncTrackTrain::DeadEnd( void )
 	{
 		DevMsg( 2, "at %s\n", pTrack->GetDebugName() );
 		variant_t emptyVariant;
-		pTrack->AcceptInput( "InPass", this, this, emptyVariant, 0 );
+		pTrack->AcceptInput( "InPass", this, this, Move(emptyVariant), 0 );
 	}
 	else
 	{
@@ -2786,7 +2786,7 @@ void CFuncTrackTrain::MoveDone()
 //-----------------------------------------------------------------------------
 // Purpose: Lock the current orientation of the train.
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputLockOrientation(inputdata_t &inputdata)
+void CFuncTrackTrain::InputLockOrientation( inputdata_t &&inputdata )
 {
 	m_eOrientationType = TrainOrientation_Fixed;
 }
@@ -2794,7 +2794,7 @@ void CFuncTrackTrain::InputLockOrientation(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: Unlock the current orientation of the train.
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputUnlockOrientation(inputdata_t &inputdata)
+void CFuncTrackTrain::InputUnlockOrientation( inputdata_t &&inputdata )
 {
 	m_eOrientationType = TrainOrientation_AtPathTracks;
 }
@@ -2802,7 +2802,7 @@ void CFuncTrackTrain::InputUnlockOrientation(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: Set a new max speed for the train.
 //-----------------------------------------------------------------------------
-void CFuncTrackTrain::InputSetMaxSpeed(inputdata_t &inputdata)
+void CFuncTrackTrain::InputSetMaxSpeed( inputdata_t &&inputdata )
 {
 	float m_maxSpeed = inputdata.value.Float();
 	SetSpeed(m_maxSpeed);
@@ -2938,9 +2938,9 @@ LINK_ENTITY_TO_CLASS( func_trackchange, CFuncTrackChange );
 
 BEGIN_MAPENTITY( CFuncTrackChange )
 
-	DEFINE_KEYFIELD( m_trackTopName, FIELD_STRING, "toptrack" ),
-	DEFINE_KEYFIELD( m_trackBottomName, FIELD_STRING, "bottomtrack" ),
-	DEFINE_KEYFIELD( m_trainName, FIELD_STRING, "train" ),
+	DEFINE_KEYFIELD_AUTO( m_trackTopName, "toptrack" ),
+	DEFINE_KEYFIELD_AUTO( m_trackBottomName, "bottomtrack" ),
+	DEFINE_KEYFIELD_AUTO( m_trainName, "train" ),
 	
 END_MAPENTITY()
 
@@ -3272,7 +3272,7 @@ public:
 	DECLARE_CLASS( CFuncTrackAuto, CFuncTrackChange );
 	void			Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	virtual void	UpdateAutoTargets( int toggleState );
-	void			TriggerTrackChange( inputdata_t &inputdata );
+	void			TriggerTrackChange( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 };
@@ -3319,7 +3319,7 @@ void CFuncTrackAuto::UpdateAutoTargets( int toggleState )
 }
 
 
-void CFuncTrackAuto::TriggerTrackChange ( inputdata_t &inputdata )
+void CFuncTrackAuto::TriggerTrackChange ( inputdata_t &&inputdata )
 {
 	CPathTrack *pTarget;
 

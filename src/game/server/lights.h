@@ -30,12 +30,12 @@ public:
 	void	Toggle( void );
 
 	// Input handlers
-	void	InputSetPattern( inputdata_t &inputdata );
-	void	InputFadeToPattern( inputdata_t &inputdata );
+	void	InputSetPattern( inputdata_t &&inputdata );
+	void	InputFadeToPattern( inputdata_t &&inputdata );
 
-	void	InputToggle( inputdata_t &inputdata );
-	void	InputTurnOn( inputdata_t &inputdata );
-	void	InputTurnOff( inputdata_t &inputdata );
+	void	InputToggle( inputdata_t &&inputdata );
+	void	InputTurnOn( inputdata_t &&inputdata );
+	void	InputTurnOff( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 

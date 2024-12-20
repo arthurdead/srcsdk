@@ -78,10 +78,10 @@ public:
 	void ReplaceEntity(CBaseEntity *pEntity, inputdata_t &inputdata);
 
 	// Inputs
-	void InputReplace( inputdata_t &inputdata );
-	void InputReplaceEntity( inputdata_t &inputdata );
+	void InputReplace( inputdata_t &&inputdata );
+	void InputReplaceEntity( inputdata_t &&inputdata );
 
-	void InputSetReplacementEntity( inputdata_t &inputdata );
+	void InputSetReplacementEntity( inputdata_t &&inputdata );
 
 	COutputEHANDLE m_OnReplace; // Passes the entity we replaced the target with, fired multiple times if REPLACEMENTTYPE_TEMPLATE created multiple entities
 };
@@ -91,14 +91,14 @@ LINK_ENTITY_TO_CLASS(point_entity_replace, CPointEntityReplace);
 BEGIN_DATADESC( CPointEntityReplace )
 
 	// Keys
-	DEFINE_KEYFIELD( m_iszReplacementEntity, FIELD_STRING, "ReplacementEntity" ),
+	DEFINE_KEYFIELD_AUTO( m_iszReplacementEntity, "ReplacementEntity" ),
 	DEFINE_FIELD( m_hReplacementEntity, FIELD_EHANDLE ),
-	DEFINE_KEYFIELD( m_iReplacementType, FIELD_INTEGER, "ReplacementType" ),
-	DEFINE_KEYFIELD( m_iReplacementLocation, FIELD_INTEGER, "ReplacementLocation" ),
-	DEFINE_KEYFIELD( m_bRemoveOriginalEntity, FIELD_BOOLEAN, "RemoveOriginalEntity" ),
+	DEFINE_KEYFIELD_AUTO( m_iReplacementType, "ReplacementType" ),
+	DEFINE_KEYFIELD_AUTO( m_iReplacementLocation, "ReplacementLocation" ),
+	DEFINE_KEYFIELD_AUTO( m_bRemoveOriginalEntity, "RemoveOriginalEntity" ),
 	DEFINE_FIELD( m_iTakeStuff, FIELD_INTEGER ),
 	DEFINE_UTLVECTOR( m_iszOtherTakes, FIELD_STRING ),
-	DEFINE_KEYFIELD( m_bFireOriginalEntityAsCaller, FIELD_BOOLEAN, "TargetIsCaller" ),
+	DEFINE_KEYFIELD_AUTO( m_bFireOriginalEntityAsCaller, "TargetIsCaller" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Replace", InputReplace ),
@@ -468,7 +468,7 @@ void CPointEntityReplace::ReplaceEntity(CBaseEntity *pEntity, inputdata_t &input
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointEntityReplace::InputReplace( inputdata_t &inputdata )
+void CPointEntityReplace::InputReplace( inputdata_t &&inputdata )
 {
 	CBaseEntity *pEntity = gEntList.FindEntityByName(NULL, STRING(m_target), this, inputdata.pActivator, inputdata.pCaller);
 	if (pEntity)
@@ -480,7 +480,7 @@ void CPointEntityReplace::InputReplace( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointEntityReplace::InputReplaceEntity( inputdata_t &inputdata )
+void CPointEntityReplace::InputReplaceEntity( inputdata_t &&inputdata )
 {
 	if (inputdata.value.Entity())
 		ReplaceEntity(inputdata.value.Entity(), inputdata);
@@ -489,7 +489,7 @@ void CPointEntityReplace::InputReplaceEntity( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointEntityReplace::InputSetReplacementEntity( inputdata_t &inputdata )
+void CPointEntityReplace::InputSetReplacementEntity( inputdata_t &&inputdata )
 {
 	m_iszReplacementEntity = inputdata.value.StringID();
 	m_hReplacementEntity = NULL;

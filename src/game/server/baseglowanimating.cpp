@@ -21,10 +21,10 @@ END_SEND_TABLE()
 
 BEGIN_MAPENTITY( CBaseGlowAnimating )
 
-	DEFINE_KEYFIELD(m_bGlowEnabled, FIELD_BOOLEAN, "glowstate"),
-	//DEFINE_KEYFIELD(m_bRenderWhenOccluded, FIELD_BOOLEAN, "glowrenderwhenoccluded"),
-	//DEFINE_KEYFIELD(m_bRenderWhenUnOccluded, FIELD_BOOLEAN, "glowrenderwhenunoccluded"),
-	DEFINE_KEYFIELD(m_clrGlow, FIELD_COLOR32, "glowcolor"),
+	DEFINE_KEYFIELD_AUTO( m_bGlowEnabled, "glowstate" ),
+	//DEFINE_KEYFIELD_AUTO( m_bRenderWhenOccluded, "glowrenderwhenoccluded" ),
+	//DEFINE_KEYFIELD_AUTO( m_bRenderWhenUnOccluded, "glowrenderwhenunoccluded" ),
+	DEFINE_KEYFIELD_AUTO( m_clrGlow, "glowcolor" ),
 
 	// I/O
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartGlowing", InputStartGlow ),
@@ -104,7 +104,7 @@ void CBaseGlowAnimating::SetGlowVector(float r, float g, float b )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseGlowAnimating::InputStartGlow( inputdata_t &inputData )
+void CBaseGlowAnimating::InputStartGlow( inputdata_t &&inputdata )
 {
 	AddGlowEffect();
 }
@@ -112,7 +112,7 @@ void CBaseGlowAnimating::InputStartGlow( inputdata_t &inputData )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseGlowAnimating::InputEndGlow( inputdata_t &inputData )
+void CBaseGlowAnimating::InputEndGlow( inputdata_t &&inputdata )
 {
 	RemoveGlowEffect();
 }

@@ -34,10 +34,10 @@
 ConVar g_debug_vehicledriver( "g_debug_vehicledriver", "0", FCVAR_CHEAT );
 
 BEGIN_MAPENTITY( CNPC_VehicleDriver )
-	DEFINE_KEYFIELD( m_iszVehicleName, FIELD_STRING, "vehicle" ),
+	DEFINE_KEYFIELD_AUTO( m_iszVehicleName, "vehicle" ),
 
-	DEFINE_KEYFIELD( m_flDriversMaxSpeed, FIELD_FLOAT, "drivermaxspeed" ),
-	DEFINE_KEYFIELD( m_flDriversMinSpeed, FIELD_FLOAT, "driverminspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_flDriversMaxSpeed, "drivermaxspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_flDriversMinSpeed, "driverminspeed" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetDriversMaxSpeed", InputSetDriversMaxSpeed ),
@@ -1000,7 +1000,7 @@ void CNPC_VehicleDriver::RecalculateSpeeds( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CNPC_VehicleDriver::InputSetDriversMaxSpeed( inputdata_t &inputdata )
+void CNPC_VehicleDriver::InputSetDriversMaxSpeed( inputdata_t &&inputdata )
 {
 	m_flDriversMaxSpeed = inputdata.value.Float();
 
@@ -1010,7 +1010,7 @@ void CNPC_VehicleDriver::InputSetDriversMaxSpeed( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CNPC_VehicleDriver::InputSetDriversMinSpeed( inputdata_t &inputdata )
+void CNPC_VehicleDriver::InputSetDriversMinSpeed( inputdata_t &&inputdata )
 {
 	m_flDriversMinSpeed = inputdata.value.Float();
 
@@ -1020,7 +1020,7 @@ void CNPC_VehicleDriver::InputSetDriversMinSpeed( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CNPC_VehicleDriver::InputStartForward( inputdata_t &inputdata )
+void CNPC_VehicleDriver::InputStartForward( inputdata_t &&inputdata )
 {
 	CLEARBITS( m_spawnflags, SF_VEHICLEDRIVER_INACTIVE );
 	if ( m_NPCState == NPC_STATE_IDLE )
@@ -1035,7 +1035,7 @@ void CNPC_VehicleDriver::InputStartForward( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Tell the driver to stop moving
 //-----------------------------------------------------------------------------
-void CNPC_VehicleDriver::InputStop( inputdata_t &inputdata )
+void CNPC_VehicleDriver::InputStop( inputdata_t &&inputdata )
 {
 	m_flMaxSpeed = 0;
 }
@@ -1043,7 +1043,7 @@ void CNPC_VehicleDriver::InputStop( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Tell the driver to start firing at targets
 //-----------------------------------------------------------------------------
-void CNPC_VehicleDriver::InputStartFiring( inputdata_t &inputdata )
+void CNPC_VehicleDriver::InputStartFiring( inputdata_t &&inputdata )
 {
 	CLEARBITS( m_spawnflags, SF_VEHICLEDRIVER_INACTIVE );
 	SetCondition( COND_PROVOKED );
@@ -1080,7 +1080,7 @@ void CNPC_VehicleDriver::InputStartFiring( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Tell the driver to stop firing at targets
 //-----------------------------------------------------------------------------
-void CNPC_VehicleDriver::InputStopFiring( inputdata_t &inputdata )
+void CNPC_VehicleDriver::InputStopFiring( inputdata_t &&inputdata )
 {
 	// If the vehicle has a weapon, set our capability
 	CapabilitiesRemove( bits_CAP_INNATE_RANGE_ATTACK1 );
@@ -1090,7 +1090,7 @@ void CNPC_VehicleDriver::InputStopFiring( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CNPC_VehicleDriver::InputGotoPathCorner( inputdata_t &inputdata )
+void CNPC_VehicleDriver::InputGotoPathCorner( inputdata_t &&inputdata )
 {
 	string_t iszPathName = inputdata.value.StringID();
 	if ( iszPathName != NULL_STRING )

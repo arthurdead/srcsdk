@@ -73,9 +73,9 @@ private:
 
 public:
 	// Input functions
-	void InputApplyRelationship( inputdata_t &inputdata );
-	void InputRevertRelationship( inputdata_t &inputdata );
-	void InputRevertToDefaultRelationship( inputdata_t &inputdata );
+	void InputApplyRelationship( inputdata_t &&inputdata );
+	void InputRevertRelationship( inputdata_t &&inputdata );
+	void InputRevertToDefaultRelationship( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 };
@@ -84,16 +84,16 @@ LINK_ENTITY_TO_CLASS( ai_relationship, CAI_Relationship );
 
 BEGIN_MAPENTITY( CAI_Relationship )
 
-	DEFINE_KEYFIELD( m_iszSubject, FIELD_STRING, "subject" ),
-	DEFINE_KEYFIELD( m_iszSubjectClass, FIELD_STRING, "subjectclass" ),
-	DEFINE_KEYFIELD( m_iszTargetClass, FIELD_STRING, "targetclass" ),
-	DEFINE_KEYFIELD( m_iDisposition, FIELD_INTEGER, "disposition" ),
-	DEFINE_KEYFIELD( m_iRank, FIELD_INTEGER, "rank" ),
-	DEFINE_KEYFIELD( m_fStartActive, FIELD_BOOLEAN, "StartActive" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSubject, "subject" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSubjectClass, "subjectclass" ),
+	DEFINE_KEYFIELD_AUTO( m_iszTargetClass, "targetclass" ),
+	DEFINE_KEYFIELD_AUTO( m_iDisposition, "disposition" ),
+	DEFINE_KEYFIELD_AUTO( m_iRank, "rank" ),
+	DEFINE_KEYFIELD_AUTO( m_fStartActive, "StartActive" ),
 
-	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "radius" ),
 
-	DEFINE_KEYFIELD( m_bReciprocal, FIELD_BOOLEAN, "reciprocal" ),
+	DEFINE_KEYFIELD_AUTO( m_bReciprocal, "reciprocal" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "ApplyRelationship", InputApplyRelationship ),
@@ -158,21 +158,21 @@ void CAI_Relationship::SetActive( bool bActive )
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-void CAI_Relationship::InputApplyRelationship( inputdata_t &inputdata )
+void CAI_Relationship::InputApplyRelationship( inputdata_t &&inputdata )
 {
 	ApplyRelationship( inputdata.pActivator, inputdata.pCaller );
 }
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-void CAI_Relationship::InputRevertRelationship( inputdata_t &inputdata )
+void CAI_Relationship::InputRevertRelationship( inputdata_t &&inputdata )
 {
 	RevertRelationship( inputdata.pActivator, inputdata.pCaller );
 }
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-void CAI_Relationship::InputRevertToDefaultRelationship( inputdata_t &inputdata )
+void CAI_Relationship::InputRevertToDefaultRelationship( inputdata_t &&inputdata )
 {
 	RevertToDefaultRelationship( inputdata.pActivator, inputdata.pCaller );
 }

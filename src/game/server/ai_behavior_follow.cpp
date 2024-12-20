@@ -1728,7 +1728,7 @@ bool CAI_FollowBehavior::ShouldAlwaysThink()
 //-----------------------------------------------------------------------------
 
 BEGIN_MAPENTITY( CAI_FollowGoal, MAPENT_POINTCLASS )
-	DEFINE_KEYFIELD(	m_iFormation, FIELD_INTEGER, "Formation" ),
+	DEFINE_KEYFIELD_AUTO( m_iFormation, "Formation" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "OutsideTransition",	InputOutsideTransition ),
 END_MAPENTITY()
@@ -1774,7 +1774,7 @@ void CAI_FollowGoal::DisableGoal( CAI_BaseNPC *pAI  )
 
 //-------------------------------------
 
-void CAI_FollowGoal::InputOutsideTransition( inputdata_t &inputdata )
+void CAI_FollowGoal::InputOutsideTransition( inputdata_t &&inputdata )
 {
 	EnterDormant();
 }

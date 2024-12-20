@@ -79,8 +79,8 @@ private:
 	void				AccelerationThink( void );
 
 	// Input handlers
-	void				InputMoveToFloor( inputdata_t &inputdata );	// Start the brush moving to the specified floor
-	void				InputDisable( inputdata_t &inputdata );		// Prevent the elevator from moving again
+	void				InputMoveToFloor( inputdata_t &&inputdata );	// Start the brush moving to the specified floor
+	void				InputDisable( inputdata_t &&inputdata );		// Prevent the elevator from moving again
 
 	string_t	m_soundStart;			// start and looping sound
 	string_t	m_soundStop;			// stop sound

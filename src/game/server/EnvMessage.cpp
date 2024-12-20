@@ -20,10 +20,10 @@ LINK_ENTITY_TO_CLASS( env_message, CMessage );
 
 BEGIN_MAPENTITY( CMessage )
 
-	DEFINE_KEYFIELD( m_iszMessage, FIELD_STRING, "message" ),
-	DEFINE_KEYFIELD( m_sNoise, FIELD_SOUNDNAME, "messagesound" ),
-	DEFINE_KEYFIELD( m_MessageAttenuation, FIELD_INTEGER, "messageattenuation" ),
-	DEFINE_KEYFIELD( m_MessageVolume, FIELD_FLOAT, "messagevolume" ),
+	DEFINE_KEYFIELD_AUTO( m_iszMessage, "message" ),
+	DEFINE_KEYFIELD_AUTO( m_sNoise, "messagesound" ),
+	DEFINE_KEYFIELD_AUTO( m_MessageAttenuation, "messageattenuation" ),
+	DEFINE_KEYFIELD_AUTO( m_MessageVolume, "messagevolume" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "ShowMessage", InputShowMessage ),
 
@@ -87,7 +87,7 @@ void CMessage::Precache( void )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for showing the message and/or playing the sound.
 //-----------------------------------------------------------------------------
-void CMessage::InputShowMessage( inputdata_t &inputdata )
+void CMessage::InputShowMessage( inputdata_t &&inputdata )
 {
 	CBaseEntity *pPlayer = NULL;
 
@@ -152,10 +152,10 @@ public:
 	DECLARE_MAPENTITY();
 
 	void	Spawn( void );
-	void	InputRollCredits( inputdata_t &inputdata );
-	void	InputRollOutroCredits( inputdata_t &inputdata );
-	void	InputShowLogo( inputdata_t &inputdata );
-	void	InputSetLogoLength( inputdata_t &inputdata );
+	void	InputRollCredits( inputdata_t &&inputdata );
+	void	InputRollOutroCredits( inputdata_t &&inputdata );
+	void	InputShowLogo( inputdata_t &&inputdata );
+	void	InputSetLogoLength( inputdata_t &&inputdata );
 
 	COutputEvent m_OnCreditsDone;
 
@@ -181,7 +181,7 @@ BEGIN_MAPENTITY( CCredits )
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetLogoLength", InputSetLogoLength ),
 	DEFINE_OUTPUT( m_OnCreditsDone, "OnCreditsDone"),
 
-	DEFINE_KEYFIELD( m_iszCreditsFile, FIELD_STRING, "CreditsFile" ),
+	DEFINE_KEYFIELD_AUTO( m_iszCreditsFile, "CreditsFile" ),
 
 END_MAPENTITY()
 
@@ -240,7 +240,7 @@ void CCredits::RollOutroCredits()
 	MessageEnd();
 }
 
-void CCredits::InputRollOutroCredits( inputdata_t &inputdata )
+void CCredits::InputRollOutroCredits( inputdata_t &&inputdata )
 {
 	RollOutroCredits();
 
@@ -250,7 +250,7 @@ void CCredits::InputRollOutroCredits( inputdata_t &inputdata )
 	gamestats->Event_Credits();
 }
 
-void CCredits::InputShowLogo( inputdata_t &inputdata )
+void CCredits::InputShowLogo( inputdata_t &&inputdata )
 {
 	CRecipientFilter filter; 
 	filter.AddAllPlayers(); 
@@ -272,12 +272,12 @@ void CCredits::InputShowLogo( inputdata_t &inputdata )
 	}
 }
 
-void CCredits::InputSetLogoLength( inputdata_t &inputdata )
+void CCredits::InputSetLogoLength( inputdata_t &&inputdata )
 {
 	m_flLogoLength = inputdata.value.Float();
 }
 
-void CCredits::InputRollCredits( inputdata_t &inputdata )
+void CCredits::InputRollCredits( inputdata_t &&inputdata )
 {
 	CRecipientFilter filter; 
 	filter.AddAllPlayers(); 
@@ -299,9 +299,9 @@ public:
 	DECLARE_MAPENTITY();
 
 	void Spawn( void );
-	void InputRollCredits( inputdata_t &inputdata );
-	void InputRollStatsCrawl( inputdata_t &inputdata );
-	void InputSkipStateChanged( inputdata_t &inputdata );
+	void InputRollCredits( inputdata_t &&inputdata );
+	void InputRollStatsCrawl( inputdata_t &&inputdata );
+	void InputSkipStateChanged( inputdata_t &&inputdata );
 
 	void SkipThink( void );
 	void CalcSkipState( int &skippingPlayers, int &totalPlayers );
@@ -327,7 +327,7 @@ void COuttroStats::Spawn( void )
 }
 
 //-----------------------------------------------------------------------------
-void COuttroStats::InputRollStatsCrawl( inputdata_t &inputdata )
+void COuttroStats::InputRollStatsCrawl( inputdata_t &&inputdata )
 {
 	CReliableBroadcastRecipientFilter players;
 	UserMessageBegin( players, "StatsCrawlMsg" );
@@ -338,7 +338,7 @@ void COuttroStats::InputRollStatsCrawl( inputdata_t &inputdata )
 }
 
 //-----------------------------------------------------------------------------
-void COuttroStats::InputRollCredits( inputdata_t &inputdata )
+void COuttroStats::InputRollCredits( inputdata_t &&inputdata )
 {
 	CReliableBroadcastRecipientFilter players;
 	UserMessageBegin( players, "creditsMsg" );
@@ -367,7 +367,7 @@ void COuttroStats::CalcSkipState( int &skippingPlayers, int &totalPlayers )
 	totalPlayers = 0;
 }
 
-void COuttroStats::InputSkipStateChanged( inputdata_t &inputdata )
+void COuttroStats::InputSkipStateChanged( inputdata_t &&inputdata )
 {
 	int iNumSkips = 0;
 	int iNumPlayers = 0;
@@ -391,7 +391,7 @@ void CC_Test_Outtro_Stats( const CCommand& args )
 	if ( pOuttro )
 	{
 		variant_t emptyVariant;
-		pOuttro->AcceptInput( "RollStatsCrawl", NULL, NULL, emptyVariant, 0 );
+		pOuttro->AcceptInput( "RollStatsCrawl", NULL, NULL, Move(emptyVariant), 0 );
 	}
 }
 static ConCommand test_outtro_stats("test_outtro_stats", CC_Test_Outtro_Stats, 0, FCVAR_CHEAT);

@@ -28,12 +28,12 @@ public:
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 
 	// Input handlers
-	void InputEnable( inputdata_t &inputdata );
-	void InputEnableRefire( inputdata_t &inputdata );  // Private input handler, not in FGD
-	void InputDisable( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
-	void InputTrigger( inputdata_t &inputdata );
-	void InputCancelPending( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputEnableRefire( inputdata_t &&inputdata );  // Private input handler, not in FGD
+	void InputDisable( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputTrigger( inputdata_t &&inputdata );
+	void InputCancelPending( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 

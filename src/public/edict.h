@@ -24,7 +24,7 @@ struct edict_t;
 //-----------------------------------------------------------------------------
 // Purpose: Defines the ways that a map can be loaded.
 //-----------------------------------------------------------------------------
-enum MapLoadType_t
+enum MapLoadType_t : unsigned int
 {
 	MapLoad_NewGame = 0,
 	MapLoad_Unused1,
@@ -68,33 +68,38 @@ inline CGlobalVars::CGlobalVars( bool bIsClient ) :
 }
 
 
-class CPlayerState;
 class IServerNetworkable;
 class IServerEntity;
 
+enum EdictStateFlags_t : unsigned int
+{
+	FL_EDICT_NONE = 0,
 
-#define FL_EDICT_CHANGED	(1<<0)	// Game DLL sets this when the entity state changes
-									// Mutually exclusive with FL_EDICT_PARTIAL_CHANGE.
-									
-#define FL_EDICT_FREE		(1<<1)	// this edict if free for reuse
-#define FL_EDICT_FULL		(1<<2)	// this is a full server entity
+	FL_EDICT_CHANGED =	(1<<0),	// Game DLL sets this when the entity state changes
+										// Mutually exclusive with FL_EDICT_PARTIAL_CHANGE.
+										
+	FL_EDICT_FREE =		(1<<1),	// this edict if free for reuse
+	FL_EDICT_FULL =		(1<<2),	// this is a full server entity
 
-#define FL_EDICT_FULLCHECK	(0<<0)  // call ShouldTransmit() each time, this is a fake flag
-#define FL_EDICT_ALWAYS		(1<<3)	// always transmit this entity
-#define FL_EDICT_DONTSEND	(1<<4)	// don't transmit this entity
-#define FL_EDICT_PVSCHECK	(1<<5)	// always transmit entity, but cull against PVS
+	FL_EDICT_ALWAYS =		(1<<3),	// always transmit this entity
+	FL_EDICT_DONTSEND =	(1<<4),	// don't transmit this entity
+	FL_EDICT_PVSCHECK =	(1<<5),	// always transmit entity, but cull against PVS
 
-// Used by local network backdoor.
-#define FL_EDICT_PENDING_DORMANT_CHECK	(1<<6)
+	// Used by local network backdoor.
+	FL_EDICT_PENDING_DORMANT_CHECK =	(1<<6),
 
-// This is always set at the same time EFL_DIRTY_PVS_INFORMATION is set, but it 
-// gets cleared in a different place.
-#define FL_EDICT_DIRTY_PVS_INFORMATION	(1<<7)
+	// This is always set at the same time EFL_DIRTY_PVS_INFORMATION is set, but it 
+	// gets cleared in a different place.
+	FL_EDICT_DIRTY_PVS_INFORMATION =	(1<<7),
 
-// This is used internally to edict_t to remember that it's carrying a 
-// "full change list" - all its properties might have changed their value.
-#define FL_FULL_EDICT_CHANGED			(1<<8)
+	// This is used internally to edict_t to remember that it's carrying a 
+	// "full change list" - all its properties might have changed their value.
+	FL_FULL_EDICT_CHANGED =			(1<<8),
 
+	FL_EDICT_FULLCHECK =	(1<<9),  // call ShouldTransmit() each time, this is a fake flag
+};
+
+FLAGENUM_OPERATORS( EdictStateFlags_t, unsigned int )
 
 // Max # of variable changes we'll track in an entity before we treat it
 // like they all changed.
@@ -198,7 +203,7 @@ public:
 
 	// NOTE: this is in the edict instead of being accessed by a virtual because the engine needs fast access to it.
 	// NOTE: YOU CAN'T CHANGE THE LAYOUT OR SIZE OF CBASEEDICT AND REMAIN COMPATIBLE WITH HL2_VC6!!!!!
-	int	m_fStateFlags;	
+	EdictStateFlags_t	m_fStateFlags;	
 
 	// NOTE: this is in the edict instead of being accessed by a virtual because the engine needs fast access to it.
 	// int m_NetworkSerialNumber;
@@ -346,7 +351,7 @@ inline void CBaseEdict::ClearFree()
 
 inline void	CBaseEdict::ClearTransmitState()
 {
-	m_fStateFlags &= ~(FL_EDICT_ALWAYS|FL_EDICT_PVSCHECK|FL_EDICT_DONTSEND);
+	m_fStateFlags &= ~(FL_EDICT_ALWAYS|FL_EDICT_PVSCHECK|FL_EDICT_DONTSEND|FL_EDICT_FULLCHECK);
 }
 
 inline const IServerEntity* CBaseEdict::GetIServerEntity() const
@@ -376,7 +381,7 @@ inline void CBaseEdict::SetEdict( IServerUnknown *pUnk, bool bFullEdict )
 	}
 	else
 	{
-		m_fStateFlags = 0;
+		m_fStateFlags = FL_EDICT_NONE;
 	}
 }
 

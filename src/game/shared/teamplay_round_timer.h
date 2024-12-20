@@ -65,21 +65,21 @@ public:
 
 	void		 SetShowInHud( bool bShowInHUD ) { m_bShowInHUD = bShowInHUD; }
 
-	int UpdateTransmitState();
+	EdictStateFlags_t UpdateTransmitState();
 
-	void InputEnable( inputdata_t &input );
-	void InputDisable( inputdata_t &input );
-	void InputPause( inputdata_t &input );
-	void InputResume( inputdata_t &input );
-	void InputSetTime( inputdata_t &input );
-	void InputAddTime( inputdata_t &input );
-	void InputRestart( inputdata_t &input );
-	void InputShowInHUD( inputdata_t &input );
-	void InputRoundSpawn( inputdata_t &inputdata );
-	void InputSetMaxTime( inputdata_t &input );
-	void InputAutoCountdown( inputdata_t &input );
-	void InputAddTeamTime( inputdata_t &input );
-	void InputSetSetupTime( inputdata_t &input );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputPause( inputdata_t &&inputdata );
+	void InputResume( inputdata_t &&inputdata );
+	void InputSetTime( inputdata_t &&inputdata );
+	void InputAddTime( inputdata_t &&inputdata );
+	void InputRestart( inputdata_t &&inputdata );
+	void InputShowInHUD( inputdata_t &&inputdata );
+	void InputRoundSpawn( inputdata_t &&inputdata );
+	void InputSetMaxTime( inputdata_t &&inputdata );
+	void InputAutoCountdown( inputdata_t &&inputdata );
+	void InputAddTeamTime( inputdata_t &&inputdata );
+	void InputSetSetupTime( inputdata_t &&inputdata );
 
 #endif
 
@@ -112,8 +112,8 @@ private:
 
 private:
 	CNetworkVar( bool, m_bTimerPaused );
-	CNetworkVar( float, m_flTimeRemaining );
-	CNetworkVar( float, m_flTimerEndTime );	
+	CNetworkTime( m_flTimeRemaining );
+	CNetworkTime( m_flTimerEndTime );	
 	CNetworkVar( bool, m_bIsDisabled );
 	CNetworkVar( bool, m_bShowInHUD );
 	CNetworkVar( int, m_nTimerLength );			// current timer's length (used in the timer panel if no max length is set)
@@ -125,7 +125,7 @@ private:
 	CNetworkVar( bool, m_bStartPaused );		// start the timer paused when it spawns
 	CNetworkVar( bool, m_bShowTimeRemaining );  //show how much time is left (default) instead of how much time has passed.
 	CNetworkVar( bool, m_bInCaptureWatchState );
-	CNetworkVar( float, m_flTotalTime );
+	CNetworkTime( m_flTotalTime );
 	CNetworkVar( bool, m_bStopWatchTimer );
 
 	bool			m_bFireFinished;

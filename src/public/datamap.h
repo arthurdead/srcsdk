@@ -18,6 +18,12 @@
 #include "basehandle.h"
 #include "interval.h"
 #include "mathlib/vmatrix.h"
+#include "bittools.h"
+#include "networkvar.h"
+
+#if defined( CLIENT_DLL ) || defined( GAME_DLL )
+	#include "ehandle.h"
+#endif
 
 #include "tier1/utlvector.h"
 
@@ -49,119 +55,335 @@ struct inputdata_t;
 
 #define INVALID_TIME (FLT_MAX * -1.0) // Special value not rebased on save/load
 
-enum _fieldtypes : unsigned char
+enum fieldtype_t : uint64
 {
 	FIELD_VOID = 0,			// No type or value
+
 	FIELD_FLOAT,			// Any floating point value
-	FIELD_STRING,			// A string ID (return from ALLOC_STRING)
+	FIELD_INTERVAL,			// a start and range floating point interval ( e.g., 3.2->3.6 == 3.2 and 0.4 )
+
+	FIELD_UINTEGER,
+	FIELD_INTEGER,			// Any integer or enum
+	FIELD_INTEGER64,		// 64bit integer
+	FIELD_UINTEGER64,
+	FIELD_USHORT,
+	FIELD_SHORT,			// 2 byte integer
+	FIELD_BOOLEAN,			// boolean, implemented as an int, I may use this as a hint for compression
+	FIELD_CHARACTER,		// a byte
+	FIELD_UCHARACTER,
+	FIELD_SCHARACTER,
+
+	FIELD_MODELINDEX,
+
+	FIELD_COLOR32,			// 8-bit per channel r,g,b,a (32bit color)
+	FIELD_COLOR32E,
+	FIELD_COLOR24,
+
+	FIELD_POOLED_STRING,			// A string ID (return from ALLOC_STRING)
+	FIELD_CSTRING,
+
 	FIELD_VECTOR,			// Any vector, QAngle, or AngularImpulse
 	FIELD_QUATERNION,		// A quaternion
-	FIELD_INTEGER,			// Any integer or enum
-	FIELD_BOOLEAN,			// boolean, implemented as an int, I may use this as a hint for compression
-	FIELD_SHORT,			// 2 byte integer
-	FIELD_CHARACTER,		// a byte
-	FIELD_COLOR32,			// 8-bit per channel r,g,b,a (32bit color)
-	FIELD_COLOR24,
-	FIELD_EMBEDDED,			// an embedded object with a datadesc, recursively traverse and embedded class/structure based on an additional typedescription
-	FIELD_CUSTOM,			// special type that contains function pointers to it's read/write/parse functions
-
-	FIELD_CLASSPTR,			// CBaseEntity *
-	FIELD_EHANDLE,			// Entity handle
-	FIELD_EDICT,			// edict_t *
-
-	FIELD_POSITION_VECTOR,	// A world coordinate (these are fixed up across level transitions automagically)
-	FIELD_TIME,				// a floating point time (these are fixed up automatically too!)
-	FIELD_TICK,				// an integer tick count( fixed up similarly to time)
-	FIELD_MODELNAME,		// Engine string that is a model name (needs precache)
-	FIELD_SOUNDNAME,		// Engine string that is a sound name (needs precache)
-
-	FIELD_INPUT,			// a list of inputed data fields (all derived from CMultiInputVar)
-	FIELD_FUNCTION,			// A class function pointer (Think, Use, etc)
-
-	FIELD_VMATRIX,			// a vmatrix (output coords are NOT worldspace)
-
-	// NOTE: Use float arrays for local transformations that don't need to be fixed up.
-	FIELD_VMATRIX_WORLDSPACE,// A VMatrix that maps some local space to world space (translation is fixed up on level transitions)
-	FIELD_MATRIX3X4_WORLDSPACE,	// matrix3x4_t that maps some local space to world space (translation is fixed up on level transitions)
-
-	FIELD_INTERVAL,			// a start and range floating point interval ( e.g., 3.2->3.6 == 3.2 and 0.4 )
-	FIELD_MODELINDEX,		// a model index
-	FIELD_MATERIALINDEX,	// a material index (using the material precache string table)
-	
+	FIELD_VMATRIX,
+	FIELD_MATRIX3X4,
+	FIELD_QANGLE,
 	FIELD_VECTOR2D,			// 2 floats
-
-	FIELD_INTEGER64,		// 64bit integer
-
 	FIELD_VECTOR4D,			// 4 floats
 
-	FIELD_TYPECOUNT,		// MUST BE LAST
+	FIELD_PREDICTABLEID,
+
+	FIELD_ENTITYPTR,			// CBaseEntity *
+	FIELD_EHANDLE,			// Entity handle
+	FIELD_EDICTPTR,			// edict_t *
+
+	FIELD_FUNCTION,			// A class function pointer (Think, Use, etc)
+
+	FIELD_INPUT,
+	FIELD_VARIANT,			// a list of inputed data fields (all derived from CMultiInputVar)
+	FIELD_CUSTOM,			// special type that contains function pointers to it's read/write/parse functions
+
+	FIELD_EMBEDDED,			// an embedded object with a datadesc, recursively traverse and embedded class/structure based on an additional typedescription
+
+	FIELD_BASE_TYPECOUNT,		// MUST BE LAST
+
+	FIELD_TYPE_BITS = MINIMUM_BITS_NEEDED(FIELD_EMBEDDED),
+	FIELD_TYPE_MASK = 0x3F,
+
+	// NOTE: Use float arrays for local transformations that don't need to be fixed up.
+	FIELD_TYPE_FLAG_WORLDSPACE = ((1 << 0) << FIELD_TYPE_BITS), //maps some local space to world space (translation is fixed up on level transitions)
+	FIELD_TYPE_FLAG_MODEL      = ((1 << 1) << FIELD_TYPE_BITS), // Engine string that is a model name (needs precache)
+	FIELD_TYPE_FLAG_MATERIAL   = ((1 << 2) << FIELD_TYPE_BITS), // a material index (using the material precache string table)
+	FIELD_TYPE_FLAG_SOUND      = ((1 << 3) << FIELD_TYPE_BITS), // Engine string that is a sound name (needs precache)
+	FIELD_TYPE_FLAG_PARTIAL    = ((1 << 4) << FIELD_TYPE_BITS),
+	FIELD_TYPE_FLAG_TARGETNAME = ((1 << 5) << FIELD_TYPE_BITS),
+
+	FIELD_FLAGS_MASK = 0x1F,
+
+	FIELD_LAST_FLAG = FIELD_TYPE_FLAG_TARGETNAME,
+	FIELD_END_BITS = MINIMUM_BITS_NEEDED(FIELD_LAST_FLAG << 1),
+
+	FIELD_TICK = (FIELD_INTEGER|FIELD_TYPE_FLAG_SOUND),				// an integer tick count( fixed up similarly to time)
+	FIELD_TIME = (FIELD_FLOAT|FIELD_TYPE_FLAG_SOUND),				// a floating point time (these are fixed up automatically too!)
+	FIELD_DISTANCE = (FIELD_FLOAT|FIELD_TYPE_FLAG_WORLDSPACE),
+	FIELD_SCALE = (FIELD_FLOAT|FIELD_TYPE_FLAG_PARTIAL),
+	FIELD_EXACT_CLASSNAME = (FIELD_POOLED_STRING|FIELD_TYPE_FLAG_WORLDSPACE),
+	FIELD_PARTIAL_CLASSNAME = (FIELD_POOLED_STRING|FIELD_TYPE_FLAG_WORLDSPACE|FIELD_TYPE_FLAG_PARTIAL),
+	FIELD_EXACT_TARGETNAME = (FIELD_POOLED_STRING|FIELD_TYPE_FLAG_TARGETNAME),
+	FIELD_PARTIAL_TARGETNAME = (FIELD_POOLED_STRING|FIELD_TYPE_FLAG_TARGETNAME|FIELD_TYPE_FLAG_PARTIAL),
+	FIELD_EXACT_TARGETNAME_OR_CLASSNAME = (FIELD_POOLED_STRING|FIELD_TYPE_FLAG_TARGETNAME|FIELD_TYPE_FLAG_WORLDSPACE),
+	FIELD_PARTIAL_TARGETNAME_OR_CLASSNAME = (FIELD_POOLED_STRING|FIELD_TYPE_FLAG_TARGETNAME|FIELD_TYPE_FLAG_WORLDSPACE|FIELD_TYPE_FLAG_PARTIAL),
+	FIELD_MATERIALINDEX = (FIELD_INTEGER|FIELD_TYPE_FLAG_MATERIAL),
+	FIELD_BRUSH_MODELIDNEX = (FIELD_MODELINDEX|FIELD_TYPE_FLAG_WORLDSPACE),
+	FIELD_STUDIO_MODELIDNEX = (FIELD_MODELINDEX|FIELD_TYPE_FLAG_MODEL),
+	FIELD_SPRITE_MODELINDEX = (FIELD_MODELINDEX|FIELD_TYPE_FLAG_MATERIAL),
+	FIELD_POOLED_MODELNAME = (FIELD_POOLED_STRING|FIELD_TYPE_FLAG_MODEL),
+	FIELD_POOLED_SPRITENAME = (FIELD_POOLED_STRING|FIELD_TYPE_FLAG_MATERIAL),
+	FIELD_POOLED_SOUNDNAME = (FIELD_POOLED_STRING|FIELD_TYPE_FLAG_SOUND),
+	FIELD_VECTOR_WORLDSPACE = (FIELD_VECTOR|FIELD_TYPE_FLAG_WORLDSPACE),
+	FIELD_VMATRIX_WORLDSPACE = (FIELD_VMATRIX|FIELD_TYPE_FLAG_WORLDSPACE),
+	FIELD_MATRIX3X4_WORLDSPACE = (FIELD_MATRIX3X4|FIELD_TYPE_FLAG_WORLDSPACE),
+
+	FIELD_RENDERMODE =     (FIELD_UCHARACTER|(1 << FIELD_END_BITS)),
+	FIELD_RENDERFX =       (FIELD_UCHARACTER|(2 << FIELD_END_BITS)),
+	FIELD_COLLISIONGROUP = (FIELD_UINTEGER|  (3 << FIELD_END_BITS)),
+	FIELD_MOVETYPE =       (FIELD_UCHARACTER|(4 << FIELD_END_BITS)),
+	FIELD_EFFECTS =        (FIELD_USHORT|    (5 << FIELD_END_BITS)),
+	FIELD_MOVECOLLIDE =    (FIELD_UCHARACTER|(6 << FIELD_END_BITS)),
+	FIELD_TEAMNUM =        (FIELD_UCHARACTER|(7 << FIELD_END_BITS)),
+	FIELD_CPULEVEL =       (FIELD_UCHARACTER|(8 << FIELD_END_BITS)),
+	FIELD_GPULEVEL =       (FIELD_UCHARACTER|(9 << FIELD_END_BITS)),
+	FIELD_THREESTATE =     (FIELD_UCHARACTER|(10 << FIELD_END_BITS)),
+	FIELD_NPCSTATE =       (FIELD_UCHARACTER|(11 << FIELD_END_BITS)),
+
+	FIELD_EXT_TYPECOUNT = (FIELD_MOVECOLLIDE >> FIELD_END_BITS),		// MUST BE LAST
 };
 
-typedef _fieldtypes fieldtype_t;
+COMPILE_TIME_ASSERT(MINIMUM_BITS_NEEDED(FIELD_LAST_FLAG >> FIELD_TYPE_BITS) == 5); //update FIELD_FLAGS_MASK
+COMPILE_TIME_ASSERT(FIELD_TYPE_BITS == 6); //update FIELD_TYPE_MASK
 
 
 //
 // Function prototype for all input handlers.
 //
-#ifdef GAME_DLL
-typedef void (CBaseEntity::*inputfunc_t)(inputdata_t &data);
-#elif defined CLIENT_DLL
-typedef void (C_BaseEntity::*inputfunc_t)(inputdata_t &data);
-#else
-typedef void (CGameBaseEntity::*inputfunc_t)(inputdata_t &data);
-#endif
+typedef void (CGameBaseEntity::*inputfunc_t)(inputdata_t &&data);
 
 //-----------------------------------------------------------------------------
 // Field sizes... 
 //-----------------------------------------------------------------------------
 template <int FIELD_TYPE>
-class CDatamapFieldSizeDeducer
-{
-public:
-	enum
-	{
-		SIZE = 0
+class CDatamapFieldInfo;
+
+template <typename T>
+class CNativeFieldInfo;
+
+#define DECLARE_FIELD_TYPE_INFO( _fieldType, ... )	\
+	template<> \
+	class CDatamapFieldInfo<(_fieldType)> \
+	{ \
+	public: \
+		using native_type = __VA_ARGS__; \
+		using info_type = CDatamapFieldInfo<(_fieldType)>; \
+		static inline auto FIELDTYPE = (_fieldType); \
+		static inline auto NATIVESIZE = sizeof(native_type); \
 	};
 
-	static int FieldSize( )
-	{
-		return 0;
-	}
-};
+#define DECLARE_FIELD_NATIVE_INFO( _fieldType, ... )	\
+	template <> \
+	class CNativeFieldInfo<__VA_ARGS__> \
+	{ \
+	public: \
+		using native_type = __VA_ARGS__; \
+		using info_type = CDatamapFieldInfo<(_fieldType)>; \
+		static inline auto FIELDTYPE = (_fieldType); \
+		static inline auto NATIVESIZE = sizeof(native_type); \
+	};
 
-#define DECLARE_FIELD_SIZE( _fieldType, _fieldSize )	\
-	template< > class CDatamapFieldSizeDeducer<(_fieldType)> { public: enum { SIZE = (_fieldSize) }; static int FieldSize() { return (_fieldSize); } };
-#define FIELD_SIZE( _fieldType )	CDatamapFieldSizeDeducer<(_fieldType)>::SIZE
+#define DECLARE_FIELD_NETWORK_INFO( _fieldType, netclass, ... )	\
+	template <typename H> \
+	class CNativeFieldInfo<netclass< __VA_OPT__(__VA_ARGS__,) H>> \
+	{ \
+	public: \
+		using native_type = typename NetworkVarType< netclass< __VA_OPT__(__VA_ARGS__,) H> >::type; \
+		using info_type = CDatamapFieldInfo<(_fieldType)>; \
+		static inline auto FIELDTYPE = (_fieldType); \
+		static inline auto NATIVESIZE = sizeof(native_type); \
+	};
+
+#define DECLARE_FIELD_ENUM( ... )	\
+	template <> \
+	class CNativeFieldInfo<__VA_ARGS__> \
+	{ \
+	public: \
+		using native_type = __VA_ARGS__; \
+		using info_type = typename CNativeFieldInfo<__underlying_type(__VA_ARGS__)>::info_type; \
+		static inline auto FIELDTYPE = info_type::FIELDTYPE; \
+		static inline auto NATIVESIZE = sizeof(native_type); \
+	};
+
+#define DECLARE_FIELD_INFO( _fieldType, ... )	\
+	DECLARE_FIELD_TYPE_INFO( _fieldType, __VA_ARGS__ ) \
+	DECLARE_FIELD_NATIVE_INFO( _fieldType, __VA_ARGS__ )
+
+#define FIELD_SIZE( _fieldType )	CDatamapFieldInfo<(_fieldType)>::NATIVESIZE
 #define FIELD_BITS( _fieldType )	(FIELD_SIZE( _fieldType ) * 8)
 
-DECLARE_FIELD_SIZE( FIELD_FLOAT,		sizeof(float) )
-DECLARE_FIELD_SIZE( FIELD_STRING,		sizeof(string_t) )
-DECLARE_FIELD_SIZE( FIELD_VECTOR,		sizeof(Vector) )
-DECLARE_FIELD_SIZE( FIELD_QUATERNION,	sizeof(Quaternion))
-DECLARE_FIELD_SIZE( FIELD_INTEGER,		sizeof(int))
-DECLARE_FIELD_SIZE( FIELD_BOOLEAN,		sizeof(bool))
-DECLARE_FIELD_SIZE( FIELD_SHORT,		sizeof(short))
-DECLARE_FIELD_SIZE( FIELD_CHARACTER,	sizeof(char))
-DECLARE_FIELD_SIZE( FIELD_COLOR32,		sizeof(color32))
-DECLARE_FIELD_SIZE( FIELD_COLOR24,		sizeof(color24))
-DECLARE_FIELD_SIZE( FIELD_CLASSPTR,		sizeof(CGameBaseEntity *))
-DECLARE_FIELD_SIZE( FIELD_EHANDLE,		sizeof(CBaseHandle))
-DECLARE_FIELD_SIZE( FIELD_EDICT,		sizeof(edict_t *))
-DECLARE_FIELD_SIZE( FIELD_POSITION_VECTOR, sizeof(Vector))
-DECLARE_FIELD_SIZE( FIELD_TIME,			sizeof(float))
-DECLARE_FIELD_SIZE( FIELD_TICK,			sizeof(int))
-DECLARE_FIELD_SIZE( FIELD_MODELNAME,	sizeof(string_t))
-DECLARE_FIELD_SIZE( FIELD_SOUNDNAME,	sizeof(string_t))
-DECLARE_FIELD_SIZE( FIELD_FUNCTION,		sizeof(inputfunc_t))
-DECLARE_FIELD_SIZE( FIELD_VMATRIX,		sizeof(VMatrix))
-DECLARE_FIELD_SIZE( FIELD_VMATRIX_WORLDSPACE,	sizeof(VMatrix))
-DECLARE_FIELD_SIZE( FIELD_MATRIX3X4_WORLDSPACE,	sizeof(matrix3x4_t))
-DECLARE_FIELD_SIZE( FIELD_INTERVAL,		sizeof( interval_t) )  // NOTE:  Must match interval.h definition
-DECLARE_FIELD_SIZE( FIELD_MODELINDEX,	sizeof(modelindex_t) )
-DECLARE_FIELD_SIZE( FIELD_MATERIALINDEX,	sizeof(int) )
-DECLARE_FIELD_SIZE( FIELD_VECTOR2D,		sizeof(Vector2D) )
-DECLARE_FIELD_SIZE( FIELD_INTEGER64,	sizeof(int64))
-DECLARE_FIELD_SIZE( FIELD_VECTOR4D,		sizeof( Vector4D ) )
+class variant_t;
+typedef variant_t game_variant_t;
+
+class CPredictableId;
+typedef CPredictableId CGamePredictableId;
+
+template<>
+class CDatamapFieldInfo<FIELD_VARIANT>;
+template<>
+class CNativeFieldInfo<game_variant_t>;
+
+enum Team_t : unsigned char;
+enum CPULevel_t : unsigned char;
+enum GPULevel_t : unsigned char;
+enum MemLevel_t : unsigned char;
+enum GPUMemLevel_t : unsigned char;
+enum NPC_STATE : unsigned char;
+
+DECLARE_FIELD_INFO( FIELD_FLOAT,		float )
+DECLARE_FIELD_INFO( FIELD_POOLED_STRING,		string_t )
+DECLARE_FIELD_INFO( FIELD_VECTOR,		Vector )
+DECLARE_FIELD_INFO( FIELD_QUATERNION,	Quaternion)
+DECLARE_FIELD_INFO( FIELD_INTEGER,		int)
+DECLARE_FIELD_INFO( FIELD_BOOLEAN,		bool)
+DECLARE_FIELD_INFO( FIELD_SHORT,		short)
+DECLARE_FIELD_INFO( FIELD_CHARACTER,	char)
+DECLARE_FIELD_INFO( FIELD_COLOR32,		color32)
+DECLARE_FIELD_INFO( FIELD_COLOR32E,		ColorRGBExp32)
+DECLARE_FIELD_INFO( FIELD_COLOR24,		color24)
+DECLARE_FIELD_INFO( FIELD_ENTITYPTR,		CGameBaseEntity *)
+DECLARE_FIELD_INFO( FIELD_EHANDLE,		CBaseHandle)
+DECLARE_FIELD_INFO( FIELD_EDICTPTR,		edict_t *)
+DECLARE_FIELD_INFO( FIELD_FUNCTION,		inputfunc_t)
+DECLARE_FIELD_INFO( FIELD_VMATRIX,		VMatrix)
+DECLARE_FIELD_INFO( FIELD_MATRIX3X4,	matrix3x4_t)
+DECLARE_FIELD_INFO( FIELD_INTERVAL,		 interval_t)   // NOTE:  Must match interval.h definition
+DECLARE_FIELD_INFO( FIELD_MODELINDEX,	modelindex_t) 
+DECLARE_FIELD_INFO( FIELD_VECTOR2D,		Vector2D) 
+DECLARE_FIELD_INFO( FIELD_INTEGER64,	int64)
+DECLARE_FIELD_INFO( FIELD_VECTOR4D,		 Vector4D ) 
+DECLARE_FIELD_INFO( FIELD_CSTRING,		 const char * ) 
+DECLARE_FIELD_INFO( FIELD_UINTEGER,		 unsigned int ) 
+DECLARE_FIELD_INFO( FIELD_USHORT,		 unsigned short ) 
+DECLARE_FIELD_INFO( FIELD_UINTEGER64,		 uint64 ) 
+DECLARE_FIELD_INFO( FIELD_UCHARACTER,		 unsigned char ) 
+DECLARE_FIELD_INFO( FIELD_SCHARACTER,		 signed char ) 
+DECLARE_FIELD_INFO( FIELD_QANGLE,		 QAngle ) 
+DECLARE_FIELD_INFO( FIELD_RENDERMODE,		 RenderMode_t ) 
+DECLARE_FIELD_INFO( FIELD_RENDERFX,		 RenderFx_t ) 
+DECLARE_FIELD_INFO( FIELD_EFFECTS,		 Effects_t ) 
+DECLARE_FIELD_INFO( FIELD_MOVETYPE,		 MoveType_t ) 
+DECLARE_FIELD_INFO( FIELD_MOVECOLLIDE,		 MoveCollide_t ) 
+DECLARE_FIELD_INFO( FIELD_COLLISIONGROUP,		 Collision_Group_t ) 
+DECLARE_FIELD_INFO( FIELD_TEAMNUM,		 Team_t ) 
+DECLARE_FIELD_INFO( FIELD_CPULEVEL,		 CPULevel_t ) 
+DECLARE_FIELD_INFO( FIELD_GPULEVEL,		 GPULevel_t ) 
+DECLARE_FIELD_INFO( FIELD_THREESTATE,		 ThreeState_t ) 
+DECLARE_FIELD_INFO( FIELD_NPCSTATE,		 NPC_STATE ) 
+
+DECLARE_FIELD_TYPE_INFO( FIELD_TICK, int )
+DECLARE_FIELD_TYPE_INFO( FIELD_TIME, float )
+
+DECLARE_FIELD_TYPE_INFO( FIELD_EXACT_CLASSNAME, string_t )
+DECLARE_FIELD_TYPE_INFO( FIELD_PARTIAL_CLASSNAME, string_t )
+DECLARE_FIELD_TYPE_INFO( FIELD_EXACT_TARGETNAME, string_t )
+DECLARE_FIELD_TYPE_INFO( FIELD_PARTIAL_TARGETNAME, string_t )
+DECLARE_FIELD_TYPE_INFO( FIELD_EXACT_TARGETNAME_OR_CLASSNAME, string_t )
+DECLARE_FIELD_TYPE_INFO( FIELD_PARTIAL_TARGETNAME_OR_CLASSNAME, string_t )
+
+DECLARE_FIELD_TYPE_INFO( FIELD_MATERIALINDEX, int )
+
+DECLARE_FIELD_TYPE_INFO( FIELD_BRUSH_MODELIDNEX, modelindex_t )
+DECLARE_FIELD_TYPE_INFO( FIELD_STUDIO_MODELIDNEX, modelindex_t )
+DECLARE_FIELD_TYPE_INFO( FIELD_SPRITE_MODELINDEX, modelindex_t )
+
+DECLARE_FIELD_TYPE_INFO( FIELD_POOLED_MODELNAME, string_t )
+DECLARE_FIELD_TYPE_INFO( FIELD_POOLED_SPRITENAME, string_t )
+DECLARE_FIELD_TYPE_INFO( FIELD_POOLED_SOUNDNAME, string_t )
+
+DECLARE_FIELD_TYPE_INFO( FIELD_VECTOR_WORLDSPACE, Vector )
+DECLARE_FIELD_TYPE_INFO( FIELD_VMATRIX_WORLDSPACE, VMatrix )
+DECLARE_FIELD_TYPE_INFO( FIELD_MATRIX3X4_WORLDSPACE, matrix3x4_t )
+
+DECLARE_FIELD_NETWORK_INFO( FIELD_COLOR32E, CNetworkColor32EBase )
+DECLARE_FIELD_NETWORK_INFO( FIELD_COLOR32, CNetworkColor32Base )
+DECLARE_FIELD_NETWORK_INFO( FIELD_COLOR24, CNetworkColor24Base )
+DECLARE_FIELD_NETWORK_INFO( FIELD_QANGLE, CNetworkQAngleBase )
+DECLARE_FIELD_NETWORK_INFO( FIELD_QANGLE, CNetworkVectorBaseImpl, QAngle )
+DECLARE_FIELD_NETWORK_INFO( FIELD_VECTOR, CNetworkVectorBaseImpl, Vector )
+DECLARE_FIELD_NETWORK_INFO( FIELD_VECTOR, CNetworkVectorBase )
+DECLARE_FIELD_NETWORK_INFO( FIELD_VECTOR_WORLDSPACE, CNetworkVectorWorldspaceBase )
+DECLARE_FIELD_NETWORK_INFO( FIELD_QUATERNION, CNetworkQuaternionBase )
+DECLARE_FIELD_NETWORK_INFO( FIELD_POOLED_STRING, CNetworkStringTBaseImpl )
+DECLARE_FIELD_NETWORK_INFO( FIELD_MODELINDEX, CNetworkModelIndexBaseImpl )
+DECLARE_FIELD_NETWORK_INFO( FIELD_TIME, CNetworkTimeBase )
+DECLARE_FIELD_NETWORK_INFO( FIELD_SCALE, CNetworkScaleBase )
+DECLARE_FIELD_NETWORK_INFO( FIELD_DISTANCE, CNetworkDistanceBase )
+
+#if defined( CLIENT_DLL ) || defined( GAME_DLL )
+template <typename T, typename H>
+class CNativeFieldInfo<CNetworkHandleBaseImpl<T, H>>
+{
+public:
+	using native_type = CHandle<T>;
+	using info_type = CDatamapFieldInfo<FIELD_EHANDLE>;
+	static inline auto FIELDTYPE = FIELD_EHANDLE;
+	static inline auto NATIVESIZE = sizeof(native_type);
+};
+
+template <typename T, typename H>
+class CNativeFieldInfo<CNetworkHandleBase<T, H>>
+{
+public:
+	using native_type = CHandle<T>;
+	using info_type = CDatamapFieldInfo<FIELD_EHANDLE>;
+	static inline auto FIELDTYPE = FIELD_EHANDLE;
+	static inline auto NATIVESIZE = sizeof(native_type);
+};
+#endif
+
+template <typename T, typename H>
+class CNativeFieldInfo<CNetworkVarArithmeticBaseImpl<T, H>>
+{
+public:
+	using native_type = T;
+	using info_type = typename CNativeFieldInfo<T>::info_type;
+	static inline auto FIELDTYPE = info_type::FIELDTYPE;
+	static inline auto NATIVESIZE = sizeof(native_type);
+};
+
+template <typename T, typename H>
+class CNativeFieldInfo<CNetworkVarBase<T, H>>
+{
+public:
+	using native_type = T;
+	using info_type = typename CNativeFieldInfo<T>::info_type;
+	static inline auto FIELDTYPE = info_type::FIELDTYPE;
+	static inline auto NATIVESIZE = sizeof(native_type);
+};
+
+template <typename T, typename H>
+class CNativeFieldInfo<CNetworkVarBaseImpl<T, H>>
+{
+public:
+	using native_type = T;
+	using info_type = typename CNativeFieldInfo<T>::info_type;
+	static inline auto FIELDTYPE = info_type::FIELDTYPE;
+	static inline auto NATIVESIZE = sizeof(native_type);
+};
+
+inline fieldtype_t GetBaseFieldType( fieldtype_t type )
+{ return (fieldtype_t)((uint64)type & (uint64)FIELD_TYPE_MASK); }
+inline unsigned char GetFieldTypeFlags( fieldtype_t type )
+{ return (unsigned char)(((uint64)type >> (uint64)FIELD_TYPE_BITS) & (uint64)FIELD_FLAGS_MASK); }
+
+int GetFieldSize( fieldtype_t type );
+const char *GetFieldName( fieldtype_t type, bool pretty );
 
 #define ARRAYSIZE2D(p)		(sizeof((p))/sizeof((p)[0][0]))
 #define SIZE_OF_ARRAY(p)	_ARRAYSIZE(p)
@@ -178,8 +400,11 @@ DECLARE_FIELD_SIZE( FIELD_VECTOR4D,		sizeof( Vector4D ) )
 #define DEFINE_FIELD_NULL \
 	typedescription_t()
 
+#define AUTO_FIELDTYPE(name) \
+	CNativeFieldInfo<decltype(classNameTypedef::name)>::FIELDTYPE
+
 #define DEFINE_FIELD(name,fieldtype) \
-	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), 0, NULL, 0)
+	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_NONE, NULL, 0)
 #define DEFINE_FIELD_FLAGS(name,fieldtype, flags) \
 	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), (flags), NULL, 0)
 #define DEFINE_FIELD_FLAGS_TOL(name,fieldtype, flags,tolerance) \
@@ -187,22 +412,24 @@ DECLARE_FIELD_SIZE( FIELD_VECTOR4D,		sizeof( Vector4D ) )
 
 #define DEFINE_KEYFIELD(name,fieldtype, mapname) \
 	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_KEY, mapname, 0)
+#define DEFINE_KEYFIELD_AUTO(name, mapname) \
+	typedescription_t(AUTO_FIELDTYPE(name), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_KEY, mapname, 0)
 
 #define DEFINE_FIELD_NAME(localname,netname,fieldtype) \
-	typedescription_t((fieldtype), #localname, sizeof(((classNameTypedef *)0)->localname), 1, offsetof(classNameTypedef, localname), 0, netname, 0)
+	typedescription_t((fieldtype), #localname, sizeof(((classNameTypedef *)0)->localname), 1, offsetof(classNameTypedef, localname), FTYPEDESC_NONE, netname, 0)
 #define DEFINE_FIELD_NAME_TOL(localname,netname,fieldtolerance) \
-	typedescription_t((fieldtype), #localname, sizeof(((classNameTypedef *)0)->localname), 1, offsetof(classNameTypedef, localname), 0, netname, (fieldtolerance))
+	typedescription_t((fieldtype), #localname, sizeof(((classNameTypedef *)0)->localname), 1, offsetof(classNameTypedef, localname), FTYPEDESC_NONE, netname, (fieldtolerance))
 
 #define DEFINE_KEYFIELD_ARRAYELEM(name,i,fieldtype, mapname) \
 	typedescription_t((fieldtype), #name "[" #i "]", sizeof(((classNameTypedef *)0)->name[(i)]), 1, (offsetof(classNameTypedef, name) + (sizeof(((classNameTypedef *)0)->name[(i)]) * (i))), FTYPEDESC_KEY, mapname, 0)
 
 #define DEFINE_AUTO_ARRAY(name,fieldtype) \
-	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), SIZE_OF_ARRAY(((classNameTypedef *)0)->name), offsetof(classNameTypedef, name), 0, NULL, 0)
+	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), SIZE_OF_ARRAY(((classNameTypedef *)0)->name), offsetof(classNameTypedef, name), FTYPEDESC_NONE, NULL, 0)
 #define DEFINE_AUTO_ARRAY_KEYFIELD(name,fieldtype,mapname) \
-	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), SIZE_OF_ARRAY(((classNameTypedef *)0)->name), offsetof(classNameTypedef, name), 0, mapname, 0)
+	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), SIZE_OF_ARRAY(((classNameTypedef *)0)->name), offsetof(classNameTypedef, name), FTYPEDESC_NONE, mapname, 0)
 
 #define DEFINE_ARRAY(name,fieldtype, count) \
-	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), (count), offsetof(classNameTypedef, name), 0, NULL, 0)
+	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), (count), offsetof(classNameTypedef, name), FTYPEDESC_NONE, NULL, 0)
 #define DEFINE_ARRAY_FLAGS(name,fieldtype, count,flags) \
 	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), (count), offsetof(classNameTypedef, name), (flags), NULL, 0)
 #define DEFINE_ARRAY_FLAGS_TOL(name,fieldtype, count,flags,tolerance) \
@@ -212,7 +439,7 @@ DECLARE_FIELD_SIZE( FIELD_VECTOR4D,		sizeof( Vector4D ) )
 	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_KEY, #name, 0)
 
 #define DEFINE_CUSTOM_FIELD(name,datafuncs) \
-	typedescription_t((datafuncs), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), 0, NULL, 0)
+	typedescription_t((datafuncs), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_NONE, NULL, 0)
 #define DEFINE_CUSTOM_KEYFIELD(name,datafuncs,mapname) \
 	typedescription_t((datafuncs), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_KEY, mapname, 0)
 
@@ -225,14 +452,14 @@ DECLARE_FIELD_SIZE( FIELD_VECTOR4D,		sizeof( Vector4D ) )
 	typedescription_t((fieldtype), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_INDEX, NULL, 0)
 
 #define DEFINE_EMBEDDED( name )						\
-	typedescription_t(&(((classNameTypedef *)0)->name.m_DataMap), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), 0, NULL)
+	typedescription_t(&(((classNameTypedef *)0)->name.m_DataMap), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_NONE, NULL)
 #define DEFINE_PRED_EMBEDDED( name )						\
-	typedescription_t(&(((classNameTypedef *)0)->name.m_PredMap), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), 0, NULL)
+	typedescription_t(&(((classNameTypedef *)0)->name.m_PredMap), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_NONE, NULL)
 #define DEFINE_PRED_EMBEDDED_FLAGS( name, flags )						\
 	typedescription_t(&(((classNameTypedef *)0)->name.m_PredMap), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), (flags), NULL)
 
 #define DEFINE_EMBEDDED_OVERRIDE( name, overridetype )	\
-	typedescription_t(&(((overridetype *)0)->name.m_DataMap), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), 0, NULL)
+	typedescription_t(&(((overridetype *)0)->name.m_DataMap), #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_NONE, NULL)
 
 #define DEFINE_EMBEDDED_PTR( name )					\
 	typedescription_t(&(((classNameTypedef *)0)->name->m_DataMap), #name, sizeof(*(((classNameTypedef *)0)->name)), 1, offsetof(classNameTypedef, name), FTYPEDESC_PTR, NULL)
@@ -244,9 +471,9 @@ DECLARE_FIELD_SIZE( FIELD_VECTOR4D,		sizeof( Vector4D ) )
 	typedescription_t(&(((classNameTypedef *)0)->name->m_PredMap), #name, sizeof(*(((classNameTypedef *)0)->name)), 1, offsetof(classNameTypedef, name), FTYPEDESC_PTR|(flags), NULL)
 
 #define DEFINE_EMBEDDED_ARRAY( name, count )			\
-	typedescription_t(&(((classNameTypedef *)0)->name[0].m_DataMap), #name, sizeof(((classNameTypedef *)0)->name[0]), (count), offsetof(classNameTypedef, name), 0, NULL)
+	typedescription_t(&(((classNameTypedef *)0)->name[0].m_DataMap), #name, sizeof(((classNameTypedef *)0)->name[0]), (count), offsetof(classNameTypedef, name), FTYPEDESC_NONE, NULL)
 #define DEFINE_EMBEDDED_AUTO_ARRAY( name )			\
-	typedescription_t(&(((classNameTypedef *)0)->name[0].m_DataMap), #name, sizeof(((classNameTypedef *)0)->name[0]), SIZE_OF_ARRAY(((classNameTypedef *)0)->name), offsetof(classNameTypedef, name), 0, NULL)
+	typedescription_t(&(((classNameTypedef *)0)->name[0].m_DataMap), #name, sizeof(((classNameTypedef *)0)->name[0]), SIZE_OF_ARRAY(((classNameTypedef *)0)->name), offsetof(classNameTypedef, name), FTYPEDESC_NONE, NULL)
 
 //#define DEFINE_DATA( name, fieldextname, flags ) _FIELD(name, fieldtype, 1,  flags, extname )
 
@@ -268,7 +495,7 @@ extern ICustomFieldOps *eventFuncs;
 // Quick way to define variants in a datadesc.
 extern ICustomFieldOps *variantFuncs;
 #define DEFINE_VARIANT(name) \
-	typedescription_t(variantFuncs, #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), 0, NULL, 0)
+	typedescription_t(variantFuncs, #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_NONE, NULL, 0)
 #define DEFINE_KEYVARIANT(name,mapname) \
 	typedescription_t(variantFuncs, #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_KEY, mapname, 0)
 
@@ -278,7 +505,7 @@ extern ICustomFieldOps *variantFuncs;
 #define DEFINE_FUNCTION( function ) \
 	typedescription_t(FIELD_VOID, nameHolder.GenerateName(#function), ((inputfunc_t)(&classNameTypedef::function)), FTYPEDESC_FUNCTIONTABLE, NULL)
 
-enum : uint64
+enum fieldflags_t : uint64
 {
 	FTYPEDESC_NONE =                    0,
 
@@ -303,12 +530,9 @@ enum : uint64
 													//   but if this is set, then we allow you to see fields on other players
 	FTYPEDESC_VIEW_OWN_TEAM =     (1 << 14),		// Only show this data if the player is on the same team as the local player
 	FTYPEDESC_VIEW_NEVER =        (1 << 15),		// Never show this field to anyone, even the local player (unusual)
-
-	FTYPEDESC_UNSIGNED =          (1 << 16),
 };
 
-typedef uint64 _fieldflags;
-typedef _fieldflags fieldflags_t;
+FLAGENUM_OPERATORS( fieldflags_t, uint64 )
 
 #define TD_MSECTOLERANCE		0.001f		// This is a FIELD_FLOAT and should only be checked to be within 0.001 of the networked info
 
@@ -317,12 +541,18 @@ struct typedescription_t;
 
 struct FieldInfo_t
 {
+private:
 	void *			   pField;
 
+public:
 	// Note that it is legal for the following two fields to be NULL,
 	// though it may be disallowed by implementors of ISaveRestoreOps
 	void *			   pOwner;
-	typedescription_t *pTypeDesc;
+
+	const typedescription_t *pTypeDesc;
+
+	template <typename T>
+	T *GetField() const;
 };
 
 abstract_class ICustomFieldOps
@@ -335,13 +565,9 @@ public:
 	virtual bool IsEmpty( const FieldInfo_t &fieldInfo ) = 0;
 	virtual void MakeEmpty( const FieldInfo_t &fieldInfo ) = 0;
 	virtual bool Parse( const FieldInfo_t &fieldInfo, char const* szValue ) = 0;
-
-	bool IsEmpty( void *pField)							{ FieldInfo_t fieldInfo = { pField, NULL, NULL }; return IsEmpty( fieldInfo ); }
-	void MakeEmpty( void *pField)						{ FieldInfo_t fieldInfo = { pField, NULL, NULL }; MakeEmpty( fieldInfo ); }
-	bool Parse( void *pField, char const *pszValue )	{ FieldInfo_t fieldInfo = { pField, NULL, NULL }; return Parse( fieldInfo, pszValue ); }
 };
 
-enum
+enum : unsigned char
 {
 	TD_OFFSET_NORMAL = 0,
 	TD_OFFSET_PACKED = 1,
@@ -350,8 +576,13 @@ enum
 	TD_OFFSET_COUNT,
 };
 
+template <typename T>
+T *GetField(void *pObject, const typedescription_t &desc);
+
 struct typedescription_t
 {
+	friend class CByteswap;
+
 	typedescription_t();
 	typedescription_t(const typedescription_t &) = delete;
 	typedescription_t &operator=(const typedescription_t &) = delete;
@@ -363,9 +594,30 @@ struct typedescription_t
 	typedescription_t(ICustomFieldOps *funcs, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname, float tol);
 	typedescription_t(datamap_t *embed, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname);
 
-	fieldtype_t			fieldType;
+private:
+	fieldtype_t			fieldType_;
+
+public:
+	fieldtype_t baseType() const
+	{ return GetBaseFieldType(fieldType_); }
+	fieldtype_t rawType() const
+	{ return fieldType_; }
+
+	unsigned char typeFlags() const
+	{ return GetFieldTypeFlags(fieldType_); }
+
 	const char			*fieldName;
-	int					fieldOffset[ TD_OFFSET_COUNT ]; // 0 == normal, 1 == packed offset
+
+private:
+	unsigned int					fieldOffset_[ TD_OFFSET_COUNT ]; // 0 == normal, 1 == packed offset
+
+	template <typename T>
+	friend T *GetField(void *pObject, const typedescription_t &desc);
+
+public:
+	int rawOffset() const
+	{ return fieldOffset_[TD_OFFSET_NORMAL]; }
+
 	unsigned short		fieldSize;
 	fieldflags_t				flags;
 	// the name of the variable in the map/fgd data, or the name of the action
@@ -378,10 +630,10 @@ struct typedescription_t
 	datamap_t			*td;
 
 	// Stores the actual member variable size in bytes
-	int					fieldSizeInBytes;
+	unsigned int					fieldSizeInBytes;
 
 	// FTYPEDESC_OVERRIDE point to first baseclass instance if chains_validated has occurred
-	struct typedescription_t *override_field;
+	typedescription_t *override_field;
 
 	// Used to track exclusion of baseclass fields
 	int					override_count;
@@ -394,25 +646,41 @@ struct typedescription_t
 	const char *m_pDescription;
 };
 
-class CDefCustomFieldOps : public ICustomFieldOps
+template <typename T>
+T *GetField(void *pObject, const typedescription_t &desc)
 {
-public:
-	// save data type interface
-	virtual bool IsEmpty( const FieldInfo_t &fieldInfo ) { return false; }
-	virtual void MakeEmpty( const FieldInfo_t &fieldInfo ) {}
-	virtual bool Parse( const FieldInfo_t &fieldInfo, char const* szValue ) { return false; }
-};
+	Assert( sizeof(T) == desc.fieldSizeInBytes );
+	if(desc.flags & FTYPEDESC_PTR) {
+		T *ptr = *(T **)((unsigned char *)pObject + desc.fieldOffset_[TD_OFFSET_NORMAL]);
+		Assert( ptr != NULL );
+		return ptr;
+	} else {
+		return (T *)((unsigned char *)pObject + desc.fieldOffset_[TD_OFFSET_NORMAL]);
+	}
+}
 
+template <typename T>
+T *FieldInfo_t::GetField() const
+{
+	Assert( sizeof(T) == pTypeDesc->fieldSizeInBytes );
+	if(pTypeDesc->flags & FTYPEDESC_PTR) {
+		T *ptr = *(T **)((unsigned char *)pField);
+		Assert( ptr != NULL );
+		return ptr;
+	} else {
+		return (T *)((unsigned char *)pField);
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Used by ops that deal with pointers
 //-----------------------------------------------------------------------------
-class CClassPtrFieldOps : public CDefCustomFieldOps
+class CClassPtrFieldOps : public ICustomFieldOps
 {
 public:
 	virtual bool IsEmpty( const FieldInfo_t &fieldInfo )
 	{
-		void **ppClassPtr = (void **)fieldInfo.pField;
+		void **ppClassPtr = fieldInfo.GetField<void *>();
 		int nObjects = fieldInfo.pTypeDesc->fieldSize;
 		for ( int i = 0; i < nObjects; i++ )
 		{
@@ -424,7 +692,13 @@ public:
 
 	virtual void MakeEmpty( const FieldInfo_t &fieldInfo )
 	{
-		memset( fieldInfo.pField, 0, fieldInfo.pTypeDesc->fieldSize * sizeof( void * ) );
+		memset( fieldInfo.GetField<void *>(), 0, fieldInfo.pTypeDesc->fieldSize * sizeof( void * ) );
+	}
+
+	virtual bool Parse( const FieldInfo_t &fieldInfo, char const* szValue )
+	{
+		Assert(0);
+		return false;
 	}
 };
 

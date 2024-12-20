@@ -85,9 +85,9 @@ END_SEND_TABLE()
 
 BEGIN_MAPENTITY(CRagdollProp)
 
-	DEFINE_KEYFIELD(m_anglesOverrideString,	FIELD_STRING, "angleOverride" ),
+	DEFINE_KEYFIELD_AUTO( m_anglesOverrideString, "angleOverride" ),
 
-	DEFINE_KEYFIELD( m_bStartDisabled, FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bStartDisabled, "StartDisabled" ),
 
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "StartRagdollBoogie", InputStartRadgollBoogie ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableMotion", InputEnableMotion ),
@@ -459,7 +459,7 @@ void CRagdollProp::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )
 	
 	if ( m_takedamage != DAMAGE_NO )
 	{
-		int damageType = 0;
+		uint64 damageType = DMG_GENERIC;
 		float damage = CalculateDefaultPhysicsDamage( index, pEvent, 1.0f, true, damageType );
 		if ( damage > 0 )
 		{
@@ -972,7 +972,6 @@ void CRagdollProp::VPhysicsUpdate( IPhysicsObject *pPhysics )
 		return;
 
 	m_lastUpdateTickCount = gpGlobals->tickcount;
-	//NetworkStateChanged();
 
 	matrix3x4_t boneToWorld[MAXSTUDIOBONES];
 	QAngle angles;
@@ -1141,7 +1140,6 @@ void CRagdollProp::FadeOutThink(void)
 		int nFade = (int)(alpha * 255.0f);
 		SetRenderMode( kRenderTransTexture );
 		SetRenderAlpha( nFade );
-		NetworkStateChanged();
 		SetContextThink( &CRagdollProp::FadeOutThink, gpGlobals->curtime + TICK_INTERVAL, s_pFadeOutContext );
 	}
 	else
@@ -1660,7 +1658,7 @@ void CRagdollProp::DisableMotion( void )
 	}
 }
 
-void CRagdollProp::InputStartRadgollBoogie( inputdata_t &inputdata )
+void CRagdollProp::InputStartRadgollBoogie( inputdata_t &&inputdata )
 {
 	float duration = inputdata.value.Float();
 
@@ -1675,7 +1673,7 @@ void CRagdollProp::InputStartRadgollBoogie( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Enable physics motion and collision response (on by default)
 //-----------------------------------------------------------------------------
-void CRagdollProp::InputEnableMotion( inputdata_t &inputdata )
+void CRagdollProp::InputEnableMotion( inputdata_t &&inputdata )
 {
 	for ( int iRagdoll = 0; iRagdoll < m_ragdoll.listCount; ++iRagdoll )
 	{
@@ -1691,7 +1689,7 @@ void CRagdollProp::InputEnableMotion( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Disable any physics motion or collision response
 //-----------------------------------------------------------------------------
-void CRagdollProp::InputDisableMotion( inputdata_t &inputdata )
+void CRagdollProp::InputDisableMotion( inputdata_t &&inputdata )
 {
 	DisableMotion();
 }
@@ -1699,7 +1697,7 @@ void CRagdollProp::InputDisableMotion( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler to start the physics prop simulating.
 //-----------------------------------------------------------------------------
-void CRagdollProp::InputWake( inputdata_t &inputdata )
+void CRagdollProp::InputWake( inputdata_t &&inputdata )
 {
 	for ( int iRagdoll = 0; iRagdoll < m_ragdoll.listCount; ++iRagdoll )
 	{
@@ -1714,7 +1712,7 @@ void CRagdollProp::InputWake( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler to stop the physics prop simulating.
 //-----------------------------------------------------------------------------
-void CRagdollProp::InputSleep( inputdata_t &inputdata )
+void CRagdollProp::InputSleep( inputdata_t &&inputdata )
 {
 	for ( int iRagdoll = 0; iRagdoll < m_ragdoll.listCount; ++iRagdoll )
 	{
@@ -1726,17 +1724,17 @@ void CRagdollProp::InputSleep( inputdata_t &inputdata )
 	}
 }
 
-void CRagdollProp::InputTurnOn( inputdata_t &inputdata )
+void CRagdollProp::InputTurnOn( inputdata_t &&inputdata )
 {
 	RemoveEffects( EF_NODRAW );
 }
 
-void CRagdollProp::InputTurnOff( inputdata_t &inputdata )
+void CRagdollProp::InputTurnOff( inputdata_t &&inputdata )
 {
 	AddEffects( EF_NODRAW );
 }
 
-void CRagdollProp::InputFadeAndRemove( inputdata_t &inputdata )
+void CRagdollProp::InputFadeAndRemove( inputdata_t &&inputdata )
 {
 	float flFadeDuration = inputdata.value.Float();
 	
@@ -1755,7 +1753,7 @@ public:
 	virtual int		OnTakeDamage( const CTakeDamageInfo &info );
 	virtual void	VPhysicsCollision( int index, gamevcollisionevent_t *pEvent );
 
-	void			InputStartDestruction( inputdata_t &inputdata );
+	void			InputStartDestruction( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 private:
@@ -1778,10 +1776,10 @@ private:
 LINK_ENTITY_TO_CLASS( prop_dynamically_destructible, CDynamicDestrProp );
 
 BEGIN_MAPENTITY( CDynamicDestrProp )
-	DEFINE_KEYFIELD( Health, FIELD_FLOAT, "prophealth" ),
-	DEFINE_KEYFIELD( PieceMass, FIELD_FLOAT, "mass" ),
-	DEFINE_KEYFIELD( iNumHitLimit, FIELD_INTEGER, "numhits" ),
-	DEFINE_KEYFIELD( iNumBrokenPartsLimit, FIELD_INTEGER, "numpieces" ),
+	DEFINE_KEYFIELD_AUTO( Health, "prophealth" ),
+	DEFINE_KEYFIELD_AUTO( PieceMass, "mass" ),
+	DEFINE_KEYFIELD_AUTO( iNumHitLimit, "numhits" ),
+	DEFINE_KEYFIELD_AUTO( iNumBrokenPartsLimit, "numpieces" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartDestruction", InputStartDestruction ),
 
@@ -2011,7 +2009,7 @@ int	CDynamicDestrProp::OnTakeDamage( const CTakeDamageInfo &info )
 	return CBaseAnimating::OnTakeDamage( info );
 }
 
-void CDynamicDestrProp::InputStartDestruction( inputdata_t &inputdata )
+void CDynamicDestrProp::InputStartDestruction( inputdata_t &&inputdata )
 {
 	for ( int iRagdoll = 0; iRagdoll < m_ragdoll.listCount; ++iRagdoll )
 	{

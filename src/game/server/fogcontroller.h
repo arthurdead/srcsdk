@@ -36,26 +36,26 @@ public:
 
 	// Parse data from a map file
 	virtual void Activate();
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 
 	// Input handlers
-	void InputSetStartDist(inputdata_t &data);
-	void InputSetEndDist(inputdata_t &data);
-	void InputTurnOn(inputdata_t &data);
-	void InputTurnOff(inputdata_t &data);
-	void InputSetColor(inputdata_t &data);
-	void InputSetColorSecondary(inputdata_t &data);
-	void InputSetFarZ( inputdata_t &data );
-	void InputSetAngles( inputdata_t &inputdata );
-	void InputSetMaxDensity( inputdata_t &inputdata );
+	void InputSetStartDist( inputdata_t &&inputdata );
+	void InputSetEndDist( inputdata_t &&inputdata );
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
+	void InputSetColor( inputdata_t &&inputdata );
+	void InputSetColorSecondary( inputdata_t &&inputdata );
+	void InputSetFarZ( inputdata_t &&inputdata );
+	void InputSetAngles( inputdata_t &&inputdata );
+	void InputSetMaxDensity( inputdata_t &&inputdata );
 
-	void InputSetColorLerpTo(inputdata_t &data);
-	void InputSetColorSecondaryLerpTo(inputdata_t &data);
-	void InputSetStartDistLerpTo(inputdata_t &data);
-	void InputSetEndDistLerpTo(inputdata_t &data);
-	void InputSetMaxDensityLerpTo(inputdata_t &data);
+	void InputSetColorLerpTo( inputdata_t &&inputdata );
+	void InputSetColorSecondaryLerpTo( inputdata_t &&inputdata );
+	void InputSetStartDistLerpTo( inputdata_t &&inputdata );
+	void InputSetEndDistLerpTo( inputdata_t &&inputdata );
+	void InputSetMaxDensityLerpTo( inputdata_t &&inputdata );
 
-	void InputStartFogTransition(inputdata_t &data);
+	void InputStartFogTransition( inputdata_t &&inputdata );
 
 	int DrawDebugTextOverlays(void);
 
@@ -66,7 +66,7 @@ public:
 
 public:
 
-	CNetworkVarEmbedded( fogparams_t, m_fog );
+	CNetworkVarEmbedded( networked_fogparams_t, m_fog );
 	bool					m_bUseAngles;
 	int						m_iChangedVariables;
 };

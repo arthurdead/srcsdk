@@ -23,10 +23,10 @@ public:
 	virtual void Precache( void );
 	virtual void Spawn( void );
 	virtual int DrawDebugTextOverlays( void );
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
-	void InputSetVisibleTime( inputdata_t &inputdata );
-	void InputSetRechargeTime( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputSetVisibleTime( inputdata_t &&inputdata );
+	void InputSetRechargeTime( inputdata_t &&inputdata );
 
 	CNetworkVar( bool, m_bEnabled );
 	float m_fStartEnabledChance; //0.0 - 100.0% chance that this hallucination will start enabled
@@ -35,9 +35,9 @@ public:
 };
 
 BEGIN_MAPENTITY( CProp_Hallucination )
-	DEFINE_KEYFIELD( m_fStartEnabledChance, FIELD_FLOAT, "EnabledChance" ),
-	DEFINE_KEYFIELD( m_fVisibleTime, FIELD_FLOAT, "VisibleTime" ),
-	DEFINE_KEYFIELD( m_fRechargeTime, FIELD_FLOAT, "RechargeTime" ),
+	DEFINE_KEYFIELD_AUTO( m_fStartEnabledChance, "EnabledChance" ),
+	DEFINE_KEYFIELD_AUTO( m_fVisibleTime, "VisibleTime" ),
+	DEFINE_KEYFIELD_AUTO( m_fRechargeTime, "RechargeTime" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetVisibleTime", InputSetVisibleTime ),
@@ -75,22 +75,22 @@ void CProp_Hallucination::Spawn( void )
 	}
 }
 
-void CProp_Hallucination::InputEnable( inputdata_t &inputdata )
+void CProp_Hallucination::InputEnable( inputdata_t &&inputdata )
 {
 	m_bEnabled = true;
 }
 
-void CProp_Hallucination::InputDisable( inputdata_t &inputdata )
+void CProp_Hallucination::InputDisable( inputdata_t &&inputdata )
 {
 	m_bEnabled = false;
 }
 
-void CProp_Hallucination::InputSetVisibleTime( inputdata_t &inputdata )
+void CProp_Hallucination::InputSetVisibleTime( inputdata_t &&inputdata )
 {
 	m_fVisibleTime = inputdata.value.Float();
 }
 
-void CProp_Hallucination::InputSetRechargeTime( inputdata_t &inputdata )
+void CProp_Hallucination::InputSetRechargeTime( inputdata_t &&inputdata )
 {
 	m_fRechargeTime = inputdata.value.Float();
 }

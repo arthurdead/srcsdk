@@ -31,16 +31,16 @@ public:
 
 	COutputInt m_RequestedPlayerHealth;
 
-	void InputSetFlashlightSlowDrain( inputdata_t &inputdata );
-	void InputSetFlashlightNormalDrain( inputdata_t &inputdata );
-	void InputLowerWeapon( inputdata_t &inputdata );
-	void InputSetLocatorTargetEntity( inputdata_t &inputdata );
+	void InputSetFlashlightSlowDrain( inputdata_t &&inputdata );
+	void InputSetFlashlightNormalDrain( inputdata_t &&inputdata );
+	void InputLowerWeapon( inputdata_t &&inputdata );
+	void InputSetLocatorTargetEntity( inputdata_t &&inputdata );
 
-	void InputRequestPlayerHealth( inputdata_t &inputdata );
-	void InputSetPlayerHealth( inputdata_t &inputdata );
-	void InputRequestAmmoState( inputdata_t &inputdata );
-	void InputEnableCappedPhysicsDamage( inputdata_t &inputdata );
-	void InputDisableCappedPhysicsDamage( inputdata_t &inputdata );
+	void InputRequestPlayerHealth( inputdata_t &&inputdata );
+	void InputSetPlayerHealth( inputdata_t &&inputdata );
+	void InputRequestAmmoState( inputdata_t &&inputdata );
+	void InputEnableCappedPhysicsDamage( inputdata_t &&inputdata );
+	void InputDisableCappedPhysicsDamage( inputdata_t &&inputdata );
 
 	void Activate( void );
 

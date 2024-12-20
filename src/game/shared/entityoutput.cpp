@@ -190,7 +190,7 @@ void CBaseEntityOutput::FireOutput(variant_t Value, CSharedBaseEntity *pActivato
 			// Post the event with a parameter override.
 			//
 			variant_t ValueOverride;
-			ValueOverride.SetString( ev->m_iParameter );
+			ValueOverride.SetStringT( ev->m_iParameter );
 			// I found this while making point_advanced_finder. FireOutput()'s own delay parameter doesn't work with...uh...parameters.
 			g_EventQueue.AddEvent( STRING(ev->m_iTarget), STRING(ev->m_iTargetInput), ValueOverride, ev->m_flDelay + fDelay, pActivator, pCaller, ev->m_iIDStamp );
 		}
@@ -299,7 +299,7 @@ void CBaseEntityOutput::FireOutput(variant_t Value, CSharedBaseEntity *pActivato
 void COutputEvent::FireOutput(CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, float fDelay)
 {
 	variant_t Val;
-	Val.Set( FIELD_VOID, NULL );
+	Val.SetVoid();
 	CBaseEntityOutput::FireOutput(Val, pActivator, pCaller, fDelay);
 }
 
@@ -382,32 +382,38 @@ class CEventsSaveDataOps : public ICustomFieldOps
 {
 	virtual bool IsEmpty( const FieldInfo_t &fieldInfo )
 	{
-		AssertMsg( fieldInfo.pTypeDesc->fieldSize == 1, "CEventsSaveDataOps does not support arrays");
-		
 		// check all the elements of the array (usually only 1)
-		CBaseEntityOutput *ev = (CBaseEntityOutput*)fieldInfo.pField;
+		CBaseEntityOutput *ev = fieldInfo.GetField<CBaseEntityOutput>();
 		const int fieldSize = fieldInfo.pTypeDesc->fieldSize;
 		for ( int i = 0; i < fieldSize; i++, ev++ )
 		{
 			// It's not empty if it has events or if it has a non-void variant value
-			if (( ev->NumberOfElements() != 0 ) || ( ev->ValueFieldType() != FIELD_VOID ))
-				return 0;
+			if (( ev->NumberOfElements() != 0 ) || ( ev->ValueBaseFieldType() != FIELD_VOID ))
+				return false;
 		}
 
 		// variant has no data
-		return 1;
+		return true;
 	}
 
 	virtual void MakeEmpty( const FieldInfo_t &fieldInfo )
 	{
-		// Don't no how to. This is okay, since objects of this type
-		// are always born clean before restore, and not reused
+		CBaseEntityOutput *ev = fieldInfo.GetField<CBaseEntityOutput>();
+		const int fieldSize = fieldInfo.pTypeDesc->fieldSize;
+		for ( int i = 0; i < fieldSize; i++, ev++ )
+		{
+			ev->DeleteAllElements();
+		}
 	}
 
 	virtual bool Parse( const FieldInfo_t &fieldInfo, char const* szValue )
 	{
-		CBaseEntityOutput *ev = (CBaseEntityOutput*)fieldInfo.pField;
-		ev->ParseEventAction( szValue );
+		CBaseEntityOutput *ev = fieldInfo.GetField<CBaseEntityOutput>();
+		const int fieldSize = fieldInfo.pTypeDesc->fieldSize;
+		for ( int i = 0; i < fieldSize; i++, ev++ )
+		{
+			ev->ParseEventAction( szValue );
+		}
 		return true;
 	}
 };
@@ -602,7 +608,7 @@ EventQueuePrioritizedEvent_t *CEventQueue::AddEvent( CSharedBaseEntity *target, 
 EventQueuePrioritizedEvent_t *CEventQueue::AddEvent( CSharedBaseEntity *target, const char *action, float fireDelay, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, int outputID )
 {
 	variant_t Value;
-	Value.Set( FIELD_VOID, NULL );
+	Value.SetVoid();
 	EventQueuePrioritizedEvent_t *newEvent = AddEvent( target, action, Value, fireDelay, pActivator, pCaller, outputID );
 	return newEvent;
 }
@@ -680,11 +686,11 @@ void CEventQueue::ServiceEvents( void )
 			// This is a hack to access the entity from a FIELD_EHANDLE input
 			if ( FStrEq( STRING( pe->m_iTarget ), "!output" ) )
 			{
-				pe->m_VariantValue.Convert( FIELD_EHANDLE );
-				CSharedBaseEntity *target = pe->m_VariantValue.Entity();
+				CSharedBaseEntity *target = pe->m_VariantValue.EntityP();
+				pe->m_VariantValue.SetEntityH( target );
 
 				// pump the action into the target
-				target->AcceptInput( STRING( pe->m_iTargetInput ), pe->m_pActivator, pe->m_pCaller, pe->m_VariantValue, pe->m_iOutputID );
+				target->AcceptInput( STRING( pe->m_iTargetInput ), pe->m_pActivator, pe->m_pCaller, Move(pe->m_VariantValue), pe->m_iOutputID );
 				targetFound = true;
 			}
 			else
@@ -697,7 +703,7 @@ void CEventQueue::ServiceEvents( void )
 						break;
 
 					// pump the action into the target
-					target->AcceptInput( STRING(pe->m_iTargetInput), pe->m_pActivator, pe->m_pCaller, pe->m_VariantValue, pe->m_iOutputID );
+					target->AcceptInput( STRING(pe->m_iTargetInput), pe->m_pActivator, pe->m_pCaller, Move(pe->m_VariantValue), pe->m_iOutputID );
 					targetFound = true;
 				}
 			}
@@ -706,7 +712,7 @@ void CEventQueue::ServiceEvents( void )
 		// direct pointer
 		if ( pe->m_pEntTarget != NULL )
 		{
-			pe->m_pEntTarget->AcceptInput( STRING(pe->m_iTargetInput), pe->m_pActivator, pe->m_pCaller, pe->m_VariantValue, pe->m_iOutputID );
+			pe->m_pEntTarget->AcceptInput( STRING(pe->m_iTargetInput), pe->m_pActivator, pe->m_pCaller, Move(pe->m_VariantValue), pe->m_iOutputID );
 			targetFound = true;
 		}
 
@@ -723,7 +729,7 @@ void CEventQueue::ServiceEvents( void )
 						break;
 
 					// pump the action into the target
-					target->AcceptInput( STRING(pe->m_iTargetInput), pe->m_pActivator, pe->m_pCaller, pe->m_VariantValue, pe->m_iOutputID );
+					target->AcceptInput( STRING(pe->m_iTargetInput), pe->m_pActivator, pe->m_pCaller, Move(pe->m_VariantValue), pe->m_iOutputID );
 					targetFound = true;
 				}
 			}

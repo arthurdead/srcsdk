@@ -277,7 +277,6 @@ void CTeam::InitializePlayers( void )
 void CTeam::AddPlayer( CBasePlayer *pPlayer )
 {
 	m_aPlayers.AddToTail( pPlayer );
-	NetworkStateChanged();
 }
 
 //-----------------------------------------------------------------------------
@@ -286,7 +285,6 @@ void CTeam::AddPlayer( CBasePlayer *pPlayer )
 void CTeam::RemovePlayer( CBasePlayer *pPlayer )
 {
 	m_aPlayers.FindAndRemove( pPlayer );
-	NetworkStateChanged();
 }
 
 //-----------------------------------------------------------------------------

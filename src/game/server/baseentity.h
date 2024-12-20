@@ -9,8 +9,6 @@
 #define BASEENTITY_H
 #pragma once
 
-#define TEAMNUM_NUM_BITS	6
-
 #include "entitylist.h"
 #include "entityoutput.h"
 #include "networkvar.h"
@@ -27,6 +25,8 @@
 #include "map_entity.h"
 #include "vphysics_interface.h"
 //#include "density_weight_map.h"
+#include "videocfg/videocfg.h"
+#include "imovehelper.h"
 
 class CDamageModifier;
 class CDmgAccumulator;
@@ -98,6 +98,7 @@ typedef unsigned int UtlHashHandle_t;
 class CGlobalEvent;
 class CCollisionProperty;
 class DensityWeightsMap;
+enum density_type_t : unsigned char;
 
 typedef CUtlVector< CBaseEntity* > EntityList_t;
 
@@ -115,7 +116,7 @@ struct ResponseContext_t
 // Entity events... targetted to a particular entity
 // Each event has a well defined structure to use for parameters
 //-----------------------------------------------------------------------------
-enum EntityEvent_t
+enum EntityEvent_t : unsigned char
 {
 	ENTITY_EVENT_WATER_TOUCH = 0,		// No data needed
 	ENTITY_EVENT_WATER_UNTOUCH,			// No data needed
@@ -134,7 +135,7 @@ typedef void (CBaseEntity::*USEPTR)( CBaseEntity *pActivator, CBaseEntity *pCall
 #define DEFINE_USEFUNC( function ) DEFINE_FUNCTION_RAW( function, USEPTR )
 
 // Things that toggle (buttons/triggers/doors) need this
-enum TOGGLE_STATE
+enum TOGGLE_STATE : unsigned char
 {
 	TS_AT_TOP,
 	TS_AT_BOTTOM,
@@ -143,8 +144,10 @@ enum TOGGLE_STATE
 };
 
 // Debug overlay bits
-enum DebugOverlayBits_t
+enum DebugOverlayBits_t : unsigned int
 {
+	OVERLAY_NONE = 0,
+
 #if !defined SWDS || 1
 	OVERLAY_TEXT_BIT			=	0x00000001,		// show text debug overlay for this entity
 	OVERLAY_NAME_BIT			=	0x00000002,		// show name debug overlay for this entity
@@ -191,6 +194,8 @@ enum DebugOverlayBits_t
 #endif
 };
 
+FLAGENUM_OPERATORS( DebugOverlayBits_t, unsigned int )
+
 #if !defined SWDS || 1
 struct TimedOverlay_t;
 #endif
@@ -231,20 +236,10 @@ struct thinkfunc_t
 struct EmitSound_t;
 struct rotatingpushmove_t;
 
-#if PREDICTION_ERROR_CHECK_LEVEL > 1 
-const int SENDPROP_ANGROTATION_DEFAULT_BITS = -1;
-#else
-const int SENDPROP_ANGROTATION_DEFAULT_BITS = 13;
-#endif
-
-#if PREDICTION_ERROR_CHECK_LEVEL > 1 
-const int SENDPROP_VECORIGIN_FLAGS = SPROP_NOSCALE|SPROP_CHANGES_OFTEN;
-#else
 #ifdef DT_CELL_COORD_SUPPORTED
-const int SENDPROP_VECORIGIN_FLAGS = SPROP_CELL_COORD|SPROP_CHANGES_OFTEN;
+const DTFlags_t SENDPROP_VECORIGIN_FLAGS = SPROP_CELL_COORD;
 #else
-const int SENDPROP_VECORIGIN_FLAGS = SPROP_COORD_MP|SPROP_CHANGES_OFTEN;
-#endif
+const DTFlags_t SENDPROP_VECORIGIN_FLAGS = SPROP_COORD_MP;
 #endif
 
 #ifdef DT_CELL_COORD_SUPPORTED
@@ -265,7 +260,7 @@ const int SENDPROP_VECORIGIN_FLAGS = SPROP_COORD_MP|SPROP_CHANGES_OFTEN;
 //
 // Base Entity.  All entity types derive from this
 //
-class CBaseEntity : public IServerEntity
+class CBaseEntity : public IServerEntity, public INetworkableObject
 {
 public:
 	DECLARE_CLASS_NOBASE( CBaseEntity );	
@@ -294,8 +289,8 @@ public:
 public:
 	// If bServerOnly is true, then the ent never goes to the client. This is used
 	// by logical entities.
-	CBaseEntity() : CBaseEntity(0) {}
-	CBaseEntity( uint64 iEFlags );
+	CBaseEntity() : CBaseEntity(EFL_NONE) {}
+	CBaseEntity( EntityFlags_t iEFlags );
 	virtual ~CBaseEntity();
 
 	// prediction system
@@ -336,8 +331,8 @@ public:
 
 public:
 	// virtual methods for derived classes to override
-	virtual bool			TestCollision( const Ray_t& ray, unsigned int mask, trace_t& trace );
-	virtual	bool			TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr );
+	virtual bool			TestCollision( const Ray_t& ray, ContentsFlags_t mask, trace_t& trace );
+	virtual	bool			TestHitboxes( const Ray_t &ray, ContentsFlags_t fContentsMask, trace_t& tr );
 	virtual void			ComputeWorldSpaceSurroundingBox( Vector *pWorldMins, Vector *pWorldMaxs );
 
 	// non-virtual methods. Don't override these!
@@ -356,12 +351,12 @@ public:
 	inline Vector			Up() const RESTRICT;      ///< get my up      (+z) vector
 
 	SolidType_t				GetSolid() const;
-	int			 			GetSolidFlags( void ) const;
+	SolidFlags_t			 			GetSolidFlags( void ) const;
 
-	uint64						GetEFlags() const;
-	void					AddEFlags( uint64 nEFlagMask );
-	void					RemoveEFlags( uint64 nEFlagMask );
-	bool					IsEFlagSet( uint64 nEFlagMask ) const;
+	EntityFlags_t						GetEFlags() const;
+	void					AddEFlags( EntityFlags_t nEFlagMask );
+	void					RemoveEFlags( EntityFlags_t nEFlagMask );
+	bool					IsEFlagSet( EntityFlags_t nEFlagMask ) const;
 
 	// Quick way to ask if we have a player entity as a child anywhere in our hierarchy.
 	void					RecalcHasPlayerChildBit();
@@ -381,7 +376,7 @@ public:
 	bool					IsFloating();
 
 	// Called by physics to see if we should avoid a collision test....
-	virtual	bool			ShouldCollide( int collisionGroup, int contentsMask ) const;
+	virtual	bool			ShouldCollide( Collision_Group_t collisionGroup, ContentsFlags_t contentsMask ) const;
 
 	// Move type / move collide
 	MoveType_t				GetMoveType() const;
@@ -405,13 +400,13 @@ public:
 	matrix3x4_t&			GetParentToWorldTransform( matrix3x4_t &tempMatrix );
 
 	// Externalized data objects ( see sharreddefs.h for DataObjectType_t )
-	bool					HasDataObjectType( int type ) const;
-	void					AddDataObjectType( int type );
-	void					RemoveDataObjectType( int type );
+	bool					HasDataObjectType( DataObject_t type ) const;
+	void					AddDataObjectType( DataObject_t type );
+	void					RemoveDataObjectType( DataObject_t type );
 
-	void					*GetDataObject( int type );
-	void					*CreateDataObject( int type );
-	void					DestroyDataObject( int type );
+	void					*GetDataObject( DataObject_t type );
+	void					*CreateDataObject( DataObject_t type );
+	void					DestroyDataObject( DataObject_t type );
 	void					DestroyAllDataObjects( void );
 
 public:
@@ -428,15 +423,15 @@ public:
 
 	// Only CBaseEntity implements these. CheckTransmit calls the virtual ShouldTransmit to see if the
 	// entity wants to be sent. If so, it calls SetTransmit, which will mark any dependents for transmission too.
-	virtual int				ShouldTransmit( const CCheckTransmitInfo *pInfo );
+	virtual EdictStateFlags_t				ShouldTransmit( const CCheckTransmitInfo *pInfo );
 
 	// update the global transmit state if a transmission rule changed
-		    int				SetTransmitState( int nFlag);
-			int				GetTransmitState( void );
-	int						DispatchUpdateTransmitState();
+    EdictStateFlags_t				SetTransmitState( EdictStateFlags_t nFlag);
+	EdictStateFlags_t				GetTransmitState( void );
+	EdictStateFlags_t						DispatchUpdateTransmitState();
 	
 	// Do NOT call this directly. Use DispatchUpdateTransmitState.
-	virtual int				UpdateTransmitState();
+	virtual EdictStateFlags_t				UpdateTransmitState();
 	
 	// Entities (like ropes) use this to own the transmit state of another entity
 	// by forcing it to not call UpdateTransmitState.
@@ -574,12 +569,12 @@ public:
 	void		ClearSpawnFlags( void );
 	bool		HasSpawnFlags( int nFlags ) const;
 
-	int			GetEffects( void ) const;
-	void		AddEffects( int nEffects );
-	void		RemoveEffects( int nEffects );
+	Effects_t			GetEffects( void ) const;
+	void		AddEffects( Effects_t nEffects );
+	void		RemoveEffects( Effects_t nEffects );
 	void		ClearEffects( void );
-	void		SetEffects( int nEffects );
-	bool		IsEffectActive( int nEffects ) const;
+	void		SetEffects( Effects_t nEffects );
+	bool		IsEffectActive( Effects_t nEffects ) const;
 
 	// makes the entity inactive
 	void		MakeDormant( void );
@@ -601,103 +596,104 @@ public:
 
 	// handles an input (usually caused by outputs)
 	// returns true if the the value in the pass in should be set, false if the input is to be ignored
-	virtual bool AcceptInput( const char *szInputName, CBaseEntity *pActivator, CBaseEntity *pCaller, variant_t Value, int outputID );
+	virtual bool AcceptInput( const char *szInputName, CBaseEntity *pActivator, CBaseEntity *pCaller, variant_t &&Value, int outputID );
+	bool AcceptInput( const char *szInputName, CBaseEntity *pActivator, CBaseEntity *pCaller, const variant_t &Value, int outputID );
 
 	//
 	// Input handlers.
 	//
-	void InputAlternativeSorting( inputdata_t &inputdata );
-	void InputAlpha( inputdata_t &inputdata );
-	void InputColor( inputdata_t &inputdata );
-	void InputSetParent( inputdata_t &inputdata );
+	void InputAlternativeSorting( inputdata_t &&inputdata );
+	void InputAlpha( inputdata_t &&inputdata );
+	void InputColor( inputdata_t &&inputdata );
+	void InputSetParent( inputdata_t &&inputdata );
 	void SetParentAttachment( const char *szInputName, const char *szAttachment, bool bMaintainOffset );
-	void InputSetParentAttachment( inputdata_t &inputdata );
-	void InputSetParentAttachmentMaintainOffset( inputdata_t &inputdata );
-	void InputClearParent( inputdata_t &inputdata );
-	void InputSetTeam( inputdata_t &inputdata );
-	void InputUse( inputdata_t &inputdata );
-	void InputKill( inputdata_t &inputdata );
-	void InputKillHierarchy( inputdata_t &inputdata );
-	void InputSetDamageFilter( inputdata_t &inputdata );
-	void InputDispatchEffect( inputdata_t &inputdata );
-	void InputEnableDamageForces( inputdata_t &inputdata );
-	void InputDisableDamageForces( inputdata_t &inputdata );
-	void InputAddContext( inputdata_t &inputdata );
-	void InputRemoveContext( inputdata_t &inputdata );
-	void InputClearContext( inputdata_t &inputdata );
-	void InputDispatchResponse( inputdata_t& inputdata );
-	void InputDisableShadow( inputdata_t &inputdata );
-	void InputEnableShadow( inputdata_t &inputdata );
-	void InputDisableDraw( inputdata_t &inputdata );
-	void InputEnableDraw( inputdata_t &inputdata );
-	void InputDisableReceivingFlashlight( inputdata_t &inputdata );
-	void InputEnableReceivingFlashlight( inputdata_t &inputdata );
-	void InputAddOutput( inputdata_t &inputdata );
-	void InputFireUser1( inputdata_t &inputdata );
-	void InputFireUser2( inputdata_t &inputdata );
-	void InputFireUser3( inputdata_t &inputdata );
-	void InputFireUser4( inputdata_t &inputdata );
-	void InputChangeVariable( inputdata_t &inputdata );
+	void InputSetParentAttachment( inputdata_t &&inputdata );
+	void InputSetParentAttachmentMaintainOffset( inputdata_t &&inputdata );
+	void InputClearParent( inputdata_t &&inputdata );
+	void InputSetTeam( inputdata_t &&inputdata );
+	void InputUse( inputdata_t &&inputdata );
+	void InputKill( inputdata_t &&inputdata );
+	void InputKillHierarchy( inputdata_t &&inputdata );
+	void InputSetDamageFilter( inputdata_t &&inputdata );
+	void InputDispatchEffect( inputdata_t &&inputdata );
+	void InputEnableDamageForces( inputdata_t &&inputdata );
+	void InputDisableDamageForces( inputdata_t &&inputdata );
+	void InputAddContext( inputdata_t &&inputdata );
+	void InputRemoveContext( inputdata_t &&inputdata );
+	void InputClearContext( inputdata_t &&inputdata );
+	void InputDispatchResponse( inputdata_t &&inputdata );
+	void InputDisableShadow( inputdata_t &&inputdata );
+	void InputEnableShadow( inputdata_t &&inputdata );
+	void InputDisableDraw( inputdata_t &&inputdata );
+	void InputEnableDraw( inputdata_t &&inputdata );
+	void InputDisableReceivingFlashlight( inputdata_t &&inputdata );
+	void InputEnableReceivingFlashlight( inputdata_t &&inputdata );
+	void InputAddOutput( inputdata_t &&inputdata );
+	void InputFireUser1( inputdata_t &&inputdata );
+	void InputFireUser2( inputdata_t &&inputdata );
+	void InputFireUser3( inputdata_t &&inputdata );
+	void InputFireUser4( inputdata_t &&inputdata );
+	void InputChangeVariable( inputdata_t &&inputdata );
 
-	void InputPassUser1( inputdata_t &inputdata );
-	void InputPassUser2( inputdata_t &inputdata );
-	void InputPassUser3( inputdata_t &inputdata );
-	void InputPassUser4( inputdata_t &inputdata );
+	void InputPassUser1( inputdata_t &&inputdata );
+	void InputPassUser2( inputdata_t &&inputdata );
+	void InputPassUser3( inputdata_t &&inputdata );
+	void InputPassUser4( inputdata_t &&inputdata );
 
-	void InputFireRandomUser( inputdata_t &inputdata );
-	void InputPassRandomUser( inputdata_t &inputdata );
+	void InputFireRandomUser( inputdata_t &&inputdata );
+	void InputPassRandomUser( inputdata_t &&inputdata );
 
-	void InputSetEntityName( inputdata_t &inputdata );
+	void InputSetEntityName( inputdata_t &&inputdata );
 
-	virtual void InputSetTarget( inputdata_t &inputdata );
-	virtual void InputSetOwnerEntity( inputdata_t &inputdata );
+	virtual void InputSetTarget( inputdata_t &&inputdata );
+	virtual void InputSetOwnerEntity( inputdata_t &&inputdata );
 
-	virtual void InputAddHealth( inputdata_t &inputdata );
-	virtual void InputRemoveHealth( inputdata_t &inputdata );
-	virtual void InputSetHealth( inputdata_t &inputdata );
+	virtual void InputAddHealth( inputdata_t &&inputdata );
+	virtual void InputRemoveHealth( inputdata_t &&inputdata );
+	virtual void InputSetHealth( inputdata_t &&inputdata );
 
-	virtual void InputSetMaxHealth( inputdata_t &inputdata );
+	virtual void InputSetMaxHealth( inputdata_t &&inputdata );
 
-	void InputFireOutput( inputdata_t &inputdata );
-	void InputRemoveOutput( inputdata_t &inputdata );
-	//virtual void InputCancelOutput( inputdata_t &inputdata ); // Find a way to implement this
-	void InputReplaceOutput( inputdata_t &inputdata );
-	void InputAcceptInput( inputdata_t &inputdata );
-	virtual void InputCancelPending( inputdata_t &inputdata );
+	void InputFireOutput( inputdata_t &&inputdata );
+	void InputRemoveOutput( inputdata_t &&inputdata );
+	//virtual void InputCancelOutput( inputdata_t &&inputdata ); // Find a way to implement this
+	void InputReplaceOutput( inputdata_t &&inputdata );
+	void InputAcceptInput( inputdata_t &&inputdata );
+	virtual void InputCancelPending( inputdata_t &&inputdata );
 
-	void InputFreeChildren( inputdata_t &inputdata );
+	void InputFreeChildren( inputdata_t &&inputdata );
 
-	void InputSetLocalOrigin( inputdata_t &inputdata );
-	void InputSetLocalAngles( inputdata_t &inputdata );
-	void InputSetAbsOrigin( inputdata_t &inputdata );
-	void InputSetAbsAngles( inputdata_t &inputdata );
-	void InputSetLocalVelocity( inputdata_t &inputdata );
-	void InputSetLocalAngularVelocity( inputdata_t &inputdata );
+	void InputSetLocalOrigin( inputdata_t &&inputdata );
+	void InputSetLocalAngles( inputdata_t &&inputdata );
+	void InputSetAbsOrigin( inputdata_t &&inputdata );
+	void InputSetAbsAngles( inputdata_t &&inputdata );
+	void InputSetLocalVelocity( inputdata_t &&inputdata );
+	void InputSetLocalAngularVelocity( inputdata_t &&inputdata );
 
-	void InputAddSpawnFlags( inputdata_t &inputdata );
-	void InputRemoveSpawnFlags( inputdata_t &inputdata );
-	void InputSetRenderMode( inputdata_t &inputdata );
-	void InputSetRenderFX( inputdata_t &inputdata );
-	void InputSetViewHideFlags( inputdata_t &inputdata );
-	void InputAddEffects( inputdata_t &inputdata );
-	void InputRemoveEffects( inputdata_t &inputdata );
-	void InputDrawEntity( inputdata_t &inputdata );
-	void InputUndrawEntity( inputdata_t &inputdata );
-	void InputAddEFlags( inputdata_t &inputdata );
-	void InputRemoveEFlags( inputdata_t &inputdata );
-	void InputAddSolidFlags( inputdata_t &inputdata );
-	void InputRemoveSolidFlags( inputdata_t &inputdata );
-	void InputSetMoveType( inputdata_t &inputdata );
-	void InputSetCollisionGroup( inputdata_t &inputdata );
+	void InputAddSpawnFlags( inputdata_t &&inputdata );
+	void InputRemoveSpawnFlags( inputdata_t &&inputdata );
+	void InputSetRenderMode( inputdata_t &&inputdata );
+	void InputSetRenderFX( inputdata_t &&inputdata );
+	void InputSetViewHideFlags( inputdata_t &&inputdata );
+	void InputAddEffects( inputdata_t &&inputdata );
+	void InputRemoveEffects( inputdata_t &&inputdata );
+	void InputDrawEntity( inputdata_t &&inputdata );
+	void InputUndrawEntity( inputdata_t &&inputdata );
+	void InputAddEFlags( inputdata_t &&inputdata );
+	void InputRemoveEFlags( inputdata_t &&inputdata );
+	void InputAddSolidFlags( inputdata_t &&inputdata );
+	void InputRemoveSolidFlags( inputdata_t &&inputdata );
+	void InputSetMoveType( inputdata_t &&inputdata );
+	void InputSetCollisionGroup( inputdata_t &&inputdata );
 
-	void InputTouch( inputdata_t &inputdata );
+	void InputTouch( inputdata_t &&inputdata );
 
-	virtual void InputKilledNPC( inputdata_t &inputdata );
+	virtual void InputKilledNPC( inputdata_t &&inputdata );
 
-	void InputKillIfNotVisible( inputdata_t &inputdata );
-	void InputKillWhenNotVisible( inputdata_t &inputdata );
+	void InputKillIfNotVisible( inputdata_t &&inputdata );
+	void InputKillWhenNotVisible( inputdata_t &&inputdata );
 
-	void InputSetThinkNull( inputdata_t &inputdata );
+	void InputSetThinkNull( inputdata_t &&inputdata );
 
 	// Returns the origin at which to play an inputted dispatcheffect 
 	virtual void GetInputDispatchEffectPosition( const char *sInputString, Vector &pOrigin, QAngle &pAngles );
@@ -753,7 +749,7 @@ public:
 public:
 	// Networking related methods
 	virtual void	NetworkStateChanged();
-	virtual void	NetworkStateChanged( void *pVar );
+	virtual void	NetworkStateChanged( unsigned short offset );
 
 public:
  	void CalcAbsolutePosition();
@@ -820,9 +816,9 @@ public:
 
 private:
 	// was pev->renderfx
-	CNetworkVar( unsigned char, m_nRenderFX );
+	CNetworkVar( RenderFx_t, m_nRenderFX );
 	// was pev->rendermode
-	CNetworkVar( unsigned char, m_nRenderMode );
+	CNetworkVar( RenderMode_t, m_nRenderMode );
 	CNetworkModelIndex( m_nModelIndex );
 	
 	CNetworkUtlVector( VisionModelIndex_t, m_VisionModelIndexOverrides ); // used to override the base model index on the client if necessary
@@ -834,7 +830,7 @@ public:
 	// Doing this via flags allows for the entity to be hidden from multiple view IDs at the same time.
 	// 
 	// This was partly inspired by Underhell's keyvalue that allows entities to only render in mirrors and cameras.
-	CNetworkVar( int, m_iViewHideFlags );
+	CNetworkVar( view_flags_t, m_iViewHideFlags );
 
 protected:
 	// Disables receiving projected textures. Based on a keyvalue from later Source games.
@@ -858,9 +854,9 @@ public:
 
 	// was pev->animtime:  consider moving to CBaseAnimating
 	float		m_flPrevAnimTime;
-	CNetworkVar( float, m_flAnimTime );  // this is the point in time that the client will interpolate to position,angle,frame,etc.
-	CNetworkVar( float, m_flSimulationTime );
-	CNetworkVar( float, m_flCreateTime );
+	CNetworkTime( m_flAnimTime );  // this is the point in time that the client will interpolate to position,angle,frame,etc.
+	CNetworkTime( m_flSimulationTime );
+	CNetworkTime( m_flCreateTime );
 
 	void IncrementInterpolationFrame(); // Call this to cause a discontinuity (teleport)
 
@@ -869,7 +865,7 @@ public:
 	int				m_nLastThinkTick;
 
 	// Certain entities (projectiles) can be created on the client and thus need a matching id number
-	CNetworkVar( CPredictableId, m_PredictableID );
+	CNetworkPredictableId( m_PredictableID );
 
 	// used so we know when things are no longer touching
 	int			m_nTouchStamp;			
@@ -877,7 +873,7 @@ public:
 protected:
 
 	// think function handling
-	enum thinkmethods_t
+	enum thinkmethods_t : unsigned char
 	{
 		THINK_FIRE_ALL_FUNCTIONS,
 		THINK_FIRE_BASE_ONLY,
@@ -924,9 +920,9 @@ private:
 	friend class CThinkSyncTester;
 
 	// was pev->nextthink
-	CNetworkVarForDerived( int, m_nNextThinkTick );
+	CNetworkVarForDerived( int, m_nNextThinkTick, private );
 	// was pev->effects
-	CNetworkVar( int, m_fEffects );
+	CNetworkVar( Effects_t, m_fEffects );
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -972,7 +968,7 @@ public:
 	int TakeDamage( const CTakeDamageInfo &info );
 	virtual void AdjustDamageDirection( const CTakeDamageInfo &info, Vector &dir, CBaseEntity *pEnt ) {}
 
-	virtual int		TakeHealth( float flHealth, int bitsDamageType );
+	virtual int		TakeHealth( float flHealth, DamageTypes_t bitsDamageType );
 
 	virtual bool	IsAlive( void );
 	// Entity killed (only fired once)
@@ -984,9 +980,9 @@ public:
 	virtual void	Event_KilledOther( CBaseEntity *pVictim, const CTakeDamageInfo &info );
 
 	// UNDONE: Make this data?
-	virtual int				BloodColor( void );
+	virtual BloodColor_t				BloodColor( void );
 
-	void					TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, uint64 bitsDamageType );
+	void					TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, DamageTypes_t bitsDamageType );
 	virtual bool			IsTriggered( CBaseEntity *pActivator ) {return true;}
 	virtual bool			IsNPC( void ) const { return false; }
 	virtual CAI_BaseNPC				*MyNPCPointer( void ); 
@@ -997,7 +993,7 @@ public:
 	bool					IsWorld() const { extern CWorld *g_WorldEntity; return (void *)this == (void *)g_WorldEntity; }
 	virtual char const		*DamageDecal( int bitsDamageType, int gameMaterial );
 	virtual void			DecalTrace( trace_t *pTrace, char const *decalName );
-	virtual void			ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName = NULL );
+	virtual void			ImpactTrace( trace_t *pTrace, DamageTypes_t iDamageType, const char *pCustomImpactName = NULL );
 
 	void			AddPoints( int score, bool bAllowNegativeScore );
 	void			AddPointsToTeam( int score, bool bAllowNegativeScore );
@@ -1204,18 +1200,18 @@ public:
 	string_t	m_target;
 	CNetworkVarForDerived( int, m_iMaxHealth ); // CBaseEntity doesn't care about changes to this variable, but there are derived classes that do.
 private:
-	CNetworkVarForDerived( int, m_iHealth );
+	CNetworkVarForDerived( int, m_iHealth, private );
 
 public:
-	CNetworkVarForDerived( char, m_lifeState );
-	CNetworkVarForDerived( char , m_takedamage );
+	CNetworkVarForDerived( Lifestate_t, m_lifeState );
+	CNetworkVarForDerived( Takedamage_t , m_takedamage );
 
 	// Damage filtering
 	string_t	m_iszDamageFilterName;	// The name of the entity to use as our damage filter.
 	EHANDLE		m_hDamageFilter;		// The entity that controls who can damage us.
 
 	// Debugging / devolopment fields
-	int				m_debugOverlays;	// For debug only (bitfields)
+	DebugOverlayBits_t				m_debugOverlays;	// For debug only (bitfields)
 #if !defined SWDS || 1
 	TimedOverlay_t*	m_pTimedOverlay;	// For debug only
 #endif
@@ -1234,12 +1230,12 @@ public:
 	static CBaseEntity *CreatePredictedNoSpawn( const char *module, int line, const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner = NULL );
 
 	// Collision group accessors
-	int				GetCollisionGroup() const;
-	void			SetCollisionGroup( int collisionGroup );
+	Collision_Group_t				GetCollisionGroup() const;
+	void			SetCollisionGroup( Collision_Group_t collisionGroup );
 	void			CollisionRulesChanged();
 
 	// Damage accessors
-	virtual uint64		GetDamageType() const;
+	virtual DamageTypes_t		GetDamageType() const;
 	virtual float	GetDamage() { return 0; }
 	virtual void	SetDamage(float flDamage) {}
 
@@ -1315,8 +1311,8 @@ public:
 	void			SetMass(float mass);
 	float			GetMass();
 
-	virtual	bool FVisible ( CBaseEntity *pEntity, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
-	virtual bool FVisible( const Vector &vecTarget, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
+	virtual	bool FVisible ( CBaseEntity *pEntity, ContentsFlags_t traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
+	virtual bool FVisible( const Vector &vecTarget, ContentsFlags_t traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
 
 	virtual bool CanBeSeenBy( CAI_BaseNPC *pNPC ); // allows entities to be 'invisible' to NPC senses.
 	virtual bool CanBeSeenBy( CBaseEntity *pEnt ); // allows entities to be 'invisible' to NPC senses.
@@ -1339,19 +1335,19 @@ public:
 	// Gets the velocity we impart to a player standing on us
 	virtual void			GetGroundVelocityToApply( Vector &vecGroundVel ) { vecGroundVel = vec3_origin; }
 
-	int						GetWaterLevel() const;
-	void					SetWaterLevel( int nLevel );
-	int						GetWaterType() const;
-	void					SetWaterType( int nType );
+	WaterLevel_t						GetWaterLevel() const;
+	void					SetWaterLevel( WaterLevel_t nLevel );
+	WaterType_t						GetWaterType() const;
+	void					SetWaterType( WaterType_t nType );
 
 	virtual bool			PhysicsSplash( const Vector &centerPoint, const Vector &normal, float rawSpeed, float scaledSpeed ) { return false; }
 	virtual void			Splash() {}
 
 	void					ClearSolidFlags( void );	
-	void					RemoveSolidFlags( int flags );
-	void					AddSolidFlags( int flags );
-	bool					IsSolidFlagSet( int flagMask ) const;
-	void				 	SetSolidFlags( int flags );
+	void					RemoveSolidFlags( SolidFlags_t flags );
+	void					AddSolidFlags( SolidFlags_t flags );
+	bool					IsSolidFlagSet( SolidFlags_t flagMask ) const;
+	void				 	SetSolidFlags( SolidFlags_t flags );
 	bool					IsSolid() const;
 	
 	void					SetModelName( string_t name );
@@ -1413,11 +1409,9 @@ public:
 	static void SendProxy_CellX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
 	static void SendProxy_CellY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
 	static void SendProxy_CellZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-#ifdef DT_CELL_COORD_SUPPORTED
 	static void SendProxy_CellOrigin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 	static void SendProxy_CellOriginXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 	static void SendProxy_CellOriginZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-#endif
 	static void SendProxy_AnglesX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 	static void SendProxy_AnglesY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 	static void SendProxy_AnglesZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
@@ -1431,10 +1425,10 @@ public:
 	// When OBBs get in, this can probably go away.
 	virtual Vector			GetSoundEmissionOrigin() const;
 
-	void					AddFlag( uint64 flags );
-	void					RemoveFlag( uint64 flagsToRemove );
-	void					ToggleFlag( uint64 flagToToggle );
-	uint64						GetFlags( void ) const;
+	void					AddFlag( EntityBehaviorFlags_t flags );
+	void					RemoveFlag( EntityBehaviorFlags_t flagsToRemove );
+	void					ToggleFlag( EntityBehaviorFlags_t flagToToggle );
+	EntityBehaviorFlags_t						GetFlags( void ) const;
 	void					ClearFlags( void );
 
 	// Sets the local position from a transform
@@ -1576,7 +1570,7 @@ public:
 	virtual	CBasePlayer		*HasPhysicsAttacker( float dt ) { return NULL; }
 
 	// UNDONE: Make this data?
-	virtual unsigned int	PhysicsSolidMaskForEntity( void ) const;
+	virtual ContentsFlags_t	PhysicsSolidMaskForEntity( void ) const;
 
 	// Computes the abs position of a point specified in local space
 	void					ComputeAbsPosition( const Vector &vecLocalPosition, Vector *pAbsPosition );
@@ -1718,9 +1712,9 @@ protected:
 	CNetworkVar( int, m_spawnflags );
 
 private:
-	uint64		m_iEFlags;	// entity flags EFL_*
+	EntityFlags_t		m_iEFlags;	// entity flags EFL_*
 	// was pev->flags
-	CNetworkVarForDerived( uint64, m_fFlags );
+	CNetworkVarForDerived( EntityBehaviorFlags_t, m_fFlags, private );
 
 	CNetworkStringT( m_iName ); // name used to identify this entity
 
@@ -1732,8 +1726,8 @@ private:
 
 	byte	m_nTransmitStateOwnedCounter;
 	CNetworkVar( unsigned char,  m_iParentAttachment ); // 0 if we're relative to the parent's absorigin and absangles.
-	CNetworkVar( unsigned char, m_MoveType );		// One of the MOVETYPE_ defines.
-	CNetworkVar( unsigned char, m_MoveCollide );
+	CNetworkVar( MoveType_t, m_MoveType );		// One of the MOVETYPE_ defines.
+	CNetworkVar( MoveCollide_t, m_MoveCollide );
 
 	// Our immediate parent in the movement hierarchy.
 	// FIXME: clarify m_pParent vs. m_pMoveParent
@@ -1745,19 +1739,19 @@ private:
 
 	friend class CCollisionProperty;
 	friend class CServerNetworkProperty;
-	CCollisionProperty *m_pCollision;
+	CNetworkVarEmbeddedPtr( CCollisionProperty, m_pCollision );
 
 	CNetworkHandle( CBaseEntity, m_hOwnerEntity );	// only used to point to an edict it won't collide with
 	CNetworkHandle( CBaseEntity, m_hEffectEntity );	// Fire/Dissolve entity.
-	CNetworkVar( float, m_fadeMinDist );	// Point at which fading is absolute
-	CNetworkVar( float, m_fadeMaxDist );	// Point at which fading is inactive
-	CNetworkVar( float, m_flFadeScale );	// Scale applied to min / max
+	CNetworkDistance( m_fadeMinDist );	// Point at which fading is absolute
+	CNetworkDistance( m_fadeMaxDist );	// Point at which fading is inactive
+	CNetworkScale( m_flFadeScale );	// Scale applied to min / max
 
-	CNetworkVar( int, m_CollisionGroup );		// used to cull collision tests
+	CNetworkVar( Collision_Group_t, m_CollisionGroup );		// used to cull collision tests
 	IPhysicsObject	*m_pPhysicsObject;	// pointer to the entity's physics object (vphysics.dll)
 	float m_flNonShadowMass;	// cached mass (shadow controllers set mass to VPHYSICS_MAX_MASS, or 50000)
 
-	CNetworkVar( float, m_flShadowCastDistance );
+	CNetworkDistance( m_flShadowCastDistance );
 	float		m_flDesiredShadowCastDistance;
 
 	// Team handling
@@ -1767,19 +1761,19 @@ private:
 	// Sets water type + level for physics objects
 	unsigned char	m_nWaterTouch;
 	unsigned char	m_nSlimeTouch;
-	unsigned char	m_nWaterType;
-	CNetworkVarForDerived( unsigned char, m_nWaterLevel );
+	WaterType_t	m_nWaterType;
+	CNetworkVarForDerived( WaterLevel_t, m_nWaterLevel, private );
 	float			m_flNavIgnoreUntilTime;
 	bool			m_bAlwaysIgnoreNav;
 
-	CNetworkHandleForDerived( CBaseEntity, m_hGroundEntity );
+	CNetworkHandleForDerived( CBaseEntity, m_hGroundEntity, private );
 	float			m_flGroundChangeTime; // Time that the ground entity changed
 	
 	string_t		m_ModelName;
 	string_t		m_AIAddOn;
 
 	// Velocity of the thing we're standing on (world space)
-	CNetworkVarForDerived( Vector, m_vecBaseVelocity );
+	CNetworkVectorForDerived( m_vecBaseVelocity, private );
 
 	// Global velocity
 	Vector			m_vecAbsVelocity;
@@ -1799,8 +1793,8 @@ private:
 	// was pev->gravity;
 	float			m_flGravity;  // rename to m_flGravityScale;
 	// was pev->friction
-	CNetworkVarForDerived( float, m_flFriction );
-	CNetworkVar( float, m_flElasticity );
+	CNetworkVarForDerived( float, m_flFriction, private );
+	CNetworkScale( m_flElasticity );
 	float m_flOverriddenFriction;
 	void FrictionRevertThink( void );
 
@@ -1815,7 +1809,7 @@ private:
 	int				m_nPushEnumCount;
 
 	Vector			m_vecAbsOrigin;
-	CNetworkVectorForDerived( m_vecVelocity );
+	CNetworkVectorForDerived( m_vecVelocity, private );
 	
 	//Adrian
 	CNetworkVar( unsigned char, m_iTextureFrameIndex );
@@ -1824,10 +1818,10 @@ private:
 	CNetworkVar( bool, m_bAnimatedEveryTick );
 	CNetworkVar( bool, m_bAlternateSorting );
 
-	CNetworkVar( unsigned char, m_nMinCPULevel );
-	CNetworkVar( unsigned char, m_nMaxCPULevel );
-	CNetworkVar( unsigned char, m_nMinGPULevel );
-	CNetworkVar( unsigned char, m_nMaxGPULevel );
+	CNetworkVar( CPULevel_t, m_nMinCPULevel );
+	CNetworkVar( CPULevel_t, m_nMaxCPULevel );
+	CNetworkVar( GPULevel_t, m_nMinGPULevel );
+	CNetworkVar( GPULevel_t, m_nMaxGPULevel );
 
 public:
 	CNetworkVarForDerived( bool, m_bClientSideRagdoll );
@@ -1857,16 +1851,16 @@ private:
 	// We cache the cell width for convience
 	int m_cellwidth;
 
-	CNetworkVar( int, m_cellbits );
+	CNetworkVar( unsigned int, m_cellbits );
 
 	// Cell of the current origin
 //	CNetworkArray( int, m_cellXY, 2 );
-	CNetworkVar( int, m_cellX );
-	CNetworkVar( int, m_cellY );
-	CNetworkVar( int, m_cellZ );
+	CNetworkVar( unsigned int, m_cellX );
+	CNetworkVar( unsigned int, m_cellY );
+	CNetworkVar( unsigned int, m_cellZ );
 
 	// was pev->view_ofs ( FIXME:  Move somewhere up the hierarch, CBaseAnimating, etc. )
-	CNetworkVectorForDerived( m_vecViewOffset );
+	CNetworkVectorForDerived( m_vecViewOffset, private );
 
 private:
 	// dynamic model state tracking
@@ -1968,7 +1962,7 @@ public:
 	// Density map
 	virtual float GetDensityMultiplier() { return 1.0f; }
 	DensityWeightsMap *DensityMap();
-	void SetDensityMapType( int iType );
+	void SetDensityMapType( density_type_t iType );
 
 	// Nav obstacle ref for recast mesh.
 	void SetNavObstacleRef( int ref ) { m_NavObstacleRef = ref; }
@@ -1981,7 +1975,7 @@ private:
 
 	bool					m_bAllowNavIgnore;
 	int						m_NavObstacleRef;
-	CNetworkVar( float,		m_fViewDistance );
+	CNetworkDistance( m_fViewDistance );
 };
 
 // Send tables exposed in this module.
@@ -2257,12 +2251,12 @@ inline void CBaseEntity::MarkForDeletion()
 //-----------------------------------------------------------------------------
 // EFlags
 //-----------------------------------------------------------------------------
-inline uint64 CBaseEntity::GetEFlags() const
+inline EntityFlags_t CBaseEntity::GetEFlags() const
 {
 	return m_iEFlags;
 }
 
-inline void CBaseEntity::AddEFlags( uint64 nEFlagMask )
+inline void CBaseEntity::AddEFlags( EntityFlags_t nEFlagMask )
 {
 	m_iEFlags |= nEFlagMask;
 
@@ -2272,7 +2266,7 @@ inline void CBaseEntity::AddEFlags( uint64 nEFlagMask )
 	}
 }
 
-inline void CBaseEntity::RemoveEFlags( uint64 nEFlagMask )
+inline void CBaseEntity::RemoveEFlags( EntityFlags_t nEFlagMask )
 {
 	nEFlagMask &= ~(
 		EFL_KILLME|
@@ -2287,7 +2281,7 @@ inline void CBaseEntity::RemoveEFlags( uint64 nEFlagMask )
 		DispatchUpdateTransmitState();
 }
 
-inline bool CBaseEntity::IsEFlagSet( uint64 nEFlagMask ) const
+inline bool CBaseEntity::IsEFlagSet( EntityFlags_t nEFlagMask ) const
 {
 	return (m_iEFlags & nEFlagMask) != 0;
 }
@@ -2598,12 +2592,12 @@ inline CBaseEntity* CBaseEntity::Instance( int iEnt )
 	return Instance( INDEXENT( iEnt ) );
 }
 
-inline int CBaseEntity::GetWaterLevel() const
+inline WaterLevel_t CBaseEntity::GetWaterLevel() const
 {
 	return m_nWaterLevel;
 }
 
-inline void CBaseEntity::SetWaterLevel( int nLevel )
+inline void CBaseEntity::SetWaterLevel( WaterLevel_t nLevel )
 {
 	m_nWaterLevel = nLevel;
 }
@@ -2677,7 +2671,7 @@ inline void	CBaseEntity::EyePositionZOnly( Vector *pPosition )
 //-----------------------------------------------------------------------------
 inline CCollisionProperty *CBaseEntity::CollisionProp()
 {
-	return m_pCollision;
+	return m_pCollision.GetWithoutModifyRaw();
 }
 
 inline const CCollisionProperty *CBaseEntity::CollisionProp() const
@@ -2852,8 +2846,8 @@ public:
 	DECLARE_CLASS( CPointEntity, CBaseEntity );
 	DECLARE_SERVERCLASS();
 
-	CPointEntity() : CPointEntity( 0 ) {}
-	CPointEntity( uint64 iEFlags );
+	CPointEntity() : CPointEntity( EFL_NONE ) {}
+	CPointEntity( EntityFlags_t iEFlags );
 
 	ICollideable	*GetCollideable() { return NULL; }
 	CCollisionProperty		*CollisionProp() { return NULL; }
@@ -2862,7 +2856,7 @@ public:
 	void	Spawn( void );
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 
-	int UpdateTransmitState()
+	EdictStateFlags_t UpdateTransmitState()
 	{
 		return SetTransmitState( FL_EDICT_ALWAYS );
 	}
@@ -2878,8 +2872,8 @@ public:
 
 	DECLARE_SERVERCLASS();
 
-	CLogicalEntity() : CLogicalEntity( 0 ) {}
-	CLogicalEntity( uint64 iEFlags );
+	CLogicalEntity() : CLogicalEntity( EFL_NONE ) {}
+	CLogicalEntity( EntityFlags_t iEFlags );
 
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 };
@@ -2891,8 +2885,8 @@ class CServerOnlyWrapper : public T
 {
 public:
 	DECLARE_CLASS( CServerOnlyWrapper, T );
-	CServerOnlyWrapper() : CServerOnlyWrapper( 0 ) {}
-	CServerOnlyWrapper( uint64 iEFlags ) : T( EFL_NOT_NETWORKED|iEFlags ) {}
+	CServerOnlyWrapper() : CServerOnlyWrapper( EFL_NONE ) {}
+	CServerOnlyWrapper( EntityFlags_t iEFlags ) : T( EFL_NOT_NETWORKED|iEFlags ) {}
 
 	virtual void	NetworkStateChanged() {}
 	virtual void	NetworkStateChanged( void *pVar ) {}
@@ -2907,9 +2901,9 @@ public:
 	edict_t			*edict( void ) { return NULL; }
 	const edict_t	*edict( void ) const { return NULL; }
 
-	virtual int				ShouldTransmit( const CCheckTransmitInfo *pInfo ) { return FL_EDICT_DONTSEND; }
+	virtual EdictStateFlags_t				ShouldTransmit( const CCheckTransmitInfo *pInfo ) { return FL_EDICT_DONTSEND; }
 
-	int UpdateTransmitState()
+	EdictStateFlags_t UpdateTransmitState()
 	{
 		return FL_EDICT_DONTSEND;
 	}

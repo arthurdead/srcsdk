@@ -47,15 +47,15 @@ LINK_ENTITY_TO_CLASS( env_smokestack, CSmokeStack );
 BEGIN_MAPENTITY( CSmokeStack )
 
 	//Keyvalue fields
-	DEFINE_KEYFIELD( m_StartSize,		FIELD_FLOAT,	"StartSize" ),
-	DEFINE_KEYFIELD( m_EndSize,		FIELD_FLOAT,	"EndSize" ),
-	DEFINE_KEYFIELD( m_InitialState,	FIELD_BOOLEAN,	"InitialState" ),
-	DEFINE_KEYFIELD( m_flBaseSpread,	FIELD_FLOAT,	"BaseSpread" ),
-	DEFINE_KEYFIELD( m_flTwist,		FIELD_FLOAT,	"Twist" ),
-	DEFINE_KEYFIELD( m_flRollSpeed, FIELD_FLOAT,	"Roll" ),
+	DEFINE_KEYFIELD_AUTO( m_StartSize, "StartSize" ),
+	DEFINE_KEYFIELD_AUTO( m_EndSize, "EndSize" ),
+	DEFINE_KEYFIELD_AUTO( m_InitialState, "InitialState" ),
+	DEFINE_KEYFIELD_AUTO( m_flBaseSpread, "BaseSpread" ),
+	DEFINE_KEYFIELD_AUTO( m_flTwist, "Twist" ),
+	DEFINE_KEYFIELD_AUTO( m_flRollSpeed, "Roll" ),
 
-	DEFINE_KEYFIELD( m_WindAngle, FIELD_INTEGER,	"WindAngle" ),
-	DEFINE_KEYFIELD( m_WindSpeed, FIELD_INTEGER,	"WindSpeed" ),
+	DEFINE_KEYFIELD_AUTO( m_WindAngle, "WindAngle" ),
+	DEFINE_KEYFIELD_AUTO( m_WindSpeed, "WindSpeed" ),
 
 	// Inputs
 	DEFINE_INPUT( m_JetLength, FIELD_FLOAT, "JetLength" ),
@@ -222,7 +222,7 @@ void CSmokeStack::Precache()
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for toggling the steam jet on/off.
 //-----------------------------------------------------------------------------
-void CSmokeStack::InputToggle( inputdata_t &inputdata )
+void CSmokeStack::InputToggle( inputdata_t &&inputdata )
 {
 	m_bEmit = !m_bEmit;
 }
@@ -231,7 +231,7 @@ void CSmokeStack::InputToggle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for turning on the steam jet.
 //-----------------------------------------------------------------------------
-void CSmokeStack::InputTurnOn( inputdata_t &inputdata )
+void CSmokeStack::InputTurnOn( inputdata_t &&inputdata )
 {
 	m_bEmit = true;
 }
@@ -240,7 +240,7 @@ void CSmokeStack::InputTurnOn( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for turning off the steam jet.
 //-----------------------------------------------------------------------------
-void CSmokeStack::InputTurnOff( inputdata_t &inputdata )
+void CSmokeStack::InputTurnOff( inputdata_t &&inputdata )
 {
 	m_bEmit = false;
 }

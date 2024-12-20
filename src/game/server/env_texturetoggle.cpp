@@ -14,8 +14,8 @@ class CTextureToggle : public CPointEntity
 public:
 	DECLARE_CLASS( CTextureToggle, CPointEntity );
 
-	void	InputIncrementBrushTexIndex( inputdata_t &inputdata );
-	void	InputSetBrushTexIndex( inputdata_t &inputdata );
+	void	InputIncrementBrushTexIndex( inputdata_t &&inputdata );
+	void	InputSetBrushTexIndex( inputdata_t &&inputdata );
 
 private:
 	
@@ -35,7 +35,7 @@ END_MAPENTITY()
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CTextureToggle::InputIncrementBrushTexIndex( inputdata_t& inputdata )
+void CTextureToggle::InputIncrementBrushTexIndex( inputdata_t &&inputdata )
 {
 	CBaseEntity *pEntity = gEntList.FindEntityByName( NULL, m_target );
 		
@@ -48,7 +48,7 @@ void CTextureToggle::InputIncrementBrushTexIndex( inputdata_t& inputdata )
 	}
 }
 
-void CTextureToggle::InputSetBrushTexIndex( inputdata_t& inputdata )
+void CTextureToggle::InputSetBrushTexIndex( inputdata_t &&inputdata )
 {
 	CBaseEntity *pEntity = gEntList.FindEntityByName( NULL, m_target );
 		

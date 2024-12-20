@@ -860,17 +860,17 @@ END_SEND_TABLE()
 
 BEGIN_MAPENTITY( CBreakableProp )
 
-	DEFINE_KEYFIELD( m_explodeDamage, FIELD_FLOAT, "ExplodeDamage"),	
-	DEFINE_KEYFIELD( m_explodeRadius, FIELD_FLOAT, "ExplodeRadius"),	
-	DEFINE_KEYFIELD( m_iMinHealthDmg, FIELD_INTEGER, "minhealthdmg" ),
+	DEFINE_KEYFIELD_AUTO( m_explodeDamage, "ExplodeDamage" )	
+	DEFINE_KEYFIELD_AUTO( m_explodeRadius, "ExplodeRadius" )	
+	DEFINE_KEYFIELD_AUTO( m_iMinHealthDmg, "minhealthdmg" ),
 
-	DEFINE_KEYFIELD( m_PerformanceMode, FIELD_INTEGER, "PerformanceMode" ),
+	DEFINE_KEYFIELD_AUTO( m_PerformanceMode, "PerformanceMode" ),
 
-	DEFINE_KEYFIELD( m_iszBreakModelMessage, FIELD_STRING, "BreakModelMessage" ),
+	DEFINE_KEYFIELD_AUTO( m_iszBreakModelMessage, "BreakModelMessage" ),
 
-	DEFINE_KEYFIELD( m_iszPuntSound, FIELD_STRING, "puntsound" ),
+	DEFINE_KEYFIELD_AUTO( m_iszPuntSound, "puntsound" ),
 
-	DEFINE_KEYFIELD( m_flPressureDelay, FIELD_FLOAT, "PressureDelay" ),
+	DEFINE_KEYFIELD_AUTO( m_flPressureDelay, "PressureDelay" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Break", InputBreak ),
@@ -1109,12 +1109,12 @@ void CBreakableProp::CopyFadeFrom( CBreakableProp *pSource )
 //-----------------------------------------------------------------------------
 // Make physcannonable, or not
 //-----------------------------------------------------------------------------
-void CBreakableProp::InputEnablePhyscannonPickup( inputdata_t &inputdata )
+void CBreakableProp::InputEnablePhyscannonPickup( inputdata_t &&inputdata )
 {
 	RemoveEFlags( EFL_NO_PHYSCANNON_INTERACTION );
 }
 
-void CBreakableProp::InputDisablePhyscannonPickup( inputdata_t &inputdata )
+void CBreakableProp::InputDisablePhyscannonPickup( inputdata_t &&inputdata )
 {
 	AddEFlags( EFL_NO_PHYSCANNON_INTERACTION );
 }
@@ -1235,7 +1235,7 @@ int CBreakableProp::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	// (avoids a set of explosions progressively vaporizing a compound breakable)
 	if ( m_createTick == (unsigned int)gpGlobals->tickcount )
 	{
-		int saveFlags = m_takedamage;
+		Takedamage_t saveFlags = m_takedamage;
 		m_takedamage = DAMAGE_EVENTS_ONLY;
 		int ret = BaseClass::OnTakeDamage( info );
 		m_takedamage = saveFlags;
@@ -1255,7 +1255,7 @@ int CBreakableProp::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	// Handle melee attack immunity
 	if ( ((info.GetDamageType() & DMG_CLUB) || (info.GetDamageType() & DMG_SLASH)) && HasInteraction( PROPINTER_MELEE_IMMUNE ) )
 	{
-		int saveFlags = m_takedamage;
+		Takedamage_t saveFlags = m_takedamage;
 		m_takedamage = DAMAGE_EVENTS_ONLY;
 		int ret = BaseClass::OnTakeDamage( info );
 		m_takedamage = saveFlags;
@@ -1358,7 +1358,7 @@ void CBreakableProp::Event_Killed( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for breaking the breakable immediately.
 //-----------------------------------------------------------------------------
-void CBreakableProp::InputBreak( inputdata_t &inputdata )
+void CBreakableProp::InputBreak( inputdata_t &&inputdata )
 {
 	CTakeDamageInfo info;
 	info.SetAttacker( this );
@@ -1370,7 +1370,7 @@ void CBreakableProp::InputBreak( inputdata_t &inputdata )
 // Purpose: Input handler for adding to the breakable's health.
 // Input  : Integer health points to add.
 //-----------------------------------------------------------------------------
-void CBreakableProp::InputAddHealth( inputdata_t &inputdata )
+void CBreakableProp::InputAddHealth( inputdata_t &&inputdata )
 {
 	UpdateHealth( GetHealth() + inputdata.value.Int(), inputdata.pActivator );
 }
@@ -1379,7 +1379,7 @@ void CBreakableProp::InputAddHealth( inputdata_t &inputdata )
 // Purpose: Input handler for removing health from the breakable.
 // Input  : Integer health points to remove.
 //-----------------------------------------------------------------------------
-void CBreakableProp::InputRemoveHealth( inputdata_t &inputdata )
+void CBreakableProp::InputRemoveHealth( inputdata_t &&inputdata )
 {
 	UpdateHealth( GetHealth() - inputdata.value.Int(), inputdata.pActivator );
 }
@@ -1388,7 +1388,7 @@ void CBreakableProp::InputRemoveHealth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for setting the breakable's health.
 //-----------------------------------------------------------------------------
-void CBreakableProp::InputSetHealth( inputdata_t &inputdata )
+void CBreakableProp::InputSetHealth( inputdata_t &&inputdata )
 {
 	UpdateHealth( inputdata.value.Int(), inputdata.pActivator );
 }
@@ -1396,7 +1396,7 @@ void CBreakableProp::InputSetHealth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for setting interactions.
 //-----------------------------------------------------------------------------
-void CBreakableProp::InputSetInteraction( inputdata_t &inputdata )
+void CBreakableProp::InputSetInteraction( inputdata_t &&inputdata )
 {
 	SetInteraction( (propdata_interactions_t)inputdata.value.Int() );
 }
@@ -1404,7 +1404,7 @@ void CBreakableProp::InputSetInteraction( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for Adding interactions.
 //-----------------------------------------------------------------------------
-void CBreakableProp::InputRemoveInteraction( inputdata_t &inputdata )
+void CBreakableProp::InputRemoveInteraction( inputdata_t &&inputdata )
 {
 	RemoveInteraction( (propdata_interactions_t)inputdata.value.Int() );
 }
@@ -2018,16 +2018,16 @@ IMPLEMENT_AUTO_LIST( IPhysicsPropAutoList );
 BEGIN_MAPENTITY( CDynamicProp )
 
 	// Fields
-	DEFINE_KEYFIELD( m_iszDefaultAnim, FIELD_STRING, "DefaultAnim"),	
+	DEFINE_KEYFIELD_AUTO( m_iszDefaultAnim, "DefaultAnim" )	
 
-	DEFINE_KEYFIELD( m_bRandomAnimator, FIELD_BOOLEAN, "RandomAnimation"),	
+	DEFINE_KEYFIELD_AUTO( m_bRandomAnimator, "RandomAnimation" )	
 
-	DEFINE_KEYFIELD( m_flMinRandAnimTime, FIELD_FLOAT, "MinAnimTime"),
-	DEFINE_KEYFIELD( m_flMaxRandAnimTime, FIELD_FLOAT, "MaxAnimTime"),
-	DEFINE_KEYFIELD( m_bStartDisabled, FIELD_BOOLEAN, "StartDisabled" ),
-	DEFINE_KEYFIELD( m_bDisableBoneFollowers, FIELD_BOOLEAN, "DisableBoneFollowers" ),
-	DEFINE_KEYFIELD( m_bUpdateAttachedChildren, FIELD_BOOLEAN, "updatechildren" ),
-	DEFINE_KEYFIELD( m_bHoldAnimation, FIELD_BOOLEAN, "HoldAnimation" ),
+	DEFINE_KEYFIELD_AUTO( m_flMinRandAnimTime, "MinAnimTime" ),
+	DEFINE_KEYFIELD_AUTO( m_flMaxRandAnimTime, "MaxAnimTime" ),
+	DEFINE_KEYFIELD_AUTO( m_bStartDisabled, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisableBoneFollowers, "DisableBoneFollowers" ),
+	DEFINE_KEYFIELD_AUTO( m_bUpdateAttachedChildren, "updatechildren" ),
+	DEFINE_KEYFIELD_AUTO( m_bHoldAnimation, "HoldAnimation" ),
 		
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING,	"SetAnimation",	InputSetAnimation ),
@@ -2299,7 +2299,7 @@ void CDynamicProp::HandleAnimEvent( animevent_t *pEvent )
 		case SCRIPT_EVENT_FIRE_INPUT:
 		{
 			variant_t emptyVariant;
-			this->AcceptInput( pEvent->options, this, this, emptyVariant, 0 );
+			this->AcceptInput( pEvent->options, this, this, Move(emptyVariant), 0 );
 			return;
 		}
 		
@@ -2442,7 +2442,7 @@ void CDynamicProp::PropSetAnim( const char *szAnim )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CDynamicProp::InputSetAnimation( inputdata_t &inputdata )
+void CDynamicProp::InputSetAnimation( inputdata_t &&inputdata )
 {
 	PropSetAnim( inputdata.value.String() );
 }
@@ -2450,7 +2450,7 @@ void CDynamicProp::InputSetAnimation( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Set the animation unless the prop is already set to this particular animation
 //------------------------------------------------------------------------------
-void CDynamicProp::InputSetAnimationNoReset( inputdata_t &inputdata )
+void CDynamicProp::InputSetAnimationNoReset( inputdata_t &&inputdata )
 {
 	if ( GetSequence() != LookupSequence( inputdata.value.String() ) )
 	{
@@ -2461,7 +2461,7 @@ void CDynamicProp::InputSetAnimationNoReset( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CDynamicProp::InputSetDefaultAnimation( inputdata_t &inputdata )
+void CDynamicProp::InputSetDefaultAnimation( inputdata_t &&inputdata )
 {
 	m_iszDefaultAnim = inputdata.value.StringID();
 }
@@ -2469,7 +2469,7 @@ void CDynamicProp::InputSetDefaultAnimation( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CDynamicProp::InputSetPlaybackRate( inputdata_t &inputdata )
+void CDynamicProp::InputSetPlaybackRate( inputdata_t &&inputdata )
 {
 	SetPlaybackRate( inputdata.value.Float() );
 }
@@ -2516,22 +2516,22 @@ void CDynamicProp::PropSetSequence( int nSequence )
 
 
 // NOTE: To avoid risk, currently these do nothing about collisions, only visually on/off
-void CDynamicProp::InputTurnOn( inputdata_t &inputdata )
+void CDynamicProp::InputTurnOn( inputdata_t &&inputdata )
 {
 	RemoveEffects( EF_NODRAW );
 }
 
-void CDynamicProp::InputTurnOff( inputdata_t &inputdata )
+void CDynamicProp::InputTurnOff( inputdata_t &&inputdata )
 {
 	AddEffects( EF_NODRAW );
 }
 
-void CDynamicProp::InputDisableCollision( inputdata_t &inputdata )
+void CDynamicProp::InputDisableCollision( inputdata_t &&inputdata )
 {
 	AddSolidFlags( FSOLID_NOT_SOLID );
 }
 
-void CDynamicProp::InputEnableCollision( inputdata_t &inputdata )
+void CDynamicProp::InputEnableCollision( inputdata_t &&inputdata )
 {
 	RemoveSolidFlags( FSOLID_NOT_SOLID );
 }
@@ -2551,8 +2551,8 @@ public:
 	void DetachFromOwner();
 
 	// Input handlers
-	void InputSetAttached( inputdata_t &inputdata );
-	void InputDetach( inputdata_t &inputdata );
+	void InputSetAttached( inputdata_t &&inputdata );
+	void InputDetach( inputdata_t &&inputdata );
 
 private:
 	string_t	m_initialOwner;
@@ -2562,7 +2562,7 @@ LINK_ENTITY_TO_CLASS( prop_dynamic_ornament, COrnamentProp );
 
 BEGIN_MAPENTITY( COrnamentProp )
 
-	DEFINE_KEYFIELD( m_initialOwner, FIELD_STRING, "InitialOwner" ),
+	DEFINE_KEYFIELD_AUTO( m_initialOwner, "InitialOwner" ),
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING,	"SetAttached",	InputSetAttached ),
 	DEFINE_INPUTFUNC( FIELD_VOID,		"Detach",	InputDetach ),
@@ -2593,7 +2593,7 @@ void COrnamentProp::Activate()
 	}
 }
 
-void COrnamentProp::InputSetAttached( inputdata_t &inputdata )
+void COrnamentProp::InputSetAttached( inputdata_t &&inputdata )
 {
 	AttachTo( inputdata.value.String(), inputdata.pActivator, inputdata.pCaller );
 }
@@ -2609,7 +2609,7 @@ void COrnamentProp::AttachTo( const char *pAttachName, CBaseEntity *pActivator, 
 	}
 }
 
-void COrnamentProp::InputDetach( inputdata_t &inputdata )
+void COrnamentProp::InputDetach( inputdata_t &&inputdata )
 {
 	DetachFromOwner();
 }
@@ -2654,18 +2654,18 @@ public:
 	void PushThink();
 
 	// Input handlers
-	void InputLock( inputdata_t &inputdata );
-	void InputUnlock( inputdata_t &inputdata );
-	void InputPress( inputdata_t &inputdata );
+	void InputLock( inputdata_t &&inputdata );
+	void InputUnlock( inputdata_t &&inputdata );
+	void InputPress( inputdata_t &&inputdata );
 
-	void InputEnableUseInteraction( inputdata_t &inputdata ) { AddSpawnFlags(SF_INTERACTABLE_USE_INTERACTS); }
-	void InputDisableUseInteraction( inputdata_t &inputdata ) { RemoveSpawnFlags(SF_INTERACTABLE_USE_INTERACTS); }
-	void InputEnableTouchInteraction( inputdata_t &inputdata ) { AddSpawnFlags( SF_INTERACTABLE_TOUCH_INTERACTS ); }
-	void InputDisableTouchInteraction( inputdata_t &inputdata ) { RemoveSpawnFlags( SF_INTERACTABLE_TOUCH_INTERACTS ); }
-	void InputStartIgnoringCommandsWhenLocked( inputdata_t &inputdata ) { AddSpawnFlags( SF_INTERACTABLE_IGNORE_COMMANDS_WHEN_LOCKED ); }
-	void InputStopIgnoringCommandsWhenLocked( inputdata_t &inputdata ) { RemoveSpawnFlags( SF_INTERACTABLE_IGNORE_COMMANDS_WHEN_LOCKED ); }
-	void InputEnableRadiusInteract( inputdata_t &inputdata ) { AddSpawnFlags( SF_INTERACTABLE_RADIUS_USE ); }
-	void InputDisableRadiusInteract( inputdata_t &inputdata ) { RemoveSpawnFlags( SF_INTERACTABLE_RADIUS_USE ); }
+	void InputEnableUseInteraction( inputdata_t &&inputdata ) { AddSpawnFlags(SF_INTERACTABLE_USE_INTERACTS); }
+	void InputDisableUseInteraction( inputdata_t &&inputdata ) { RemoveSpawnFlags(SF_INTERACTABLE_USE_INTERACTS); }
+	void InputEnableTouchInteraction( inputdata_t &&inputdata ) { AddSpawnFlags( SF_INTERACTABLE_TOUCH_INTERACTS ); }
+	void InputDisableTouchInteraction( inputdata_t &&inputdata ) { RemoveSpawnFlags( SF_INTERACTABLE_TOUCH_INTERACTS ); }
+	void InputStartIgnoringCommandsWhenLocked( inputdata_t &&inputdata ) { AddSpawnFlags( SF_INTERACTABLE_IGNORE_COMMANDS_WHEN_LOCKED ); }
+	void InputStopIgnoringCommandsWhenLocked( inputdata_t &&inputdata ) { RemoveSpawnFlags( SF_INTERACTABLE_IGNORE_COMMANDS_WHEN_LOCKED ); }
+	void InputEnableRadiusInteract( inputdata_t &&inputdata ) { AddSpawnFlags( SF_INTERACTABLE_RADIUS_USE ); }
+	void InputDisableRadiusInteract( inputdata_t &&inputdata ) { RemoveSpawnFlags( SF_INTERACTABLE_RADIUS_USE ); }
 
 	COutputEvent m_OnPressed;
 	COutputEvent m_OnLockedUse;
@@ -2703,17 +2703,17 @@ LINK_ENTITY_TO_CLASS( prop_interactable, CInteractableProp );
 
 BEGIN_MAPENTITY( CInteractableProp )
 
-	DEFINE_KEYFIELD( m_bLocked, FIELD_BOOLEAN, "Locked" ),
+	DEFINE_KEYFIELD_AUTO( m_bLocked, "Locked" ),
 	DEFINE_INPUT( m_flCooldown, FIELD_FLOAT, "SetCooldown" ),
 
-	DEFINE_KEYFIELD( m_iszPressedSound, FIELD_STRING, "PressedSound" ),
-	DEFINE_KEYFIELD( m_iszLockedSound, FIELD_STRING, "LockedSound" ),
-	DEFINE_KEYFIELD( m_iszInSequence, FIELD_STRING, "InSequence" ),
-	DEFINE_KEYFIELD( m_iszOutSequence, FIELD_STRING, "OutSequence" ),
-	DEFINE_KEYFIELD( m_iszLockedSequence, FIELD_STRING, "LockedSequence" ),
+	DEFINE_KEYFIELD_AUTO( m_iszPressedSound, "PressedSound" ),
+	DEFINE_KEYFIELD_AUTO( m_iszLockedSound, "LockedSound" ),
+	DEFINE_KEYFIELD_AUTO( m_iszInSequence, "InSequence" ),
+	DEFINE_KEYFIELD_AUTO( m_iszOutSequence, "OutSequence" ),
+	DEFINE_KEYFIELD_AUTO( m_iszLockedSequence, "LockedSequence" ),
 
-	DEFINE_KEYFIELD( m_vecUseMins, FIELD_VECTOR, "use_mins" ),
-	DEFINE_KEYFIELD( m_vecUseMaxs, FIELD_VECTOR, "use_maxs" ),
+	DEFINE_KEYFIELD_AUTO( m_vecUseMins, "use_mins" ),
+	DEFINE_KEYFIELD_AUTO( m_vecUseMaxs, "use_maxs" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID,	"Lock",		InputLock ),
@@ -2849,7 +2849,7 @@ void CInteractableProp::InteractablePropTouch( CBaseEntity *pOther )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CInteractableProp::InputLock( inputdata_t &inputdata )
+void CInteractableProp::InputLock( inputdata_t &&inputdata )
 {
 	m_bLocked = true;
 }
@@ -2857,7 +2857,7 @@ void CInteractableProp::InputLock( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CInteractableProp::InputUnlock( inputdata_t &inputdata )
+void CInteractableProp::InputUnlock( inputdata_t &&inputdata )
 {
 	m_bLocked = false;
 }
@@ -2865,7 +2865,7 @@ void CInteractableProp::InputUnlock( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CInteractableProp::InputPress( inputdata_t &inputdata )
+void CInteractableProp::InputPress( inputdata_t &&inputdata )
 {
 	Use( inputdata.pActivator, inputdata.pCaller, USE_ON, 0 );
 }
@@ -2976,16 +2976,16 @@ BEGIN_MAPENTITY( CPhysicsProp )
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableFloating", InputDisableFloating ),
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "SetDebris", InputSetDebris ),
 
-	DEFINE_KEYFIELD( m_iPhysicsMode, FIELD_INTEGER, "physicsmode" ),
+	DEFINE_KEYFIELD_AUTO( m_iPhysicsMode, "physicsmode" ),
 
-	DEFINE_KEYFIELD( m_massScale, FIELD_FLOAT, "massscale" ),
-	DEFINE_KEYFIELD( m_inertiaScale, FIELD_FLOAT, "inertiascale" ),
-	DEFINE_KEYFIELD( m_damageType, FIELD_INTEGER, "Damagetype" ),
-	DEFINE_KEYFIELD( m_iszOverrideScript, FIELD_STRING, "overridescript" ),
+	DEFINE_KEYFIELD_AUTO( m_massScale, "massscale" ),
+	DEFINE_KEYFIELD_AUTO( m_inertiaScale, "inertiascale" ),
+	DEFINE_KEYFIELD_AUTO( m_damageType, "Damagetype" ),
+	DEFINE_KEYFIELD_AUTO( m_iszOverrideScript, "overridescript" ),
 
-	DEFINE_KEYFIELD( m_damageToEnableMotion, FIELD_INTEGER, "damagetoenablemotion" ), 
-	DEFINE_KEYFIELD( m_flForceToEnableMotion, FIELD_FLOAT, "forcetoenablemotion" ), 
-	DEFINE_KEYFIELD( m_iExploitableByPlayer, FIELD_INTEGER, "ExploitableByPlayer" ),
+	DEFINE_KEYFIELD_AUTO( m_damageToEnableMotion, "damagetoenablemotion" ) 
+	DEFINE_KEYFIELD_AUTO( m_flForceToEnableMotion, "forcetoenablemotion" ) 
+	DEFINE_KEYFIELD_AUTO( m_iExploitableByPlayer, "ExploitableByPlayer" ),
 
 	DEFINE_OUTPUT( m_OnAwakened, "OnAwakened" ),
 	DEFINE_OUTPUT( m_MotionEnabled, "OnMotionEnabled" ),
@@ -3370,7 +3370,7 @@ bool CPhysicsProp::OverridePropdata( void )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler to start the physics prop simulating.
 //-----------------------------------------------------------------------------
-void CPhysicsProp::InputWake( inputdata_t &inputdata )
+void CPhysicsProp::InputWake( inputdata_t &&inputdata )
 {
 	IPhysicsObject *pPhysicsObject = VPhysicsGetObject();
 	if ( pPhysicsObject != NULL )
@@ -3382,7 +3382,7 @@ void CPhysicsProp::InputWake( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler to stop the physics prop simulating.
 //-----------------------------------------------------------------------------
-void CPhysicsProp::InputSleep( inputdata_t &inputdata )
+void CPhysicsProp::InputSleep( inputdata_t &&inputdata )
 {
 	IPhysicsObject *pPhysicsObject = VPhysicsGetObject();
 	if ( pPhysicsObject != NULL )
@@ -3394,7 +3394,7 @@ void CPhysicsProp::InputSleep( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Enable physics motion and collision response (on by default)
 //-----------------------------------------------------------------------------
-void CPhysicsProp::InputEnableMotion( inputdata_t &inputdata )
+void CPhysicsProp::InputEnableMotion( inputdata_t &&inputdata )
 {
 	EnableMotion();
 }
@@ -3402,7 +3402,7 @@ void CPhysicsProp::InputEnableMotion( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Disable any physics motion or collision response
 //-----------------------------------------------------------------------------
-void CPhysicsProp::InputDisableMotion( inputdata_t &inputdata )
+void CPhysicsProp::InputDisableMotion( inputdata_t &&inputdata )
 {
 	IPhysicsObject *pPhysicsObject = VPhysicsGetObject();
 	if ( pPhysicsObject != NULL )
@@ -3412,7 +3412,7 @@ void CPhysicsProp::InputDisableMotion( inputdata_t &inputdata )
 }
 
 // Turn off floating simulation (and cost)
-void CPhysicsProp::InputDisableFloating( inputdata_t &inputdata )
+void CPhysicsProp::InputDisableFloating( inputdata_t &&inputdata )
 {
 	PhysEnableFloating( VPhysicsGetObject(), false );
 }
@@ -3420,7 +3420,7 @@ void CPhysicsProp::InputDisableFloating( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Adds or removes the debris spawnflag.
 //-----------------------------------------------------------------------------
-void CPhysicsProp::InputSetDebris( inputdata_t &inputdata )
+void CPhysicsProp::InputSetDebris( inputdata_t &&inputdata )
 {
 	if (inputdata.value.Bool())
 	{
@@ -3640,7 +3640,7 @@ void CPhysicsProp::VPhysicsUpdate( IPhysicsObject *pPhysics )
 	BaseClass::VPhysicsUpdate( pPhysics );
 	m_bAwake = !pPhysics->IsAsleep();
 	IPhysicsObject *pPhysicsObject = VPhysicsGetObject();
-	NetworkStateChanged();
+
 	if ( HasSpawnFlags( SF_PHYSPROP_START_ASLEEP ) )
 	{
 		if ( m_bAwake )
@@ -4287,21 +4287,21 @@ ConVar ai_door_open_dist_override( "ai_door_open_dist_override", "-1", FCVAR_NON
 
 BEGIN_MAPENTITY(CBasePropDoor)
 
-	DEFINE_KEYFIELD(m_nHardwareType, FIELD_INTEGER, "hardware"),
-	DEFINE_KEYFIELD(m_flAutoReturnDelay, FIELD_FLOAT, "returndelay"),
+	DEFINE_KEYFIELD_AUTO( m_nHardwareType, "hardware" ),
+	DEFINE_KEYFIELD_AUTO( m_flAutoReturnDelay, "returndelay" ),
 
-	DEFINE_KEYFIELD(m_SoundMoving, FIELD_SOUNDNAME, "soundmoveoverride"),
-	DEFINE_KEYFIELD(m_SoundOpen, FIELD_SOUNDNAME, "soundopenoverride"),
-	DEFINE_KEYFIELD(m_SoundClose, FIELD_SOUNDNAME, "soundcloseoverride"),
+	DEFINE_KEYFIELD_AUTO( m_SoundMoving, "soundmoveoverride" ),
+	DEFINE_KEYFIELD_AUTO( m_SoundOpen, "soundopenoverride" ),
+	DEFINE_KEYFIELD_AUTO( m_SoundClose, "soundcloseoverride" ),
 	DEFINE_KEYFIELD(m_ls.sLockedSound, FIELD_SOUNDNAME, "soundlockedoverride"),
 	DEFINE_KEYFIELD(m_ls.sUnlockedSound, FIELD_SOUNDNAME, "soundunlockedoverride"),
-	DEFINE_KEYFIELD(m_SlaveName, FIELD_STRING, "slavename" ),
-	DEFINE_KEYFIELD(m_flNPCOpenDistance, FIELD_FLOAT, "opendistoverride"),
-	DEFINE_KEYFIELD(m_eNPCOpenFrontActivity, FIELD_INTEGER, "openfrontactivityoverride"),
-	DEFINE_KEYFIELD(m_eNPCOpenBackActivity, FIELD_INTEGER, "openbackactivityoverride"),
+	DEFINE_KEYFIELD_AUTO( m_SlaveName, "slavename" ),
+	DEFINE_KEYFIELD_AUTO( m_flNPCOpenDistance, "opendistoverride" ),
+	DEFINE_KEYFIELD_AUTO( m_eNPCOpenFrontActivity, "openfrontactivityoverride" ),
+	DEFINE_KEYFIELD_AUTO( m_eNPCOpenBackActivity, "openbackactivityoverride" ),
 
-	//DEFINE_KEYFIELD(m_flBlockDamage, FIELD_FLOAT, "dmg"),
-	DEFINE_KEYFIELD( m_bForceClosed, FIELD_BOOLEAN, "forceclosed" ),
+	//DEFINE_KEYFIELD_AUTO( m_flBlockDamage, "dmg" ),
+	DEFINE_KEYFIELD_AUTO( m_bForceClosed, "forceclosed" ),
 
 	DEFINE_INPUTFUNC(FIELD_VOID, "Open", InputOpen),
 	DEFINE_INPUTFUNC(FIELD_STRING, "OpenAwayFrom", InputOpenAwayFrom),
@@ -4786,7 +4786,7 @@ void CBasePropDoor::OnUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TY
 //-----------------------------------------------------------------------------
 // Purpose: Closes the door if it is not already closed.
 //-----------------------------------------------------------------------------
-void CBasePropDoor::InputClose(inputdata_t &inputdata)
+void CBasePropDoor::InputClose( inputdata_t &&inputdata )
 {
 	if (!IsDoorClosed())
 	{	
@@ -4799,7 +4799,7 @@ void CBasePropDoor::InputClose(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that locks the door.
 //-----------------------------------------------------------------------------
-void CBasePropDoor::InputLock(inputdata_t &inputdata)
+void CBasePropDoor::InputLock( inputdata_t &&inputdata )
 {
 	Lock();
 }
@@ -4808,7 +4808,7 @@ void CBasePropDoor::InputLock(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: Opens the door if it is not already open.
 //-----------------------------------------------------------------------------
-void CBasePropDoor::InputOpen(inputdata_t &inputdata)
+void CBasePropDoor::InputOpen( inputdata_t &&inputdata )
 {
 	OpenIfUnlocked(inputdata.pActivator, NULL);
 }
@@ -4817,7 +4817,7 @@ void CBasePropDoor::InputOpen(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: Opens the door away from a specified entity if it is not already open.
 //-----------------------------------------------------------------------------
-void CBasePropDoor::InputOpenAwayFrom(inputdata_t &inputdata)
+void CBasePropDoor::InputOpenAwayFrom( inputdata_t &&inputdata )
 {
 	CBaseEntity *pOpenAwayFrom = gEntList.FindEntityByName( NULL, inputdata.value.String(), NULL, inputdata.pActivator, inputdata.pCaller );
 	OpenIfUnlocked(inputdata.pActivator, pOpenAwayFrom);
@@ -4851,7 +4851,7 @@ void CBasePropDoor::OpenIfUnlocked(CBaseEntity *pActivator, CBaseEntity *pOpenAw
 //-----------------------------------------------------------------------------
 // Purpose: Opens the door if it is not already open.
 //-----------------------------------------------------------------------------
-void CBasePropDoor::InputToggle(inputdata_t &inputdata)
+void CBasePropDoor::InputToggle( inputdata_t &&inputdata )
 {
 	if (IsDoorClosed())
 	{	
@@ -4871,7 +4871,7 @@ void CBasePropDoor::InputToggle(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that unlocks the door.
 //-----------------------------------------------------------------------------
-void CBasePropDoor::InputUnlock(inputdata_t &inputdata)
+void CBasePropDoor::InputUnlock( inputdata_t &&inputdata )
 {
 	Unlock();
 }
@@ -4879,7 +4879,7 @@ void CBasePropDoor::InputUnlock(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that makes the door usable for players.
 //-----------------------------------------------------------------------------
-void CBasePropDoor::InputAllowPlayerUse(inputdata_t &inputdata)
+void CBasePropDoor::InputAllowPlayerUse( inputdata_t &&inputdata )
 {
 	RemoveSpawnFlags(SF_DOOR_IGNORE_USE);
 }
@@ -4887,7 +4887,7 @@ void CBasePropDoor::InputAllowPlayerUse(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that makes the door unusable for players.
 //-----------------------------------------------------------------------------
-void CBasePropDoor::InputDisallowPlayerUse(inputdata_t &inputdata)
+void CBasePropDoor::InputDisallowPlayerUse( inputdata_t &&inputdata )
 {
 	AddSpawnFlags(SF_DOOR_IGNORE_USE);
 }
@@ -5592,7 +5592,7 @@ public:
 
 	bool	OverridePropdata() { return true; }
 
-	void	InputSetSpeed(inputdata_t &inputdata);
+	void	InputSetSpeed( inputdata_t &&inputdata );
 
 	virtual void ComputeDoorExtent( Extent *extent, unsigned int extentType );	// extent contains the volume encompassing open + closed states
 
@@ -5616,7 +5616,7 @@ private:
 	
 	doorCheck_e	GetOpenState( void );
 
-	void	InputSetRotationDistance ( inputdata_t &inputdata );			// Set the degree difference between open and closed
+	void	InputSetRotationDistance ( inputdata_t &&inputdata );			// Set the degree difference between open and closed
 
 	void	CalcOpenAngles ( void );		// Subroutine to setup the m_angRotation QAngles based on the m_flDistance variable
 
@@ -5644,12 +5644,12 @@ private:
 
 
 BEGIN_MAPENTITY(CPropDoorRotating)
-	DEFINE_KEYFIELD(m_eSpawnPosition, FIELD_INTEGER, "spawnpos"),
-	DEFINE_KEYFIELD(m_eOpenDirection, FIELD_INTEGER, "opendir" ),
-	DEFINE_KEYFIELD(m_vecAxis, FIELD_VECTOR, "axis"),
-	DEFINE_KEYFIELD(m_flDistance, FIELD_FLOAT, "distance"),
-	DEFINE_KEYFIELD( m_angRotationAjar, FIELD_VECTOR, "ajarangles" ),
-	DEFINE_KEYFIELD(m_eBreakType, FIELD_INTEGER, "breaktype" ),
+	DEFINE_KEYFIELD_AUTO( m_eSpawnPosition, "spawnpos" ),
+	DEFINE_KEYFIELD_AUTO( m_eOpenDirection, "opendir" ),
+	DEFINE_KEYFIELD_AUTO( m_vecAxis, "axis" ),
+	DEFINE_KEYFIELD_AUTO( m_flDistance, "distance" ),
+	DEFINE_KEYFIELD_AUTO( m_angRotationAjar, "ajarangles" ),
+	DEFINE_KEYFIELD_AUTO( m_eBreakType, "breaktype" ),
 
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetRotationDistance", InputSetRotationDistance ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpeed", InputSetSpeed ),
@@ -6453,7 +6453,7 @@ void CPropDoorRotating::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &inf
 	}
 }
 
-void CPropDoorRotating::InputSetSpeed(inputdata_t &inputdata)
+void CPropDoorRotating::InputSetSpeed( inputdata_t &&inputdata )
 {
 	AssertMsg1(inputdata.value.Float() > 0.0f, "InputSetSpeed on %s called with negative parameter!", GetDebugName() );
 	m_flSpeed = inputdata.value.Float();
@@ -6463,7 +6463,7 @@ void CPropDoorRotating::InputSetSpeed(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 // Purpose: Change this door's distance (in degrees) between open and closed
 //-----------------------------------------------------------------------------
-void CPropDoorRotating::InputSetRotationDistance( inputdata_t &inputdata )
+void CPropDoorRotating::InputSetRotationDistance( inputdata_t &&inputdata )
 {
 	m_flDistance = inputdata.value.Float();
 	
@@ -6500,7 +6500,7 @@ public:
 };
 
 BEGIN_MAPENTITY( CPhysSphere )
-	DEFINE_KEYFIELD( m_fRadius, FIELD_FLOAT, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_fRadius, "radius" ),
 END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( prop_sphere, CPhysSphere );
@@ -6553,16 +6553,16 @@ public:
 
 	virtual float GetFlareLifetime() { return m_flFlareLifetime; }
 
-	void InputStartFlare( inputdata_t &inputdata )
+	void InputStartFlare( inputdata_t &&inputdata )
 	{
 		CreateFlare( PROP_FLARE_LIFETIME );
 	}
-	void InputStopFlare( inputdata_t &inputdata )
+	void InputStopFlare( inputdata_t &&inputdata )
 	{
 		KillFlare( this, m_hFlareEnt, PROP_FLARE_IGNITE_SUBSTRACT );
 	}
 
-	void InputAddFlareLifetime( inputdata_t &inputdata )
+	void InputAddFlareLifetime( inputdata_t &&inputdata )
 	{
 		if (m_hFlareEnt)
 		{
@@ -6574,13 +6574,13 @@ public:
 		}
 	}
 
-	void InputRemoveFlare( inputdata_t &inputdata )
+	void InputRemoveFlare( inputdata_t &&inputdata )
 	{
 		UTIL_Remove(m_hFlareEnt);
 		m_nSkin = 1;
 	}
 
-	void InputRestoreFlare( inputdata_t &inputdata )
+	void InputRestoreFlare( inputdata_t &&inputdata )
 	{
 		if (!HasInteraction(PROPINTER_PHYSGUN_CREATE_FLARE) && !m_hFlareEnt)
 		{
@@ -6613,7 +6613,7 @@ LINK_ENTITY_TO_CLASS( prop_flare, CPropFlare );
  
 BEGIN_MAPENTITY( CPropFlare )
 
-	DEFINE_KEYFIELD( m_flFlareLifetime, FIELD_FLOAT, "FlareLifetime" ),
+	DEFINE_KEYFIELD_AUTO( m_flFlareLifetime, "FlareLifetime" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartFlare", InputStartFlare ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopFlare", InputStopFlare ),
@@ -6655,7 +6655,7 @@ private:
 LINK_ENTITY_TO_CLASS( prop_physics_respawnable, CPhysicsPropRespawnable );
 
 BEGIN_MAPENTITY( CPhysicsPropRespawnable )
-	DEFINE_KEYFIELD( m_flRespawnTime, FIELD_FLOAT, "RespawnTime" ),
+	DEFINE_KEYFIELD_AUTO( m_flRespawnTime, "RespawnTime" ),
 END_MAPENTITY()
 
 CPhysicsPropRespawnable::CPhysicsPropRespawnable( void )

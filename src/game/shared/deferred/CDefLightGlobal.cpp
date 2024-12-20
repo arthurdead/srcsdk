@@ -11,11 +11,11 @@ CDeferredLightGlobal *GetGlobalLight()
 #ifdef GAME_DLL
 BEGIN_DATADESC( CDeferredLightGlobal )
 
-	DEFINE_KEYFIELD( m_str_Diff, FIELD_STRING, "diffuse" ),
-	DEFINE_KEYFIELD( m_str_Ambient_High, FIELD_STRING, "ambient_high" ),
-	DEFINE_KEYFIELD( m_str_Ambient_Low, FIELD_STRING, "ambient_low" ),
+	DEFINE_KEYFIELD_AUTO( m_str_Diff, "diffuse" ),
+	DEFINE_KEYFIELD_AUTO( m_str_Ambient_High, "ambient_high" ),
+	DEFINE_KEYFIELD_AUTO( m_str_Ambient_Low, "ambient_low" ),
 
-	DEFINE_KEYFIELD( m_flFadeTime, FIELD_FLOAT, "fadetime" ),
+	DEFINE_KEYFIELD_AUTO( m_flFadeTime, "fadetime" ),
 
 	DEFINE_FIELD( m_vecColor_Diff, FIELD_VECTOR ),
 	DEFINE_FIELD( m_vecColor_Ambient_High, FIELD_VECTOR ),
@@ -74,7 +74,7 @@ void CDeferredLightGlobal::Activate()
 	m_vecColor_Ambient_Low.GetForModify() = stringColToVec( STRING( m_str_Ambient_Low ) );
 }
 
-int CDeferredLightGlobal::UpdateTransmitState()
+EdictStateFlags_t CDeferredLightGlobal::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }

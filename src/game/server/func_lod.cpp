@@ -50,8 +50,8 @@ LINK_ENTITY_TO_CLASS(func_lod, CFunc_LOD);
 
 BEGIN_MAPENTITY( CFunc_LOD )
 
-	DEFINE_KEYFIELD( m_flDisappearMinDist,	FIELD_FLOAT, "DisappearMinDist" ),
-	DEFINE_KEYFIELD( m_flDisappearMaxDist,	FIELD_FLOAT, "DisappearMaxDist" ),
+	DEFINE_KEYFIELD_AUTO( m_flDisappearMinDist, "DisappearMinDist" ),
+	DEFINE_KEYFIELD_AUTO( m_flDisappearMaxDist, "DisappearMaxDist" ),
 
 END_MAPENTITY()
 

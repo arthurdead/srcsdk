@@ -28,10 +28,10 @@ EntityParticleTrailInfo_t::EntityParticleTrailInfo_t()
 
 BEGIN_SIMPLE_DATADESC( EntityParticleTrailInfo_t )
 
-	DEFINE_KEYFIELD( m_strMaterialName,	FIELD_STRING,	"ParticleTrailMaterial" ),
-	DEFINE_KEYFIELD( m_flLifetime,		FIELD_FLOAT,	"ParticleTrailLifetime" ),
-	DEFINE_KEYFIELD( m_flStartSize,		FIELD_FLOAT,	"ParticleTrailStartSize" ),
-	DEFINE_KEYFIELD( m_flEndSize,		FIELD_FLOAT,	"ParticleTrailEndSize" ),
+	DEFINE_KEYFIELD_AUTO( m_strMaterialName, "ParticleTrailMaterial" ),
+	DEFINE_KEYFIELD_AUTO( m_flLifetime, "ParticleTrailLifetime" ),
+	DEFINE_KEYFIELD_AUTO( m_flStartSize, "ParticleTrailStartSize" ),
+	DEFINE_KEYFIELD_AUTO( m_flEndSize, "ParticleTrailEndSize" ),
 
 END_DATADESC()
 

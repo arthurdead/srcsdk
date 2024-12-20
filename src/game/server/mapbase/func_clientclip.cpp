@@ -30,9 +30,9 @@ public:
 	void TurnOn( void );
 
 	// Input handlers
-	void InputTurnOff( inputdata_t &inputdata );
-	void InputTurnOn( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
+	void InputTurnOff( inputdata_t &&inputdata );
+	void InputTurnOn( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
 
 	CNetworkVar( bool, m_bDisabled );
 
@@ -40,7 +40,7 @@ public:
 
 	virtual bool IsOn( void );
 
-	int UpdateTransmitState()	// always send to all clients
+	EdictStateFlags_t UpdateTransmitState()	// always send to all clients
 	{
 		return SetTransmitState( FL_EDICT_ALWAYS );
 	}
@@ -53,7 +53,7 @@ BEGIN_DATADESC( CFuncClientClip )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
-	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
 END_DATADESC()
 
@@ -130,7 +130,7 @@ int CFuncClientClip::DrawDebugTextOverlays( void )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for toggling the hidden/shown state of the brush.
 //-----------------------------------------------------------------------------
-void CFuncClientClip::InputToggle( inputdata_t &inputdata )
+void CFuncClientClip::InputToggle( inputdata_t &&inputdata )
 {
 	if ( IsOn() )
 	{
@@ -145,7 +145,7 @@ void CFuncClientClip::InputToggle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for hiding the brush.
 //-----------------------------------------------------------------------------
-void CFuncClientClip::InputTurnOff( inputdata_t &inputdata )
+void CFuncClientClip::InputTurnOff( inputdata_t &&inputdata )
 {
 	TurnOff();
 }
@@ -154,7 +154,7 @@ void CFuncClientClip::InputTurnOff( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for showing the brush.
 //-----------------------------------------------------------------------------
-void CFuncClientClip::InputTurnOn( inputdata_t &inputdata )
+void CFuncClientClip::InputTurnOn( inputdata_t &&inputdata )
 {
 	TurnOn();
 }

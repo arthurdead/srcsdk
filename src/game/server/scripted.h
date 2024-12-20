@@ -98,10 +98,10 @@ public:
 	CBaseEntity *GetTarget( void ) { return m_hTargetEnt.Get(); };
 
 	// Input handlers
-	void InputBeginSequence( inputdata_t &inputdata );
-	void InputCancelSequence( inputdata_t &inputdata );
-	void InputMoveToPosition( inputdata_t &inputdata );
-	void InputSetTarget( inputdata_t &inputdata );
+	void InputBeginSequence( inputdata_t &&inputdata );
+	void InputCancelSequence( inputdata_t &&inputdata );
+	void InputMoveToPosition( inputdata_t &&inputdata );
+	void InputSetTarget( inputdata_t &&inputdata );
 
 	bool IsTimeToStart( void );
 	bool IsWaitingForBegin( void );
@@ -143,7 +143,7 @@ public:
 	virtual int DrawDebugTextOverlays( void );
 	virtual void DrawDebugGeometryOverlays( void );
 
-	void InputScriptPlayerDeath( inputdata_t &inputdata );
+	void InputScriptPlayerDeath( inputdata_t &&inputdata );
 
 private:
 	friend class CAI_BaseNPC;	// should probably try to eliminate this relationship

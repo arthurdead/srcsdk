@@ -1506,11 +1506,11 @@ public:
 
 protected:
 
-	void InputSetName( inputdata_t &inputdata );
-	void InputIncrement( inputdata_t &inputdata );
+	void InputSetName( inputdata_t &&inputdata );
+	void InputIncrement( inputdata_t &&inputdata );
 
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 private:
 
 	string_t		m_strStatisticName;
@@ -1519,7 +1519,7 @@ private:
 
 BEGIN_MAPENTITY( CPointGamestatsCounter )
 
-	DEFINE_KEYFIELD( m_strStatisticName, FIELD_STRING, "Name" ),
+	DEFINE_KEYFIELD_AUTO( m_strStatisticName, "Name" ),
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetName", InputSetName ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "Increment", InputIncrement ),
@@ -1540,7 +1540,7 @@ CPointGamestatsCounter::CPointGamestatsCounter() :
 //-----------------------------------------------------------------------------
 // Purpose: Changes name of statistic
 //-----------------------------------------------------------------------------
-void CPointGamestatsCounter::InputSetName( inputdata_t &inputdata )
+void CPointGamestatsCounter::InputSetName( inputdata_t &&inputdata )
 {
 	m_strStatisticName = inputdata.value.StringID();
 }
@@ -1548,7 +1548,7 @@ void CPointGamestatsCounter::InputSetName( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Changes name of statistic
 //-----------------------------------------------------------------------------
-void CPointGamestatsCounter::InputIncrement( inputdata_t &inputdata )
+void CPointGamestatsCounter::InputIncrement( inputdata_t &&inputdata )
 {
 	if ( m_bDisabled )
 		return;
@@ -1563,12 +1563,12 @@ void CPointGamestatsCounter::InputIncrement( inputdata_t &inputdata )
 	gamestats->Event_IncrementCountedStatistic( GetAbsOrigin(), STRING( m_strStatisticName ), inputdata.value.Float() );
 }
 
-void CPointGamestatsCounter::InputEnable( inputdata_t &inputdata )
+void CPointGamestatsCounter::InputEnable( inputdata_t &&inputdata )
 {
 	m_bDisabled = false;
 }
 
-void CPointGamestatsCounter::InputDisable( inputdata_t &inputdata )
+void CPointGamestatsCounter::InputDisable( inputdata_t &&inputdata )
 {
 	m_bDisabled = true;
 }

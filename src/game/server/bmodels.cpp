@@ -84,7 +84,7 @@ public:
 	void	Spawn( void );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
-	void	InputToggle( inputdata_t &inputdata );
+	void	InputToggle( inputdata_t &&inputdata );
 
 	void	TurnOff( void );
 	void	TurnOn( void );
@@ -141,7 +141,7 @@ bool CFuncWallToggle::IsOn( void )
 	return true;
 }
 
-void CFuncWallToggle::InputToggle( inputdata_t &inputdata )
+void CFuncWallToggle::InputToggle( inputdata_t &&inputdata )
 {
 	int status = IsOn();
 
@@ -178,8 +178,8 @@ public:
 	void Spawn();
 	bool CreateVPhysics( void );
 
-	void InputEnable( inputdata_t &data );
-	void InputDisable( inputdata_t &data );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
 private:
 };
@@ -218,7 +218,7 @@ bool CFuncVehicleClip::CreateVPhysics( void )
 	return true;
 }
 
-void CFuncVehicleClip::InputEnable( inputdata_t &data )
+void CFuncVehicleClip::InputEnable( inputdata_t &&inputdata )
 {
 	IPhysicsObject *pPhys = VPhysicsGetObject();
 	if ( pPhys )
@@ -228,7 +228,7 @@ void CFuncVehicleClip::InputEnable( inputdata_t &data )
 	RemoveSolidFlags( FSOLID_NOT_SOLID );
 }
 
-void CFuncVehicleClip::InputDisable( inputdata_t &data )
+void CFuncVehicleClip::InputDisable( inputdata_t &&inputdata )
 {
 	IPhysicsObject *pPhys = VPhysicsGetObject();
 	if ( pPhys )
@@ -259,8 +259,8 @@ public:
 	void	GetGroundVelocityToApply( Vector &vecGroundVel );
 
 	// Input handlers.
-	void	InputToggleDirection( inputdata_t &inputdata );
-	void	InputSetSpeed( inputdata_t &inputdata );
+	void	InputToggleDirection( inputdata_t &&inputdata );
+	void	InputSetSpeed( inputdata_t &&inputdata );
 
 private:
 
@@ -275,7 +275,7 @@ BEGIN_MAPENTITY( CFuncConveyor, MAPENT_SOLIDCLASS )
 	DEFINE_INPUTFUNC( FIELD_VOID, "ToggleDirection", InputToggleDirection ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "SetSpeed", InputSetSpeed ),
 
-	DEFINE_KEYFIELD( m_vecMoveDir, FIELD_VECTOR, "movedir" ),
+	DEFINE_KEYFIELD_AUTO( m_vecMoveDir, "movedir" ),
 
 END_MAPENTITY()
 
@@ -327,13 +327,13 @@ void CFuncConveyor::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE
 }
 
 
-void CFuncConveyor::InputToggleDirection( inputdata_t &inputdata )
+void CFuncConveyor::InputToggleDirection( inputdata_t &&inputdata )
 {
 	Use( inputdata.pActivator, inputdata.pCaller, USE_TOGGLE, 0 );
 }
 
 
-void CFuncConveyor::InputSetSpeed( inputdata_t &inputdata )
+void CFuncConveyor::InputSetSpeed( inputdata_t &&inputdata )
 {
     m_flSpeed = inputdata.value.Float();
 	UpdateSpeed( m_flSpeed );
@@ -412,14 +412,14 @@ protected:
 	float GetNextMoveInterval() const;
 
 	// Input handlers
-	void InputSetSpeed( inputdata_t &inputdata );
-	void InputStart( inputdata_t &inputdata );
-	void InputStop( inputdata_t &inputdata );
-	void InputStartForward( inputdata_t &inputdata );
-	void InputStartBackward( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
-	void InputReverse( inputdata_t &inputdata );
-	void InputStopAtStartPos( inputdata_t &inputdata );
+	void InputSetSpeed( inputdata_t &&inputdata );
+	void InputStart( inputdata_t &&inputdata );
+	void InputStop( inputdata_t &&inputdata );
+	void InputStartForward( inputdata_t &&inputdata );
+	void InputStartBackward( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputReverse( inputdata_t &&inputdata );
+	void InputStopAtStartPos( inputdata_t &&inputdata );
 
 	QAngle	m_vecMoveAng;
 
@@ -450,14 +450,14 @@ LINK_ENTITY_TO_CLASS( func_rotating, CFuncRotating );
 
 BEGIN_MAPENTITY( CFuncRotating, MAPENT_SOLIDCLASS )
 
-	DEFINE_KEYFIELD( m_flMaxSpeed, FIELD_FLOAT, "maxspeed" ),
-	DEFINE_KEYFIELD( m_flBlockDamage, FIELD_FLOAT, "dmg" ),
-	DEFINE_KEYFIELD( m_NoiseRunning, FIELD_SOUNDNAME, "message" ),
+	DEFINE_KEYFIELD_AUTO( m_flMaxSpeed, "maxspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_flBlockDamage, "dmg" ),
+	DEFINE_KEYFIELD_AUTO( m_NoiseRunning, "message" ),
 
-	DEFINE_KEYFIELD( m_bSolidBsp, FIELD_BOOLEAN, "solidbsp" ),
+	DEFINE_KEYFIELD_AUTO( m_bSolidBsp, "solidbsp" ),
 
-	DEFINE_KEYFIELD( m_iMinPitch, FIELD_INTEGER, "minpitch" ),
-	DEFINE_KEYFIELD( m_iMaxPitch, FIELD_INTEGER, "maxpitch" ),
+	DEFINE_KEYFIELD_AUTO( m_iMinPitch, "minpitch" ),
+	DEFINE_KEYFIELD_AUTO( m_iMaxPitch, "maxpitch" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpeed", InputSetSpeed ),
@@ -552,12 +552,12 @@ IMPLEMENT_SERVERCLASS_ST(CFuncRotating, DT_FuncRotating)
 	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_vecOrigin ) ),
 	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_flSimulationTime ) ),
 
-	SendPropVector(SENDINFO(m_vecOrigin), -1,  SPROP_COORD|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_FuncRotatingOrigin ),
-	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 0), 13, SPROP_CHANGES_OFTEN, SendProxy_FuncRotatingAngle ),
-	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 1), 13, SPROP_CHANGES_OFTEN, SendProxy_FuncRotatingAngle ),
-	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 2), 13, SPROP_CHANGES_OFTEN, SendProxy_FuncRotatingAngle ),
+	SendPropVector(SENDINFO(m_vecOrigin), -1,  SPROP_COORD|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_FuncRotatingOrigin, SENDPROP_CHANGES_OFTEN_PRIORITY ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 0), 13, SPROP_CHANGES_OFTEN, SendProxy_FuncRotatingAngle, SENDPROP_CHANGES_OFTEN_PRIORITY ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 1), 13, SPROP_CHANGES_OFTEN, SendProxy_FuncRotatingAngle, SENDPROP_CHANGES_OFTEN_PRIORITY ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 2), 13, SPROP_CHANGES_OFTEN, SendProxy_FuncRotatingAngle, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 
-	SendPropInt(SENDINFO(m_flSimulationTime), SIMULATION_TIME_WINDOW_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_FuncRotatingSimulationTime),
+	SendPropInt(SENDINFO(m_flSimulationTime), SIMULATION_TIME_WINDOW_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_FuncRotatingSimulationTime, SENDPROP_CHANGES_OFTEN_PRIORITY),
 END_SEND_TABLE()
 
 
@@ -1213,7 +1213,7 @@ void CFuncRotating::RotatingUse( CBaseEntity *pActivator, CBaseEntity *pCaller, 
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that reverses the direction of rotation.
 //-----------------------------------------------------------------------------
-void CFuncRotating::InputReverse( inputdata_t &inputdata )
+void CFuncRotating::InputReverse( inputdata_t &&inputdata )
 {
 	m_bStopAtStartPos = false;
 	m_bReversed = !m_bReversed;
@@ -1225,7 +1225,7 @@ void CFuncRotating::InputReverse( inputdata_t &inputdata )
 // Purpose: Input handler for setting the speed of the rotator.
 // Input  : Float target angular velocity as a ratio of maximum speed [0, 1].
 //-----------------------------------------------------------------------------
-void CFuncRotating::InputSetSpeed( inputdata_t &inputdata )
+void CFuncRotating::InputSetSpeed( inputdata_t &&inputdata )
 {
 	m_bStopAtStartPos = false;
 	float flSpeed = inputdata.value.Float();
@@ -1238,7 +1238,7 @@ void CFuncRotating::InputSetSpeed( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler to start the rotator spinning.
 //-----------------------------------------------------------------------------
-void CFuncRotating::InputStart( inputdata_t &inputdata )
+void CFuncRotating::InputStart( inputdata_t &&inputdata )
 {
 	m_bStopAtStartPos = false;
 	SetTargetSpeed( m_flMaxSpeed );
@@ -1248,7 +1248,7 @@ void CFuncRotating::InputStart( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler to start the rotator spinning.
 //-----------------------------------------------------------------------------
-void CFuncRotating::InputStartForward( inputdata_t &inputdata )
+void CFuncRotating::InputStartForward( inputdata_t &&inputdata )
 {
 	m_bReversed = false;
 	SetTargetSpeed( m_flMaxSpeed );
@@ -1258,7 +1258,7 @@ void CFuncRotating::InputStartForward( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler to start the rotator spinning.
 //-----------------------------------------------------------------------------
-void CFuncRotating::InputStartBackward( inputdata_t &inputdata )
+void CFuncRotating::InputStartBackward( inputdata_t &&inputdata )
 {
 	m_bStopAtStartPos = false;
 	m_bReversed = true;
@@ -1269,7 +1269,7 @@ void CFuncRotating::InputStartBackward( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler to stop the rotator from spinning.
 //-----------------------------------------------------------------------------
-void CFuncRotating::InputStop( inputdata_t &inputdata )
+void CFuncRotating::InputStop( inputdata_t &&inputdata )
 {
 	m_bStopAtStartPos = false;
 	SetTargetSpeed( 0 );
@@ -1279,7 +1279,7 @@ void CFuncRotating::InputStop( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CFuncRotating::InputStopAtStartPos( inputdata_t &inputdata )
+void CFuncRotating::InputStopAtStartPos( inputdata_t &&inputdata )
 {
 	m_bStopAtStartPos = true;
 	SetTargetSpeed( 0 );
@@ -1289,7 +1289,7 @@ void CFuncRotating::InputStopAtStartPos( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Starts the rotator if it is still, stops it if it is spinning.
 //-----------------------------------------------------------------------------
-void CFuncRotating::InputToggle( inputdata_t &inputdata )
+void CFuncRotating::InputToggle( inputdata_t &&inputdata )
 {	
 	if (m_flSpeed > 0)
 	{
@@ -1349,10 +1349,10 @@ public:
 	bool EntityPassesFilter( CBaseEntity *pOther );
 	bool ForceVPhysicsCollide( CBaseEntity *pEntity );
 
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
-	void InputSetFilter( inputdata_t &inputdata );
+	void InputSetFilter( inputdata_t &&inputdata );
 
 private:
 
@@ -1365,12 +1365,12 @@ private:
 BEGIN_MAPENTITY( CFuncVPhysicsClip, MAPENT_SOLIDCLASS )
 
 	// Keyfields
-	DEFINE_KEYFIELD( m_iFilterName,	FIELD_STRING,	"filtername" ),
+	DEFINE_KEYFIELD_AUTO( m_iFilterName, "filtername" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
-	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
 	DEFINE_INPUTFUNC( FIELD_EHANDLE, "SetFilter", InputSetFilter ),
 
@@ -1430,19 +1430,19 @@ bool CFuncVPhysicsClip::ForceVPhysicsCollide( CBaseEntity *pEntity )
 	return EntityPassesFilter(pEntity);
 }
 
-void CFuncVPhysicsClip::InputEnable( inputdata_t &inputdata )
+void CFuncVPhysicsClip::InputEnable( inputdata_t &&inputdata )
 {
 	VPhysicsGetObject()->EnableCollisions(true);
 	m_bDisabled = false;
 }
 
-void CFuncVPhysicsClip::InputDisable( inputdata_t &inputdata )
+void CFuncVPhysicsClip::InputDisable( inputdata_t &&inputdata )
 {
 	VPhysicsGetObject()->EnableCollisions(false);
 	m_bDisabled = true;
 }
 
-void CFuncVPhysicsClip::InputSetFilter( inputdata_t &inputdata )
+void CFuncVPhysicsClip::InputSetFilter( inputdata_t &&inputdata )
 {
 	if (inputdata.value.Entity())
 	{

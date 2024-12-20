@@ -611,12 +611,12 @@ AI_END_CUSTOM_SCHEDULE_PROVIDER()
 //-----------------------------------------------------------------------------
 
 BEGIN_DATADESC( CAI_FightFromCoverGoal )
-	DEFINE_KEYFIELD( m_DirectionalMarker, FIELD_STRING, "DirectionalMarker" ),
-	DEFINE_KEYFIELD( m_GenericHintType, FIELD_STRING, "GenericHintType" ),
-	DEFINE_KEYFIELD( m_WidthZone, FIELD_FLOAT, "width" ),
-	DEFINE_KEYFIELD( m_LengthZone, FIELD_FLOAT, "length" ),
-	DEFINE_KEYFIELD( m_HeightZone, FIELD_FLOAT, "height" ),
-	DEFINE_KEYFIELD( m_BiasZone, FIELD_FLOAT, "bias" ),
+	DEFINE_KEYFIELD_AUTO( m_DirectionalMarker, "DirectionalMarker" ),
+	DEFINE_KEYFIELD_AUTO( m_GenericHintType, "GenericHintType" ),
+	DEFINE_KEYFIELD_AUTO( m_WidthZone, "width" ),
+	DEFINE_KEYFIELD_AUTO( m_LengthZone, "length" ),
+	DEFINE_KEYFIELD_AUTO( m_HeightZone, "height" ),
+	DEFINE_KEYFIELD_AUTO( m_BiasZone, "bias" ),
 	DEFINE_FIELD( m_vFront, FIELD_POSITION_VECTOR ),
 
 	DEFINE_INPUTFUNC( FIELD_EHANDLE, "SetDirectionalMarker", InputSetDirectionalMarker ),
@@ -797,7 +797,7 @@ void CAI_FightFromCoverGoal::ResolveNames()
 
 //-------------------------------------
 
-void CAI_FightFromCoverGoal::InputSetDirectionalMarker( inputdata_t &inputdata )
+void CAI_FightFromCoverGoal::InputSetDirectionalMarker( inputdata_t &&inputdata )
 {
 	m_hDirectionalMarker = inputdata.value.Entity();
 	if ( m_hDirectionalMarker != NULL )

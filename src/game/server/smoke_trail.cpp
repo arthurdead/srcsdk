@@ -42,17 +42,17 @@ LINK_ENTITY_TO_CLASS(env_smoketrail, SmokeTrail);
 
 BEGIN_MAPENTITY( SmokeTrail )
 
-	DEFINE_KEYFIELD( m_Opacity, FIELD_FLOAT, "opacity" ),
-	DEFINE_KEYFIELD( m_SpawnRate, FIELD_FLOAT, "spawnrate" ),
-	DEFINE_KEYFIELD( m_ParticleLifetime, FIELD_FLOAT, "lifetime" ),
+	DEFINE_KEYFIELD_AUTO( m_Opacity, "opacity" ),
+	DEFINE_KEYFIELD_AUTO( m_SpawnRate, "spawnrate" ),
+	DEFINE_KEYFIELD_AUTO( m_ParticleLifetime, "lifetime" ),
 
-	DEFINE_KEYFIELD( m_MinSpeed, FIELD_FLOAT, "minspeed" ),
-	DEFINE_KEYFIELD( m_MaxSpeed, FIELD_FLOAT, "maxspeed" ),
-	DEFINE_KEYFIELD( m_MinDirectedSpeed, FIELD_FLOAT, "mindirectedspeed" ),
-	DEFINE_KEYFIELD( m_MaxDirectedSpeed, FIELD_FLOAT, "maxdirectedspeed" ),
-	DEFINE_KEYFIELD( m_StartSize, FIELD_FLOAT, "startsize" ),
-	DEFINE_KEYFIELD( m_EndSize, FIELD_FLOAT, "endsize" ),
-	DEFINE_KEYFIELD( m_SpawnRadius, FIELD_FLOAT, "spawnradius" ),
+	DEFINE_KEYFIELD_AUTO( m_MinSpeed, "minspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_MaxSpeed, "maxspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_MinDirectedSpeed, "mindirectedspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_MaxDirectedSpeed, "maxdirectedspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_StartSize, "startsize" ),
+	DEFINE_KEYFIELD_AUTO( m_EndSize, "endsize" ),
+	DEFINE_KEYFIELD_AUTO( m_SpawnRadius, "spawnradius" ),
 
 END_MAPENTITY()
 
@@ -343,8 +343,8 @@ LINK_ENTITY_TO_CLASS( env_sporeexplosion, SporeExplosion );
 
 BEGIN_MAPENTITY( SporeExplosion )
 
-	DEFINE_KEYFIELD( m_flSpawnRate, FIELD_FLOAT, "spawnrate" ),
-	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "startdisabled" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpawnRate, "spawnrate" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "startdisabled" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -399,14 +399,14 @@ SporeExplosion *SporeExplosion::CreateSporeExplosion()
 	return NULL;
 }
 
-void SporeExplosion::InputEnable( inputdata_t &inputdata )
+void SporeExplosion::InputEnable( inputdata_t &&inputdata )
 {
 	m_bDontRemove = true;
 	m_bDisabled = false;
 	m_bEmit = true;
 }
 
-void SporeExplosion::InputDisable( inputdata_t &inputdata )
+void SporeExplosion::InputDisable( inputdata_t &&inputdata )
 {
 	m_bDontRemove = true;
 	m_bDisabled = true;
@@ -500,17 +500,17 @@ LINK_ENTITY_TO_CLASS( env_dusttrail, DustTrail);
 
 BEGIN_MAPENTITY( DustTrail )
 
-	DEFINE_KEYFIELD( m_Opacity, FIELD_FLOAT, "opacity" ),
-	DEFINE_KEYFIELD( m_SpawnRate, FIELD_FLOAT, "spawnrate" ),
-	DEFINE_KEYFIELD( m_ParticleLifetime, FIELD_FLOAT, "lifetime" ),
+	DEFINE_KEYFIELD_AUTO( m_Opacity, "opacity" ),
+	DEFINE_KEYFIELD_AUTO( m_SpawnRate, "spawnrate" ),
+	DEFINE_KEYFIELD_AUTO( m_ParticleLifetime, "lifetime" ),
 
-	DEFINE_KEYFIELD( m_MinSpeed, FIELD_FLOAT, "minspeed" ),
-	DEFINE_KEYFIELD( m_MaxSpeed, FIELD_FLOAT, "maxspeed" ),
-	DEFINE_KEYFIELD( m_MinDirectedSpeed, FIELD_FLOAT, "mindirectedspeed" ),
-	DEFINE_KEYFIELD( m_MaxDirectedSpeed, FIELD_FLOAT, "maxdirectedspeed" ),
-	DEFINE_KEYFIELD( m_StartSize, FIELD_FLOAT, "startsize" ),
-	DEFINE_KEYFIELD( m_EndSize, FIELD_FLOAT, "endsize" ),
-	DEFINE_KEYFIELD( m_SpawnRadius, FIELD_FLOAT, "spawnradius" ),
+	DEFINE_KEYFIELD_AUTO( m_MinSpeed, "minspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_MaxSpeed, "maxspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_MinDirectedSpeed, "mindirectedspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_MaxDirectedSpeed, "maxdirectedspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_StartSize, "startsize" ),
+	DEFINE_KEYFIELD_AUTO( m_EndSize, "endsize" ),
+	DEFINE_KEYFIELD_AUTO( m_SpawnRadius, "spawnradius" ),
 
 END_MAPENTITY()
 

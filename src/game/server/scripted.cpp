@@ -48,28 +48,28 @@ ConVar ai_task_pre_script(  "ai_task_pre_script", "0", FCVAR_NONE );
 
 BEGIN_MAPENTITY( CAI_ScriptedSequence )
 
-	DEFINE_KEYFIELD( m_iszEntry, FIELD_STRING, "m_iszEntry" ),
-	DEFINE_KEYFIELD( m_iszPreIdle, FIELD_STRING, "m_iszIdle" ),
-	DEFINE_KEYFIELD( m_iszPlay, FIELD_STRING, "m_iszPlay" ),
-	DEFINE_KEYFIELD( m_iszPostIdle, FIELD_STRING, "m_iszPostIdle" ),
-	DEFINE_KEYFIELD( m_iszCustomMove, FIELD_STRING, "m_iszCustomMove" ),
-	DEFINE_KEYFIELD( m_iszNextScript, FIELD_STRING, "m_iszNextScript" ),
-	DEFINE_KEYFIELD( m_iszEntity, FIELD_STRING, "m_iszEntity" ),
-	DEFINE_KEYFIELD( m_fMoveTo, FIELD_INTEGER, "m_fMoveTo" ),
-	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "m_flRadius" ),
-	DEFINE_KEYFIELD( m_flRepeat, FIELD_FLOAT, "m_flRepeat" ),
+	DEFINE_KEYFIELD_AUTO( m_iszEntry, "m_iszEntry" ),
+	DEFINE_KEYFIELD_AUTO( m_iszPreIdle, "m_iszIdle" ),
+	DEFINE_KEYFIELD_AUTO( m_iszPlay, "m_iszPlay" ),
+	DEFINE_KEYFIELD_AUTO( m_iszPostIdle, "m_iszPostIdle" ),
+	DEFINE_KEYFIELD_AUTO( m_iszCustomMove, "m_iszCustomMove" ),
+	DEFINE_KEYFIELD_AUTO( m_iszNextScript, "m_iszNextScript" ),
+	DEFINE_KEYFIELD_AUTO( m_iszEntity, "m_iszEntity" ),
+	DEFINE_KEYFIELD_AUTO( m_fMoveTo, "m_fMoveTo" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "m_flRadius" ),
+	DEFINE_KEYFIELD_AUTO( m_flRepeat, "m_flRepeat" ),
 
-	DEFINE_KEYFIELD( m_bLoopActionSequence, FIELD_BOOLEAN, "m_bLoopActionSequence" ),
-	DEFINE_KEYFIELD( m_bSynchPostIdles, FIELD_BOOLEAN, "m_bSynchPostIdles" ),
-	DEFINE_KEYFIELD( m_bIgnoreGravity, FIELD_BOOLEAN, "m_bIgnoreGravity" ),
-	DEFINE_KEYFIELD( m_bDisableNPCCollisions, FIELD_BOOLEAN, "m_bDisableNPCCollisions" ),
+	DEFINE_KEYFIELD_AUTO( m_bLoopActionSequence, "m_bLoopActionSequence" ),
+	DEFINE_KEYFIELD_AUTO( m_bSynchPostIdles, "m_bSynchPostIdles" ),
+	DEFINE_KEYFIELD_AUTO( m_bIgnoreGravity, "m_bIgnoreGravity" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisableNPCCollisions, "m_bDisableNPCCollisions" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "MoveToPosition", InputMoveToPosition ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "BeginSequence", InputBeginSequence ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "CancelSequence", InputCancelSequence ),
 
-	DEFINE_KEYFIELD( m_iPlayerDeathBehavior, FIELD_INTEGER, "onplayerdeath" ),
+	DEFINE_KEYFIELD_AUTO( m_iPlayerDeathBehavior, "onplayerdeath" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "ScriptPlayerDeath", InputScriptPlayerDeath ),
 
 	// Outputs
@@ -269,7 +269,7 @@ void CAI_ScriptedSequence::FireScriptEvent( int nEvent )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that causes the NPC to move to the script position.
 //-----------------------------------------------------------------------------
-void CAI_ScriptedSequence::InputMoveToPosition( inputdata_t &inputdata )
+void CAI_ScriptedSequence::InputMoveToPosition( inputdata_t &&inputdata )
 {
 	if ( m_bInitiatedSelfDelete )
 		return;
@@ -311,7 +311,7 @@ void CAI_ScriptedSequence::InputMoveToPosition( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our target NPC with the generic SetTarget input.
 //-----------------------------------------------------------------------------
-void CAI_ScriptedSequence::InputSetTarget( inputdata_t &inputdata )
+void CAI_ScriptedSequence::InputSetTarget( inputdata_t &&inputdata )
 {
 	m_hActivator = inputdata.pActivator;
 	m_iszEntity = AllocPooledString(inputdata.value.String());
@@ -321,7 +321,7 @@ void CAI_ScriptedSequence::InputSetTarget( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that activates the scripted sequence.
 //-----------------------------------------------------------------------------
-void CAI_ScriptedSequence::InputBeginSequence( inputdata_t &inputdata )
+void CAI_ScriptedSequence::InputBeginSequence( inputdata_t &&inputdata )
 {
 	if ( m_bInitiatedSelfDelete )
 		return;
@@ -389,7 +389,7 @@ void CAI_ScriptedSequence::InputBeginSequence( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that activates the scripted sequence.
 //-----------------------------------------------------------------------------
-void CAI_ScriptedSequence::InputCancelSequence( inputdata_t &inputdata )
+void CAI_ScriptedSequence::InputCancelSequence( inputdata_t &&inputdata )
 {
 	if ( m_bInitiatedSelfDelete )
 		return;
@@ -403,7 +403,7 @@ void CAI_ScriptedSequence::InputCancelSequence( inputdata_t &inputdata )
 	ScriptEntityCancel( this );
 }
 
-void CAI_ScriptedSequence::InputScriptPlayerDeath( inputdata_t &inputdata )
+void CAI_ScriptedSequence::InputScriptPlayerDeath( inputdata_t &&inputdata )
 {
     if ( m_iPlayerDeathBehavior == SCRIPT_CANCEL )
 	{
@@ -1600,9 +1600,9 @@ private:
 	void ScriptThink( void );
 
 	// Input handlers
-	void InputStartSchedule( inputdata_t &inputdata );
-	void InputStopSchedule( inputdata_t &inputdata );
-	void InputSetTarget( inputdata_t &inputdata );
+	void InputStartSchedule( inputdata_t &&inputdata );
+	void InputStopSchedule( inputdata_t &&inputdata );
+	void InputSetTarget( inputdata_t &&inputdata );
 
 	CAI_BaseNPC *FindScriptEntity(  bool bCyclic );
 
@@ -1645,14 +1645,14 @@ private:
 
 BEGIN_MAPENTITY( CAI_ScriptedSchedule )
 
-	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "m_flRadius" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "m_flRadius" ),
 	
-	DEFINE_KEYFIELD( m_iszEntity, FIELD_STRING, "m_iszEntity" ),
-	DEFINE_KEYFIELD( m_nSchedule, FIELD_INTEGER, "schedule" ),
-	DEFINE_KEYFIELD( m_nForceState, FIELD_INTEGER, "forcestate" ),
-	DEFINE_KEYFIELD( m_sGoalEnt, FIELD_STRING, "goalent" ),
-	DEFINE_KEYFIELD( m_bGrabAll, FIELD_BOOLEAN, "graball" ),
-	DEFINE_KEYFIELD( m_Interruptability, FIELD_INTEGER, "interruptability"),
+	DEFINE_KEYFIELD_AUTO( m_iszEntity, "m_iszEntity" ),
+	DEFINE_KEYFIELD_AUTO( m_nSchedule, "schedule" ),
+	DEFINE_KEYFIELD_AUTO( m_nForceState, "forcestate" ),
+	DEFINE_KEYFIELD_AUTO( m_sGoalEnt, "goalent" ),
+	DEFINE_KEYFIELD_AUTO( m_bGrabAll, "graball" ),
+	DEFINE_KEYFIELD_AUTO( m_Interruptability, "interruptability" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartSchedule", InputStartSchedule ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopSchedule", InputStopSchedule ),
@@ -1860,7 +1860,7 @@ void CAI_ScriptedSchedule::StartSchedule( CAI_BaseNPC *pTarget )
 // Purpose: Input handler to activate the scripted schedule. Finds the NPC to
 //			act on and sets a think for the near future to do the real work.
 //-----------------------------------------------------------------------------
-void CAI_ScriptedSchedule::InputStartSchedule( inputdata_t &inputdata )
+void CAI_ScriptedSchedule::InputStartSchedule( inputdata_t &&inputdata )
 {
 	if (( m_nForceState == 0 ) && ( m_nSchedule == 0 ))
 	{
@@ -1883,7 +1883,7 @@ void CAI_ScriptedSchedule::InputStartSchedule( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler to stop a previously activated scripted schedule. 
 //-----------------------------------------------------------------------------
-void CAI_ScriptedSchedule::InputStopSchedule( inputdata_t &inputdata )
+void CAI_ScriptedSchedule::InputStopSchedule( inputdata_t &&inputdata )
 {
 	if ( !m_bDidFireOnce )
 	{
@@ -1913,7 +1913,7 @@ void CAI_ScriptedSchedule::InputStopSchedule( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our target NPC with the generic SetTarget input.
 //-----------------------------------------------------------------------------
-void CAI_ScriptedSchedule::InputSetTarget( inputdata_t &inputdata )
+void CAI_ScriptedSchedule::InputSetTarget( inputdata_t &&inputdata )
 {
 	m_hActivator = inputdata.pActivator;
 	m_iszEntity = AllocPooledString( inputdata.value.String() );
@@ -1943,7 +1943,7 @@ public:
 	int	 ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
 
 	// Input handlers
-	void InputBeginSentence( inputdata_t &inputdata );
+	void InputBeginSentence( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -1977,14 +1977,14 @@ private:
 
 BEGIN_MAPENTITY( CAI_ScriptedSentence )
 
-	DEFINE_KEYFIELD( m_iszSentence, FIELD_STRING, "sentence" ),
-	DEFINE_KEYFIELD( m_iszEntity, FIELD_STRING, "entity" ),
-	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "radius" ),
-	DEFINE_KEYFIELD( m_flDelay, FIELD_FLOAT, "delay" ),
-	DEFINE_KEYFIELD( m_flRepeat, FIELD_FLOAT, "refire" ),
-	DEFINE_KEYFIELD( m_iszListener, FIELD_STRING, "listener" ),
+	DEFINE_KEYFIELD_AUTO( m_iszSentence, "sentence" ),
+	DEFINE_KEYFIELD_AUTO( m_iszEntity, "entity" ),
+	DEFINE_KEYFIELD_AUTO( m_flRadius, "radius" ),
+	DEFINE_KEYFIELD_AUTO( m_flDelay, "delay" ),
+	DEFINE_KEYFIELD_AUTO( m_flRepeat, "refire" ),
+	DEFINE_KEYFIELD_AUTO( m_iszListener, "listener" ),
 
-	DEFINE_KEYFIELD( m_TempAttenuation, FIELD_INTEGER, "attenuation" ),
+	DEFINE_KEYFIELD_AUTO( m_TempAttenuation, "attenuation" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "BeginSentence", InputBeginSentence),
@@ -2024,7 +2024,7 @@ bool CAI_ScriptedSentence::KeyValue( const char *szKeyName, const char *szValue 
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for starting the scripted sentence.
 //-----------------------------------------------------------------------------
-void CAI_ScriptedSentence::InputBeginSentence( inputdata_t &inputdata )
+void CAI_ScriptedSentence::InputBeginSentence( inputdata_t &&inputdata )
 {
 	if ( !m_active )
 		return;
@@ -2266,13 +2266,13 @@ public:
 
 	void Precache();
 
-	CBaseEntity *GetTarget(inputdata_t &inputdata);
+	CBaseEntity *GetTarget( inputdata_t &&inputdata );
 
 	// Input handlers
-	void InputPlaySound( inputdata_t &inputdata );
-	void InputPlaySoundOnEntity( inputdata_t &inputdata );
-	void InputStopSound( inputdata_t &inputdata );
-	void InputSetSound( inputdata_t &inputdata );
+	void InputPlaySound( inputdata_t &&inputdata );
+	void InputPlaySoundOnEntity( inputdata_t &&inputdata );
+	void InputStopSound( inputdata_t &&inputdata );
+	void InputSetSound( inputdata_t &&inputdata );
 
 private:
 	string_t m_message;
@@ -2283,8 +2283,8 @@ private:
 
 BEGIN_MAPENTITY( CScriptedSound )
 
-	DEFINE_KEYFIELD( m_message, FIELD_STRING, "message" ),
-	DEFINE_KEYFIELD( m_bGrabAll, FIELD_BOOLEAN, "GrabAll" ),
+	DEFINE_KEYFIELD_AUTO( m_message, "message" ),
+	DEFINE_KEYFIELD_AUTO( m_bGrabAll, "GrabAll" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "PlaySound", InputPlaySound),
@@ -2315,7 +2315,7 @@ void CScriptedSound::Precache()
 // Input  : 
 // Output : 
 //-----------------------------------------------------------------------------
-CBaseEntity *CScriptedSound::GetTarget(inputdata_t &inputdata)
+CBaseEntity *CScriptedSound::GetTarget( inputdata_t &&inputdata )
 {
 	CBaseEntity *pEntity = NULL;
 	if (m_target == NULL_STRING)
@@ -2337,7 +2337,7 @@ CBaseEntity *CScriptedSound::GetTarget(inputdata_t &inputdata)
 // Input  : 
 // Output : 
 //-----------------------------------------------------------------------------
-void CScriptedSound::InputPlaySound( inputdata_t &inputdata )
+void CScriptedSound::InputPlaySound( inputdata_t &&inputdata )
 {
 	PrecacheScriptSound(STRING(m_message));
 
@@ -2372,7 +2372,7 @@ void CScriptedSound::InputPlaySound( inputdata_t &inputdata )
 // Input  : 
 // Output : 
 //-----------------------------------------------------------------------------
-void CScriptedSound::InputPlaySoundOnEntity( inputdata_t &inputdata )
+void CScriptedSound::InputPlaySoundOnEntity( inputdata_t &&inputdata )
 {
 	if (inputdata.value.Entity())
 	{
@@ -2386,7 +2386,7 @@ void CScriptedSound::InputPlaySoundOnEntity( inputdata_t &inputdata )
 // Input  : 
 // Output : 
 //-----------------------------------------------------------------------------
-void CScriptedSound::InputStopSound( inputdata_t &inputdata )
+void CScriptedSound::InputStopSound( inputdata_t &&inputdata )
 {
 	CBaseEntity *pEntity = GetTarget(inputdata);
 	const char *sound = STRING(m_message);
@@ -2413,7 +2413,7 @@ void CScriptedSound::InputStopSound( inputdata_t &inputdata )
 // Input  : 
 // Output : 
 //-----------------------------------------------------------------------------
-void CScriptedSound::InputSetSound( inputdata_t &inputdata )
+void CScriptedSound::InputSetSound( inputdata_t &&inputdata )
 {
 	PrecacheScriptSound(inputdata.value.String());
 	m_message = inputdata.value.StringID();

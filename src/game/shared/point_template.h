@@ -77,8 +77,8 @@ public:
 	void			CreationComplete( const CUtlVector<CSharedBaseEntity*> &entities );
 
 	// Inputs
-	void			InputForceSpawn( inputdata_t &inputdata );
-	void			InputForceSpawnRandomTemplate( inputdata_t &inputdata );
+	void			InputForceSpawn( inputdata_t &&inputdata );
+	void			InputForceSpawnRandomTemplate( inputdata_t &&inputdata );
 
 	virtual void	PerformPrecache();
 

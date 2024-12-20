@@ -294,12 +294,12 @@ ConVar free_pass_peek_debug( "free_pass_peek_debug", "0" );
 
 BEGIN_SIMPLE_MAPEMBEDDED( AI_FreePassParams_t )
 
-	DEFINE_KEYFIELD( timeToTrigger,			FIELD_FLOAT, "freepass_timetotrigger"),
-	DEFINE_KEYFIELD( duration,				FIELD_FLOAT, "freepass_duration"),
-	DEFINE_KEYFIELD( moveTolerance,			FIELD_FLOAT, "freepass_movetolerance"),
-	DEFINE_KEYFIELD( refillRate,			FIELD_FLOAT, "freepass_refillrate"),
+	DEFINE_KEYFIELD_AUTO( timeToTrigger, "freepass_timetotrigger" ),
+	DEFINE_KEYFIELD_AUTO( duration, "freepass_duration" ),
+	DEFINE_KEYFIELD_AUTO( moveTolerance, "freepass_movetolerance" ),
+	DEFINE_KEYFIELD_AUTO( refillRate, "freepass_refillrate" ),
 
-	DEFINE_KEYFIELD( peekTime,				FIELD_FLOAT, "freepass_peektime"),
+	DEFINE_KEYFIELD_AUTO( peekTime, "freepass_peektime" ),
 
 END_MAPEMBEDDED()
 

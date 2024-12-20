@@ -83,12 +83,12 @@ public:
 
 	void	SetEndPoints( const Vector& p1, const Vector& p2 );
 
-	void	InputEnable( inputdata_t &inputdata );
-	void	InputDisable( inputdata_t &inputdata );
+	void	InputEnable( inputdata_t &&inputdata );
+	void	InputDisable( inputdata_t &&inputdata );
 
 #ifdef GAME_DLL
-	void	InputForcePlayerOn( inputdata_t &inputdata );
-	void	InputCheckPlayerOn( inputdata_t &inputdata );
+	void	InputForcePlayerOn( inputdata_t &&inputdata );
+	void	InputCheckPlayerOn( inputdata_t &&inputdata );
 #endif
 
 	bool	IsEnabled() const;
@@ -134,7 +134,7 @@ private:
 	COutputEvent	m_OnPlayerGotOnLadder;
 	COutputEvent	m_OnPlayerGotOffLadder;
 
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 #endif
 };
 

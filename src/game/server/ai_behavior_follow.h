@@ -60,7 +60,7 @@ public:
 
 	virtual void EnableGoal( CAI_BaseNPC *pAI );
 	virtual void DisableGoal( CAI_BaseNPC *pAI  );
-	virtual void InputOutsideTransition( inputdata_t &inputdata );
+	virtual void InputOutsideTransition( inputdata_t &&inputdata );
 
 	int m_iFormation;
 

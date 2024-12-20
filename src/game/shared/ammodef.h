@@ -14,6 +14,8 @@
 
 #include "tier0/platform.h"
 
+enum DamageTypes_t : uint64;
+
 #ifdef GAME_DLL
 class CBaseCombatCharacter;
 typedef CBaseCombatCharacter CSharedBaseCombatCharacter;
@@ -24,22 +26,44 @@ typedef C_BaseCombatCharacter CSharedBaseCombatCharacter;
 
 class ConVar;
 
+#ifdef __MINGW32__
+class ConVarBase;
+#else
+typedef ConVar ConVarBase;
+#endif
+
 #define BULLET_MASS_GRAINS_TO_LB(grains) (0.002285f*(grains)/16.0f)
 #define BULLET_MASS_GRAINS_TO_KG(grains) lbs2kg(BULLET_MASS_GRAINS_TO_LB(grains))
 
 #define BULLET_IMPULSE_EXAGGERATION 3.5f
 #define BULLET_IMPULSE(grains, ftpersec) ((ftpersec)*12*BULLET_MASS_GRAINS_TO_KG(grains)*BULLET_IMPULSE_EXAGGERATION)
 
+enum AmmoTracer_t : unsigned char
+{
+	TRACER_NONE,
+	TRACER_LINE,
+	TRACER_RAIL,
+	TRACER_BEAM,
+	TRACER_LINE_AND_WHIZ,
+};
+
+enum AmmoFlags_t : unsigned char
+{
+	AMMO_NONE = 0,
+	AMMO_FORCE_DROP_IF_CARRIED = 0x1,
+	AMMO_INTERPRET_PLRDAMAGE_AS_DAMAGE_TO_PLAYER = 0x2,
+};
+
 struct Ammo_t 
 {
 	char 				*pName;
-	uint64					nDamageType;
-	int					eTracerType;
+	DamageTypes_t					nDamageType;
+	AmmoTracer_t					eTracerType;
 	float				physicsForceImpulse;
 	int					nMinSplashSize;
 	int					nMaxSplashSize;
 
-	int					nFlags;
+	AmmoFlags_t					nFlags;
 
 	// Values for player/NPC damage and carrying capability
 	// If the integers are set, they override the CVars
@@ -56,23 +80,13 @@ struct Ammo_t
 // Ammo is infinite
 #define		INFINITE_AMMO	-2
 
-enum AmmoTracer_t
-{
-	TRACER_NONE,
-	TRACER_LINE,
-	TRACER_RAIL,
-	TRACER_BEAM,
-	TRACER_LINE_AND_WHIZ,
-};
+enum AmmoIndex_t : unsigned short;
 
-enum AmmoFlags_t
-{
-	AMMO_FORCE_DROP_IF_CARRIED = 0x1,
-	AMMO_INTERPRET_PLRDAMAGE_AS_DAMAGE_TO_PLAYER = 0x2,
-};
+inline const AmmoIndex_t AMMO_INVALID_INDEX = (AmmoIndex_t)-1;
 
-
-#include "shareddefs.h"
+// is this required?
+#define	MAX_AMMO_TYPES	128		// ???
+#define MAX_AMMO_SLOTS  128		// not really slots
 
 //=============================================================================
 //	>> CAmmoDef
@@ -80,27 +94,28 @@ enum AmmoFlags_t
 class CAmmoDef
 {
 
-public:
-	int					m_nAmmoIndex;
+private:
+	unsigned int					m_nAmmoIndex;
 
 	Ammo_t				m_AmmoType[MAX_AMMO_TYPES];
 
-	Ammo_t				*GetAmmoOfIndex(int nAmmoIndex);
-	int					Index(const char *psz);
-	const char*			Name(int nAmmoIndex);
-	int					PlrDamage(int nAmmoIndex);
-	int					NPCDamage(int nAmmoIndex);
-	int					MaxCarry(int nAmmoIndex, const CSharedBaseCombatCharacter *owner);
-	bool				CanCarryInfiniteAmmo(int nAmmoIndex);
-	uint64					DamageType(int nAmmoIndex);
-	int					TracerType(int nAmmoIndex);
-	float				DamageForce(int nAmmoIndex);
-	int					MinSplashSize(int nAmmoIndex);
-	int					MaxSplashSize(int nAmmoIndex);
-	int					Flags(int nAmmoIndex);
+public:
+	Ammo_t				*GetAmmoOfIndex(AmmoIndex_t nAmmoIndex);
+	AmmoIndex_t					Index(const char *psz);
+	const char*			Name(AmmoIndex_t nAmmoIndex);
+	int					PlrDamage(AmmoIndex_t nAmmoIndex);
+	int					NPCDamage(AmmoIndex_t nAmmoIndex);
+	int					MaxCarry(AmmoIndex_t nAmmoIndex, const CSharedBaseCombatCharacter *owner);
+	bool				CanCarryInfiniteAmmo(AmmoIndex_t nAmmoIndex);
+	DamageTypes_t					DamageType(AmmoIndex_t nAmmoIndex);
+	AmmoTracer_t					TracerType(AmmoIndex_t nAmmoIndex);
+	float				DamageForce(AmmoIndex_t nAmmoIndex);
+	int					MinSplashSize(AmmoIndex_t nAmmoIndex);
+	int					MaxSplashSize(AmmoIndex_t nAmmoIndex);
+	AmmoFlags_t					Flags(AmmoIndex_t nAmmoIndex);
 
-	void				AddAmmoType(char const* name, uint64 damageType, int tracerType, int plr_dmg, int npc_dmg, int carry, float physicsForceImpulse, int nFlags, int minSplashSize = 4, int maxSplashSize = 8 );
-	void				AddAmmoType(char const* name, uint64 damageType, int tracerType, char const* plr_cvar, char const* npc_var, char const* carry_cvar, float physicsForceImpulse, int nFlags, int minSplashSize = 4, int maxSplashSize = 8 );
+	void				AddAmmoType(char const* name, DamageTypes_t damageType, AmmoTracer_t tracerType, int plr_dmg, int npc_dmg, int carry, float physicsForceImpulse, AmmoFlags_t nFlags, int minSplashSize = 4, int maxSplashSize = 8 );
+	void				AddAmmoType(char const* name, DamageTypes_t damageType, AmmoTracer_t tracerType, char const* plr_cvar, char const* npc_var, char const* carry_cvar, float physicsForceImpulse, AmmoFlags_t nFlags, int minSplashSize = 4, int maxSplashSize = 8 );
 
 	int					NumAmmoTypes() { return m_nAmmoIndex; }
 	int					GetNumAmmoTypes() { return m_nAmmoIndex; }
@@ -109,7 +124,7 @@ public:
 	virtual ~CAmmoDef( void );
 
 private:
-	bool				AddAmmoType(char const* name, uint64 damageType, int tracerType, int nFlags, int minSplashSize, int maxSplashSize );
+	bool				AddAmmoType(char const* name, DamageTypes_t damageType, AmmoTracer_t tracerType, AmmoFlags_t nFlags, int minSplashSize, int maxSplashSize );
 };
 
 

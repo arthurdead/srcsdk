@@ -36,9 +36,9 @@ PRECACHE_REGISTER( vgui_screen );
 //-----------------------------------------------------------------------------
 BEGIN_MAPENTITY( CVGuiScreen )
 
-	DEFINE_KEYFIELD( m_flWidth, FIELD_FLOAT, "width" ),
-	DEFINE_KEYFIELD( m_flHeight, FIELD_FLOAT, "height" ),
-	DEFINE_KEYFIELD( m_strOverlayMaterial, FIELD_STRING, "overlaymaterial" ),
+	DEFINE_KEYFIELD_AUTO( m_flWidth, "width" ),
+	DEFINE_KEYFIELD_AUTO( m_flHeight, "height" ),
+	DEFINE_KEYFIELD_AUTO( m_strOverlayMaterial, "overlaymaterial" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "SetActive", InputSetActive ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "SetInactive", InputSetInactive ),
@@ -233,7 +233,7 @@ void CVGuiScreen::SetTransparency( bool bTransparent )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CVGuiScreen::InputSetActive( inputdata_t &inputdata )
+void CVGuiScreen::InputSetActive( inputdata_t &&inputdata )
 {
 	SetActive( true );
 }
@@ -241,7 +241,7 @@ void CVGuiScreen::InputSetActive( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CVGuiScreen::InputSetInactive( inputdata_t &inputdata )
+void CVGuiScreen::InputSetInactive( inputdata_t &&inputdata )
 {
 	SetActive( false );
 }
@@ -288,7 +288,7 @@ bool CVGuiScreen::IsVisibleToTeam( int nTeam )
 //			clientArea - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-int CVGuiScreen::UpdateTransmitState()
+EdictStateFlags_t CVGuiScreen::UpdateTransmitState()
 {
 	if ( IsAttachedToViewModel() )
 	{

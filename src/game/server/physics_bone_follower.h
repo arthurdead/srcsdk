@@ -71,7 +71,7 @@ class CBoneFollower : public CBaseEntity
 public:
 	// CBaseEntity
 	void VPhysicsUpdate( IPhysicsObject *pPhysics );
-	int  UpdateTransmitState(void);
+	EdictStateFlags_t  UpdateTransmitState(void);
 
 	// NOTE: These are forwarded to the parent object!
 	void VPhysicsCollision( int index, gamevcollisionevent_t *pEvent );

@@ -179,16 +179,16 @@ private:
 	DECLARE_MAPENTITY();
 
 	bool m_bDisabled;
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
-	void InputRoundSpawn( inputdata_t &inputdata );
-	void InputRoundActivate( inputdata_t &inputdata );
-	void InputSetWinner( inputdata_t &inputdata );
-	void InputSetWinnerAndForceCaps( inputdata_t &inputdata );
-	void InputSetCapLayout( inputdata_t &inputdata );
-	void InputSetCapLayoutCustomPositionX( inputdata_t &inputdata );
-	void InputSetCapLayoutCustomPositionY( inputdata_t &inputdata );
+	void InputRoundSpawn( inputdata_t &&inputdata );
+	void InputRoundActivate( inputdata_t &&inputdata );
+	void InputSetWinner( inputdata_t &&inputdata );
+	void InputSetWinnerAndForceCaps( inputdata_t &&inputdata );
+	void InputSetCapLayout( inputdata_t &&inputdata );
+	void InputSetCapLayoutCustomPositionX( inputdata_t &&inputdata );
+	void InputSetCapLayoutCustomPositionY( inputdata_t &&inputdata );
 
 	void InternalSetWinner( int iTeam );
 

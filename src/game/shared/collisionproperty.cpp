@@ -260,7 +260,7 @@ void CDirtySpatialPartitionEntityList::OnPostQuery( SpatialPartitionListMask_t l
 
 	BEGIN_MAPEMBEDDED_NO_BASE( CCollisionProperty )
 
-		DEFINE_KEYFIELD( m_nSolidType, FIELD_CHARACTER, "solid" ),
+		DEFINE_KEYFIELD_AUTO( m_nSolidType, "solid" ),
 
 	END_MAPEMBEDDED()
 

@@ -48,7 +48,7 @@ public:
 
 	virtual void Activate();
 	virtual void SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
-	virtual int  UpdateTransmitState( void );
+	virtual EdictStateFlags_t  UpdateTransmitState( void );
 
 private:
 	CNetworkHandle( CBaseEntity, m_hLightingLandmark );
@@ -58,7 +58,7 @@ private:
 LINK_ENTITY_TO_CLASS( info_lighting_relative, CInfoLightingRelative );
 
 BEGIN_MAPENTITY( CInfoLightingRelative, MAPENT_POINTCLASS )
-	DEFINE_KEYFIELD( m_strLightingLandmark, FIELD_STRING, "LightingLandmark" ),
+	DEFINE_KEYFIELD_AUTO( m_strLightingLandmark, "LightingLandmark" ),
 END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST(CInfoLightingRelative, DT_InfoLightingRelative)
@@ -123,25 +123,25 @@ void CInfoLightingRelative::SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways
 //-----------------------------------------------------------------------------
 // Purpose Force our lighting landmark to be transmitted
 //-----------------------------------------------------------------------------
-int CInfoLightingRelative::UpdateTransmitState( void )
+EdictStateFlags_t CInfoLightingRelative::UpdateTransmitState( void )
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
 
 BEGIN_MAPENTITY( CBaseAnimating )
 
-	DEFINE_KEYFIELD( m_nSkin, FIELD_INTEGER, "ModelSkin" ),
+	DEFINE_KEYFIELD_AUTO( m_nSkin, "ModelSkin" ),
 	DEFINE_INPUT( m_nSkin, FIELD_INTEGER, "skin" ),
-	DEFINE_KEYFIELD( m_nBody, FIELD_INTEGER, "body" ),
+	DEFINE_KEYFIELD_AUTO( m_nBody, "body" ),
 	DEFINE_INPUT( m_nBody, FIELD_INTEGER, "SetBodyGroup" ),
-	DEFINE_KEYFIELD( m_nHitboxSet, FIELD_INTEGER, "hitboxset" ),
-	DEFINE_KEYFIELD( m_nSequence, FIELD_INTEGER, "sequence" ),
-	DEFINE_KEYFIELD( m_flPlaybackRate, FIELD_FLOAT, "playbackrate" ),
-	DEFINE_KEYFIELD( m_flCycle, FIELD_FLOAT, "cycle" ),
-	DEFINE_KEYFIELD( m_bSuppressAnimSounds, FIELD_BOOLEAN, "SuppressAnimSounds"),
+	DEFINE_KEYFIELD_AUTO( m_nHitboxSet, "hitboxset" ),
+	DEFINE_KEYFIELD_AUTO( m_nSequence, "sequence" ),
+	DEFINE_KEYFIELD_AUTO( m_flPlaybackRate, "playbackrate" ),
+	DEFINE_KEYFIELD_AUTO( m_flCycle, "cycle" ),
+	DEFINE_KEYFIELD_AUTO( m_bSuppressAnimSounds, "SuppressAnimSounds" ),
 
-	DEFINE_KEYFIELD( m_iszLightingOriginRelative, FIELD_STRING, "LightingOriginHack" ),
-	DEFINE_KEYFIELD( m_iszLightingOrigin, FIELD_STRING, "LightingOrigin" ),
+	DEFINE_KEYFIELD_AUTO( m_iszLightingOriginRelative, "LightingOriginHack" ),
+	DEFINE_KEYFIELD_AUTO( m_iszLightingOrigin, "LightingOrigin" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Ignite", InputIgnite ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "IgniteLifetime", InputIgniteLifetime ),
@@ -156,8 +156,8 @@ BEGIN_MAPENTITY( CBaseAnimating )
 	DEFINE_OUTPUT( m_OnIgnite, "OnIgnite" ),
 	DEFINE_OUTPUT( m_OnServerRagdoll, "OnServerRagdoll" ),
 
-	DEFINE_KEYFIELD( m_flModelScale, FIELD_FLOAT, "ModelScale" ),
-	DEFINE_KEYFIELD( m_flModelScale, FIELD_FLOAT, "modelscale" ),
+	DEFINE_KEYFIELD_AUTO( m_flModelScale, "ModelScale" ),
+	DEFINE_KEYFIELD_AUTO( m_flModelScale, "modelscale" ),
 	DEFINE_INPUTFUNC( FIELD_VECTOR, "SetModelScale", InputSetModelScale ),
 	DEFINE_INPUTFUNC( FIELD_STRING,	"SetModel",	InputSetModel ),
 
@@ -169,7 +169,7 @@ END_MAPENTITY()
 // Sendtable for fields we don't want to send to clientside animating entities
 BEGIN_SEND_TABLE_NOBASE( CBaseAnimating, DT_ServerAnimationData )
 	// ANIMATION_CYCLE_BITS is defined in shareddefs.h
-	SendPropFloat	(SENDINFO(m_flCycle),		ANIMATION_CYCLE_BITS, SPROP_CHANGES_OFTEN|SPROP_ROUNDDOWN,	0.0f,   1.0f)
+	SendPropFloat	(SENDINFO(m_flCycle),		ANIMATION_CYCLE_BITS, SPROP_CHANGES_OFTEN|SPROP_ROUNDDOWN,	0.0f,   1.0f, SendProxy_Float, SENDPROP_CHANGES_OFTEN_PRIORITY)
 END_SEND_TABLE()
 
 void *SendProxy_ClientSideAnimation( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
@@ -197,9 +197,9 @@ IMPLEMENT_SERVERCLASS_ST(CBaseAnimating, DT_BaseAnimating)
 	SendPropInt( SENDINFO( m_bClientSideFrameReset ), 1, SPROP_UNSIGNED ),
 	SendPropBool( SENDINFO( m_bClientSideRagdoll ) ),
 
-	SendPropInt( SENDINFO( m_nNewSequenceParity ), EF_PARITY_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN ),
-	SendPropInt( SENDINFO( m_nResetEventsParity ), EF_PARITY_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN ),
-	SendPropInt( SENDINFO( m_nMuzzleFlashParity ), EF_MUZZLEFLASH_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN ),
+	SendPropInt( SENDINFO( m_nNewSequenceParity ), EF_PARITY_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN, NULL, SENDPROP_CHANGES_OFTEN_PRIORITY ),
+	SendPropInt( SENDINFO( m_nResetEventsParity ), EF_PARITY_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN, NULL, SENDPROP_CHANGES_OFTEN_PRIORITY ),
+	SendPropInt( SENDINFO( m_nMuzzleFlashParity ), EF_MUZZLEFLASH_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN, NULL, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 
 	SendPropEHandle( SENDINFO( m_hLightingOrigin ) ),
 	SendPropEHandle( SENDINFO( m_hLightingOriginRelative ) ),
@@ -523,7 +523,7 @@ void CBaseAnimating::SetLightingOrigin( string_t strLightingOrigin, inputdata_t 
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CBaseAnimating::InputSetLightingOriginRelative( inputdata_t &inputdata )
+void CBaseAnimating::InputSetLightingOriginRelative( inputdata_t &&inputdata )
 { 
 	// Find our specified target
 	SetLightingOriginRelative( inputdata.value.StringID(), &inputdata );
@@ -533,7 +533,7 @@ void CBaseAnimating::InputSetLightingOriginRelative( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CBaseAnimating::InputSetLightingOrigin( inputdata_t &inputdata )
+void CBaseAnimating::InputSetLightingOrigin( inputdata_t &&inputdata )
 { 
 	// Find our specified target
 	SetLightingOrigin( inputdata.value.StringID(), &inputdata );
@@ -542,7 +542,7 @@ void CBaseAnimating::InputSetLightingOrigin( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: SetModelScale input handler
 //-----------------------------------------------------------------------------
-void CBaseAnimating::InputSetModelScale( inputdata_t &inputdata )
+void CBaseAnimating::InputSetModelScale( inputdata_t &&inputdata )
 {
 	Vector vecScale;
 	inputdata.value.Vector3D( vecScale );
@@ -553,7 +553,7 @@ void CBaseAnimating::InputSetModelScale( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our current model
 //-----------------------------------------------------------------------------
-void CBaseAnimating::InputSetModel( inputdata_t &inputdata )
+void CBaseAnimating::InputSetModel( inputdata_t &&inputdata )
 {
 	const char *szModel = inputdata.value.String();
 	if (IsValidModelIndex( PrecacheModel(szModel, false) ))
@@ -566,7 +566,7 @@ void CBaseAnimating::InputSetModel( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our current cycle
 //-----------------------------------------------------------------------------
-void CBaseAnimating::InputSetCycle( inputdata_t &inputdata )
+void CBaseAnimating::InputSetCycle( inputdata_t &&inputdata )
 {
 	SetCycle( inputdata.value.Float() );
 }
@@ -574,7 +574,7 @@ void CBaseAnimating::InputSetCycle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our current cycle
 //-----------------------------------------------------------------------------
-void CBaseAnimating::InputSetPlaybackRate( inputdata_t &inputdata )
+void CBaseAnimating::InputSetPlaybackRate( inputdata_t &&inputdata )
 {
 	SetPlaybackRate( inputdata.value.Float() );
 }
@@ -3747,27 +3747,27 @@ void CBaseAnimating::ResetSequence(int nSequence)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CBaseAnimating::InputIgnite( inputdata_t &inputdata )
+void CBaseAnimating::InputIgnite( inputdata_t &&inputdata )
 {
 	Ignite( 30, false, 0.0f, true );
 }
 
-void CBaseAnimating::InputIgniteLifetime( inputdata_t &inputdata )
+void CBaseAnimating::InputIgniteLifetime( inputdata_t &&inputdata )
 {
 	IgniteLifetime( inputdata.value.Float() );
 }
 
-void CBaseAnimating::InputIgniteNumHitboxFires( inputdata_t &inputdata )
+void CBaseAnimating::InputIgniteNumHitboxFires( inputdata_t &&inputdata )
 {
 	IgniteNumHitboxFires( inputdata.value.Int() );
 }
 
-void CBaseAnimating::InputIgniteHitboxFireScale( inputdata_t &inputdata )
+void CBaseAnimating::InputIgniteHitboxFireScale( inputdata_t &&inputdata )
 {
 	IgniteHitboxFireScale( inputdata.value.Float() );
 }
 
-void CBaseAnimating::InputBecomeRagdoll( inputdata_t &inputdata )
+void CBaseAnimating::InputBecomeRagdoll( inputdata_t &&inputdata )
 {
 	BecomeRagdollOnClient( vec3_origin );
 }
@@ -4036,7 +4036,7 @@ CStudioHdr *CBaseAnimating::OnNewModel()
 	return hdr;
 }
 
-void CBaseAnimating::InputCreateSeparateRagdoll( inputdata_t &inputdata )
+void CBaseAnimating::InputCreateSeparateRagdoll( inputdata_t &&inputdata )
 {
 	CTakeDamageInfo info( this, inputdata.pActivator, 0.0f, DMG_GENERIC );
 
@@ -4051,7 +4051,7 @@ void CBaseAnimating::InputCreateSeparateRagdoll( inputdata_t &inputdata )
 	CreateServerRagdoll( this, 0, info, COLLISION_GROUP_INTERACTIVE_DEBRIS, true );
 }
 
-void CBaseAnimating::InputCreateSeparateRagdollClient( inputdata_t &inputdata )
+void CBaseAnimating::InputCreateSeparateRagdollClient( inputdata_t &&inputdata )
 {
 	// I remember there being a reason why this must be initialized to all 0's...
 	Vector forceVector = Vector(0.0f, 0.0f, 0.0f);
@@ -4072,7 +4072,7 @@ void CBaseAnimating::InputCreateSeparateRagdollClient( inputdata_t &inputdata )
 	}
 }
 
-void CBaseAnimating::InputSetPoseParameter( inputdata_t &inputdata )
+void CBaseAnimating::InputSetPoseParameter( inputdata_t &&inputdata )
 {
 	char token[64];
 	Q_strncpy( token, inputdata.value.String(), sizeof(token) );

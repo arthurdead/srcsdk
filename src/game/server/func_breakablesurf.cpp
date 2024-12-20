@@ -148,13 +148,13 @@ LINK_ENTITY_TO_CLASS( func_breakable_surf, CBreakableSurface );
 
 BEGIN_MAPENTITY( CBreakableSurface )
 
-	DEFINE_KEYFIELD( m_nSurfaceType,		FIELD_INTEGER,	"surfacetype"),
-	DEFINE_KEYFIELD( m_nFragility,		FIELD_INTEGER,	"fragility"),
-	DEFINE_KEYFIELD( m_vLLVertex,		FIELD_VECTOR,  "lowerleft" ),
-	DEFINE_KEYFIELD( m_vULVertex,		FIELD_VECTOR,  "upperleft" ),
-	DEFINE_KEYFIELD( m_vLRVertex,		FIELD_VECTOR,  "lowerright" ),
-	DEFINE_KEYFIELD( m_vURVertex,		FIELD_VECTOR,  "upperright" ),
-	DEFINE_KEYFIELD( m_nQuadError,		FIELD_INTEGER, "error" ),
+	DEFINE_KEYFIELD_AUTO( m_nSurfaceType, "surfacetype" ),
+	DEFINE_KEYFIELD_AUTO( m_nFragility, "fragility" ),
+	DEFINE_KEYFIELD_AUTO( m_vLLVertex, "lowerleft" ),
+	DEFINE_KEYFIELD_AUTO( m_vULVertex, "upperleft" ),
+	DEFINE_KEYFIELD_AUTO( m_vLRVertex, "lowerright" ),
+	DEFINE_KEYFIELD_AUTO( m_vURVertex, "upperright" ),
+	DEFINE_KEYFIELD_AUTO( m_nQuadError, "error" ),
 
 	DEFINE_INPUTFUNC( FIELD_VECTOR,	"Shatter", InputShatter ),
 
@@ -703,7 +703,7 @@ void CBreakableSurface::Die( CBaseEntity *pBreaker, const Vector &vAttackDir )
 // Purpose: Set an instaneous force on the rope.
 // Input  : Force vector.
 //------------------------------------------------------------------------------
-void CBreakableSurface::InputShatter( inputdata_t &inputdata )
+void CBreakableSurface::InputShatter( inputdata_t &&inputdata )
 {
 	Vector vecShatterInfo;
 	inputdata.value.Vector3D(vecShatterInfo);

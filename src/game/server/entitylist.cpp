@@ -500,16 +500,16 @@ CBaseEntity *CGlobalEntityList::NextEnt( CBaseEntity *pCurrentEnt )
 }
 
 
-void CGlobalEntityList::ReportEntityFlagsChanged( CBaseEntity *pEntity, uint64 flagsOld, uint64 flagsNow )
+void CGlobalEntityList::ReportEntityFlagsChanged( CBaseEntity *pEntity, EntityBehaviorFlags_t flagsOld, EntityBehaviorFlags_t flagsNow )
 {
 	if ( pEntity->IsMarkedForDeletion() )
 		return;
 	// UNDONE: Move this into IEntityListener instead?
-	uint64 flagsChanged = flagsOld ^ flagsNow;
+	EntityBehaviorFlags_t flagsChanged = flagsOld ^ flagsNow;
 	if ( flagsChanged & FL_AIMTARGET )
 	{
-		uint64 flagsAdded = flagsNow & flagsChanged;
-		uint64 flagsRemoved = flagsOld & flagsChanged;
+		EntityBehaviorFlags_t flagsAdded = flagsNow & flagsChanged;
+		EntityBehaviorFlags_t flagsRemoved = flagsOld & flagsChanged;
 
 		if ( flagsAdded & FL_AIMTARGET )
 		{
@@ -1598,16 +1598,16 @@ void CNotifyList::RemoveEntity( CBaseEntity *pNotify, CBaseEntity *pWatched )
 
 void CNotifyList::ReportNamedEvent( CBaseEntity *pEntity, const char *pInputName )
 {
-	variant_t emptyVariant;
-
 	if ( !pEntity->IsEFlagSet(EFL_NOTIFY) )
 		return;
+
+	variant_t emptyVariant;
 
 	for ( int i = 0; i < m_notifyList.Count(); i++ )
 	{
 		if ( m_notifyList[i].pWatched == pEntity )
 		{
-			m_notifyList[i].pNotify->AcceptInput( pInputName, pEntity, pEntity, emptyVariant, 0 );
+			m_notifyList[i].pNotify->AcceptInput( pInputName, pEntity, pEntity, Move(emptyVariant), 0 );
 		}
 	}
 }

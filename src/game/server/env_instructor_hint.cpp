@@ -22,8 +22,8 @@ public:
 	DECLARE_MAPENTITY();
 
 private:
-	void InputShowHint( inputdata_t &inputdata );
-	void InputEndHint( inputdata_t &inputdata );
+	void InputShowHint( inputdata_t &&inputdata );
+	void InputEndHint( inputdata_t &&inputdata );
 	
 	string_t	m_iszReplace_Key;
 	string_t	m_iszHintTargetEntity;
@@ -50,25 +50,25 @@ LINK_ENTITY_TO_CLASS( env_instructor_hint, CEnvInstructorHint );
 
 BEGIN_MAPENTITY( CEnvInstructorHint )
 
-	DEFINE_KEYFIELD( m_iszReplace_Key, FIELD_STRING, "hint_replace_key" ),
-	DEFINE_KEYFIELD( m_iszHintTargetEntity, FIELD_STRING, "hint_target" ),
-	DEFINE_KEYFIELD( m_iTimeout, FIELD_INTEGER, "hint_timeout" ),
-	DEFINE_KEYFIELD( m_iszIcon_Onscreen, FIELD_STRING, "hint_icon_onscreen" ),
-	DEFINE_KEYFIELD( m_iszIcon_Offscreen, FIELD_STRING, "hint_icon_offscreen" ),
-	DEFINE_KEYFIELD( m_iszCaption, FIELD_STRING, "hint_caption" ),
-	DEFINE_KEYFIELD( m_iszActivatorCaption, FIELD_STRING, "hint_activator_caption" ),
-	DEFINE_KEYFIELD( m_Color, FIELD_COLOR32, "hint_color" ),
-	DEFINE_KEYFIELD( m_fIconOffset, FIELD_FLOAT, "hint_icon_offset" ),
-	DEFINE_KEYFIELD( m_fRange, FIELD_FLOAT, "hint_range" ),
-	DEFINE_KEYFIELD( m_iPulseOption, FIELD_CHARACTER, "hint_pulseoption" ),
-	DEFINE_KEYFIELD( m_iAlphaOption, FIELD_CHARACTER, "hint_alphaoption" ),
-	DEFINE_KEYFIELD( m_iShakeOption, FIELD_CHARACTER, "hint_shakeoption" ),
-	DEFINE_KEYFIELD( m_bStatic, FIELD_BOOLEAN, "hint_static" ),
-	DEFINE_KEYFIELD( m_bNoOffscreen, FIELD_BOOLEAN, "hint_nooffscreen" ),
-	DEFINE_KEYFIELD( m_bForceCaption, FIELD_BOOLEAN, "hint_forcecaption" ),
-	DEFINE_KEYFIELD( m_iszBinding, FIELD_STRING, "hint_binding" ),
-	DEFINE_KEYFIELD( m_bAllowNoDrawTarget, FIELD_BOOLEAN, "hint_allow_nodraw_target" ),	
-	DEFINE_KEYFIELD( m_bLocalPlayerOnly, FIELD_BOOLEAN, "hint_local_player_only" ),
+	DEFINE_KEYFIELD_AUTO( m_iszReplace_Key, "hint_replace_key" ),
+	DEFINE_KEYFIELD_AUTO( m_iszHintTargetEntity, "hint_target" ),
+	DEFINE_KEYFIELD_AUTO( m_iTimeout, "hint_timeout" ),
+	DEFINE_KEYFIELD_AUTO( m_iszIcon_Onscreen, "hint_icon_onscreen" ),
+	DEFINE_KEYFIELD_AUTO( m_iszIcon_Offscreen, "hint_icon_offscreen" ),
+	DEFINE_KEYFIELD_AUTO( m_iszCaption, "hint_caption" ),
+	DEFINE_KEYFIELD_AUTO( m_iszActivatorCaption, "hint_activator_caption" ),
+	DEFINE_KEYFIELD_AUTO( m_Color, "hint_color" ),
+	DEFINE_KEYFIELD_AUTO( m_fIconOffset, "hint_icon_offset" ),
+	DEFINE_KEYFIELD_AUTO( m_fRange, "hint_range" ),
+	DEFINE_KEYFIELD_AUTO( m_iPulseOption, "hint_pulseoption" ),
+	DEFINE_KEYFIELD_AUTO( m_iAlphaOption, "hint_alphaoption" ),
+	DEFINE_KEYFIELD_AUTO( m_iShakeOption, "hint_shakeoption" ),
+	DEFINE_KEYFIELD_AUTO( m_bStatic, "hint_static" ),
+	DEFINE_KEYFIELD_AUTO( m_bNoOffscreen, "hint_nooffscreen" ),
+	DEFINE_KEYFIELD_AUTO( m_bForceCaption, "hint_forcecaption" ),
+	DEFINE_KEYFIELD_AUTO( m_iszBinding, "hint_binding" ),
+	DEFINE_KEYFIELD_AUTO( m_bAllowNoDrawTarget, "hint_allow_nodraw_target" )	
+	DEFINE_KEYFIELD_AUTO( m_bLocalPlayerOnly, "hint_local_player_only" ),
 	
 	DEFINE_INPUTFUNC( FIELD_STRING,	"ShowHint",	InputShowHint ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"EndHint",	InputEndHint ),
@@ -84,7 +84,7 @@ END_MAPENTITY()
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for showing the message and/or playing the sound.
 //-----------------------------------------------------------------------------
-void CEnvInstructorHint::InputShowHint( inputdata_t &inputdata )
+void CEnvInstructorHint::InputShowHint( inputdata_t &&inputdata )
 {
 	IGameEvent * event = gameeventmanager->CreateEvent( "instructor_server_hint_create", false );
 	if ( event )
@@ -155,7 +155,7 @@ void CEnvInstructorHint::InputShowHint( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CEnvInstructorHint::InputEndHint( inputdata_t &inputdata )
+void CEnvInstructorHint::InputEndHint( inputdata_t &&inputdata )
 {
 	IGameEvent * event = gameeventmanager->CreateEvent( "instructor_server_hint_stop", false );
 	if ( event )
@@ -174,7 +174,7 @@ class CInfoInstructorHintTarget : public CPointEntity
 public:
 	DECLARE_CLASS( CInfoInstructorHintTarget, CPointEntity );
 
-	virtual int UpdateTransmitState( void )	// set transmit filter to transmit always
+	virtual EdictStateFlags_t UpdateTransmitState( void )	// set transmit filter to transmit always
 	{
 		return SetTransmitState( FL_EDICT_ALWAYS );
 	}

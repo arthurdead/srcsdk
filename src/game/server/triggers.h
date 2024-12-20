@@ -37,13 +37,13 @@ public:
 	void TouchTest(  void );
 
 	// Input handlers
-	virtual void InputEnable( inputdata_t &inputdata );
-	virtual void InputDisable( inputdata_t &inputdata );
-	virtual void InputToggle( inputdata_t &inputdata );
-	virtual void InputTouchTest ( inputdata_t &inputdata );
+	virtual void InputEnable( inputdata_t &&inputdata );
+	virtual void InputDisable( inputdata_t &&inputdata );
+	virtual void InputToggle( inputdata_t &&inputdata );
+	virtual void InputTouchTest ( inputdata_t &&inputdata );
 
-	virtual void InputStartTouch( inputdata_t &inputdata );
-	virtual void InputEndTouch( inputdata_t &inputdata );
+	virtual void InputStartTouch( inputdata_t &&inputdata );
+	virtual void InputEndTouch( inputdata_t &&inputdata );
 
 	virtual bool UsesFilter( void ){ return ( m_hFilter.Get() != NULL ); }
 	virtual bool PassesTriggerFilters(CBaseEntity *pOther);
@@ -165,9 +165,9 @@ public:
 	virtual void StartTouch( CBaseEntity *pOther );
 	virtual void EndTouch( CBaseEntity *pOther );
 
-	void InputToggle( inputdata_t &inputdata );
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputToggle( inputdata_t &&inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 	
 
 protected:
@@ -320,22 +320,22 @@ public:
 	void MoveThink( void );
 
 	// Always transmit to clients so they know where to move the view to
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 	
 	DECLARE_MAPENTITY();
 
 	// Input handlers
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
-	void InputSetTarget( inputdata_t &inputdata );
-	void InputSetTargetAttachment( inputdata_t &inputdata );
-	void InputReturnToEyes( inputdata_t &inputdata );
-	void InputTeleportToView( inputdata_t &inputdata );
-	void InputSetTrackSpeed( inputdata_t &inputdata );
-	void InputSetPath( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputSetTarget( inputdata_t &&inputdata );
+	void InputSetTargetAttachment( inputdata_t &&inputdata );
+	void InputReturnToEyes( inputdata_t &&inputdata );
+	void InputTeleportToView( inputdata_t &&inputdata );
+	void InputSetTrackSpeed( inputdata_t &&inputdata );
+	void InputSetPath( inputdata_t &&inputdata );
 
-	void InputSetFOV( inputdata_t &inputdata );
-	void InputSetFOVRate( inputdata_t &inputdata );
+	void InputSetFOV( inputdata_t &&inputdata );
+	void InputSetFOVRate( inputdata_t &&inputdata );
 
 private:
 	EHANDLE m_hPlayer;
@@ -375,7 +375,7 @@ private:
 	const static float kflPosInterpTime; // seconds
 
 	uint64   m_nPlayerButtons;
-	int m_nOldTakeDamage;
+	Takedamage_t m_nOldTakeDamage;
 
 private:
 	COutputEvent m_OnEndFollow;

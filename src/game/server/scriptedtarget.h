@@ -32,8 +32,8 @@ public:
 	void TurnOff(void);
 
 	// Input handlers
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
 	CScriptedTarget*	NextScriptedTarget(void);
 	float				MoveSpeed(void)			{ return m_nMoveSpeed; };

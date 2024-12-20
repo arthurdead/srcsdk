@@ -30,9 +30,9 @@ public:
 	virtual void FireGameEvent( IGameEvent *event );
 
 	// Input handlers
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
-	void InputToggle( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputToggle( inputdata_t &&inputdata );
 
 	DECLARE_DATADESC();
 
@@ -51,8 +51,8 @@ LINK_ENTITY_TO_CLASS(logic_eventlistener, CLogicEventListener);
 
 BEGIN_DATADESC( CLogicEventListener )
 
-	DEFINE_KEYFIELD(m_iszEventName, FIELD_STRING, "EventName"),
-	DEFINE_KEYFIELD(m_bDisabled, FIELD_BOOLEAN, "StartDisabled"),
+	DEFINE_KEYFIELD_AUTO( m_iszEventName, "EventName" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "Enable", InputEnable),
@@ -119,7 +119,7 @@ void CLogicEventListener::FireGameEvent( IGameEvent *event )
 //------------------------------------------------------------------------------
 // Purpose: Turns on the entity, allowing it to fire outputs.
 //------------------------------------------------------------------------------
-void CLogicEventListener::InputEnable( inputdata_t &inputdata )
+void CLogicEventListener::InputEnable( inputdata_t &&inputdata )
 {
 	m_bDisabled = false;
 }
@@ -127,7 +127,7 @@ void CLogicEventListener::InputEnable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Turns off the entity, preventing it from firing outputs.
 //------------------------------------------------------------------------------
-void CLogicEventListener::InputDisable( inputdata_t &inputdata )
+void CLogicEventListener::InputDisable( inputdata_t &&inputdata )
 { 
 	m_bDisabled = true;
 }
@@ -135,7 +135,7 @@ void CLogicEventListener::InputDisable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Toggles the enabled/disabled state of the entity.
 //------------------------------------------------------------------------------
-void CLogicEventListener::InputToggle( inputdata_t &inputdata )
+void CLogicEventListener::InputToggle( inputdata_t &&inputdata )
 { 
 	m_bDisabled = !m_bDisabled;
 }
@@ -157,9 +157,9 @@ public:
 	void FireGameEvent( IGameEvent *event );
 
 	// Input handlers
-	void InputSetAllEvents( inputdata_t &inputdata );
-	void InputAddEvent( inputdata_t &inputdata );
-	//void InputRemoveEvent( inputdata_t &inputdata );
+	void InputSetAllEvents( inputdata_t &&inputdata );
+	void InputAddEvent( inputdata_t &&inputdata );
+	//void InputRemoveEvent( inputdata_t &&inputdata );
 
 	DECLARE_DATADESC();
 
@@ -246,7 +246,7 @@ void CPointEvent::FireGameEvent( IGameEvent *event )
 //------------------------------------------------------------------------------
 // Purpose: 
 //------------------------------------------------------------------------------
-void CPointEvent::InputSetAllEvents( inputdata_t &inputdata )
+void CPointEvent::InputSetAllEvents( inputdata_t &&inputdata )
 {
 	StopListeningForAllEvents();
 
@@ -264,7 +264,7 @@ void CPointEvent::InputSetAllEvents( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: 
 //------------------------------------------------------------------------------
-void CPointEvent::InputAddEvent( inputdata_t &inputdata )
+void CPointEvent::InputAddEvent( inputdata_t &&inputdata )
 {
 	ListenForGameEvent(inputdata.value.String());
 }

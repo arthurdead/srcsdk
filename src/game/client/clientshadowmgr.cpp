@@ -150,9 +150,7 @@ void ToolFramework_RecordMaterialParams( IMaterial *pMaterial );
 // At the moment, the implementation simply allocates blocks of max 256x256
 // and each block stores an array of uniformly-sized textures
 //-----------------------------------------------------------------------------
-enum class TextureHandle_t : unsigned short
-{
-};
+enum TextureHandle_t : unsigned short;
 inline const TextureHandle_t INVALID_TEXTURE_HANDLE = (TextureHandle_t)~0;
 
 class CTextureAllocator
@@ -193,10 +191,7 @@ public:
 	void InitRenderTargets( void );
 
 private:
-	enum class FragmentHandle_t : unsigned short
-	{
-	};
-
+	enum FragmentHandle_t : unsigned short;
 	static inline const FragmentHandle_t INVALID_FRAGMENT_HANDLE = (FragmentHandle_t)~0;
 
 	typedef unsigned short FragmentHandleIndex_t;

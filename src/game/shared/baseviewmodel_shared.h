@@ -113,8 +113,8 @@ public:
 	}
 
 #if !defined( CLIENT_DLL )
-	virtual int				UpdateTransmitState( void );
-	virtual int				ShouldTransmit( const CCheckTransmitInfo *pInfo );
+	virtual EdictStateFlags_t				UpdateTransmitState( void );
+	virtual EdictStateFlags_t				ShouldTransmit( const CCheckTransmitInfo *pInfo );
 	virtual void			SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
 #else
 

@@ -192,9 +192,7 @@ float ComputeScreenSize( const Vector &vecOrigin, float flRadius, const ScreenSi
 //-----------------------------------------------------------------------------
 // A handle associated with shadows managed by the client leaf system
 //-----------------------------------------------------------------------------
-enum class ClientLeafShadowHandle_t : unsigned short
-{
-};
+enum ClientLeafShadowHandle_t : unsigned short;
 inline const ClientLeafShadowHandle_t CLIENT_LEAF_SHADOW_INVALID_HANDLE = (ClientLeafShadowHandle_t)~0;
 
 

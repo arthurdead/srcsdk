@@ -25,7 +25,7 @@ public:
 	virtual void Precache( void );
 	virtual void Spawn( void );
 	virtual void Activate( void );
-	virtual int  UpdateTransmitState(void);
+	virtual EdictStateFlags_t UpdateTransmitState(void);
 	virtual int	 ObjectCaps( void );
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 	virtual bool GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen );
@@ -33,10 +33,10 @@ public:
 	void		StartParticleSystem( void );
 	void		StopParticleSystem( int nStopType = STOP_NORMAL );
 
-	void		InputStart( inputdata_t &inputdata );
-	void		InputStop( inputdata_t &inputdata );
-	void		InputDestroyImmediately( inputdata_t &inputdata );
-	void		InputStopEndCap( inputdata_t &inputdata );
+	void		InputStart( inputdata_t &&inputdata );
+	void		InputStop( inputdata_t &&inputdata );
+	void		InputDestroyImmediately( inputdata_t &&inputdata );
+	void		InputStopEndCap( inputdata_t &&inputdata );
 	void		StartParticleSystemThink( void );
 	bool		SetControlPointValue( int iControlPoint, const Vector &vValue ); //server controlled control points (variables in particle effects instead of literal follow points)
 

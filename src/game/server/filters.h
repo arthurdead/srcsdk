@@ -49,10 +49,10 @@ public:
 	bool m_bNegated;
 
 	// Inputs
-	void InputTestActivator( inputdata_t &inputdata );
+	void InputTestActivator( inputdata_t &&inputdata );
 
-	void InputTestEntity( inputdata_t &inputdata );
-	virtual void InputSetField( inputdata_t &inputdata );
+	void InputTestEntity( inputdata_t &&inputdata );
+	virtual void InputSetField( inputdata_t &&inputdata );
 
 	bool m_bPassCallerWhenTested;
 
@@ -85,10 +85,10 @@ private:
 class CTraceFilterEntityFilter : public CTraceFilterSimple
 {
 public:
-	CTraceFilterEntityFilter( const IHandleEntity *passentity, int collisionGroup ) : CTraceFilterSimple( passentity, collisionGroup ) {}
-	CTraceFilterEntityFilter( int collisionGroup ) : CTraceFilterSimple( NULL, collisionGroup ) {}
+	CTraceFilterEntityFilter( const IHandleEntity *passentity, Collision_Group_t collisionGroup ) : CTraceFilterSimple( passentity, collisionGroup ) {}
+	CTraceFilterEntityFilter( Collision_Group_t collisionGroup ) : CTraceFilterSimple( NULL, collisionGroup ) {}
 
-	bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 	{
 		bool base = CTraceFilterSimple::ShouldHitEntity( pHandleEntity, contentsMask );
 		CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );

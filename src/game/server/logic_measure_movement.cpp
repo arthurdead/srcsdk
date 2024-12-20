@@ -45,13 +45,13 @@ protected:
 	void SetTarget( const char *pName );
 	void SetTargetReference( const char *pName );
 
-	void InputSetMeasureTarget( inputdata_t &inputdata );
-	void InputSetMeasureReference( inputdata_t &inputdata );
-	void InputSetTarget( inputdata_t &inputdata );
-	void InputSetTargetReference( inputdata_t &inputdata );
-	void InputSetTargetScale( inputdata_t &inputdata );
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
+	void InputSetMeasureTarget( inputdata_t &&inputdata );
+	void InputSetMeasureReference( inputdata_t &&inputdata );
+	void InputSetTarget( inputdata_t &&inputdata );
+	void InputSetTargetReference( inputdata_t &&inputdata );
+	void InputSetTargetScale( inputdata_t &&inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
 
 	// Allows for derived class trickery
 	void MeasureThink(); //{ DoMeasure(); }
@@ -60,9 +60,9 @@ protected:
 	virtual void DoMeasure(Vector &vecOrigin, QAngle &angAngles);
 	void HandleIgnoreFlags( float *vec );
 
-	void InputSetMeasureAttachment( inputdata_t &inputdata );
-	void InputSetMeasureType( inputdata_t &inputdata ) { m_nMeasureType = inputdata.value.Int(); }
-	void InputGetPosition( inputdata_t &inputdata );
+	void InputSetMeasureAttachment( inputdata_t &&inputdata );
+	void InputSetMeasureType( inputdata_t &&inputdata ) { m_nMeasureType = inputdata.value.Int(); }
+	void InputGetPosition( inputdata_t &&inputdata );
 
 protected:
 	enum
@@ -100,11 +100,11 @@ LINK_ENTITY_TO_CLASS( logic_measure_movement, CLogicMeasureMovement );
 
 BEGIN_MAPENTITY( CLogicMeasureMovement )
 
-	DEFINE_KEYFIELD( m_strMeasureTarget, FIELD_STRING, "MeasureTarget" ),
-	DEFINE_KEYFIELD( m_strMeasureReference, FIELD_STRING, "MeasureReference" ),
-	DEFINE_KEYFIELD( m_strTargetReference, FIELD_STRING, "TargetReference" ),
-	DEFINE_KEYFIELD( m_flScale, FIELD_FLOAT, "TargetScale" ),
-	DEFINE_KEYFIELD( m_nMeasureType, FIELD_INTEGER, "MeasureType" ),
+	DEFINE_KEYFIELD_AUTO( m_strMeasureTarget, "MeasureTarget" ),
+	DEFINE_KEYFIELD_AUTO( m_strMeasureReference, "MeasureReference" ),
+	DEFINE_KEYFIELD_AUTO( m_strTargetReference, "TargetReference" ),
+	DEFINE_KEYFIELD_AUTO( m_flScale, "TargetScale" ),
+	DEFINE_KEYFIELD_AUTO( m_nMeasureType, "MeasureType" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetMeasureTarget", InputSetMeasureTarget ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetMeasureReference", InputSetMeasureReference ),
@@ -117,7 +117,7 @@ BEGIN_MAPENTITY( CLogicMeasureMovement )
 
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMeasureType", InputSetMeasureType ),
 
-	DEFINE_KEYFIELD( m_strAttachment, FIELD_STRING, "MeasureAttachment" ),
+	DEFINE_KEYFIELD_AUTO( m_strAttachment, "MeasureAttachment" ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetMeasureAttachment", InputSetMeasureAttachment ),
 
 	DEFINE_INPUT( m_bOutputPosition, FIELD_BOOLEAN, "ShouldOutputPosition" ),
@@ -326,13 +326,13 @@ FORCEINLINE void CLogicMeasureMovement::HandleIgnoreFlags( float *vec )
 //-----------------------------------------------------------------------------
 // Enable, disable
 //-----------------------------------------------------------------------------
-void CLogicMeasureMovement::InputEnable( inputdata_t &inputdata )
+void CLogicMeasureMovement::InputEnable( inputdata_t &&inputdata )
 {
 	SetThink( &CLogicMeasureMovement::MeasureThink );
 	SetNextThink( gpGlobals->curtime + TICK_INTERVAL );
 }
 
-void CLogicMeasureMovement::InputDisable( inputdata_t &inputdata )
+void CLogicMeasureMovement::InputDisable( inputdata_t &&inputdata )
 {
 	SetThink( NULL );
 }
@@ -342,7 +342,7 @@ void CLogicMeasureMovement::InputDisable( inputdata_t &inputdata )
 // Inputs work differently now so they could take !activator, etc.
 // 
 
-void CLogicMeasureMovement::InputSetMeasureTarget( inputdata_t &inputdata )
+void CLogicMeasureMovement::InputSetMeasureTarget( inputdata_t &&inputdata )
 {
 	m_strMeasureTarget = inputdata.value.StringID();
 	m_hMeasureTarget = gEntList.FindEntityByName( NULL, STRING(m_strMeasureTarget), this, inputdata.pActivator, inputdata.pCaller );
@@ -362,7 +362,7 @@ void CLogicMeasureMovement::InputSetMeasureTarget( inputdata_t &inputdata )
 		SetTargetReference( STRING(m_strTargetReference) );
 }
 
-void CLogicMeasureMovement::InputSetMeasureReference( inputdata_t &inputdata )
+void CLogicMeasureMovement::InputSetMeasureReference( inputdata_t &&inputdata )
 {
 	m_strMeasureReference = inputdata.value.StringID();
 	m_hMeasureReference = gEntList.FindEntityByName( NULL, STRING(m_strMeasureReference), this, inputdata.pActivator, inputdata.pCaller );
@@ -372,7 +372,7 @@ void CLogicMeasureMovement::InputSetMeasureReference( inputdata_t &inputdata )
 	}
 }
 
-void CLogicMeasureMovement::InputSetTarget( inputdata_t &inputdata )
+void CLogicMeasureMovement::InputSetTarget( inputdata_t &&inputdata )
 {
 	m_target = inputdata.value.StringID();
 	m_hTarget = gEntList.FindEntityByName( NULL, STRING(m_target), this, inputdata.pActivator, inputdata.pCaller );
@@ -382,7 +382,7 @@ void CLogicMeasureMovement::InputSetTarget( inputdata_t &inputdata )
 	}
 }
 
-void CLogicMeasureMovement::InputSetTargetReference( inputdata_t &inputdata )
+void CLogicMeasureMovement::InputSetTargetReference( inputdata_t &&inputdata )
 {
 	m_strTargetReference = inputdata.value.StringID();
 	m_hTargetReference = gEntList.FindEntityByName( NULL, STRING(m_strTargetReference), this, inputdata.pActivator, inputdata.pCaller );
@@ -392,7 +392,7 @@ void CLogicMeasureMovement::InputSetTargetReference( inputdata_t &inputdata )
 	}
 }
 
-void CLogicMeasureMovement::InputSetMeasureAttachment( inputdata_t &inputdata )
+void CLogicMeasureMovement::InputSetMeasureAttachment( inputdata_t &&inputdata )
 {
 	m_strAttachment = inputdata.value.StringID();
 	m_iAttachment = 0;
@@ -400,7 +400,7 @@ void CLogicMeasureMovement::InputSetMeasureAttachment( inputdata_t &inputdata )
 
 // Just gets the position once and fires outputs without moving anything.
 // We don't even need a target for this.
-void CLogicMeasureMovement::InputGetPosition( inputdata_t &inputdata )
+void CLogicMeasureMovement::InputGetPosition( inputdata_t &&inputdata )
 {
 	if ( !m_hMeasureTarget.Get() || !m_hMeasureReference.Get() || !m_hTargetReference.Get() )
 		return;
@@ -414,7 +414,7 @@ void CLogicMeasureMovement::InputGetPosition( inputdata_t &inputdata )
 	m_OutAngles.Set(QAngle(vecNewAngles.x, vecNewAngles.y, vecNewAngles.z), m_bOutputPosition ? m_hTarget.Get() : inputdata.pActivator, this);
 }
 
-void CLogicMeasureMovement::InputSetTargetScale( inputdata_t &inputdata )
+void CLogicMeasureMovement::InputSetTargetScale( inputdata_t &&inputdata )
 {
 	m_flScale = inputdata.value.Float();
 }
@@ -438,7 +438,7 @@ public:
 	virtual void DoMeasure(Vector &vecOrigin, QAngle &angAngles);
 
 	CBaseFilter *GetTraceFilter();
-	//void InputSetTraceFilter( inputdata_t &inputdata ) { InputSetDamageFilter(inputdata); }
+	//void InputSetTraceFilter( inputdata_t &&inputdata ) { InputSetDamageFilter(inputdata); }
 
 private:
 
@@ -459,11 +459,11 @@ LINK_ENTITY_TO_CLASS( logic_measure_direction, CLogicMeasureDirection );
 
 BEGIN_MAPENTITY( CLogicMeasureDirection )
 
-	DEFINE_KEYFIELD( m_flTraceDistance, FIELD_FLOAT, "TraceDistance" ),
-	DEFINE_KEYFIELD( m_iMask, FIELD_INTEGER, "Mask" ),
-	DEFINE_KEYFIELD( m_iCollisionGroup, FIELD_INTEGER, "CollisionGroup" ),
-	DEFINE_KEYFIELD( m_bHitIfPassed, FIELD_BOOLEAN, "HitIfPassed" ),
-	DEFINE_KEYFIELD( m_bTraceTargetReference, FIELD_BOOLEAN, "TraceTargetReference" ),
+	DEFINE_KEYFIELD_AUTO( m_flTraceDistance, "TraceDistance" ),
+	DEFINE_KEYFIELD_AUTO( m_iMask, "Mask" ),
+	DEFINE_KEYFIELD_AUTO( m_iCollisionGroup, "CollisionGroup" ),
+	DEFINE_KEYFIELD_AUTO( m_bHitIfPassed, "HitIfPassed" ),
+	DEFINE_KEYFIELD_AUTO( m_bTraceTargetReference, "TraceTargetReference" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetTraceFilter", InputSetDamageFilter ),
 

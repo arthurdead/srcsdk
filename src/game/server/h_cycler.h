@@ -31,7 +31,7 @@ public:
 	virtual bool IsAlive( void ) { return false; }
 
 	// Inputs
-	void	InputSetSequence( inputdata_t &inputdata );
+	void	InputSetSequence( inputdata_t &&inputdata );
 
 	DECLARE_MAPENTITY();
 

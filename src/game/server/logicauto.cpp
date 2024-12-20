@@ -52,7 +52,7 @@ LINK_ENTITY_TO_CLASS(logic_auto, CLogicAuto);
 
 BEGIN_MAPENTITY( CLogicAuto )
 
-	DEFINE_KEYFIELD(m_globalstate, FIELD_STRING, "globalstate"),
+	DEFINE_KEYFIELD_AUTO( m_globalstate, "globalstate" ),
 
 	// Outputs
 	DEFINE_OUTPUT(m_OnMapSpawn, "OnMapSpawn"),

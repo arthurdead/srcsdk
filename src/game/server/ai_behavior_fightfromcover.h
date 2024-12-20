@@ -36,7 +36,7 @@ public:
 
 	virtual void ResolveNames();
 
-	void InputSetDirectionalMarker( inputdata_t &inputdata );
+	void InputSetDirectionalMarker( inputdata_t &&inputdata );
 
 	void BeginMovingFront();
 	void EndMovingFront();

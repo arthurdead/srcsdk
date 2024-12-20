@@ -228,8 +228,8 @@ public:
 	void DrawDebugGeometryOverlays(void);
 
 	void SetPlayerAvoidState( void );
-	void InputDisablePlayerCollision( inputdata_t &inputdata );
-	void InputEnablePlayerCollision( inputdata_t &inputdata );
+	void InputDisablePlayerCollision( inputdata_t &&inputdata );
+	void InputEnablePlayerCollision( inputdata_t &&inputdata );
 	void UpdateBoneFollowerState( void );
 
 private:
@@ -358,13 +358,13 @@ bool CNPC_Furniture::CreateVPhysics( void )
 	return true;
 }
 
-void CNPC_Furniture::InputDisablePlayerCollision( inputdata_t &inputdata )
+void CNPC_Furniture::InputDisablePlayerCollision( inputdata_t &&inputdata )
 {
 	SetCollisionGroup( COLLISION_GROUP_NPC_ACTOR );
 	UpdateBoneFollowerState();
 }
 
-void CNPC_Furniture::InputEnablePlayerCollision( inputdata_t &inputdata )
+void CNPC_Furniture::InputEnablePlayerCollision( inputdata_t &&inputdata )
 {
 	SetCollisionGroup( COLLISION_GROUP_NPC );
 	UpdateBoneFollowerState();

@@ -34,9 +34,9 @@ string_t MakeButtonSound( int sound );				// get string of button sound number
 
 BEGIN_MAPENTITY( CBaseButton )
 
-	DEFINE_KEYFIELD( m_vecMoveDir, FIELD_VECTOR, "movedir" ),
+	DEFINE_KEYFIELD_AUTO( m_vecMoveDir, "movedir" ),
 	
-	DEFINE_KEYFIELD( m_sounds, FIELD_INTEGER, "sounds" ),
+	DEFINE_KEYFIELD_AUTO( m_sounds, "sounds" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Lock", InputLock ),
@@ -169,7 +169,7 @@ void CBaseButton::Unlock()
 // Purpose: Locks the button. If locked, the button will play the locked sound
 //			when the player tries to use it.
 //-----------------------------------------------------------------------------
-void CBaseButton::InputLock( inputdata_t &inputdata )
+void CBaseButton::InputLock( inputdata_t &&inputdata )
 {
 	Lock();
 }
@@ -178,7 +178,7 @@ void CBaseButton::InputLock( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Unlocks the button, making it able to be pressed again.
 //-----------------------------------------------------------------------------
-void CBaseButton::InputUnlock( inputdata_t &inputdata )
+void CBaseButton::InputUnlock( inputdata_t &&inputdata )
 {
 	Unlock();
 }
@@ -246,7 +246,7 @@ void CBaseButton::Press( CBaseEntity *pActivator, BUTTON_CODE eCode )
 //-----------------------------------------------------------------------------
 // Presses the button.
 //-----------------------------------------------------------------------------
-void CBaseButton::InputPress( inputdata_t &inputdata )
+void CBaseButton::InputPress( inputdata_t &&inputdata )
 {
 	Press( inputdata.pActivator, BUTTON_PRESS );
 }
@@ -255,7 +255,7 @@ void CBaseButton::InputPress( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Presses the button, sending it to the top/pressed position.
 //-----------------------------------------------------------------------------
-void CBaseButton::InputPressIn( inputdata_t &inputdata )
+void CBaseButton::InputPressIn( inputdata_t &&inputdata )
 {
 	Press( inputdata.pActivator, BUTTON_ACTIVATE );
 }
@@ -264,7 +264,7 @@ void CBaseButton::InputPressIn( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Unpresses the button, sending it to the unpressed/bottom position.
 //-----------------------------------------------------------------------------
-void CBaseButton::InputPressOut( inputdata_t &inputdata )
+void CBaseButton::InputPressOut( inputdata_t &&inputdata )
 {
 	Press( inputdata.pActivator, BUTTON_RETURN );
 }
@@ -916,10 +916,10 @@ bool CRotButton::CreateVPhysics( void )
 
 BEGIN_MAPENTITY( CMomentaryRotButton )
 
-	DEFINE_KEYFIELD( m_direction, FIELD_INTEGER, "StartDirection" ),
-	DEFINE_KEYFIELD( m_returnSpeed, FIELD_FLOAT, "returnspeed" ),
-	DEFINE_KEYFIELD( m_flStartPosition, FIELD_FLOAT, "StartPosition"),
-	DEFINE_KEYFIELD( m_bSolidBsp, FIELD_BOOLEAN, "solidbsp" ),
+	DEFINE_KEYFIELD_AUTO( m_direction, "StartDirection" ),
+	DEFINE_KEYFIELD_AUTO( m_returnSpeed, "returnspeed" ),
+	DEFINE_KEYFIELD_AUTO( m_flStartPosition, "StartPosition" ),
+	DEFINE_KEYFIELD_AUTO( m_bSolidBsp, "solidbsp" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetPosition", InputSetPosition ),
@@ -1100,7 +1100,7 @@ float CMomentaryRotButton::GetPos( const QAngle &vecAngles )
 // Purpose :
 // Input   : flPosition 
 //------------------------------------------------------------------------------
-void CMomentaryRotButton::InputSetPosition( inputdata_t &inputdata )
+void CMomentaryRotButton::InputSetPosition( inputdata_t &&inputdata )
 {
 	m_IdealYaw = clamp( inputdata.value.Float(), 0.f, 1.f );
 
@@ -1153,7 +1153,7 @@ void CMomentaryRotButton::InputSetPosition( inputdata_t &inputdata )
 // Purpose :
 // Input   : flPosition 
 //------------------------------------------------------------------------------
-void CMomentaryRotButton::InputSetPositionImmediately( inputdata_t &inputdata )
+void CMomentaryRotButton::InputSetPositionImmediately( inputdata_t &&inputdata )
 {
 	m_IdealYaw = clamp( inputdata.value.Float(), 0.f, 1.f );
 	SetLocalAngles( m_start + m_vecMoveAng * ( m_IdealYaw * m_flMoveDistance ) );
@@ -1164,7 +1164,7 @@ void CMomentaryRotButton::InputSetPositionImmediately( inputdata_t &inputdata )
 // Purpose: Turns off target updates so that we can change the wheel's position
 //			without changing the target's position. Used for jiggling when locked.
 //------------------------------------------------------------------------------
-void CMomentaryRotButton::InputDisableUpdateTarget( inputdata_t &inputdata )
+void CMomentaryRotButton::InputDisableUpdateTarget( inputdata_t &&inputdata )
 {
 	m_bUpdateTarget = false;
 }
@@ -1173,7 +1173,7 @@ void CMomentaryRotButton::InputDisableUpdateTarget( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Turns target updates back on (after jiggling).
 //------------------------------------------------------------------------------
-void CMomentaryRotButton::InputEnableUpdateTarget( inputdata_t &inputdata )
+void CMomentaryRotButton::InputEnableUpdateTarget( inputdata_t &&inputdata )
 {
 	m_bUpdateTarget = true;
 }
@@ -1523,7 +1523,7 @@ int CMomentaryRotButton::DrawDebugTextOverlays(void)
 //-----------------------------------------------------------------------------
 // Purpose: Input hander that starts the spawner
 //-----------------------------------------------------------------------------
-void CMomentaryRotButton::InputEnable( inputdata_t &inputdata )
+void CMomentaryRotButton::InputEnable( inputdata_t &&inputdata )
 {
 	Enable();
 }
@@ -1532,7 +1532,7 @@ void CMomentaryRotButton::InputEnable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input hander that stops the spawner
 //-----------------------------------------------------------------------------
-void CMomentaryRotButton::InputDisable( inputdata_t &inputdata )
+void CMomentaryRotButton::InputDisable( inputdata_t &&inputdata )
 {
 	Disable();
 }

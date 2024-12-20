@@ -161,24 +161,10 @@ void* SendProxy_ClientSideAnimation( const SendProp *pProp, const void *pStruct,
 REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_ClientSideAnimation );
 
 
-BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_AnimTimeMustBeFirst )
-	// NOTE:  Animtime must be sent before origin and angles ( from pev ) because it has a 
-	//  proxy on the client that stores off the old values before writing in the new values and
-	//  if it is sent after the new values, then it will only have the new origin and studio model, etc.
-	//  interpolation will be busted
-	SendPropInt	(SENDINFO(m_flAnimTime), 8, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_AnimTime),
-END_SEND_TABLE()
-
-BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_PredictableId )
-	SendPropPredictableId( SENDINFO( m_PredictableID ) ),
-	SendPropInt( SENDINFO( m_bIsPlayerSimulated ), 1, SPROP_UNSIGNED ),
-END_SEND_TABLE()
-
-
-static void* SendProxy_SendPredictableId( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+static void* SendProxy_SendPredictableIdTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)pStruct;
-	if ( !pEntity || !pEntity->m_PredictableID->IsActive() )
+	if ( !pEntity || pEntity->m_PredictableID == INVALID_PREDICTABLE_ID )
 		return NULL;
 
 	int id_player_index = pEntity->m_PredictableID->GetPlayer();
@@ -186,7 +172,7 @@ static void* SendProxy_SendPredictableId( const SendProp *pProp, const void *pSt
 	
 	return ( void * )pVarData;
 }
-REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableId );
+REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableIdTable );
 
 void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
@@ -298,7 +284,6 @@ void CBaseEntity::SendProxy_CellZ( const SendProp *pProp, const void *pStruct, c
 	}
 }
 
-#ifdef DT_CELL_COORD_SUPPORTED
 //--------------------------------------------------------------------------------------------------------
 // The origin is adjusted to be relative to current cell
 //--------------------------------------------------------------------------------------------------------
@@ -395,7 +380,6 @@ void CBaseEntity::SendProxy_CellOriginZ( const SendProp *pProp, const void *pStr
 	Assert( pOut->m_Float >= 0.0f );
 	Assert( fabs( CoordFromCell( cellwidth, cell[2], pOut->m_Float ) - v->z ) < cellEpsilon );
 }
-#endif
 
 void SendProxy_Angles( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
@@ -468,79 +452,99 @@ BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_FullTable )
 END_SEND_TABLE()
 
 BEGIN_SEND_TABLE_NOBASE( VisionModelIndex_t, DT_VisionModelIndex )
-	SendPropInt( SENDINFO_NOCHECK( flags ), MAX_SUPPORTED_VISION_FILTERS, SPROP_UNSIGNED ),
-	SendPropModelIndex( SENDINFO_NOCHECK( modelindex ) ),
+	SendPropAuto_NoCheck( flags, MAX_SUPPORTED_VISION_FILTERS, VISION_FILTER_NONE ),
+	SendPropAuto_NoCheck( modelindex ),
+END_SEND_TABLE()
+
+BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_AnimTimeMustBeFirst )
+	// NOTE:  Animtime must be sent before origin and angles ( from pev ) because it has a 
+	//  proxy on the client that stores off the old values before writing in the new values and
+	//  if it is sent after the new values, then it will only have the new origin and studio model, etc.
+	//  interpolation will be busted
+	SendPropAuto( m_flAnimTime, 8, SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_AnimTime, SENDPROP_CHANGES_OFTEN_PRIORITY ),
+END_SEND_TABLE()
+
+BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_PredictableId )
+	SendPropAuto( m_PredictableID ),
+	SendPropAuto( m_bIsPlayerSimulated ),
 END_SEND_TABLE()
 
 // This table encodes the CBaseEntity data.
 IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropDataTable( "AnimTimeMustBeFirst", 0, &REFERENCE_SEND_TABLE(DT_AnimTimeMustBeFirst), SendProxy_ClientSideAnimation ),
-	SendPropInt			(SENDINFO(m_flSimulationTime),	SIMULATION_TIME_WINDOW_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_SimulationTime, SENDPROP_SIMULATION_TIME_PRIORITY),
 
-	SendPropFloat		(SENDINFO( m_flCreateTime ) ),
+	SendPropAuto( m_flSimulationTime, SIMULATION_TIME_WINDOW_BITS, SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_SimulationTime, SENDPROP_SIMULATION_TIME_PRIORITY ),
+	SendPropAuto( m_flCreateTime ),
 
-	SendPropInt			(SENDINFO(m_cellbits), MINIMUM_BITS_NEEDED( 32 ), SPROP_UNSIGNED, 0, SENDPROP_CELL_INFO_PRIORITY ),
-//	SendPropArray       (SendPropInt(SENDINFO_ARRAY(m_cellXY), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED|SPROP_CHANGES_OFTEN ), m_cellXY),
-	SendPropInt			(SENDINFO(m_cellX), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED|SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellX, SENDPROP_CELL_INFO_PRIORITY ), // 32 priority in the send table
-	SendPropInt			(SENDINFO(m_cellY), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED|SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellY, SENDPROP_CELL_INFO_PRIORITY ),
-	SendPropInt			(SENDINFO(m_cellZ), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED|SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellZ, SENDPROP_CELL_INFO_PRIORITY ),
+	SendPropAuto( m_cellbits, MINIMUM_BITS_NEEDED( 32 ), SENDPROP_CELL_INFO_PRIORITY ),
+	SendPropAuto( m_cellX, CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellX, SENDPROP_CELL_INFO_PRIORITY ), // 32 priority in the send table
+	SendPropAuto( m_cellY, CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellY, SENDPROP_CELL_INFO_PRIORITY ),
+	SendPropAuto( m_cellZ, CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellZ, SENDPROP_CELL_INFO_PRIORITY ),
 
-	SendPropVector		(SENDINFO(m_vecOrigin), SENDPROP_VECORIGIN_BITS, SENDPROP_VECORIGIN_FLAGS, 0.0f, HIGH_DEFAULT, SENDPROP_VECORIGIN_PROXY ),
+	SendPropAuto( m_vecOrigin, 
+	#if PREDICTION_ERROR_CHECK_LEVEL > 1
+		SPROP_NOSCALE|
+	#endif
+		SPROP_CHANGES_OFTEN|SENDPROP_VECORIGIN_FLAGS, SENDPROP_VECORIGIN_PROXY, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 
-	SendPropInt		(SENDINFO( m_ubInterpolationFrame ), NOINTERP_PARITY_MAX_BITS, SPROP_UNSIGNED ),
-	SendPropModelIndex(SENDINFO(m_nModelIndex)),
+	SendPropAuto( m_ubInterpolationFrame, 0, NOINTERP_PARITY_MAX ),
+	SendPropAuto( m_nModelIndex ),
 
 	SendPropDataTable( SENDINFO_DT( m_pCollision ), &REFERENCE_SEND_TABLE(DT_CollisionProperty), SendProxy_DataTablePtrToDataTable ),
 
-	SendPropInt		(SENDINFO(m_nRenderFX),		8, SPROP_UNSIGNED ),
-	SendPropInt		(SENDINFO(m_nRenderMode),	8, SPROP_UNSIGNED ),
-	SendPropInt		(SENDINFO(m_fEffects),		EF_MAX_BITS, SPROP_UNSIGNED),
-	SendPropColor32		(SENDINFO(m_clrRender)),
+	SendPropAuto( m_nRenderFX, kRenderFxNone, kRenderFxMax ),
+	SendPropAuto( m_nRenderMode, kRenderNormal, kRenderModeCount ),
+	SendPropAuto( m_fEffects, EF_NONE, EF_LAST_FLAG ),
+	SendPropAuto( m_clrRender ),
+
 	// Keep consistent with VIEW_ID_COUNT in viewrender.h
-	SendPropInt		(SENDINFO(m_iViewHideFlags),	9, SPROP_UNSIGNED ),
-	SendPropBool	(SENDINFO(m_bDisableFlashlight) ),
-	SendPropInt		(SENDINFO(m_iTeamNum),		TEAMNUM_NUM_BITS, 0),
-	SendPropInt		(SENDINFO(m_CollisionGroup), 6, SPROP_UNSIGNED),
-	SendPropFloat	(SENDINFO(m_flElasticity), 0, SPROP_NOSCALE),
-	SendPropFloat	(SENDINFO(m_flShadowCastDistance), 12, SPROP_NOSCALE ),
-	SendPropEHandle (SENDINFO(m_hOwnerEntity)),
-	SendPropEHandle (SENDINFO(m_hEffectEntity)),
-	SendPropEHandle (SENDINFO_NAME(m_hMoveParent, moveparent)),
-	SendPropInt		(SENDINFO(m_iParentAttachment), NUM_PARENTATTACHMENT_BITS, SPROP_UNSIGNED),
+	SendPropAuto( m_iViewHideFlags, VIEW_FLAG_NONE, VIEW_LAST_FLAG ),
 
-	SendPropStringT( SENDINFO( m_iName ) ),
+	SendPropAuto( m_bDisableFlashlight ),
+	SendPropAuto( m_iTeamNum, TEAMNUM_NUM_BITS, TEAM_UNASSIGNED ),
+	SendPropAuto( m_CollisionGroup, COLLISION_GROUP_BITS, COLLISION_GROUP_NONE ),
+	SendPropAuto( m_flElasticity ),
+	SendPropAuto( m_flShadowCastDistance ),
+	SendPropAuto( m_hOwnerEntity ),
+	SendPropAuto( m_hEffectEntity ),
+	SendPropAuto( m_hMoveParent ),
+	SendPropAuto( m_iParentAttachment, NUM_PARENTATTACHMENT_BITS ),
 
-	SendPropInt		(SENDINFO_NAME( m_MoveType, movetype ), MOVETYPE_MAX_BITS, SPROP_UNSIGNED ),
-	SendPropInt		(SENDINFO_NAME( m_MoveCollide, movecollide ), MOVECOLLIDE_MAX_BITS, SPROP_UNSIGNED ),
-#if PREDICTION_ERROR_CHECK_LEVEL > 1 
-	SendPropVector	(SENDINFO(m_angRotation), SENDPROP_ANGROTATION_DEFAULT_BITS, SPROP_NOSCALE|SPROP_CHANGES_OFTEN, 0, HIGH_DEFAULT, SendProxy_Angles ),
-#else
-	SendPropQAngles	(SENDINFO(m_angRotation), SENDPROP_ANGROTATION_DEFAULT_BITS, SPROP_CHANGES_OFTEN, SendProxy_Angles ),
-#endif
+	SendPropAuto( m_iName ),
 
-	SendPropInt		( SENDINFO( m_iTextureFrameIndex ),		8, SPROP_UNSIGNED ),
+	SendPropAuto( m_MoveType, MOVETYPE_NONE, MOVETYPE_LAST ),
+	SendPropAuto( m_MoveCollide, MOVECOLLIDE_DEFAULT, MOVECOLLIDE_COUNT ),
 
-	SendPropEHandle (SENDINFO(m_hPlayerSimulationOwner)),
-	SendPropDataTable( "predictable_id", 0, &REFERENCE_SEND_TABLE( DT_PredictableId ), SendProxy_SendPredictableId ),
+	SendPropAuto( m_angRotation, 
+	#if PREDICTION_ERROR_CHECK_LEVEL > 1
+		SPROP_NOSCALE|
+	#endif
+		SPROP_CHANGES_OFTEN, SendProxy_Angles, SENDPROP_CHANGES_OFTEN_PRIORITY ),
+
+	SendPropAuto( m_iTextureFrameIndex, 8 ),
+
+	SendPropAuto( m_hPlayerSimulationOwner ),
+	SendPropDataTable( "predictable_id", 0, &REFERENCE_SEND_TABLE( DT_PredictableId ), SendProxy_SendPredictableIdTable ),
 
 	// FIXME: Collapse into another flag field?
-	SendPropInt		(SENDINFO(m_bSimulatedEveryTick),		1, SPROP_UNSIGNED ),
-	SendPropInt		(SENDINFO(m_bAnimatedEveryTick),		1, SPROP_UNSIGNED ),
-	SendPropBool( SENDINFO( m_bAlternateSorting )),
+	SendPropAuto( m_bSimulatedEveryTick ),
+	SendPropAuto( m_bAnimatedEveryTick ),
+	SendPropAuto( m_bAlternateSorting ),
 
 	SendPropUtlVectorDataTable( m_VisionModelIndexOverrides, MAX_SUPPORTED_VISION_FILTERS, DT_VisionModelIndex ),
 
-	SendPropFloat(SENDINFO(m_fViewDistance),				0, SPROP_NOSCALE),
+	SendPropAuto( m_fViewDistance ),
 
 	// Fading
-	SendPropFloat( SENDINFO( m_fadeMinDist ),			0, SPROP_NOSCALE ),
-	SendPropFloat( SENDINFO( m_fadeMaxDist ),			0, SPROP_NOSCALE ),
-	SendPropFloat( SENDINFO( m_flFadeScale ),			0, SPROP_NOSCALE ),
+	SendPropAuto( m_fadeMinDist ),
+	SendPropAuto( m_fadeMaxDist ),
+	SendPropAuto( m_flFadeScale ),
 
-	SendPropInt( SENDINFO(m_nMinCPULevel),				CPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(m_nMaxCPULevel),				CPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(m_nMinGPULevel),				GPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(m_nMaxGPULevel),				GPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
+	SendPropAuto( m_nMinCPULevel, CPU_LEVEL_LOW, CPU_LEVEL_COUNT ),
+	SendPropAuto( m_nMaxCPULevel, CPU_LEVEL_LOW, CPU_LEVEL_COUNT ),
+
+	SendPropAuto( m_nMinGPULevel, GPU_LEVEL_LOW, GPU_LEVEL_COUNT ),
+	SendPropAuto( m_nMaxGPULevel, GPU_LEVEL_LOW, GPU_LEVEL_COUNT ),
 
 	// Data that gets sent when unit is outside the pvs (and no other table is send)
 	SendPropDataTable( "minimaldata", 0, &REFERENCE_SEND_TABLE(DT_MinimalTable), SendProxy_SendMinimalDataTable ),
@@ -616,15 +620,8 @@ void CBaseEntityModelLoadProxy::Handler::OnModelLoadComplete( const model_t *pMo
 }
 
 
-CBaseEntity::CBaseEntity( uint64 iEFlags )
+CBaseEntity::CBaseEntity( EntityFlags_t iEFlags )
 {
-	COMPILE_TIME_ASSERT( MOVETYPE_LAST < (1 << MOVETYPE_MAX_BITS) );
-	COMPILE_TIME_ASSERT( MOVECOLLIDE_COUNT < (1 << MOVECOLLIDE_MAX_BITS) );
-
-	// Fix CPU_LEVEL_BIT_COUNT/GPU_LEVEL_BIT_COUNT here if necessary
-	COMPILE_TIME_ASSERT( CPU_LEVEL_PC_COUNT+1 <= (1 << CPU_LEVEL_BIT_COUNT) );
-	COMPILE_TIME_ASSERT( GPU_LEVEL_PC_COUNT+1 <= (1 << GPU_LEVEL_BIT_COUNT) );
-
 	if( iEFlags != 0 )
 		AddEFlags( iEFlags );
 
@@ -668,11 +665,9 @@ CBaseEntity::CBaseEntity( uint64 iEFlags )
 	if( !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
 	{
 		m_pCollision = new CCollisionProperty;
-		IMPLEMENT_NETWORKVAR_CHAIN( m_pCollision )
 		CollisionProp()->Init( this );
 
 		m_pDensityMap = new DensityWeightsMap;
-		IMPLEMENT_NETWORKVAR_CHAIN( m_pDensityMap )
 		DensityMap()->Init( this );
 	}
 
@@ -701,7 +696,7 @@ CBaseEntity::CBaseEntity( uint64 iEFlags )
 	AddEFlags( EFL_NO_THINK_FUNCTION | EFL_NO_GAME_PHYSICS_SIMULATION | EFL_USE_PARTITION_WHEN_NOT_SOLID );
 
 	// clear debug overlays
-	m_debugOverlays  = 0;
+	m_debugOverlays  = OVERLAY_NONE;
 	m_pTimedOverlay  = NULL;
 	m_pPhysicsObject = NULL;
 	m_flElasticity   = 1.0f;
@@ -720,7 +715,8 @@ CBaseEntity::CBaseEntity( uint64 iEFlags )
 		SetRenderMode( kRenderNone );
 	}
 
-	m_iTeamNum = m_iInitialTeamNum = TEAM_UNASSIGNED;
+	m_iTeamNum = TEAM_UNASSIGNED;
+	m_iInitialTeamNum = TEAM_UNASSIGNED;
 	m_nLastThinkTick = gpGlobals->tickcount;
 	m_nSimulationTick = -1;
 	SetIdentityMatrix( m_rgflCoordinateFrame );
@@ -728,7 +724,8 @@ CBaseEntity::CBaseEntity( uint64 iEFlags )
 #if _DEBUG
 	m_iCurrentThinkContext = NO_THINK_CONTEXT;
 #endif
-	m_nWaterTouch = m_nSlimeTouch = 0;
+	m_nWaterTouch = 0;
+	m_nSlimeTouch = 0;
 
 	if( !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
 	{
@@ -768,7 +765,7 @@ CBaseEntity::CBaseEntity( uint64 iEFlags )
 	m_NavObstacleRef = NAV_OBSTACLE_INVALID_INDEX;
 }
 
-void CBaseEntity::SetDensityMapType( int iType )
+void CBaseEntity::SetDensityMapType( density_type_t iType )
 {
 	DensityMap()->SetType( iType );
 }
@@ -858,12 +855,12 @@ void CBaseEntity::PostConstructor( const char *szClassname )
 	CheckHasGamePhysicsSimulation();
 }
 
-CPointEntity::CPointEntity( uint64 iEFlags )
+CPointEntity::CPointEntity( EntityFlags_t iEFlags )
  : CBaseEntity( EFL_NOT_COLLIDEABLE|EFL_NOT_RENDERABLE|iEFlags )
 {
 }
 
-CLogicalEntity::CLogicalEntity( uint64 iEFlags )
+CLogicalEntity::CLogicalEntity( EntityFlags_t iEFlags )
  : CPointEntity( iEFlags )
 {
 }
@@ -916,16 +913,15 @@ void	CBaseEntity::NetworkStateChanged()
 	NetworkProp()->NetworkStateChanged();
 }
 
-void	CBaseEntity::NetworkStateChanged( void *pVar )
+void	CBaseEntity::NetworkStateChanged( unsigned short offset )
 {
 	// Make sure it's a semi-reasonable pointer.
-	Assert( (char*)pVar > (char*)this );
-	Assert( (char*)pVar - (char*)this < 32768 );
+	Assert( offset < 32768 );
 
 	// Good, they passed an offset so we can track this variable's change
 	// and avoid sending the whole entity.
 	Assert( NetworkProp() );
-	NetworkProp()->NetworkStateChanged( (char*)pVar - (char*)this );
+	NetworkProp()->NetworkStateChanged( offset );
 }
 
 //-----------------------------------------------------------------------------
@@ -1025,9 +1021,13 @@ void CBaseEntity::ClearModelIndexOverrides( void )
 
 void CBaseEntity::AddModelIndexOverride( vision_filter_t flags, modelindex_t nValue )
 {
-	m_VisionModelIndexOverrides.AddToTail( VisionModelIndex_t{ flags, nValue } );
+	VisionModelIndex_t vismdl( flags, nValue );
+
+	IMPLEMENT_NETWORKVAR_CHAIN( &vismdl );
+
+	m_VisionModelIndexOverrides.AddToTail( Move(vismdl) );
 }
-	  
+
 // position to shoot at
 Vector CBaseEntity::BodyTarget( const Vector &posSrc, bool bNoisy) 
 { 
@@ -2161,69 +2161,69 @@ CBaseEntity *CBaseEntity::GetNextTarget( void )
 
 BEGIN_MAPENTITY_NO_BASE( CBaseEntity )
 
-	DEFINE_KEYFIELD( m_iClassname, FIELD_STRING, "classname" ),
-	DEFINE_KEYFIELD( m_iGlobalname, FIELD_STRING, "globalname" ),
-	DEFINE_KEYFIELD( m_iParent, FIELD_STRING, "parentname" ),
+	DEFINE_KEYFIELD_AUTO( m_iClassname, "classname" ),
+	DEFINE_KEYFIELD_AUTO( m_iGlobalname, "globalname" ),
+	DEFINE_KEYFIELD_AUTO( m_iParent, "parentname" ),
 
-	DEFINE_KEYFIELD( m_nMinCPULevel, FIELD_CHARACTER, "mincpulevel" ),
-	DEFINE_KEYFIELD( m_nMaxCPULevel, FIELD_CHARACTER, "maxcpulevel" ),
-	DEFINE_KEYFIELD( m_nMinGPULevel, FIELD_CHARACTER, "mingpulevel" ),
-	DEFINE_KEYFIELD( m_nMaxGPULevel, FIELD_CHARACTER, "maxgpulevel" ),
+	DEFINE_KEYFIELD_AUTO( m_nMinCPULevel, "mincpulevel" ),
+	DEFINE_KEYFIELD_AUTO( m_nMaxCPULevel, "maxcpulevel" ),
+	DEFINE_KEYFIELD_AUTO( m_nMinGPULevel, "mingpulevel" ),
+	DEFINE_KEYFIELD_AUTO( m_nMaxGPULevel, "maxgpulevel" ),
 
-	DEFINE_KEYFIELD( m_iHammerID, FIELD_INTEGER, "hammerid" ), // save ID numbers so that entities can be tracked between save/restore and vmf
+	DEFINE_KEYFIELD_AUTO( m_iHammerID, "hammerid" ), // save ID numbers so that entities can be tracked between save/restore and vmf
 
-	DEFINE_KEYFIELD( m_flSpeed, FIELD_FLOAT, "speed" ),
-	DEFINE_KEYFIELD( m_nRenderFX, FIELD_CHARACTER, "renderfx" ),
-	DEFINE_KEYFIELD( m_nRenderMode, FIELD_CHARACTER, "rendermode" ),
+	DEFINE_KEYFIELD_AUTO( m_flSpeed, "speed" ),
+	DEFINE_KEYFIELD_AUTO( m_nRenderFX, "renderfx" ),
+	DEFINE_KEYFIELD_AUTO( m_nRenderMode, "rendermode" ),
 
-	DEFINE_KEYFIELD( m_nNextThinkTick, FIELD_TICK, "nextthink" ),
-	DEFINE_KEYFIELD( m_fEffects, FIELD_INTEGER, "effects" ),
-	DEFINE_KEYFIELD( m_clrRender, FIELD_COLOR32, "rendercolor" ),
-	DEFINE_KEYFIELD( m_nModelIndex, FIELD_MODELINDEX, "modelindex" ),
+	DEFINE_KEYFIELD_AUTO( m_nNextThinkTick, "nextthink" ),
+	DEFINE_KEYFIELD_AUTO( m_fEffects, "effects" ),
+	DEFINE_KEYFIELD_AUTO( m_clrRender, "rendercolor" ),
+	DEFINE_KEYFIELD_AUTO( m_nModelIndex, "modelindex" ),
 
-	DEFINE_KEYFIELD( m_iszResponseContext, FIELD_STRING, "ResponseContext" ),
+	DEFINE_KEYFIELD_AUTO( m_iszResponseContext, "ResponseContext" ),
 
-	DEFINE_KEYFIELD( m_iMaxHealth, FIELD_INTEGER, "max_health" ),
-	DEFINE_KEYFIELD( m_iHealth, FIELD_INTEGER, "health" ),
+	DEFINE_KEYFIELD_AUTO( m_iMaxHealth, "max_health" ),
+	DEFINE_KEYFIELD_AUTO( m_iHealth, "health" ),
 
-	DEFINE_KEYFIELD( m_target, FIELD_STRING, "target" ),
+	DEFINE_KEYFIELD_AUTO( m_target, "target" ),
 
-	DEFINE_KEYFIELD( m_iszDamageFilterName, FIELD_STRING, "damagefilter" ),
+	DEFINE_KEYFIELD_AUTO( m_iszDamageFilterName, "damagefilter" ),
 
-	DEFINE_KEYFIELD( m_flShadowCastDistance, FIELD_FLOAT, "shadowcastdist" ),
+	DEFINE_KEYFIELD_AUTO( m_flShadowCastDistance, "shadowcastdist" ),
 
-	DEFINE_KEYFIELD( m_MoveType, FIELD_CHARACTER, "MoveType" ),
+	DEFINE_KEYFIELD_AUTO( m_MoveType, "MoveType" ),
 
 	DEFINE_MAP_EMBEDDED_PTR( m_pCollision ),
 
-	DEFINE_KEYFIELD( m_CollisionGroup, FIELD_INTEGER, "CollisionGroup" ),
+	DEFINE_KEYFIELD_AUTO( m_CollisionGroup, "CollisionGroup" ),
 
 	DEFINE_INPUT( m_iInitialTeamNum, FIELD_INTEGER, "TeamNum" ),
-	DEFINE_KEYFIELD( m_iTeamNum, FIELD_INTEGER, "teamnumber" ),
+	DEFINE_KEYFIELD_AUTO( m_iTeamNum, "teamnumber" ),
 
-	DEFINE_KEYFIELD( m_ModelName, FIELD_MODELNAME, "model" ),
+	DEFINE_KEYFIELD_AUTO( m_ModelName, "model" ),
 
-	DEFINE_KEYFIELD( m_AIAddOn, FIELD_STRING, "addon" ),
+	DEFINE_KEYFIELD_AUTO( m_AIAddOn, "addon" ),
 	
-	DEFINE_KEYFIELD( m_vecBaseVelocity, FIELD_VECTOR, "basevelocity" ),
+	DEFINE_KEYFIELD_AUTO( m_vecBaseVelocity, "basevelocity" ),
 
-	DEFINE_KEYFIELD( m_vecAngVelocity, FIELD_VECTOR, "avelocity" ),
+	DEFINE_KEYFIELD_AUTO( m_vecAngVelocity, "avelocity" ),
 
-	DEFINE_KEYFIELD( m_nWaterLevel, FIELD_CHARACTER, "waterlevel" ),
+	DEFINE_KEYFIELD_AUTO( m_nWaterLevel, "waterlevel" ),
 
-	DEFINE_KEYFIELD( m_flGravity, FIELD_FLOAT, "gravity" ),
-	DEFINE_KEYFIELD( m_flFriction, FIELD_FLOAT, "friction" ),
+	DEFINE_KEYFIELD_AUTO( m_flGravity, "gravity" ),
+	DEFINE_KEYFIELD_AUTO( m_flFriction, "friction" ),
 
 	// Local time is local to each object.  It doesn't need to be re-based if the clock
 	// changes.  Therefore it is saved as a FIELD_FLOAT, not a FIELD_TIME
-	DEFINE_KEYFIELD( m_flLocalTime, FIELD_FLOAT, "ltime" ),
+	DEFINE_KEYFIELD_AUTO( m_flLocalTime, "ltime" ),
 
-	DEFINE_KEYFIELD( m_vecVelocity, FIELD_VECTOR, "velocity" ),
-	DEFINE_KEYFIELD( m_iTextureFrameIndex, FIELD_CHARACTER, "texframeindex" ),
+	DEFINE_KEYFIELD_AUTO( m_vecVelocity, "velocity" ),
+	DEFINE_KEYFIELD_AUTO( m_iTextureFrameIndex, "texframeindex" ),
 
-	DEFINE_KEYFIELD( m_spawnflags, FIELD_INTEGER, "spawnflags" ),
+	DEFINE_KEYFIELD_AUTO( m_spawnflags, "spawnflags" ),
 
-	DEFINE_KEYFIELD( m_vecViewOffset, FIELD_VECTOR, "view_ofs" ),
+	DEFINE_KEYFIELD_AUTO( m_vecViewOffset, "view_ofs" ),
 
 	// NOTE: This is tricky. TeamNum must be saved, but we can't directly
 	// read it in, because we can only set it after the team entity has been read in,
@@ -2233,7 +2233,7 @@ BEGIN_MAPENTITY_NO_BASE( CBaseEntity )
 
 	DEFINE_INPUT( m_fadeMinDist, FIELD_FLOAT, "fademindist" ),
 	DEFINE_INPUT( m_fadeMaxDist, FIELD_FLOAT, "fademaxdist" ),
-	DEFINE_KEYFIELD( m_flFadeScale, FIELD_FLOAT, "fadescale" ),
+	DEFINE_KEYFIELD_AUTO( m_flFadeScale, "fadescale" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Kill", InputKill ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "KillHierarchy", InputKillHierarchy ),
@@ -2292,15 +2292,15 @@ BEGIN_MAPENTITY_NO_BASE( CBaseEntity )
 	DEFINE_OUTPUT( m_OnUser3, "OnUser3" ),
 	DEFINE_OUTPUT( m_OnUser4, "OnUser4" ),
 
-	DEFINE_KEYFIELD( m_bLagCompensate, FIELD_BOOLEAN, "LagCompensate" ),
+	DEFINE_KEYFIELD_AUTO( m_bLagCompensate, "LagCompensate" ),
 
-	DEFINE_KEYFIELD( m_iViewHideFlags, FIELD_INTEGER, "viewhideflags" ),
-	DEFINE_KEYFIELD( m_bDisableFlashlight, FIELD_BOOLEAN, "disableflashlight" ),
+	DEFINE_KEYFIELD_AUTO( m_iViewHideFlags, "viewhideflags" ),
+	DEFINE_KEYFIELD_AUTO( m_bDisableFlashlight, "disableflashlight" ),
 
-	DEFINE_KEYFIELD( m_hOwnerEntity, FIELD_EHANDLE, "OwnerEntity" ),
+	DEFINE_KEYFIELD_AUTO( m_hOwnerEntity, "OwnerEntity" ),
 
 	// You know, m_fFlags access
-	DEFINE_KEYFIELD( m_fFlags, FIELD_INTEGER64, "m_fFlags" ),
+	DEFINE_KEYFIELD_AUTO( m_fFlags, "m_fFlags" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "ChangeVariable", InputChangeVariable ),
 
@@ -2342,8 +2342,8 @@ BEGIN_MAPENTITY_NO_BASE( CBaseEntity )
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableDraw", InputUndrawEntity ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableReceivingFlashlight", InputEnableReceivingFlashlight ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableReceivingFlashlight", InputDisableReceivingFlashlight ),
-	DEFINE_INPUTFUNC( FIELD_INTEGER64, "AddEFlags", InputAddEFlags ),
-	DEFINE_INPUTFUNC( FIELD_INTEGER64, "RemoveEFlags", InputRemoveEFlags ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER, "AddEFlags", InputAddEFlags ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER, "RemoveEFlags", InputRemoveEFlags ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "AddSolidFlags", InputAddSolidFlags ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "RemoveSolidFlags", InputRemoveSolidFlags ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMoveType", InputSetMoveType ),
@@ -3602,10 +3602,10 @@ Vector CBaseEntity::GetSoundEmissionOrigin() const
 	return WorldSpaceCenter();
 }
 
-
-//-----------------------------------------------------------------------------
-
-#include "tier0/memdbgoff.h"
+#pragma push_macro("new")
+#pragma push_macro("delete")
+#undef new
+#undef delete
 
 //-----------------------------------------------------------------------------
 // CBaseEntity new/delete
@@ -3632,8 +3632,8 @@ void CBaseEntity::operator delete( void *pMem )
 	engine->FreeEntPrivateData( pMem );
 }
 
-#include "tier0/memdbgon.h"
-
+#pragma pop_macro("delete")
+#pragma pop_macro("new")
 
 #ifdef _DEBUG
 void CBaseEntity::FunctionCheck( void *pFunction, const char *name )
@@ -3767,27 +3767,27 @@ CBaseEntity* CBaseEntity::Instance( const CBaseHandle &hEnt )
 	return gEntList.GetBaseEntity( hEnt );
 }
 
-int CBaseEntity::GetTransmitState( void )
+EdictStateFlags_t CBaseEntity::GetTransmitState( void )
 {
 	edict_t *ed = edict();
 
 	if ( !ed )
-		return 0;
+		return FL_EDICT_NONE;
 
 	return ed->m_fStateFlags;
 }
 
-int	CBaseEntity::SetTransmitState( int nFlag)
+EdictStateFlags_t	CBaseEntity::SetTransmitState( EdictStateFlags_t nFlag)
 {
 	edict_t *ed = edict();
 
 	if ( !ed )
-		return 0;
+		return FL_EDICT_NONE;
 
 	// clear current flags = check ShouldTransmit()
 	ed->ClearTransmitState();	
 	
-	int oldFlags = ed->m_fStateFlags;
+	EdictStateFlags_t oldFlags = ed->m_fStateFlags;
 	ed->m_fStateFlags |= nFlag;
 	
 	// Tell the engine (used for a network backdoor optimization).
@@ -3797,7 +3797,7 @@ int	CBaseEntity::SetTransmitState( int nFlag)
 	return ed->m_fStateFlags;
 }
 
-int CBaseEntity::UpdateTransmitState()
+EdictStateFlags_t CBaseEntity::UpdateTransmitState()
 {
 	// If you get this assert, you should be calling DispatchUpdateTransmitState
 	// instead of UpdateTransmitState.
@@ -3813,7 +3813,7 @@ int CBaseEntity::UpdateTransmitState()
 
 	if ( !IsEFlagSet( EFL_FORCE_CHECK_TRANSMIT ) )
 	{
-		if ( !IsValidModelIndex(GetModelIndex()) || !GetModelName() )
+		if ( !IsValidModelIndex(GetModelIndex()) || GetModelName() == NULL_STRING )
 		{
 			return SetTransmitState( FL_EDICT_DONTSEND );
 		}
@@ -3834,14 +3834,14 @@ int CBaseEntity::UpdateTransmitState()
 	return SetTransmitState( FL_EDICT_PVSCHECK );
 }
 
-int CBaseEntity::DispatchUpdateTransmitState()
+EdictStateFlags_t CBaseEntity::DispatchUpdateTransmitState()
 {
 	edict_t *ed = edict();
 	if ( m_nTransmitStateOwnedCounter != 0 )
-		return ed ? ed->m_fStateFlags : 0;
+		return ed ? ed->m_fStateFlags : FL_EDICT_NONE;
 	
 	g_nInsideDispatchUpdateTransmitState++;
-	int ret = UpdateTransmitState();
+	EdictStateFlags_t ret = UpdateTransmitState();
 	g_nInsideDispatchUpdateTransmitState--;
 	
 	return ret;
@@ -3855,9 +3855,9 @@ int CBaseEntity::DispatchUpdateTransmitState()
 //			*pvs - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-int CBaseEntity::ShouldTransmit( const CCheckTransmitInfo *pInfo )
+EdictStateFlags_t CBaseEntity::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 {
-	int fFlags = DispatchUpdateTransmitState();
+	EdictStateFlags_t fFlags = DispatchUpdateTransmitState();
 
 	if ( fFlags & FL_EDICT_PVSCHECK )
 	{
@@ -4099,7 +4099,7 @@ void CBaseEntity::OnEntityEvent( EntityEvent_t event, void *pEventData )
 	{
 	case ENTITY_EVENT_WATER_TOUCH:
 		{
-			int nContents = (int)pEventData;
+			ContentsFlags_t nContents = (ContentsFlags_t)pEventData;
 			if ( !nContents || (nContents & CONTENTS_WATER) )
 			{
 				++m_nWaterTouch;
@@ -4113,7 +4113,7 @@ void CBaseEntity::OnEntityEvent( EntityEvent_t event, void *pEventData )
 
 	case ENTITY_EVENT_WATER_UNTOUCH:
 		{
-			int nContents = (int)pEventData;
+			ContentsFlags_t nContents = (ContentsFlags_t)pEventData;
 			if ( !nContents || (nContents & CONTENTS_WATER) )
 			{
 				--m_nWaterTouch;
@@ -4133,25 +4133,25 @@ void CBaseEntity::OnEntityEvent( EntityEvent_t event, void *pEventData )
 	if ( GetMoveType() != MOVETYPE_VPHYSICS )
 		return;
 
-	int nNewContents = 0;
+	WaterType_t nNewContents = WT_None;
 	if ( m_nWaterTouch > 0 )
 	{
-		nNewContents |= CONTENTS_WATER;
+		nNewContents |= WT_Water;
 	}
 
 	if ( m_nSlimeTouch > 0 )
 	{
- 		nNewContents |= CONTENTS_SLIME;
+ 		nNewContents |= WT_Slime;
 	}
 
-	if (( nNewContents & MASK_WATER ) == 0)
+	if ( nNewContents == WT_None )
 	{
-		SetWaterLevel( 0 );
-		SetWaterType( CONTENTS_EMPTY );
+		SetWaterLevel( WL_NotInWater );
+		SetWaterType( WT_None );
 		return;
 	}
 
-	SetWaterLevel( 1 );
+	SetWaterLevel( WL_Feet );
 	SetWaterType( nNewContents );
 }
 
@@ -4159,7 +4159,7 @@ void CBaseEntity::OnEntityEvent( EntityEvent_t event, void *pEventData )
 // Purpose: Input handler for the entity alpha.
 // Input  : nAlpha - Alpha value (0 - 255).
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputAlpha( inputdata_t &inputdata )
+void CBaseEntity::InputAlpha( inputdata_t &&inputdata )
 {
 	SetRenderAlpha( clamp( inputdata.value.Int(), 0, 255 ) );
 }
@@ -4168,7 +4168,7 @@ void CBaseEntity::InputAlpha( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Activate alternative sorting
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputAlternativeSorting( inputdata_t &inputdata )
+void CBaseEntity::InputAlternativeSorting( inputdata_t &&inputdata )
 {
 	m_bAlternateSorting = inputdata.value.Bool();
 }
@@ -4179,7 +4179,7 @@ void CBaseEntity::InputAlternativeSorting( inputdata_t &inputdata )
 //			by a separate input handler.
 // Input  : Color32 new value for color (alpha is ignored).
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputColor( inputdata_t &inputdata )
+void CBaseEntity::InputColor( inputdata_t &&inputdata )
 {
 	color32 clr = inputdata.value.Color32();
 
@@ -4191,7 +4191,7 @@ void CBaseEntity::InputColor( inputdata_t &inputdata )
 // Purpose: Called whenever the entity is 'Used'.  This can be when a player hits
 //			use, or when an entity targets it without an output name (legacy entities)
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputUse( inputdata_t &inputdata )
+void CBaseEntity::InputUse( inputdata_t &&inputdata )
 {
 	Use( inputdata.pActivator, inputdata.pCaller, (USE_TYPE)inputdata.nOutputID, 0 );
 
@@ -4241,12 +4241,12 @@ bool CBaseEntity::ReadKeyField( const char *varName, variant_t *var )
 //-----------------------------------------------------------------------------
 // Purpose: Sets the damage filter on the object
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputEnableDamageForces( inputdata_t &inputdata )
+void CBaseEntity::InputEnableDamageForces( inputdata_t &&inputdata )
 {
 	RemoveEFlags( EFL_NO_DAMAGE_FORCES );
 }
 
-void CBaseEntity::InputDisableDamageForces( inputdata_t &inputdata )
+void CBaseEntity::InputDisableDamageForces( inputdata_t &&inputdata )
 {
 	AddEFlags( EFL_NO_DAMAGE_FORCES );
 }
@@ -4255,7 +4255,7 @@ void CBaseEntity::InputDisableDamageForces( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets the damage filter on the object
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetDamageFilter( inputdata_t &inputdata )
+void CBaseEntity::InputSetDamageFilter( inputdata_t &&inputdata )
 {
 	// Get a handle to my damage filter entity if there is one.
 	m_iszDamageFilterName = inputdata.value.StringID();
@@ -4272,7 +4272,7 @@ void CBaseEntity::InputSetDamageFilter( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Dispatch effects on this entity
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputDispatchEffect( inputdata_t &inputdata )
+void CBaseEntity::InputDispatchEffect( inputdata_t &&inputdata )
 {
 	const char *sEffect = inputdata.value.String();
 	if ( sEffect && sEffect[0] )
@@ -4304,7 +4304,7 @@ void CBaseEntity::GetInputDispatchEffectPosition( const char *sInputString, Vect
 //-----------------------------------------------------------------------------
 // Purpose: Marks the entity for deletion
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputKill( inputdata_t &inputdata )
+void CBaseEntity::InputKill( inputdata_t &&inputdata )
 {
 	// tell owner ( if any ) that we're dead.This is mostly for NPCMaker functionality.
 	CBaseEntity *pOwner = GetOwnerEntity();
@@ -4327,7 +4327,7 @@ void CBaseEntity::InputKill( inputdata_t &inputdata )
 	}
 }
 
-void CBaseEntity::InputKillHierarchy( inputdata_t &inputdata )
+void CBaseEntity::InputKillHierarchy( inputdata_t &&inputdata )
 {
 	CBaseEntity *pChild, *pNext;
 	for ( pChild = FirstMoveChild(); pChild; pChild = pNext )
@@ -4360,7 +4360,7 @@ void CBaseEntity::InputKillHierarchy( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Input handler for changing this entity's movement parent.
 //------------------------------------------------------------------------------
-void CBaseEntity::InputSetParent( inputdata_t &inputdata )
+void CBaseEntity::InputSetParent( inputdata_t &&inputdata )
 {
 	// If we had a parent attachment, clear it, because it's no longer valid.
 	if ( m_iParentAttachment )
@@ -4415,7 +4415,7 @@ void CBaseEntity::SetParentAttachment( const char *szInputName, const char *szAt
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for changing this entity's movement parent's attachment point
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetParentAttachment( inputdata_t &inputdata )
+void CBaseEntity::InputSetParentAttachment( inputdata_t &&inputdata )
 {
 	SetParentAttachment( "SetParentAttachment", inputdata.value.String(), false );
 }
@@ -4423,7 +4423,7 @@ void CBaseEntity::InputSetParentAttachment( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for changing this entity's movement parent's attachment point
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetParentAttachmentMaintainOffset( inputdata_t &inputdata )
+void CBaseEntity::InputSetParentAttachmentMaintainOffset( inputdata_t &&inputdata )
 {
 	SetParentAttachment( "SetParentAttachmentMaintainOffset", inputdata.value.String(), true );
 }
@@ -4431,7 +4431,7 @@ void CBaseEntity::InputSetParentAttachmentMaintainOffset( inputdata_t &inputdata
 //------------------------------------------------------------------------------
 // Purpose: Input handler for clearing this entity's movement parent.
 //------------------------------------------------------------------------------
-void CBaseEntity::InputClearParent( inputdata_t &inputdata )
+void CBaseEntity::InputClearParent( inputdata_t &&inputdata )
 {
 	SetParent( NULL );
 }
@@ -4534,7 +4534,7 @@ void CBaseEntity::PostClientMessagesSent( void )
 //================================================================================
 // TEAM HANDLING
 //================================================================================
-void CBaseEntity::InputSetTeam( inputdata_t &inputdata )
+void CBaseEntity::InputSetTeam( inputdata_t &&inputdata )
 {
 	ChangeTeam( inputdata.value.Int() );
 }
@@ -4655,7 +4655,7 @@ static void TeleportEntity( CBaseEntity *pSourceEntity, TeleportListEntry_t &ent
 	Vector prevOrigin = entry.prevAbsOrigin;
 	QAngle prevAngles = entry.prevAbsAngles;
 
-	int nSolidFlags = pTeleport->GetSolidFlags();
+	SolidFlags_t nSolidFlags = pTeleport->GetSolidFlags();
 	pTeleport->AddSolidFlags( FSOLID_NOT_SOLID );
 
 	// I'm teleporting myself
@@ -5984,25 +5984,25 @@ void CBaseEntity::ClearSolidFlags( void )
 	CollisionProp()->ClearSolidFlags();
 }
 
-void CBaseEntity::RemoveSolidFlags( int flags )
+void CBaseEntity::RemoveSolidFlags( SolidFlags_t flags )
 {
 	Assert( CollisionProp() );
 	CollisionProp()->RemoveSolidFlags( flags );
 }
 
-void CBaseEntity::AddSolidFlags( int flags )
+void CBaseEntity::AddSolidFlags( SolidFlags_t flags )
 {
 	Assert( CollisionProp() );
 	CollisionProp()->AddSolidFlags( flags );
 }
 
-int CBaseEntity::GetSolidFlags( void ) const
+SolidFlags_t CBaseEntity::GetSolidFlags( void ) const
 {
 	Assert( CollisionProp() );
 	return CollisionProp()->GetSolidFlags();
 }
 
-bool CBaseEntity::IsSolidFlagSet( int flagMask ) const
+bool CBaseEntity::IsSolidFlagSet( SolidFlags_t flagMask ) const
 {
 	Assert( CollisionProp() );
 	return CollisionProp()->IsSolidFlagSet( flagMask );
@@ -6915,7 +6915,7 @@ void CBaseEntity::RemoveContext( const char *contextName )
 // Purpose: 
 // Input  : inputdata - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputAddContext( inputdata_t& inputdata )
+void CBaseEntity::InputAddContext( inputdata_t &&inputdata )
 {
 	const char *contextName = inputdata.value.String();
 	AddContext( contextName );
@@ -6933,51 +6933,51 @@ void CBaseEntity::InputAddContext( inputdata_t& inputdata )
 //			OnUser1 output to it's sprite's Toggle input, then connect each path_track's
 //			OnPass output to !activator's FireUser1 input.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputFireUser1( inputdata_t& inputdata )
+void CBaseEntity::InputFireUser1( inputdata_t &&inputdata )
 {
 	m_OnUser1.FireOutput( inputdata.pActivator, this );
 }
 
 
-void CBaseEntity::InputFireUser2( inputdata_t& inputdata )
+void CBaseEntity::InputFireUser2( inputdata_t &&inputdata )
 {
 	m_OnUser2.FireOutput( inputdata.pActivator, this );
 }
 
 
-void CBaseEntity::InputFireUser3( inputdata_t& inputdata )
+void CBaseEntity::InputFireUser3( inputdata_t &&inputdata )
 {
 	m_OnUser3.FireOutput( inputdata.pActivator, this );
 }
 
 
-void CBaseEntity::InputFireUser4( inputdata_t& inputdata )
+void CBaseEntity::InputFireUser4( inputdata_t &&inputdata )
 {
 	m_OnUser4.FireOutput( inputdata.pActivator, this );
 }
 
-void CBaseEntity::InputPassUser1( inputdata_t& inputdata )
+void CBaseEntity::InputPassUser1( inputdata_t &&inputdata )
 {
 	m_OutUser1.Set( inputdata.value, inputdata.pActivator, this );
 }
 
-void CBaseEntity::InputPassUser2( inputdata_t& inputdata )
+void CBaseEntity::InputPassUser2( inputdata_t &&inputdata )
 {
 	m_OutUser2.Set( inputdata.value, inputdata.pActivator, this );
 }
 
-void CBaseEntity::InputPassUser3( inputdata_t& inputdata )
+void CBaseEntity::InputPassUser3( inputdata_t &&inputdata )
 {
 	m_OutUser3.Set( inputdata.value, inputdata.pActivator, this );
 }
 
-void CBaseEntity::InputPassUser4( inputdata_t& inputdata )
+void CBaseEntity::InputPassUser4( inputdata_t &&inputdata )
 {
 	m_OutUser4.Set( inputdata.value, inputdata.pActivator, this );
 }
 
 
-void CBaseEntity::InputFireRandomUser( inputdata_t& inputdata )
+void CBaseEntity::InputFireRandomUser( inputdata_t &&inputdata )
 {
 	switch (RandomInt(1, 4))
 	{
@@ -6988,7 +6988,7 @@ void CBaseEntity::InputFireRandomUser( inputdata_t& inputdata )
 	}
 }
 
-void CBaseEntity::InputPassRandomUser( inputdata_t& inputdata )
+void CBaseEntity::InputPassRandomUser( inputdata_t &&inputdata )
 {
 	switch (RandomInt(1, 4))
 	{
@@ -7002,7 +7002,7 @@ void CBaseEntity::InputPassRandomUser( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets the entity's targetname.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetEntityName( inputdata_t& inputdata )
+void CBaseEntity::InputSetEntityName( inputdata_t &&inputdata )
 {
 	SetName( inputdata.value.StringID() );
 }
@@ -7010,7 +7010,7 @@ void CBaseEntity::InputSetEntityName( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets the generic target field.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetTarget( inputdata_t& inputdata )
+void CBaseEntity::InputSetTarget( inputdata_t &&inputdata )
 {
 	m_target = inputdata.value.StringID();
 	Activate();
@@ -7019,7 +7019,7 @@ void CBaseEntity::InputSetTarget( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our owner entity.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetOwnerEntity( inputdata_t& inputdata )
+void CBaseEntity::InputSetOwnerEntity( inputdata_t &&inputdata )
 {
 	SetOwnerEntity(inputdata.value.Entity());
 }
@@ -7028,7 +7028,7 @@ void CBaseEntity::InputSetOwnerEntity( inputdata_t& inputdata )
 // Purpose: Input handler for adding to the entity's health.
 // Input  : Integer health points to add.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputAddHealth( inputdata_t &inputdata )
+void CBaseEntity::InputAddHealth( inputdata_t &&inputdata )
 {
 	TakeHealth( abs(inputdata.value.Int()), DMG_GENERIC );
 }
@@ -7037,7 +7037,7 @@ void CBaseEntity::InputAddHealth( inputdata_t &inputdata )
 // Purpose: Input handler for removing health from the entity.
 // Input  : Integer health points to remove.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputRemoveHealth( inputdata_t &inputdata )
+void CBaseEntity::InputRemoveHealth( inputdata_t &&inputdata )
 {
 	TakeDamage( CTakeDamageInfo( this, this, abs(inputdata.value.Int()), DMG_GENERIC ) );
 }
@@ -7045,7 +7045,7 @@ void CBaseEntity::InputRemoveHealth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetHealth( inputdata_t &inputdata )
+void CBaseEntity::InputSetHealth( inputdata_t &&inputdata )
 {
 	int iNewHealth = inputdata.value.Int();
 	int iDelta = abs(GetHealth() - iNewHealth);
@@ -7062,7 +7062,7 @@ void CBaseEntity::InputSetHealth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetMaxHealth( inputdata_t &inputdata )
+void CBaseEntity::InputSetMaxHealth( inputdata_t &&inputdata )
 {
 	int iNewMaxHealth = inputdata.value.Int();
 	SetMaxHealth(iNewMaxHealth);
@@ -7077,7 +7077,7 @@ void CBaseEntity::InputSetMaxHealth( inputdata_t &inputdata )
 // Purpose: Forces the named output to fire.
 //			In addition to the output itself, parameter may include !activator, !caller, and what to pass.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputFireOutput( inputdata_t& inputdata )
+void CBaseEntity::InputFireOutput( inputdata_t &&inputdata )
 {
 	char sParameter[MAX_PATH];
 	Q_strncpy( sParameter, inputdata.value.String(), sizeof(sParameter) );
@@ -7133,7 +7133,7 @@ void CBaseEntity::InputFireOutput( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Removes all outputs of the specified name.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputRemoveOutput( inputdata_t& inputdata )
+void CBaseEntity::InputRemoveOutput( inputdata_t &&inputdata )
 {
 	const char *szOutput = inputdata.value.String();
 	datamap_t *dmap = GetMapDataDesc();
@@ -7163,7 +7163,7 @@ void CBaseEntity::InputRemoveOutput( inputdata_t& inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Cancels all I/O events of a specific output.
 //------------------------------------------------------------------------------
-void CBaseEntity::InputCancelOutput( inputdata_t &inputdata )
+void CBaseEntity::InputCancelOutput( inputdata_t &&inputdata )
 { 
 
 }
@@ -7172,7 +7172,7 @@ void CBaseEntity::InputCancelOutput( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Replaces all outputs of the specified name.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputReplaceOutput( inputdata_t& inputdata )
+void CBaseEntity::InputReplaceOutput( inputdata_t &&inputdata )
 {
 	char sParameter[128];
 	Q_strncpy( sParameter, inputdata.value.String(), sizeof(sParameter) );
@@ -7259,7 +7259,7 @@ void CBaseEntity::InputReplaceOutput( inputdata_t& inputdata )
 //			
 //			In addition to the input itself, parameter may include !activator, !caller, and what to pass.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputAcceptInput( inputdata_t& inputdata )
+void CBaseEntity::InputAcceptInput( inputdata_t &&inputdata )
 {
 	char sParameter[MAX_PATH];
 	Q_strncpy( sParameter, inputdata.value.String(), sizeof(sParameter) );
@@ -7303,7 +7303,7 @@ void CBaseEntity::InputAcceptInput( inputdata_t& inputdata )
 		if (data[4])
 			iOutputID = atoi(data[4]);
 
-		AcceptInput(data[0], pActivator, pCaller, parameter, iOutputID);
+		AcceptInput(data[0], pActivator, pCaller, Move(parameter), iOutputID);
 		Msg("Input Name: %s, Activator: %s, Caller: %s, Data: %s, Output ID: %i\n", data[0], pActivator ? pActivator->GetDebugName() : "None", pCaller ? pCaller->GetDebugName() : "None", parameter.String(), iOutputID);
 	}
 	else
@@ -7315,7 +7315,7 @@ void CBaseEntity::InputAcceptInput( inputdata_t& inputdata )
 //------------------------------------------------------------------------------
 // Purpose: Cancels any I/O events in the queue that were fired by this entity.
 //------------------------------------------------------------------------------
-void CBaseEntity::InputCancelPending( inputdata_t &inputdata )
+void CBaseEntity::InputCancelPending( inputdata_t &&inputdata )
 { 
 	g_EventQueue.CancelEvents( this );
 }
@@ -7323,7 +7323,7 @@ void CBaseEntity::InputCancelPending( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Frees all of our children, entities parented to this entity.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputFreeChildren( inputdata_t& inputdata )
+void CBaseEntity::InputFreeChildren( inputdata_t &&inputdata )
 {
 	UnlinkAllChildren( this );
 }
@@ -7331,7 +7331,7 @@ void CBaseEntity::InputFreeChildren( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our origin.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetLocalOrigin( inputdata_t& inputdata )
+void CBaseEntity::InputSetLocalOrigin( inputdata_t &&inputdata )
 {
 	Vector vec;
 	inputdata.value.Vector3D(vec);
@@ -7341,7 +7341,7 @@ void CBaseEntity::InputSetLocalOrigin( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our angles.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetLocalAngles( inputdata_t& inputdata )
+void CBaseEntity::InputSetLocalAngles( inputdata_t &&inputdata )
 {
 	QAngle ang;
 	inputdata.value.Angle3D(ang);
@@ -7351,7 +7351,7 @@ void CBaseEntity::InputSetLocalAngles( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our origin.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetAbsOrigin( inputdata_t& inputdata )
+void CBaseEntity::InputSetAbsOrigin( inputdata_t &&inputdata )
 {
 	Vector vec;
 	inputdata.value.Vector3D(vec);
@@ -7361,7 +7361,7 @@ void CBaseEntity::InputSetAbsOrigin( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our angles.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetAbsAngles( inputdata_t& inputdata )
+void CBaseEntity::InputSetAbsAngles( inputdata_t &&inputdata )
 {
 	QAngle ang;
 	inputdata.value.Angle3D(ang);
@@ -7371,7 +7371,7 @@ void CBaseEntity::InputSetAbsAngles( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our velocity.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetLocalVelocity( inputdata_t& inputdata )
+void CBaseEntity::InputSetLocalVelocity( inputdata_t &&inputdata )
 {
 	Vector vec;
 	inputdata.value.Vector3D(vec);
@@ -7381,7 +7381,7 @@ void CBaseEntity::InputSetLocalVelocity( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our angular velocity.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetLocalAngularVelocity( inputdata_t& inputdata )
+void CBaseEntity::InputSetLocalAngularVelocity( inputdata_t &&inputdata )
 {
 	Vector vec;
 	inputdata.value.Vector3D(vec);
@@ -7391,7 +7391,7 @@ void CBaseEntity::InputSetLocalAngularVelocity( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Adds spawn flags.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputAddSpawnFlags( inputdata_t& inputdata )
+void CBaseEntity::InputAddSpawnFlags( inputdata_t &&inputdata )
 {
 	AddSpawnFlags(inputdata.value.Int());
 }
@@ -7399,7 +7399,7 @@ void CBaseEntity::InputAddSpawnFlags( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Removes spawn flags.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputRemoveSpawnFlags( inputdata_t& inputdata )
+void CBaseEntity::InputRemoveSpawnFlags( inputdata_t &&inputdata )
 {
 	RemoveSpawnFlags(inputdata.value.Int());
 }
@@ -7407,7 +7407,7 @@ void CBaseEntity::InputRemoveSpawnFlags( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our render mode.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetRenderMode( inputdata_t& inputdata )
+void CBaseEntity::InputSetRenderMode( inputdata_t &&inputdata )
 {
 	SetRenderMode((RenderMode_t)inputdata.value.Int());
 }
@@ -7415,7 +7415,7 @@ void CBaseEntity::InputSetRenderMode( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our render FX.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetRenderFX( inputdata_t& inputdata )
+void CBaseEntity::InputSetRenderFX( inputdata_t &&inputdata )
 {
 	m_nRenderFX = inputdata.value.Int();
 }
@@ -7423,7 +7423,7 @@ void CBaseEntity::InputSetRenderFX( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets our view hide flags.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetViewHideFlags( inputdata_t& inputdata )
+void CBaseEntity::InputSetViewHideFlags( inputdata_t &&inputdata )
 {
 	m_iViewHideFlags = inputdata.value.Int();
 }
@@ -7431,7 +7431,7 @@ void CBaseEntity::InputSetViewHideFlags( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Adds effects.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputAddEffects( inputdata_t& inputdata )
+void CBaseEntity::InputAddEffects( inputdata_t &&inputdata )
 {
 	AddEffects(inputdata.value.Int());
 }
@@ -7439,7 +7439,7 @@ void CBaseEntity::InputAddEffects( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Removes effects.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputRemoveEffects( inputdata_t& inputdata )
+void CBaseEntity::InputRemoveEffects( inputdata_t &&inputdata )
 {
 	RemoveEffects(inputdata.value.Int());
 }
@@ -7447,7 +7447,7 @@ void CBaseEntity::InputRemoveEffects( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Shortcut for removing nodraw.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputDrawEntity( inputdata_t& inputdata )
+void CBaseEntity::InputDrawEntity( inputdata_t &&inputdata )
 {
 	RemoveEffects(EF_NODRAW);
 }
@@ -7455,7 +7455,7 @@ void CBaseEntity::InputDrawEntity( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Shortcut to adding nodraw.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputUndrawEntity( inputdata_t& inputdata )
+void CBaseEntity::InputUndrawEntity( inputdata_t &&inputdata )
 {
 	AddEffects(EF_NODRAW);
 }
@@ -7463,7 +7463,7 @@ void CBaseEntity::InputUndrawEntity( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Inspired by the Portal 2 input of the same name.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputEnableReceivingFlashlight( inputdata_t& inputdata )
+void CBaseEntity::InputEnableReceivingFlashlight( inputdata_t &&inputdata )
 {
 	m_bDisableFlashlight = false;
 
@@ -7473,7 +7473,7 @@ void CBaseEntity::InputEnableReceivingFlashlight( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Inspired by the Portal 2 input of the same name.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputDisableReceivingFlashlight( inputdata_t& inputdata )
+void CBaseEntity::InputDisableReceivingFlashlight( inputdata_t &&inputdata )
 {
 	m_bDisableFlashlight = true;
 
@@ -7483,7 +7483,7 @@ void CBaseEntity::InputDisableReceivingFlashlight( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Adds eflags.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputAddEFlags( inputdata_t& inputdata )
+void CBaseEntity::InputAddEFlags( inputdata_t &&inputdata )
 {
 	AddEFlags(inputdata.value.Int64());
 }
@@ -7491,7 +7491,7 @@ void CBaseEntity::InputAddEFlags( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Removes eflags.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputRemoveEFlags( inputdata_t& inputdata )
+void CBaseEntity::InputRemoveEFlags( inputdata_t &&inputdata )
 {
 	RemoveEFlags(inputdata.value.Int64());
 }
@@ -7499,7 +7499,7 @@ void CBaseEntity::InputRemoveEFlags( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Adds solid flags.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputAddSolidFlags( inputdata_t& inputdata )
+void CBaseEntity::InputAddSolidFlags( inputdata_t &&inputdata )
 {
 	AddSolidFlags(inputdata.value.Int());
 }
@@ -7507,7 +7507,7 @@ void CBaseEntity::InputAddSolidFlags( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Removes solid flags.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputRemoveSolidFlags( inputdata_t& inputdata )
+void CBaseEntity::InputRemoveSolidFlags( inputdata_t &&inputdata )
 {
 	RemoveSolidFlags(inputdata.value.Int());
 }
@@ -7515,7 +7515,7 @@ void CBaseEntity::InputRemoveSolidFlags( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets the movetype.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetMoveType( inputdata_t& inputdata )
+void CBaseEntity::InputSetMoveType( inputdata_t &&inputdata )
 {
 	SetMoveType((MoveType_t)inputdata.value.Int());
 }
@@ -7523,7 +7523,7 @@ void CBaseEntity::InputSetMoveType( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Sets the collision group.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetCollisionGroup( inputdata_t& inputdata )
+void CBaseEntity::InputSetCollisionGroup( inputdata_t &&inputdata )
 {
 	SetCollisionGroup(inputdata.value.Int());
 }
@@ -7531,7 +7531,7 @@ void CBaseEntity::InputSetCollisionGroup( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Touch touch :)
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputTouch( inputdata_t& inputdata )
+void CBaseEntity::InputTouch( inputdata_t &&inputdata )
 {
 	if (inputdata.value.Entity())
 		Touch( inputdata.value.Entity() );
@@ -7542,7 +7542,7 @@ void CBaseEntity::InputTouch( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Passes KilledNPC to our possibly more capable parents.
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputKilledNPC( inputdata_t &inputdata )
+void CBaseEntity::InputKilledNPC( inputdata_t &&inputdata )
 {
 	// Don't get stuck in an endless loop
 	if (inputdata.value.Int() > 16)
@@ -7552,22 +7552,22 @@ void CBaseEntity::InputKilledNPC( inputdata_t &inputdata )
 
 	if (GetOwnerEntity())
 	{
-		GetOwnerEntity()->AcceptInput("KilledNPC", inputdata.pActivator, inputdata.pCaller, inputdata.value, inputdata.nOutputID);
+		GetOwnerEntity()->AcceptInput("KilledNPC", inputdata.pActivator, inputdata.pCaller, Move(inputdata.value), inputdata.nOutputID);
 	}
 	else if (HasPhysicsAttacker(4.0f))
 	{
-		HasPhysicsAttacker(4.0f)->AcceptInput("KilledNPC", inputdata.pActivator, inputdata.pCaller, inputdata.value, inputdata.nOutputID);
+		HasPhysicsAttacker(4.0f)->AcceptInput("KilledNPC", inputdata.pActivator, inputdata.pCaller, Move(inputdata.value), inputdata.nOutputID);
 	}
 	else if (GetMoveParent())
 	{
-		GetMoveParent()->AcceptInput("KilledNPC", inputdata.pActivator, inputdata.pCaller, inputdata.value, inputdata.nOutputID);
+		GetMoveParent()->AcceptInput("KilledNPC", inputdata.pActivator, inputdata.pCaller, Move(inputdata.value), inputdata.nOutputID);
 	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Remove if not visible by any players
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputKillIfNotVisible( inputdata_t& inputdata )
+void CBaseEntity::InputKillIfNotVisible( inputdata_t &&inputdata )
 {
 	// Go through each client and check if we're in their viewcone.
 	// If we're in someone's viewcone, return immediately.
@@ -7585,7 +7585,7 @@ void CBaseEntity::InputKillIfNotVisible( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Remove when not visible by any players
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputKillWhenNotVisible( inputdata_t& inputdata )
+void CBaseEntity::InputKillWhenNotVisible( inputdata_t &&inputdata )
 {
 	SetContextThink( &CBaseEntity::SUB_RemoveWhenNotVisible, gpGlobals->curtime + inputdata.value.Float(), "SUB_RemoveWhenNotVisible" );
 	//SetRenderColorA( 255 );
@@ -7595,7 +7595,7 @@ void CBaseEntity::InputKillWhenNotVisible( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Stop thinking
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputSetThinkNull( inputdata_t& inputdata )
+void CBaseEntity::InputSetThinkNull( inputdata_t &&inputdata )
 {
 	const char *szContext = inputdata.value.String();
 	if (szContext && szContext[0] != '\0')
@@ -7685,7 +7685,7 @@ void CBaseEntity::AddContext( const char *pKey, const char *pValue, float durati
 // Purpose: 
 // Input  : inputdata - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputRemoveContext( inputdata_t& inputdata )
+void CBaseEntity::InputRemoveContext( inputdata_t &&inputdata )
 {
 	const char *contextName = inputdata.value.String();
 	int idx = FindContextByName( contextName );
@@ -7699,7 +7699,7 @@ void CBaseEntity::InputRemoveContext( inputdata_t& inputdata )
 // Purpose: 
 // Input  : inputdata - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputClearContext( inputdata_t& inputdata )
+void CBaseEntity::InputClearContext( inputdata_t &&inputdata )
 {
 	m_ResponseContexts.RemoveAll();
 }
@@ -7718,7 +7718,7 @@ IResponseSystem *CBaseEntity::GetResponseSystem()
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputChangeVariable( inputdata_t &inputdata )
+void CBaseEntity::InputChangeVariable( inputdata_t &&inputdata )
 {
 	const char *szKeyName = NULL;
 	const char *szValue = NULL;
@@ -7777,35 +7777,35 @@ void CBaseEntity::InputChangeVariable( inputdata_t &inputdata )
 // Purpose: 
 // Input  : inputdata - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputDispatchResponse( inputdata_t& inputdata )
+void CBaseEntity::InputDispatchResponse( inputdata_t &&inputdata )
 {
 	DispatchResponse( inputdata.value.String() );
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputDisableShadow( inputdata_t &inputdata )
+void CBaseEntity::InputDisableShadow( inputdata_t &&inputdata )
 {
 	AddEffects( EF_NOSHADOW );
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputEnableShadow( inputdata_t &inputdata )
+void CBaseEntity::InputEnableShadow( inputdata_t &&inputdata )
 {
 	RemoveEffects( EF_NOSHADOW );
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputDisableDraw(inputdata_t &inputdata)
+void CBaseEntity::InputDisableDraw( inputdata_t &&inputdata )
 {
 	AddEffects(EF_NODRAW);
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputEnableDraw(inputdata_t &inputdata)
+void CBaseEntity::InputEnableDraw( inputdata_t &&inputdata )
 {
 	RemoveEffects(EF_NODRAW);
 }
@@ -7814,7 +7814,7 @@ void CBaseEntity::InputEnableDraw(inputdata_t &inputdata)
 // Purpose: An input to add a new connection from this entity
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::InputAddOutput( inputdata_t &inputdata )
+void CBaseEntity::InputAddOutput( inputdata_t &&inputdata )
 {
 	char sOutputName[MAX_PATH];
 	Q_strncpy( sOutputName, inputdata.value.String(), sizeof(sOutputName) );
@@ -8012,7 +8012,6 @@ void CBaseEntity::ComputeStepSimulationNetwork( StepSimulationData *step )
 			{
 				Vector delta = step->m_Next.vecOrigin - step->m_Previous.vecOrigin;
 				VectorMA( step->m_Previous.vecOrigin, frac, delta, step->m_vecNetworkOrigin );
-				NetworkStateChanged();
 			}
 			else if (!step_spline.GetBool())
 			{
@@ -8040,12 +8039,10 @@ void CBaseEntity::ComputeStepSimulationNetwork( StepSimulationData *step )
 		
 				Vector delta = pNewer->vecOrigin - pOlder->vecOrigin;
 				VectorMA( pOlder->vecOrigin, frac, delta, step->m_vecNetworkOrigin );
-				NetworkStateChanged();
 			}
 			else
 			{
 				Hermite_Spline( step->m_Previous2.vecOrigin, step->m_Previous.vecOrigin, step->m_Next.vecOrigin, frac, step->m_vecNetworkOrigin );
-				NetworkStateChanged();
 			}
 
 			// Calculate the cell of this origin

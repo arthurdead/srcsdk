@@ -18,7 +18,7 @@
 LINK_ENTITY_TO_CLASS(env_ambient_light, CEnvAmbientLight);
 
 BEGIN_MAPENTITY( CEnvAmbientLight )
-	DEFINE_KEYFIELD(	m_Color,	FIELD_COLOR32,	"Color" ),
+	DEFINE_KEYFIELD_AUTO( m_Color, "Color" ),
 	DEFINE_INPUTFUNC( FIELD_COLOR32, "SetColor",  InputSetColor ),
 END_MAPENTITY()
 
@@ -37,7 +37,7 @@ void CEnvAmbientLight::Spawn( void )
 }
 
 
-void CEnvAmbientLight::InputSetColor(inputdata_t &inputdata)
+void CEnvAmbientLight::InputSetColor( inputdata_t &&inputdata )
 {
 	m_Color = inputdata.value.Color32();
 	m_vecColor.SetX( static_cast<float>( m_Color.r ) / 255.0f );

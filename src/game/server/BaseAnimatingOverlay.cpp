@@ -21,7 +21,6 @@
 extern ConVar ai_sequence_debug;
 
 #define ORDER_BITS			4
-#define WEIGHT_BITS			8
 
 BEGIN_SEND_TABLE_NOBASE(CAnimationLayer, DT_Animationlayer)
 	SendPropInt		(SENDINFO(m_nSequence),		ANIMATION_SEQUENCE_BITS,SPROP_UNSIGNED),
@@ -50,13 +49,6 @@ END_SEND_TABLE()
 
 CAnimationLayer::CAnimationLayer( )
 {
-	Init( NULL );
-}
-
-
-void CAnimationLayer::Init( CBaseAnimatingOverlay *pOverlay )
-{
-	m_pOwnerEntity = pOverlay;
 	m_fFlags = 0;
 	m_flWeight = 0;
 	m_flCycle = 0;
@@ -77,6 +69,12 @@ void CAnimationLayer::Init( CBaseAnimatingOverlay *pOverlay )
 	m_flLastAccess = gpGlobals->curtime;
 	m_flLayerAnimtime = 0;
 	m_flLayerFadeOuttime = 0;
+}
+
+
+void CAnimationLayer::Init( CBaseAnimatingOverlay *pOverlay )
+{
+	m_pOwnerEntity = pOverlay;
 }
 
 

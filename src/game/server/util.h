@@ -40,6 +40,8 @@ struct levellist_t;
 class IServerNetworkable;
 class IEntityFactory;
 
+enum DamageTypes_t : uint64_t;
+
 #ifdef _WIN32
 	#define SETUP_EXTERNC(mapClassName)\
 		extern "C" _declspec( dllexport ) IServerNetworkable* mapClassName( void );
@@ -347,7 +349,7 @@ const char *nexttoken(char *token, const char *str, char sep, size_t tokenLen);
 // Misc. Prototypes
 void		UTIL_SetSize			(CBaseEntity *pEnt, const Vector &vecMin, const Vector &vecMax);
 void		UTIL_ClearTrace			( trace_t &trace );
-void		UTIL_SetTrace			(trace_t& tr, const Ray_t &ray, edict_t* edict, float fraction, int hitgroup, unsigned int contents, const Vector& normal, float intercept );
+void		UTIL_SetTrace			(trace_t& tr, const Ray_t &ray, edict_t* edict, float fraction, int hitgroup, ContentsFlags_t contents, const Vector& normal, float intercept );
 
 int			UTIL_PrecacheDecal		( const char *name, bool preload = false );
 
@@ -368,7 +370,7 @@ CBasePlayer *UTIL_PlayerBySteamID( const CSteamID &steamID );
 
 // helper functions added for replacing the above 
 CBasePlayer *UTIL_GetNearestPlayer( const Vector &origin ); 
-CBasePlayer *UTIL_GetNearestVisiblePlayer(CBaseEntity *pLooker, int mask = MASK_SOLID_BRUSHONLY); 
+CBasePlayer *UTIL_GetNearestVisiblePlayer(CBaseEntity *pLooker, ContentsFlags_t mask = MASK_SOLID_BRUSHONLY); 
 CBasePlayer *UTIL_GetOtherNearestPlayer( const Vector &origin );
 
 CBasePlayer *UTIL_PlayerByString( const char *query ); 
@@ -406,19 +408,19 @@ int			UTIL_EntitiesAlongRay( const Ray_t &ray, CFlaggedEntitiesEnum *pEnum  );
 int			UTIL_EntitiesInSphere( const Vector &center, float radius, CFlaggedEntitiesEnum *pEnum  );
 int			UTIL_EntitiesAtPoint( const Vector &point, CFlaggedEntitiesEnum *pEnum );
 
-inline int UTIL_EntitiesInBox( CBaseEntity **pList, int listMax, const Vector &mins, const Vector &maxs, int flagMask )
+inline int UTIL_EntitiesInBox( CBaseEntity **pList, int listMax, const Vector &mins, const Vector &maxs, ContentsFlags_t flagMask )
 {
 	CFlaggedEntitiesEnum boxEnum( pList, listMax, flagMask );
 	return UTIL_EntitiesInBox( mins, maxs, &boxEnum );
 }
 
-inline int UTIL_EntitiesInSphere( CBaseEntity **pList, int listMax, const Vector &center, float radius, int flagMask )
+inline int UTIL_EntitiesInSphere( CBaseEntity **pList, int listMax, const Vector &center, float radius, ContentsFlags_t flagMask )
 {
 	CFlaggedEntitiesEnum sphereEnum( pList, listMax, flagMask );
 	return UTIL_EntitiesInSphere( center, radius, &sphereEnum );
 }
 
-inline int UTIL_EntitiesAtPoint( CBaseEntity **pList, int listMax, const Vector &point, int flagMask )
+inline int UTIL_EntitiesAtPoint( CBaseEntity **pList, int listMax, const Vector &point, ContentsFlags_t flagMask )
 {
 	CFlaggedEntitiesEnum pointEnum( pList, listMax, flagMask );
 	return UTIL_EntitiesAtPoint( point, &pointEnum );
@@ -432,7 +434,7 @@ public:
 	// currently this builds the list in the constructor
 	// UNDONE: make an iterative query of ISpatialPartition so we could
 	// make queries like this optimal
-	CEntitySphereQuery( const Vector &center, float radius, int flagMask=0 );
+	CEntitySphereQuery( const Vector &center, float radius, ContentsFlags_t flagMask=CONTENTS_EMPTY );
 	CBaseEntity *GetCurrentEntity();
 	inline void NextEntity() { m_listIndex++; }
 
@@ -442,10 +444,10 @@ private:
 	CBaseEntity *m_pList[MAX_SPHERE_QUERY];
 };
 
-enum soundlevel_t;
+enum soundlevel_t : unsigned int;
 
 // Drops an entity onto the floor
-int			UTIL_DropToFloor( CBaseEntity *pEntity, unsigned int mask, CBaseEntity *pIgnore = NULL );
+int			UTIL_DropToFloor( CBaseEntity *pEntity, ContentsFlags_t mask, CBaseEntity *pIgnore = NULL );
 
 // Returns false if any part of the bottom of the entity is off an edge that is not a staircase.
 bool		UTIL_CheckBottom( CBaseEntity *pEntity, ITraceFilter *pTraceFilter, float flStepSize );
@@ -467,11 +469,11 @@ Vector		UTIL_PointOnLineNearestPoint(const Vector& vStartPos, const Vector& vEnd
 int			UTIL_EntityInSolid( CBaseEntity *ent );
 
 bool		UTIL_IsMasterTriggered	(string_t sMaster, CBaseEntity *pActivator);
-void		UTIL_BloodStream( const Vector &origin, const Vector &direction, int color, int amount );
-void		UTIL_BloodSpray( const Vector &pos, const Vector &dir, int color, int amount, int flags );
+void		UTIL_BloodStream( const Vector &origin, const Vector &direction, BloodColor_t color, int amount );
+void		UTIL_BloodSpray( const Vector &pos, const Vector &dir, BloodColor_t color, int amount, int flags );
 void		UTIL_BloodSprayPrecache();
 Vector		UTIL_RandomBloodVector( void );
-void		UTIL_ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName = NULL );
+void		UTIL_ImpactTrace( trace_t *pTrace, DamageTypes_t iDamageType, const char *pCustomImpactName = NULL );
 void		UTIL_PlayerDecalTrace( trace_t *pTrace, int playernum );
 void		UTIL_Smoke( const Vector &origin, const float scale, const float framerate );
 void		UTIL_AxisStringToPointDir( Vector &start, Vector &dir, const char *pString );
@@ -658,7 +660,7 @@ float UTIL_ScaleForGravity( float desiredGravity );
 
 // Sound Utilities
 
-enum soundlevel_t;
+enum soundlevel_t : unsigned int;
 
 void SENTENCEG_Init();
 void SENTENCEG_Stop(edict_t *entity, int isentenceg, int ipick);

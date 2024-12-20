@@ -37,13 +37,13 @@ public:
 	void Precache( void );
 	void UpdateForPlayer( ss_update_t &update );
 	void WriteAudioParamsTo( audioparams_t &audio );
-	virtual int UpdateTransmitState();
+	virtual EdictStateFlags_t UpdateTransmitState();
 	bool InRangeOfPlayer( CBasePlayer *pPlayer );
 	void DrawDebugGeometryOverlays( void );
 
-	void InputEnable( inputdata_t &inputdata );
-	void InputDisable( inputdata_t &inputdata );
-	void InputToggleEnabled( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &&inputdata );
+	void InputDisable( inputdata_t &&inputdata );
+	void InputToggleEnabled( inputdata_t &&inputdata );
 
 	string_t GetSoundscapeName() const {return m_soundscapeName;}
 

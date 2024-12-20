@@ -40,8 +40,8 @@ public:
 
 	void OnRestore( void );
 
-	void InputActivate(inputdata_t &inputdata);
-	void InputDeactivate(inputdata_t &inputdata);
+	void InputActivate( inputdata_t &&inputdata );
+	void InputDeactivate( inputdata_t &&inputdata );
 
 	bool NewCVar( ConVarRef *var, const char *pOldString, CBaseEntity *modent );
 

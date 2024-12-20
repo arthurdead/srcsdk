@@ -18,41 +18,7 @@
 // NOTE: This must be the last file included!!!
 #include "tier0/memdbgon.h"
 
-#if defined _WIN32 && !defined __GNUC__
-#define FAST_BIT_SCAN 1
-#ifdef __MINGW32__
-#include <immintrin.h>
-#else
-#include <intrin.h>
-#endif
-#pragma intrinsic(_BitScanReverse)
-#pragma intrinsic(_BitScanForward)
-
-inline unsigned int CountLeadingZeros(unsigned int x)
-{
-	unsigned long firstBit;
-	if ( _BitScanReverse(&firstBit,x) )
-		return 31 - firstBit;
-	return 32;
-}
-inline unsigned int CountTrailingZeros(unsigned int elem)
-{
-	unsigned long out;
-	if ( _BitScanForward(&out, elem) )
-		return out;
-	return 32;
-}
-#else
-#define FAST_BIT_SCAN 0
-#endif
-
-
 static BitBufErrorHandler g_BitBufErrorHandler = 0;
-
-inline int BitForBitnum(int bitnum)
-{
-	return GetBitForBitnum(bitnum);
-}
 
 void InternalBitBufErrorHandler( BitBufErrorType errorType, const char *pDebugName )
 {

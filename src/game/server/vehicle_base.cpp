@@ -29,7 +29,7 @@ extern ConVar g_debug_vehicledriver;
 BEGIN_MAPENTITY( CPropVehicle )
 
 	// Keys
-	DEFINE_KEYFIELD( m_vehicleScript, FIELD_STRING, "VehicleScript" ),
+	DEFINE_KEYFIELD_AUTO( m_vehicleScript, "VehicleScript" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "Throttle", InputThrottle ),
@@ -168,7 +168,7 @@ void CPropVehicle::OnPhysGunPickup( CBasePlayer *pPhysGunUser, PhysGunPickup_t r
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropVehicle::InputThrottle( inputdata_t &inputdata )
+void CPropVehicle::InputThrottle( inputdata_t &&inputdata )
 {
 	m_VehiclePhysics.SetThrottle( inputdata.value.Float() );
 }
@@ -176,7 +176,7 @@ void CPropVehicle::InputThrottle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropVehicle::InputSteering( inputdata_t &inputdata )
+void CPropVehicle::InputSteering( inputdata_t &&inputdata )
 {
 	m_VehiclePhysics.SetSteering( inputdata.value.Float(), 2*gpGlobals->frametime );
 }
@@ -184,17 +184,17 @@ void CPropVehicle::InputSteering( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropVehicle::InputAction( inputdata_t &inputdata )
+void CPropVehicle::InputAction( inputdata_t &&inputdata )
 {
 	m_VehiclePhysics.SetAction( inputdata.value.Float() );
 }
 
-void CPropVehicle::InputHandBrakeOn( inputdata_t &inputdata )
+void CPropVehicle::InputHandBrakeOn( inputdata_t &&inputdata )
 {
 	m_VehiclePhysics.SetHandbrake( true );
 }
 
-void CPropVehicle::InputHandBrakeOff( inputdata_t &inputdata )
+void CPropVehicle::InputHandBrakeOff( inputdata_t &&inputdata )
 {
 	m_VehiclePhysics.ReleaseHandbrake();
 }
@@ -248,7 +248,6 @@ Vector CPropVehicle::GetSmoothedVelocity( void )
 }
 
 //=============================================================================
-#ifdef HL2_EPISODIC
 
 //-----------------------------------------------------------------------------
 // Purpose: Add an entity to a list which receives physics callbacks from the vehicle
@@ -275,7 +274,6 @@ void CPropVehicle::RemovePhysicsChild( CBaseEntity *pChild )
 	}
 }
 
-#endif //HL2_EPISODIC
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -322,7 +320,7 @@ BEGIN_MAPENTITY( CPropVehicleDriveable )
 	DEFINE_OUTPUT( m_attack2axis, "Attack2Axis" ),
 	DEFINE_OUTPUT( m_OnPlayerUse, "OnPlayerUse" ),
 
-	DEFINE_KEYFIELD( m_bLocked, FIELD_BOOLEAN, "VehicleLocked" ),
+	DEFINE_KEYFIELD_AUTO( m_bLocked, "VehicleLocked" ),
 
 END_MAPENTITY()
 
@@ -669,7 +667,7 @@ void CPropVehicleDriveable::Think()
 		if ( m_hKeepUpright != NULL && m_flTurnOffKeepUpright < gpGlobals->curtime )
 		{
 			variant_t emptyVariant;
-			m_hKeepUpright->AcceptInput( "TurnOff", this, this, emptyVariant, USE_TOGGLE );
+			m_hKeepUpright->AcceptInput( "TurnOff", this, this, Move(emptyVariant), USE_TOGGLE );
 			m_flTurnOffKeepUpright = 0;
 
 			UTIL_Remove( m_hKeepUpright );
@@ -696,7 +694,7 @@ void CPropVehicleDriveable::SetupMove( CBasePlayer *player, CUserCmd *ucmd, IMov
 //-----------------------------------------------------------------------------
 // Purpose: Prevent the player from entering / exiting the vehicle
 //-----------------------------------------------------------------------------
-void CPropVehicleDriveable::InputLock( inputdata_t &inputdata )
+void CPropVehicleDriveable::InputLock( inputdata_t &&inputdata )
 {
 	m_bLocked = true;
 }
@@ -704,7 +702,7 @@ void CPropVehicleDriveable::InputLock( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Allow the player to enter / exit the vehicle
 //-----------------------------------------------------------------------------
-void CPropVehicleDriveable::InputUnlock( inputdata_t &inputdata )
+void CPropVehicleDriveable::InputUnlock( inputdata_t &&inputdata )
 {
 	m_bLocked = false;
 }
@@ -741,7 +739,7 @@ bool CPropVehicleDriveable::CanExitVehicle( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropVehicleDriveable::InputTurnOn( inputdata_t &inputdata )
+void CPropVehicleDriveable::InputTurnOn( inputdata_t &&inputdata )
 {
 	m_bEngineLocked = false;
 
@@ -753,7 +751,7 @@ void CPropVehicleDriveable::InputTurnOn( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropVehicleDriveable::InputTurnOff( inputdata_t &inputdata )
+void CPropVehicleDriveable::InputTurnOff( inputdata_t &&inputdata )
 {
 	m_bEngineLocked = true;
 
@@ -764,7 +762,7 @@ void CPropVehicleDriveable::InputTurnOff( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropVehicleDriveable::InputEnterVehicle( inputdata_t &inputdata )
+void CPropVehicleDriveable::InputEnterVehicle( inputdata_t &&inputdata )
 {
 	if ( m_bEnterAnimOn )
 		return;
@@ -791,7 +789,7 @@ void CPropVehicleDriveable::InputEnterVehicle( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CPropVehicleDriveable::InputEnterVehicleImmediate( inputdata_t &inputdata )
+void CPropVehicleDriveable::InputEnterVehicleImmediate( inputdata_t &&inputdata )
 {
 	if ( m_bEnterAnimOn )
 		return;
@@ -827,7 +825,7 @@ void CPropVehicleDriveable::InputEnterVehicleImmediate( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropVehicleDriveable::InputExitVehicle( inputdata_t &inputdata )
+void CPropVehicleDriveable::InputExitVehicle( inputdata_t &&inputdata )
 {
 	if (!GetDriver())
 		return;
@@ -841,7 +839,7 @@ void CPropVehicleDriveable::InputExitVehicle( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropVehicleDriveable::InputExitVehicleImmediate( inputdata_t &inputdata )
+void CPropVehicleDriveable::InputExitVehicleImmediate( inputdata_t &&inputdata )
 {
 	if (!GetDriver())
 		return;
@@ -889,7 +887,6 @@ void CPropVehicleDriveable::VPhysicsCollision( int index, gamevcollisionevent_t 
 {
 
 //=============================================================================
-#ifdef HL2_EPISODIC
 
 	// Notify all children
 	for ( int i = 0; i < m_hPhysicsChildren.Count(); i++ )
@@ -900,7 +897,6 @@ void CPropVehicleDriveable::VPhysicsCollision( int index, gamevcollisionevent_t 
 		m_hPhysicsChildren[i]->VPhysicsCollision( index, pEvent );
 	}
 
-#endif // HL2_EPISODIC
 //=============================================================================
 
 	// Don't care if we don't have a driver
@@ -980,7 +976,7 @@ void CPropVehicleDriveable::TraceAttack( const CTakeDamageInfo &info, const Vect
 			{
 				variant_t limitVariant;
 				limitVariant.SetFloat( flUprightStrength );
-				m_hKeepUpright->AcceptInput( "SetAngularLimit", this, this, limitVariant, USE_TOGGLE );
+				m_hKeepUpright->AcceptInput( "SetAngularLimit", this, this, Move(limitVariant), USE_TOGGLE );
 			}
 			else
 			{
@@ -990,14 +986,13 @@ void CPropVehicleDriveable::TraceAttack( const CTakeDamageInfo &info, const Vect
 
 			Assert( m_hKeepUpright );
 			variant_t emptyVariant;
-			m_hKeepUpright->AcceptInput( "TurnOn", this, this, emptyVariant, USE_TOGGLE );
+			m_hKeepUpright->AcceptInput( "TurnOn", this, this, Move(emptyVariant), USE_TOGGLE );
 
 			// Turn off the keepupright after a short time
 			m_flTurnOffKeepUpright = gpGlobals->curtime + GetUprightTime();
 			SetNextThink( gpGlobals->curtime );
 		}
 
-#ifdef HL2_EPISODIC
 		// Notify all children
 		for ( int i = 0; i < m_hPhysicsChildren.Count(); i++ )
 		{
@@ -1005,10 +1000,8 @@ void CPropVehicleDriveable::TraceAttack( const CTakeDamageInfo &info, const Vect
 				continue;
 
 			variant_t emptyVariant;
-			m_hPhysicsChildren[i]->AcceptInput( "VehiclePunted", info.GetAttacker(), this, emptyVariant, USE_TOGGLE );
+			m_hPhysicsChildren[i]->AcceptInput( "VehiclePunted", info.GetAttacker(), this, Move(emptyVariant), USE_TOGGLE );
 		}
-#endif // HL2_EPISODIC
-
 	}
 
 	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
@@ -1110,11 +1103,7 @@ CFourWheelServerVehicle::CFourWheelServerVehicle( void )
 	m_ViewSmoothing.flRollCurveLinear	= ROLL_CURVE_LINEAR;
 }
 
-#ifdef HL2_EPISODIC
-ConVar r_JeepFOV( "r_JeepFOV", "82", FCVAR_CHEAT | FCVAR_REPLICATED );
-#else
 ConVar r_JeepFOV( "r_JeepFOV", "90", FCVAR_CHEAT | FCVAR_REPLICATED );
-#endif // HL2_EPISODIC
 
 //-----------------------------------------------------------------------------
 // Purpose: Setup our view smoothing information

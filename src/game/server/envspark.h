@@ -26,10 +26,10 @@ public:
 	void	StopSpark( void );
 
 	// Input handlers
-	void InputStartSpark( inputdata_t &inputdata );
-	void InputStopSpark( inputdata_t &inputdata );
-	void InputToggleSpark( inputdata_t &inputdata );
-	void InputSparkOnce( inputdata_t &inputdata );
+	void InputStartSpark( inputdata_t &&inputdata );
+	void InputStopSpark( inputdata_t &&inputdata );
+	void InputToggleSpark( inputdata_t &&inputdata );
+	void InputSparkOnce( inputdata_t &&inputdata );
 
 	bool IsSparking( void ){ return ( GetNextThink() != TICK_NEVER_THINK ); }
 	

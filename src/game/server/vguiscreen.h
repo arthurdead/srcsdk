@@ -52,7 +52,7 @@ public:
 
 	void SetTransparency( bool bTransparent );
 
-	virtual int UpdateTransmitState( void );
+	virtual EdictStateFlags_t UpdateTransmitState( void );
 	virtual int ShouldTransmit( const CCheckTransmitInfo *pInfo );
 
 	void SetPlayerOwner( CBasePlayer *pPlayer, bool bOwnerOnlyInput = false );
@@ -60,8 +60,8 @@ public:
 private:
 	void SetAttachmentIndex( int nIndex );
  	void SetPanelName( const char *pPanelName );
-	void InputSetActive( inputdata_t &inputdata );
-	void InputSetInactive( inputdata_t &inputdata );
+	void InputSetActive( inputdata_t &&inputdata );
+	void InputSetInactive( inputdata_t &&inputdata );
 
 	string_t m_strOverlayMaterial;
 

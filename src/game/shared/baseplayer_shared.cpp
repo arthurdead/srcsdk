@@ -1380,17 +1380,17 @@ void CSharedBasePlayer::PlayerUse ( void )
 
 			if ( pUseEntity->ObjectCaps() & FCAP_ONOFF_USE )
 			{
-				pUseEntity->AcceptInput( "Use", this, this, emptyVariant, USE_ON );
+				pUseEntity->AcceptInput( "Use", this, this, Move(emptyVariant), USE_ON );
 			}
 			else
 			{
-				pUseEntity->AcceptInput( "Use", this, this, emptyVariant, USE_TOGGLE );
+				pUseEntity->AcceptInput( "Use", this, this, Move(emptyVariant), USE_TOGGLE );
 			}
 		}
 		// UNDONE: Send different USE codes for ON/OFF.  Cache last ONOFF_USE object to send 'off' if you turn away
 		else if ( (m_afButtonReleased & IN_USE) && (pUseEntity->ObjectCaps() & FCAP_ONOFF_USE) )	// BUGBUG This is an "off" use
 		{
-			pUseEntity->AcceptInput( "Use", this, this, emptyVariant, USE_OFF );
+			pUseEntity->AcceptInput( "Use", this, this, Move(emptyVariant), USE_OFF );
 		}
 	}
 	else if ( m_afButtonPressed & IN_USE )
@@ -2017,7 +2017,7 @@ void CSharedBasePlayer::UpdateUnderwaterState( void )
 	{
 #ifndef CLIENT_DLL
 		// player enter water sound
-		if (GetWaterType() == CONTENTS_WATER)
+		if (GetWaterType() & WT_Water)
 		{
 			EmitSound( "Player.Wade" );
 		}
