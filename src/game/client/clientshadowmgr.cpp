@@ -858,22 +858,12 @@ public:
 	bool IsShadowingFromWorldLights() const { return m_bShadowFromWorldLights && !m_bSuppressShadowFromWorldLights; }
 
 public:
-	enum
-	{
-		//if you add new flags you must update ShadowFlags_t from public/engine/ishadowmgr.h
-
-		SHADOW_FLAGS_TEXTURE_DIRTY =	(CLIENT_SHADOW_FLAGS_LAST_FLAG << 1),
-		SHADOW_FLAGS_BRUSH_MODEL =		(CLIENT_SHADOW_FLAGS_LAST_FLAG << 2), 
-		SHADOW_FLAGS_USING_LOD_SHADOW = (CLIENT_SHADOW_FLAGS_LAST_FLAG << 3),
-		SHADOW_FLAGS_LIGHT_WORLD =		(CLIENT_SHADOW_FLAGS_LAST_FLAG << 4),
-	};
-
 	struct ClientShadow_t
 	{
 		ClientEntityHandle_t	m_Entity;
 		ShadowHandle_t			m_ShadowHandle;
 		ClientLeafShadowHandle_t m_ClientLeafShadowHandle;
-		unsigned short			m_Flags;
+		ShadowFlags_t			m_Flags : 16;
 		VMatrix					m_WorldToShadow;
 		Vector2D				m_WorldSize;
 		Vector					m_ShadowDir;

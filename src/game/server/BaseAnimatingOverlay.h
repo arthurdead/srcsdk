@@ -18,8 +18,10 @@
 class CBaseAnimatingOverlay;
 typedef CBaseAnimatingOverlay CSharedBaseAnimatingOverlay;
 
-//enum animlayerindex_t : unsigned char;
-typedef int animlayerindex_t;
+enum animlayerindex_t : unsigned char;
+inline const animlayerindex_t INVALID_ANIMLAYER = (animlayerindex_t)-1;
+
+UNORDEREDENUM_OPERATORS( animlayerindex_t, unsigned char )
 
 enum AnimLayerFlags_t : unsigned char
 {
@@ -86,15 +88,15 @@ public:
 	int		m_nPriority;
 	CNetworkVar( int, m_nOrder );
 
-	bool	IsActive( void ) const { return ((m_fFlags & ANIM_LAYER_ACTIVE) != 0); }
-	bool	IsAutokill( void ) const { return ((m_fFlags & ANIM_LAYER_AUTOKILL) != 0); }
-	bool	IsKillMe( void ) const { return ((m_fFlags & ANIM_LAYER_KILLME) != 0); }
+	bool	IsActive( void ) const { return ((m_fFlags & ANIM_LAYER_ACTIVE) != ANIM_LAYER_NO_FLAGS); }
+	bool	IsAutokill( void ) const { return ((m_fFlags & ANIM_LAYER_AUTOKILL) != ANIM_LAYER_NO_FLAGS); }
+	bool	IsKillMe( void ) const { return ((m_fFlags & ANIM_LAYER_KILLME) != ANIM_LAYER_NO_FLAGS); }
 	bool	IsAutoramp( void ) const { return (m_flBlendIn != 0.0 || m_flBlendOut != 0.0); }
 	void	KillMe( void ) { m_fFlags |= ANIM_LAYER_KILLME; }
 	void	Dying( void ) { m_fFlags |= ANIM_LAYER_DYING; }
-	bool	IsDying( void ) const { return ((m_fFlags & ANIM_LAYER_DYING) != 0); }
+	bool	IsDying( void ) const { return ((m_fFlags & ANIM_LAYER_DYING) != ANIM_LAYER_NO_FLAGS); }
 	void	Dead( void ) { m_fFlags &= ~ANIM_LAYER_DYING; }
-	bool	NoEvents( void ) const { return ((m_fFlags & ANIM_LAYER_NOEVENTS) != 0); }
+	bool	NoEvents( void ) const { return ((m_fFlags & ANIM_LAYER_NOEVENTS) != ANIM_LAYER_NO_FLAGS); }
 
 	void	SetSequence( sequence_t nSequence );
 	void	SetCycle( float flCycle );

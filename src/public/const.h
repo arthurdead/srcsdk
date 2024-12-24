@@ -213,7 +213,7 @@ FLAGENUM_OPERATORS( SolidFlags_t, unsigned int )
 //-----------------------------------------------------------------------------
 inline bool IsSolid( SolidType_t solidType, SolidFlags_t nSolidFlags )
 {
-	return (solidType != SOLID_NONE) && ((nSolidFlags & FSOLID_NOT_SOLID) == 0);
+	return (solidType != SOLID_NONE) && ((nSolidFlags & FSOLID_NOT_SOLID) == FSOLID_NONE);
 }
 
 

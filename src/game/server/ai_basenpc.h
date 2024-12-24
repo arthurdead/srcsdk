@@ -165,22 +165,29 @@ enum Interruptability_t
 //-------------------------------------
 // Spawn flags
 //-------------------------------------
-#define SF_NPC_WAIT_TILL_SEEN			( 1 << 0  )	// spawnflag that makes npcs wait until player can see them before attacking.
-#define SF_NPC_GAG						( 1 << 1  )	// no idle noises from this npc
-#define SF_NPC_FALL_TO_GROUND			( 1 << 2  )	// used my NPC_Maker
-#define SF_NPC_START_EFFICIENT			( 1 << 4  ) // Set into efficiency mode from spawn
-//										( 1 << 5  )
-//										( 1 << 6  )
-#define SF_NPC_WAIT_FOR_SCRIPT			( 1 << 7  )	// spawnflag that makes npcs wait to check for attacking until the script is done or they've been attacked
-#define SF_NPC_LONG_RANGE				( 1 << 8  )	// makes npcs look far and relaxes weapon range limit 
-#define SF_NPC_FADE_CORPSE				( 1 << 9  )	// Fade out corpse after death
-#define SF_NPC_ALWAYSTHINK				( 1 << 10 )	// Simulate even when player isn't in PVS.
-#define SF_NPC_TEMPLATE					( 1 << 11 )	// This NPC will be used as a template by an npc_maker -- do not spawn.
-#define SF_NPC_ALTCOLLISION				( 1 << 12 )
-#define SF_NPC_NO_WEAPON_DROP			( 1 << 13 )	// This NPC will not actually drop a weapon that can be picked up
-#define SF_NPC_NO_PLAYER_PUSHAWAY		( 1 << 14 )	
-//										( 1 << 15 )	
+enum BaseNpcSpawnFlags_t : uint64
+{
+	SF_NPC_WAIT_TILL_SEEN =			( 1 << 0  ),	// spawnflag that makes npcs wait until player can see them before attacking.
+	SF_NPC_GAG =					( 1 << 1  ),	// no idle noises from this npc
+	SF_NPC_FALL_TO_GROUND =			( 1 << 2  ),	// used my NPC_Maker
+	SF_NPC_START_EFFICIENT =		( 1 << 4  ), // Set into efficiency mode from spawn
+	//								( 1 << 5  )
+	//								( 1 << 6  )
+	SF_NPC_WAIT_FOR_SCRIPT =		( 1 << 7  ),	// spawnflag that makes npcs wait to check for attacking until the script is done or they've been attacked
+	SF_NPC_LONG_RANGE =				( 1 << 8  ),	// makes npcs look far and relaxes weapon range limit 
+	SF_NPC_FADE_CORPSE =			( 1 << 9  ),	// Fade out corpse after death
+	SF_NPC_ALWAYSTHINK =			( 1 << 10 ),	// Simulate even when player isn't in PVS.
+	SF_NPC_TEMPLATE =				( 1 << 11 ),	// This NPC will be used as a template by an npc_maker -- do not spawn.
+	SF_NPC_ALTCOLLISION =			( 1 << 12 ),
+	SF_NPC_NO_WEAPON_DROP =			( 1 << 13 ),	// This NPC will not actually drop a weapon that can be picked up
+	SF_NPC_NO_PLAYER_PUSHAWAY =		( 1 << 14 ),	
+//									( 1 << 15 )	
 // !! Flags above ( 1 << 15 )	 are reserved for NPC sub-classes
+
+	SF_NPC_LAST_SHARED_FLAG = SF_NPC_NO_PLAYER_PUSHAWAY,
+};
+
+FLAGENUM_OPERATORS( BaseNpcSpawnFlags_t, uint64 )
 
 //-------------------------------------
 //
@@ -188,7 +195,7 @@ enum Interruptability_t
 //
 //-------------------------------------
 
-enum CanPlaySequence_t
+enum CanPlaySequence_t : unsigned char
 {
 	CANNOT_PLAY = 0,		// Can't play for any number of reasons.
 	CAN_PLAY_NOW,			// Can play the script immediately.
@@ -198,7 +205,7 @@ enum CanPlaySequence_t
 //-------------------------------------
 // Weapon holstering
 //-------------------------------------
-enum DesiredWeaponState_t
+enum DesiredWeaponState_t : unsigned char
 {
 	DESIREDWEAPONSTATE_IGNORE = 0,
 	DESIREDWEAPONSTATE_HOLSTERED,
@@ -214,7 +221,7 @@ enum DesiredWeaponState_t
 //
 //-------------------------------------
 
-enum AI_Efficiency_t
+enum AI_Efficiency_t : unsigned char
 {
 	// Run at full tilt
 	AIE_NORMAL,
@@ -232,7 +239,7 @@ enum AI_Efficiency_t
 	AIE_DORMANT,
 };
 
-enum AI_MoveEfficiency_t
+enum AI_MoveEfficiency_t : unsigned char
 {
 	AIME_NORMAL,
 	AIME_EFFICIENT,
@@ -244,7 +251,7 @@ enum AI_MoveEfficiency_t
 //
 //-------------------------------------
 
-enum AI_SleepState_t
+enum AI_SleepState_t : unsigned char
 {
 	AISS_AWAKE,
 	AISS_WAITING_FOR_THREAT,
@@ -265,7 +272,7 @@ enum AI_SleepState_t
 //
 //-------------------------------------
 
-enum DebugBaseNPCBits_e
+enum DebugBaseNPCBits_e : unsigned char
 {
 	bits_debugDisableAI = 0x00000001,		// disable AI
 	bits_debugStepAI	= 0x00000002,		// step AI
@@ -277,7 +284,7 @@ enum DebugBaseNPCBits_e
 // Base Sentence index for behaviors
 //
 //-------------------------------------
-enum SentenceIndex_t
+enum SentenceIndex_t : unsigned short
 {
 	SENTENCE_BASE_BEHAVIOR_INDEX = 1000,
 };
@@ -559,6 +566,8 @@ public:
 
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 	virtual bool GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen );
+
+	DECLARE_SPAWNFLAGS( BaseNpcSpawnFlags_t )
 
 	//---------------------------------
 	
@@ -1054,7 +1063,7 @@ public:
 	void				SetSequenceByName( const char *szSequence );
 	void				SetSequenceById( sequence_t iSequence );
 	Activity			GetScriptCustomMoveActivity( void );
-	int					GetScriptCustomMoveSequence( void );
+	sequence_t					GetScriptCustomMoveSequence( void );
 	Activity			GetStoppedActivity( void );
 	inline bool			HaveSequenceForActivity( Activity activity );
 	inline bool			IsActivityStarted(void);
@@ -1080,7 +1089,7 @@ public:
 	virtual Activity			SelectFakeSequenceGesture( Activity nActivity, Activity nTranslatedActivity );
 	void				PlayFakeSequenceGesture( Activity nActivity, Activity nSequence, Activity nTranslatedSequence );
 
-	int					GetFakeSequenceGesture();
+	animlayerindex_t					GetFakeSequenceGesture();
 	void				ResetFakeSequenceGesture();
 
 private:
@@ -1095,7 +1104,7 @@ private:
 	sequence_t					m_nIdealSequence;				// Desired animation sequence
 	Activity			m_IdealTranslatedActivity;		// Desired actual translated animation state
 	Activity			m_IdealWeaponActivity;			// Desired weapon animation state
-	int					m_FakeSequenceGestureLayer;		// The gesture layer impersonating a sequence (-1 if invalid)
+	animlayerindex_t					m_FakeSequenceGestureLayer;		// The gesture layer impersonating a sequence (-1 if invalid)
 
 	CNetworkVar(int, m_iDeathPose );
 	CNetworkVar(int, m_iDeathFrame );
@@ -1388,18 +1397,18 @@ public:
 	// Capabilities report (from CBaseCombatCharacter)
 	//
 	//-----------------------------------------------------
-	virtual int			CapabilitiesGet( void ) const;
+	virtual Capability_t			CapabilitiesGet( void ) const;
 
 	// local capabilities access
-	int					CapabilitiesAdd( int capabilities );
-	int					CapabilitiesRemove( int capabilities );
+	Capability_t					CapabilitiesAdd( Capability_t capabilities );
+	Capability_t					CapabilitiesRemove( Capability_t capabilities );
 	void				CapabilitiesClear( void );
 
 	void				InputAddCapabilities( inputdata_t &&inputdata );
 	void				InputRemoveCapabilities( inputdata_t &&inputdata );
 
 private:
-	int					m_afCapability;			// tells us what a npc can/can't do.
+	Capability_t					m_afCapability;			// tells us what a npc can/can't do.
 
 public:
 	//-----------------------------------------------------
@@ -1543,8 +1552,8 @@ public:
 protected:
 	// BRJ 4/11
 	// Semi-obsolete-looking Lars code I moved out of the engine and into here
-	int FlyMove( const Vector& vecPosition, unsigned int mask );
-	int WalkMove( const Vector& vecPosition, unsigned int mask );
+	bool FlyMove( const Vector& vecPosition, ContentsFlags_t mask );
+	bool WalkMove( const Vector& vecPosition, ContentsFlags_t mask );
 
 	//  Unreachable Entities
 	CUtlVector<UnreachableEnt_t> m_UnreachableEnts;								// Array of unreachable entities
@@ -2125,7 +2134,7 @@ public:
 		return baseCaps;
 	}
 
-	virtual int	ObjectCaps()	{ return (BaseClass::ObjectCaps() | FCAP_NOTIFY_ON_TRANSITION); }
+	virtual EntityCaps_t ObjectCaps()	{ return (BaseClass::ObjectCaps() | FCAP_NOTIFY_ON_TRANSITION); }
 
 	//-----------------------------------------------------
 	//
@@ -2455,7 +2464,7 @@ inline void CAI_BaseNPC::ResetScheduleCurTaskIndex()
 //-----------------------------------------------------------------------------
 inline bool CAI_BaseNPC::CrouchIsDesired( void ) const
 {
-	return ( (CapabilitiesGet() & bits_CAP_DUCK) && (m_bCrouchDesired | m_bForceCrouch) );
+	return ( ((CapabilitiesGet() & bits_CAP_DUCK) != bits_CAP_NONE) && (m_bCrouchDesired | m_bForceCrouch) );
 }
 
 //-----------------------------------------------------------------------------
@@ -3155,7 +3164,7 @@ inline const char *CAI_Component::GetEntClassname()
 
 //-----------------------------------------------------------------------------
 
-inline int CAI_Component::CapabilitiesGet()
+inline Capability_t CAI_Component::CapabilitiesGet()
 {
 	return GetOuter()->CapabilitiesGet();
 }

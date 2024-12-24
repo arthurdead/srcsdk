@@ -22,7 +22,6 @@
 #endif
 
 //code
-ACTIVITY_ENUM(ACT_INVALID, INVALID_ACTIVITY)			// So we have something more succint to check for than '-1'
 ACTIVITY_ENUM(ACT_RESET, 0)				// Set m_Activity to this invalid value to force a reset to m_IdealActivity
 
 // Sometimes, you just want to set an NPC's sequence to a sequence that doesn't actually

@@ -27,7 +27,7 @@ public:
 	void Spawn( void );
 	EdictStateFlags_t UpdateTransmitState();
 
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+	virtual EntityCaps_t ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
 	// Inputs
 	void	InputEnable( inputdata_t &&inputdata );

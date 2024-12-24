@@ -13,49 +13,49 @@ game_dir = get_option('game_dir')
 target_system = target_machine.system()
 
 if meson.get_compiler('cpp').has_define('__WINE__')
-	subproject('linux_hammer_ipc')
+	#subproject('linux_hammer_ipc')
 else
 	if get_option('funny')
-		subdir('funny')
+		#subdir('funny')
 	endif
 
 	if build_libs
-		subproject('choreoobjects')
-		subproject('mathlib')
-		subproject('tier1')
-		subproject('raytrace')
-		subproject('responserules')
-		subproject('vgui_controls')
-		subproject('hackmgr')
-		subproject('shaderlib')
-		subproject('recastnavigation_game')
+		#subproject('choreoobjects')
+		#subproject('mathlib')
+		#subproject('tier1')
+		#subproject('raytrace')
+		#subproject('responserules')
+		#subproject('vgui_controls')
+		#subproject('hackmgr')
+		#subproject('shaderlib')
+		#subproject('recastnavigation_game')
 		#subproject('vphysics')
-		subproject('matchmaking')
+		#subproject('matchmaking')
 		if target_system == 'linux' or target_system == 'gnu'
-			subproject('shadercompiler')
+			#subproject('shadercompiler')
 		endif
 	endif
 	if build_client or build_listen_server
-		subproject('game_loopback')
+		#subproject('game_loopback')
 	endif
 	if build_client or build_listen_server or build_dedicated_server
 		#subproject('game_switcher')
 	endif
 	if build_client
 		#subproject('hammer_redirect')
-		subproject('vaudio_minimp3')
-		subproject('vaudio_redirect')
+		#subproject('vaudio_minimp3')
+		#subproject('vaudio_redirect')
 		#subproject('video_services')
-		subproject('game_shader_dx9')
-		subproject('gameui')
-		subproject('gamepadui_redirect')
-		subproject('serverbrowser_redirect')
+		#subproject('game_shader_dx9')
+		#subproject('gameui')
+		#subproject('gamepadui_redirect')
+		#subproject('serverbrowser_redirect')
 		#subproject('client')
 	endif
 	if build_listen_server
 		subproject('server_listen')
 	endif
 	if build_dedicated_server
-		subproject('server_dedicated')
+		#subproject('server_dedicated')
 	endif
 endif

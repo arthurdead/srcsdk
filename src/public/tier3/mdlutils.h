@@ -23,7 +23,7 @@ struct matrix3x4_t;
 
 struct MDLSquenceLayer_t
 {
-	int		m_nSequenceIndex;
+	sequence_t		m_nSequenceIndex;
 	float	m_flWeight;
 	bool	m_bNoLoop;
 	float	m_flCycleBeganAt;
@@ -64,7 +64,7 @@ public:
 	Color		m_Color;
 	int			m_nSkin;
 	int			m_nBody;
-	int			m_nSequence;
+	sequence_t			m_nSequence;
 	int			m_nLOD;
 	float		m_flPlaybackRate;
 	float		m_flTime;
@@ -78,17 +78,17 @@ public:
 //-----------------------------------------------------------------------------
 // Returns the bounding box for the model
 //-----------------------------------------------------------------------------
-void GetMDLBoundingBox( Vector *pMins, Vector *pMaxs, MDLHandle_t h, int nSequence );
+void GetMDLBoundingBox( Vector *pMins, Vector *pMaxs, MDLHandle_t h, sequence_t nSequence );
 
 //-----------------------------------------------------------------------------
 // Returns the radius of the model as measured from the origin
 //-----------------------------------------------------------------------------
-float GetMDLRadius( MDLHandle_t h, int nSequence );
+float GetMDLRadius( MDLHandle_t h, sequence_t nSequence );
 
 //-----------------------------------------------------------------------------
 // Returns a more accurate bounding sphere
 //-----------------------------------------------------------------------------
-void GetMDLBoundingSphere( Vector *pVecCenter, float *pRadius, MDLHandle_t h, int nSequence );
+void GetMDLBoundingSphere( Vector *pVecCenter, float *pRadius, MDLHandle_t h, sequence_t nSequence );
 
 
 #endif // MDLUTILS_H

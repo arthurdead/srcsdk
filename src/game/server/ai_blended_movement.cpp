@@ -22,6 +22,39 @@
 // class CAI_BlendedMotor
 //
 
+CAI_BlendedMotor::CAI_BlendedMotor( CAI_BaseNPC *pOuter )
+ :	BaseClass( pOuter )
+{
+	m_iPrimaryLayer = INVALID_ANIMLAYER;
+	m_nPrimarySequence = INVALID_SEQUENCE;
+
+	m_iSecondaryLayer = INVALID_ANIMLAYER;
+	m_nSecondarySequence =  INVALID_SEQUENCE;
+	m_flSecondaryWeight = 0.0f;
+
+	m_nSavedGoalActivity = ACT_INVALID;
+	m_nSavedTranslatedGoalActivity = ACT_INVALID;
+	m_nGoalSequence = INVALID_SEQUENCE;
+
+	m_nPrevMovementSequence = INVALID_SEQUENCE;
+	m_nInteriorSequence = INVALID_SEQUENCE;
+
+	m_bDeceleratingToGoal = false;
+
+	m_flStartCycle = 0.0f;
+
+	m_flPredictiveSpeedAdjust = 1.0f;
+	m_flReactiveSpeedAdjust = 1.0f;
+	m_vecPrevOrigin1.Init();
+	m_vecPrevOrigin2.Init();
+
+	m_prevYaw = 0.0f;
+	m_doTurn = 0.0f;
+	m_doLeft = 0.0f;
+	m_doRight = 0.0f;
+	m_flNextTurnAct = 0.0f;
+}
+
 void CAI_BlendedMotor::ResetMoveCalculations()
 {
 	BaseClass::ResetMoveCalculations();
@@ -35,7 +68,7 @@ void CAI_BlendedMotor::MoveStart()
 { 
 	AI_PROFILE_SCOPE(CAI_BlendedMotor_MoveStart);
 
-	if (m_nPrimarySequence == -1)
+	if (m_nPrimarySequence == INVALID_SEQUENCE)
 	{
 		m_nPrimarySequence = GetSequence();
 		m_flStartCycle = GetCycle();
@@ -43,7 +76,7 @@ void CAI_BlendedMotor::MoveStart()
 
 		// Assert( !GetOuter()->HasMovement( m_nStartSequence ) );
 
-		m_nSecondarySequence = -1;
+		m_nSecondarySequence = INVALID_SEQUENCE;
 
 		m_iPrimaryLayer = AddLayeredSequence( m_nPrimarySequence, 0 );
 		SetLayerWeight( m_iPrimaryLayer, 0.0 );
@@ -60,7 +93,7 @@ void CAI_BlendedMotor::MoveStart()
 	}
 
 
-	if (m_nGoalSequence == ACT_INVALID)
+	if (m_nGoalSequence == INVALID_SEQUENCE)
 	{
 		ResetGoalSequence();
 	}
@@ -91,7 +124,7 @@ void CAI_BlendedMotor::ResetGoalSequence( void )
 
 	m_nGoalSequence = GetInteriorSequence( m_nPrimarySequence );
 
-	Assert( m_nGoalSequence != ACT_INVALID );
+	Assert( m_nGoalSequence != INVALID_SEQUENCE );
 }
 
 //-----------------------------------------------------------------------------
@@ -105,20 +138,20 @@ void CAI_BlendedMotor::MoveStop()
 
 	CAI_Motor::MoveStop();
 
-	if (m_iPrimaryLayer != -1)
+	if (m_iPrimaryLayer != INVALID_ANIMLAYER)
 	{
 		RemoveLayer( m_iPrimaryLayer, 0.2, 0.1 );
-		m_iPrimaryLayer = -1;
+		m_iPrimaryLayer = INVALID_ANIMLAYER;
 	}
-	if (m_iSecondaryLayer != -1)
+	if (m_iSecondaryLayer != INVALID_ANIMLAYER)
 	{
 		RemoveLayer( m_iSecondaryLayer, 0.2, 0.1 );
-		m_iSecondaryLayer = -1;
+		m_iSecondaryLayer = INVALID_ANIMLAYER;
 	}
-	m_nPrimarySequence = ACT_INVALID;
-	m_nSecondarySequence = ACT_INVALID;
-	m_nPrevMovementSequence = ACT_INVALID;
-	m_nInteriorSequence = ACT_INVALID;
+	m_nPrimarySequence = INVALID_SEQUENCE;
+	m_nSecondarySequence = INVALID_SEQUENCE;
+	m_nPrevMovementSequence = INVALID_SEQUENCE;
+	m_nInteriorSequence = INVALID_SEQUENCE;
 
 	// 	int nNextSequence = FindTransitionSequence(GetSequence(), m_nIdealSequence, NULL);
 }
@@ -134,12 +167,12 @@ void CAI_BlendedMotor::MoveContinue()
 { 
 	AI_PROFILE_SCOPE(CAI_BlendedMotor_MoveContinue);
 
-	m_nPrimarySequence = GetInteriorSequence( ACT_INVALID );
+	m_nPrimarySequence = GetInteriorSequence( INVALID_SEQUENCE );
 	m_nGoalSequence = m_nPrimarySequence;
 
-	Assert( m_nPrimarySequence != ACT_INVALID );
+	Assert( m_nPrimarySequence != INVALID_SEQUENCE );
 
-	if (m_nPrimarySequence == ACT_INVALID)
+	if (m_nPrimarySequence == INVALID_SEQUENCE)
 		return;
 
 	m_flStartCycle = 0.0;
@@ -289,7 +322,7 @@ void CAI_BlendedMotor::SetMoveScriptAnim( float flNewSpeed )
 	if ( activity != m_nSavedTranslatedGoalActivity )
 	{
 		m_nSavedTranslatedGoalActivity = activity;
-		m_nInteriorSequence = ACT_INVALID;
+		m_nInteriorSequence = INVALID_SEQUENCE;
 		m_nGoalSequence = pNavigator->GetArrivalSequence( m_nPrimarySequence );
 	}
 
@@ -298,28 +331,28 @@ void CAI_BlendedMotor::SetMoveScriptAnim( float flNewSpeed )
 		// find that sequence to play when at goal
 		m_nGoalSequence = pNavigator->GetArrivalSequence( m_nPrimarySequence );
 
-		if (m_nGoalSequence == ACT_INVALID)
+		if (m_nGoalSequence == INVALID_SEQUENCE)
 		{
 			m_nGoalSequence = GetInteriorSequence( m_nPrimarySequence );
 		}
 
-		Assert( m_nGoalSequence != ACT_INVALID );
+		Assert( m_nGoalSequence != INVALID_SEQUENCE );
 	}
 
-	if (m_flSecondaryWeight == 1.0 || (m_iSecondaryLayer != -1 && m_nPrimarySequence == m_nSecondarySequence))
+	if (m_flSecondaryWeight == 1.0 || (m_iSecondaryLayer != INVALID_ANIMLAYER && m_nPrimarySequence == m_nSecondarySequence))
 	{
 		// secondary layer at full strength last time, delete the primary and shift down
 		RemoveLayer( m_iPrimaryLayer, 0.0, 0.0 );
 
 		m_iPrimaryLayer = m_iSecondaryLayer;
 		m_nPrimarySequence = m_nSecondarySequence;
-		m_iSecondaryLayer = -1;
-		m_nSecondarySequence = ACT_INVALID;
+		m_iSecondaryLayer = INVALID_ANIMLAYER;
+		m_nSecondarySequence = INVALID_SEQUENCE;
 		m_flSecondaryWeight = 0.0;
 	}
 
 	// look for transition sequence if needed
-	if (m_nSecondarySequence == ACT_INVALID)
+	if (m_nSecondarySequence == INVALID_SEQUENCE)
 	{
 		if (!m_bDeceleratingToGoal && m_nGoalSequence != GetInteriorSequence( m_nPrimarySequence ))
 		{
@@ -327,19 +360,19 @@ void CAI_BlendedMotor::SetMoveScriptAnim( float flNewSpeed )
 			m_nGoalSequence = GetInteriorSequence( m_nPrimarySequence );
 		}
 
-		if (m_nGoalSequence != ACT_INVALID && m_nPrimarySequence != m_nGoalSequence)
+		if (m_nGoalSequence != INVALID_SEQUENCE && m_nPrimarySequence != m_nGoalSequence)
 		{
 			// Msg("From %s to %s\n", GetOuter()->GetSequenceName( m_nPrimarySequence ), GetOuter()->GetSequenceName( m_nGoalSequence ) );
 			m_nSecondarySequence = GetOuter()->FindTransitionSequence(m_nPrimarySequence, m_nGoalSequence, NULL);
-			if (m_nSecondarySequence == ACT_INVALID)
+			if (m_nSecondarySequence == INVALID_SEQUENCE)
 				m_nSecondarySequence = m_nGoalSequence;
 		}
 	}
 
 	// set blending for 
-	if (m_nSecondarySequence != ACT_INVALID)
+	if (m_nSecondarySequence != INVALID_SEQUENCE)
 	{
-		if (m_iSecondaryLayer == -1)
+		if (m_iSecondaryLayer == INVALID_ANIMLAYER)
 		{
 			m_iSecondaryLayer = AddLayeredSequence( m_nSecondarySequence, 0 );
 			SetLayerWeight( m_iSecondaryLayer, 0.0 );
@@ -371,18 +404,18 @@ void CAI_BlendedMotor::SetMoveScriptAnim( float flNewSpeed )
 	else
 	{
 		// recreate layer if missing
-		if (m_iPrimaryLayer == -1)
+		if (m_iPrimaryLayer == INVALID_ANIMLAYER)
 		{
 			MoveContinue();
 		}
 
 		// try to catch a stale layer
-		if (m_iSecondaryLayer != -1)
+		if (m_iSecondaryLayer != INVALID_ANIMLAYER)
 		{
 			// secondary layer at full strength last time, delete the primary and shift down
 			RemoveLayer( m_iSecondaryLayer, 0.0, 0.0 );
-			m_iSecondaryLayer = -1;
-			m_nSecondarySequence = ACT_INVALID;
+			m_iSecondaryLayer = INVALID_ANIMLAYER;
+			m_nSecondarySequence = INVALID_SEQUENCE;
 			m_flSecondaryWeight = 0.0;
 		}
 
@@ -396,14 +429,14 @@ void CAI_BlendedMotor::SetMoveScriptAnim( float flNewSpeed )
 //-----------------------------------------------------------------------------
 // Purpose: get the "idle" animation to play as the compliment to the movement animation
 //-----------------------------------------------------------------------------
-int CAI_BlendedMotor::GetInteriorSequence( int fromSequence )
+sequence_t CAI_BlendedMotor::GetInteriorSequence( sequence_t fromSequence )
 {
 	AI_PROFILE_SCOPE(CAI_BlendedMotor_GetInteriorSequence);
 
 	// FIXME: add interior activity to path, just like arrival activity.
-	int  sequence = GetNavigator()->GetMovementSequence();
+	sequence_t  sequence = GetNavigator()->GetMovementSequence();
 
-	if (m_nInteriorSequence != ACT_INVALID && sequence == m_nPrevMovementSequence)
+	if (m_nInteriorSequence != INVALID_SEQUENCE && sequence == m_nPrevMovementSequence)
 	{
 		return m_nInteriorSequence;
 	}
@@ -435,14 +468,14 @@ int CAI_BlendedMotor::GetInteriorSequence( int fromSequence )
 				}
 			}
 
-			if (activity == ACT_INVALID || m_nInteriorSequence == ACT_INVALID)
+			if (activity == ACT_INVALID || m_nInteriorSequence == INVALID_SEQUENCE)
 			{
 				m_nInteriorSequence = GetOuter()->LookupSequence( szActivity );
 			}
 		}
 	}
 
-	if (m_nInteriorSequence == ACT_INVALID)
+	if (m_nInteriorSequence == INVALID_SEQUENCE)
 	{
 		Activity activity = GetNavigator()->GetMovementActivity();
 		if (activity == ACT_WALK_AIM || activity == ACT_RUN_AIM)
@@ -455,7 +488,7 @@ int CAI_BlendedMotor::GetInteriorSequence( int fromSequence )
 		}
 		m_nInteriorSequence = GetOuter()->SelectWeightedSequence( GetOuter()->TranslateActivity( activity ), fromSequence );
 
-		Assert( m_nInteriorSequence != ACT_INVALID );
+		Assert( m_nInteriorSequence != INVALID_SEQUENCE );
 	}
 
 	return m_nInteriorSequence;
@@ -682,11 +715,11 @@ void CAI_BlendedMotor::RecalculateYawSpeed()
 void CAI_BlendedMotor::MoveClimbStart(  const Vector &climbDest, const Vector &climbDir, float climbDist, float yaw )
 {
 	// TODO: merge transitions with movement script
-	if (m_iPrimaryLayer != -1)
+	if (m_iPrimaryLayer != INVALID_ANIMLAYER)
 	{
 		SetLayerWeight( m_iPrimaryLayer, 0 );
 	}
-	if (m_iSecondaryLayer != -1)
+	if (m_iSecondaryLayer != INVALID_ANIMLAYER)
 	{
 		SetLayerWeight( m_iSecondaryLayer, 0 );
 	}
@@ -701,11 +734,11 @@ void CAI_BlendedMotor::MoveClimbStart(  const Vector &climbDest, const Vector &c
 void CAI_BlendedMotor::MoveJumpStart( const Vector &velocity )
 {
 	// TODO: merge transitions with movement script
-	if (m_iPrimaryLayer != -1)
+	if (m_iPrimaryLayer != INVALID_ANIMLAYER)
 	{
 		SetLayerWeight( m_iPrimaryLayer, 0 );
 	}
-	if (m_iSecondaryLayer != -1)
+	if (m_iSecondaryLayer != INVALID_ANIMLAYER)
 	{
 		SetLayerWeight( m_iSecondaryLayer, 0 );
 	}
@@ -1565,7 +1598,7 @@ void CAI_BlendedMotor::MaintainTurnActivity( void )
 	if (m_doTurn > 15.0f)
 	{
 		// mostly a foot stick clear
-		int iSeq = ACT_INVALID;
+		sequence_t iSeq = INVALID_SEQUENCE;
 		if (m_doLeft > m_doRight)
 		{
 			iSeq = SelectWeightedSequence( ACT_GESTURE_TURN_LEFT );
@@ -1577,10 +1610,10 @@ void CAI_BlendedMotor::MaintainTurnActivity( void )
 		m_doLeft = 0;
 		m_doRight = 0;
 
-		if (iSeq != ACT_INVALID)
+		if (iSeq != INVALID_SEQUENCE)
 		{
-			int iLayer = GetOuter()->AddGestureSequence( iSeq );
-			if (iLayer != -1)
+			animlayerindex_t iLayer = GetOuter()->AddGestureSequence( iSeq );
+			if (iLayer != INVALID_ANIMLAYER)
 			{
 				GetOuter()->SetLayerPriority( iLayer, 100 );
 				// increase speed if we're getting behind or they're turning quickly
@@ -1664,7 +1697,7 @@ bool CAI_BlendedMotor::AddTurnGesture( float flYD )
 		turnCompletion = 0.36;
 	}
 
-	int seq = SelectWeightedSequence( activity );
+	sequence_t seq = SelectWeightedSequence( activity );
 
 	if (scene_flatturn.GetBool() && GetOuter()->IsCurSchedule( SCHED_SCENE_GENERIC ))
 	{
@@ -1689,7 +1722,7 @@ bool CAI_BlendedMotor::AddTurnGesture( float flYD )
 
 		if (flatactivity != activity)
 		{
-			int newseq = SelectWeightedSequence( flatactivity );
+			sequence_t newseq = SelectWeightedSequence( flatactivity );
 			if (newseq != ACTIVITY_NOT_AVAILABLE)
 			{
 				seq = newseq;
@@ -1699,8 +1732,8 @@ bool CAI_BlendedMotor::AddTurnGesture( float flYD )
 
 	if (seq != ACTIVITY_NOT_AVAILABLE)
 	{
-		int iLayer = GetOuter()->AddGestureSequence( seq );
-		if (iLayer != -1)
+		animlayerindex_t iLayer = GetOuter()->AddGestureSequence( seq );
+		if (iLayer != INVALID_ANIMLAYER)
 		{
 			GetOuter()->SetLayerPriority( iLayer, 100 );
 			// vary the playback a bit

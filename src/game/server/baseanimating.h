@@ -177,7 +177,7 @@ public:
 
 	int GetNumBones ( void );
 
-	int  FindTransitionSequence( sequence_t iCurrentSequence, sequence_t iGoalSequence, int *piDir );
+	sequence_t  FindTransitionSequence( sequence_t iCurrentSequence, sequence_t iGoalSequence, int *piDir );
 	bool GotoSequence( int iCurrentSequence, float flCurrentCycle, float flCurrentRate,  sequence_t iGoalSequence, sequence_t &iNextSequence, float &flCycle, int &iDir );
 	int  GetEntryNode( sequence_t iSequence );
 	int  GetExitNode( sequence_t iSequence );
@@ -256,7 +256,7 @@ public:
 	void					GetVelocity(Vector *vVelocity, AngularImpulse *vAngVelocity);
 
 	// these two need to move somewhere else
-	LocalFlexController_t GetNumFlexControllers( void );
+	int GetNumFlexControllers( void );
 	const char *GetFlexDescFacs( int iFlexDesc );
 	const char *GetFlexControllerName( LocalFlexController_t iFlexController );
 	const char *GetFlexControllerType( LocalFlexController_t iFlexController );
@@ -311,7 +311,7 @@ public:
 	virtual void IgniteHitboxFireScale( float flHitboxFireScale );
 	virtual void IgniteUseCheapEffect( bool bUseCheapEffect );
 	virtual void Extinguish() { RemoveFlag( FL_ONFIRE ); }
-	bool IsOnFire() { return ( (GetFlags() & FL_ONFIRE) != 0 ); }
+	bool IsOnFire() { return ( (GetFlags() & FL_ONFIRE) != FL_NO_ENTITY_FLAGS ); }
 	void Scorch( int rate, int floor );
 	void InputIgnite( inputdata_t &&inputdata );
 	void InputIgniteLifetime( inputdata_t &&inputdata );
@@ -332,8 +332,8 @@ public:
 	virtual void	Unfreeze();
 
 	// Dissolve, returns true if the ragdoll has been created
-	virtual bool Dissolve( const char *pMaterialName, float flStartTime, bool bNPCOnly = true, int nDissolveType = 0, Vector vDissolverOrigin = vec3_origin, int iMagnitude = 0 );
-	bool IsDissolving() { return ( (GetFlags() & FL_DISSOLVING) != 0 ); }
+	virtual bool Dissolve( const char *pMaterialName, float flStartTime, bool bNPCOnly = true, EntityDissolve_t nDissolveType = ENTITY_DISSOLVE_NORMAL, Vector vDissolverOrigin = vec3_origin, int iMagnitude = 0 );
+	bool IsDissolving() { return ( (GetFlags() & FL_DISSOLVING) != FL_NO_ENTITY_FLAGS ); }
 	void TransferDissolveFrom( CBaseAnimating *pAnim );
 
 	// animation needs
@@ -453,7 +453,7 @@ private:
 	unsigned short	m_fBoneCacheFlags;		// Used for bone cache state on model
 
 protected:
-	CNetworkVar( float, m_flFrozen );		// 0 - 1 amount that the model is frozen
+	CNetworkScale( m_flFrozen );		// 0 - 1 amount that the model is frozen
 	float				m_flMovementFrozen;	// How frozen are the movement parts
 	float				m_flAttackFrozen;	// How frozen are the attacking parts
 	float				m_flFrozenThawRate;	// amount it unfreezes per second

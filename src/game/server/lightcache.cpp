@@ -69,7 +69,7 @@ public:
 
 				if ( tr.fraction != 1.0 )
 				{
-					float lightIntensity = GetLightIntensity( tr.endpos );
+					float lightIntensity = GetLightIntensity( 1, tr.endpos );
 
 					con_nprint_s nxPrn = { 0 };
 					nxPrn.time_to_live = -1;
@@ -86,6 +86,9 @@ public:
 
 	virtual void LevelInitPreEntity()
 	{
+		if(gpGlobals->mapname == NULL_STRING)
+			return;
+
 		char filename[MAX_PATH];
 		V_sprintf_safe(filename, "maps" CORRECT_PATH_SEPARATOR_S "%s.lightcache", STRING(gpGlobals->mapname));
 
@@ -151,15 +154,16 @@ public:
 };
 static CLightCacheSystem lightcache;
 
-void UpdateLightIntensity( const Vector &pos )
+void UpdateLightIntensity( int playerIndex, const Vector &pos )
 {
 #ifndef SWDS
-	if(!g_bDedicatedServer && g_pGameClientLoopback) {
+	IGameClientLoopback *cl_loopback = GetGameClientLoopback( playerIndex );
+	if(!g_bDedicatedServer && cl_loopback) {
 		Vector light( 0, 0, 0 );
-		light = g_pGameClientLoopback->GetLightForPoint( pos, true );
+		light = cl_loopback->GetLightForPoint( pos, true );
 
 		Vector ambientColor;
-		g_pGameClientLoopback->GetAmbientLightColor( ambientColor );
+		cl_loopback->GetAmbientLightColor( ambientColor );
 
 		float ambientIntensity = ambientColor.x + ambientColor.y + ambientColor.z;
 		float lightIntensity = light.x + light.y + light.z;
@@ -177,15 +181,16 @@ void UpdateLightIntensity( const Vector &pos )
 #endif
 }
 
-float GetLightIntensity( const Vector &pos )
+float GetLightIntensity( int playerIndex, const Vector &pos )
 {
 #ifndef SWDS
-	if(!g_bDedicatedServer && g_pGameClientLoopback) {
+	IGameClientLoopback *cl_loopback = GetGameClientLoopback( playerIndex );
+	if(!g_bDedicatedServer && cl_loopback) {
 		Vector light( 0, 0, 0 );
-		light = g_pGameClientLoopback->GetLightForPoint( pos, true );
+		light = cl_loopback->GetLightForPoint( pos, true );
 
 		Vector ambientColor;
-		g_pGameClientLoopback->GetAmbientLightColor( ambientColor );
+		cl_loopback->GetAmbientLightColor( ambientColor );
 
 		float ambientIntensity = ambientColor.x + ambientColor.y + ambientColor.z;
 		float lightIntensity = light.x + light.y + light.z;
@@ -226,7 +231,7 @@ CON_COMMAND(get_lightcache, "")
 
 	const Vector &pos = pPlayer->EyePosition();
 
-	float lightIntensity = GetLightIntensity( pos );
+	float lightIntensity = GetLightIntensity( pPlayer->entindex(), pos );
 	Msg("%f\n", lightIntensity);
 }
 #endif

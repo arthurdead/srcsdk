@@ -403,7 +403,7 @@ public:
 	bool GetPropDataAngles( const char *pKeyName, QAngle &vecAngles );
 	float GetCarryDistanceOffset( void );
 
-	int ObjectCaps();
+	EntityCaps_t ObjectCaps();
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	bool ShouldDisableMotionOnFreeze( void );
 

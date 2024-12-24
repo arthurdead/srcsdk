@@ -5283,7 +5283,7 @@ public:
 
 	virtual void Precache();
 
-	virtual int	ObjectCaps( void ) { return 0; }
+	virtual EntityCaps_t ObjectCaps( void ) { return 0; }
 };
 
 LINK_ENTITY_TO_CLASS( spraycan, CSprayCan );

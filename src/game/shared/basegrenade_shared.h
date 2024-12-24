@@ -76,7 +76,7 @@ public:
 	virtual Vector		GetBlastForce() { return vec3_origin; }
 
 	virtual void		BounceSound( void );
-	virtual int			BloodColor( void ) { return DONT_BLEED; }
+	virtual BloodColor_t			BloodColor( void ) { return DONT_BLEED; }
 	virtual void		Event_Killed( const CTakeDamageInfo &info );
 
 	virtual float		GetShakeAmplitude( void ) { return 25.0; }
@@ -119,7 +119,7 @@ public:
 
 #if !defined( CLIENT_DLL )
 	// Allow +USE pickup
-	int ObjectCaps() 
+	EntityCaps_t ObjectCaps() 
 	{ 
 		return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE | FCAP_USE_IN_RADIUS);
 	}

@@ -212,7 +212,7 @@ public:
 	void	UpdateEfficiency( bool bInPVS )	{ SetEfficiency( ( GetSleepState() != AISS_AWAKE ) ? AIE_DORMANT : AIE_NORMAL ); SetMoveEfficiency( AIME_NORMAL ); }
 	Class_T	Classify ( void );
 	float	MaxYawSpeed( void ){ return 0; }
-	virtual int	ObjectCaps( void );
+	virtual EntityCaps_t ObjectCaps( void );
 	bool	CreateVPhysics( void );
 	void	NPCThink( void );
 	void	UpdateOnRemove( void );

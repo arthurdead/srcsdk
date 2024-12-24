@@ -141,6 +141,7 @@ game_shared_base_dep = declare_dependency(
 		join_paths(shared_src_dir,'lambdawars','density_weight_map.cpp'),
 		join_paths(shared_src_dir,'debugoverlay_shared.cpp'),
 		join_paths(shared_src_dir,'shareddefs.cpp'),
+		join_paths(shared_src_dir,'gametrace_dll.cpp'),
 		join_paths(public_dir,'interval.cpp'),
 		join_paths(public_dir,'SoundParametersInternal.cpp'),
 		join_paths(public_dir,'bone_setup.cpp'),

@@ -28,7 +28,7 @@ namespace vgui
 // 
 struct MDLAnimEventState_t
 {
-	int		m_nEventSequence;
+	sequence_t		m_nEventSequence;
 	float	m_flPrevEventCycle;
 };
 
@@ -62,7 +62,7 @@ public:
 	void SetLOD( int nLOD );
 
 	// Sets the current sequence
-	void SetSequence( int nSequence, bool bResetSequence = false );
+	void SetSequence( sequence_t nSequence, bool bResetSequence = false );
 
 	// Set the pose parameters
 	void SetPoseParameters( const float *pPoseParameters, int nCount );
@@ -98,7 +98,7 @@ public:
 
 	// Events
 	void DoAnimationEvents();
-	void DoAnimationEvents( CStudioHdr *pStudioHdr, int nSeqNum, float flTime, bool bNoLoop, MDLAnimEventState_t *pEventState );
+	void DoAnimationEvents( CStudioHdr *pStudioHdr, sequence_t nSeqNum, float flTime, bool bNoLoop, MDLAnimEventState_t *pEventState );
 	virtual void FireEvent( const char *pszEventName, const char *pszEventOptions );
 	void ResetAnimationEventState( MDLAnimEventState_t *pEventState );
 

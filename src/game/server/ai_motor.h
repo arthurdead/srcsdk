@@ -19,7 +19,7 @@
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
-enum Navigation_t;
+enum Navigation_t : unsigned char;
 class CAI_PlaneSolver;
 class CAI_MoveProbe;
 class CAI_Navigator;
@@ -144,8 +144,8 @@ public:
 	//---------------------------------
 
 	CAI_Navigator		*GetNavigator( void );
-	int					SelectWeightedSequence( Activity activity );
-	float				GetSequenceGroundSpeed( int iSequence );
+	sequence_t					SelectWeightedSequence( Activity activity );
+	float				GetSequenceGroundSpeed( sequence_t iSequence );
 
 	float				CalcIntervalMove();
 
@@ -163,14 +163,14 @@ protected:
 	Vector 				GetSmoothedVelocity();
 	float				CalcIdealYaw( const Vector &vecTarget );
 	float				SetBoneController ( int iController, float flValue );
-	float 				GetSequenceMoveYaw( int iSequence );
+	float 				GetSequenceMoveYaw( sequence_t iSequence );
 	void				SetPlaybackRate( float flRate );
 	float				GetPlaybackRate() const; //get
 	float				SetPoseParameter( const char *szName, float flValue );
 	float				SetPoseParameter( int iParameter, float flValue );
 	float				GetPoseParameter( const char *szName );
-	bool				HasPoseParameter( int iSequence, const char *szName );
-	bool				HasPoseParameter( int iSequence, int iParameter );
+	bool				HasPoseParameter( sequence_t iSequence, const char *szName );
+	bool				HasPoseParameter( sequence_t iSequence, int iParameter );
 	void				SetMoveType( MoveType_t val, MoveCollide_t moveCollide = MOVECOLLIDE_DEFAULT );
 	float				StepHeight() const;
 	bool				CanStandOn( CBaseEntity *pSurface ) const;

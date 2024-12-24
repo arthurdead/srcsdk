@@ -13,16 +13,11 @@
 
 #include "tier0/platform.h"
 
-enum LocalFlexController_t
-{
-	// this isn't really an enum - its just a typed int. gcc will not accept it as a fwd decl, so we'll define one value
-	DUMMY_FLEX_CONTROLLER=0x7fffffff						// make take 32 bits
-};
+enum LocalFlexController_t : unsigned char;
+UNORDEREDENUM_OPERATORS( LocalFlexController_t, unsigned char )
 
-inline LocalFlexController_t &operator++( LocalFlexController_t &a      ) { return a = LocalFlexController_t( int( a ) + 1 ); }
-inline LocalFlexController_t &operator--( LocalFlexController_t &a      ) { return a = LocalFlexController_t( int( a ) - 1 ); }
-inline LocalFlexController_t  operator++( LocalFlexController_t &a, int ) { LocalFlexController_t t = a; a = LocalFlexController_t( int( a ) + 1 ); return t; }
-inline LocalFlexController_t  operator--( LocalFlexController_t &a, int ) { LocalFlexController_t t = a; a = LocalFlexController_t( int( a ) - 1 ); return t; }
+typedef LocalFlexController_t FlexWeight_t;
 
+inline const LocalFlexController_t INVALID_FLEXCONTROLLER = (LocalFlexController_t)-1;
 
 #endif	// LOCALFLEXCONTROLLER_H

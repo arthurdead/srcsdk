@@ -63,8 +63,8 @@ if build_libs
 			join_paths(public_dir,'SoundParametersInternal.cpp'),
 			join_paths(public_dir,'interval.cpp'),
 			join_paths(public_dir,'tier0','logging.cpp'),
-			join_paths(public_dir,'dt_send.cpp'),
-			join_paths(public_dir,'dt_recv.cpp'),
+			#join_paths(public_dir,'dt_send.cpp'),
+			#join_paths(public_dir,'dt_recv.cpp'),
 			join_paths(public_dir,'dt_common.cpp'),
 		),
 		include_directories: include_directories(

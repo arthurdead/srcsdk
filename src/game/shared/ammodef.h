@@ -54,6 +54,8 @@ enum AmmoFlags_t : unsigned char
 	AMMO_INTERPRET_PLRDAMAGE_AS_DAMAGE_TO_PLAYER = 0x2,
 };
 
+FLAGENUM_OPERATORS( AmmoFlags_t, unsigned char )
+
 struct Ammo_t 
 {
 	char 				*pName;
@@ -81,8 +83,9 @@ struct Ammo_t
 #define		INFINITE_AMMO	-2
 
 enum AmmoIndex_t : unsigned short;
-
 inline const AmmoIndex_t AMMO_INVALID_INDEX = (AmmoIndex_t)-1;
+
+UNORDEREDENUM_OPERATORS( AmmoIndex_t, unsigned short )
 
 // is this required?
 #define	MAX_AMMO_TYPES	128		// ???

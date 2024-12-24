@@ -71,7 +71,7 @@ public:
 	void	Spawn( void );
 	void	Precache( void );
 #if !defined( CLIENT_DLL )
-	int		ObjectCaps( void );
+	EntityCaps_t ObjectCaps( void );
 	void	SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
 	EdictStateFlags_t UpdateTransmitState( void );
 	int		ShouldTransmit( const CCheckTransmitInfo *pInfo );

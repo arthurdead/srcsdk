@@ -107,7 +107,7 @@ public:
 	virtual void	Precache( void );
 	void			Spawn( void );
 	void			Think(void);
-	virtual int		ObjectCaps( void ) { return BaseClass::ObjectCaps() | FCAP_IMPULSE_USE; };
+	virtual EntityCaps_t ObjectCaps( void ) { return BaseClass::ObjectCaps() | FCAP_IMPULSE_USE; };
 	virtual void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	virtual void	DrawDebugGeometryOverlays( void );
 

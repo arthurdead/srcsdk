@@ -12,9 +12,12 @@
 #include "predictable_entity.h"
 #include "baseentity_shared.h"
 
-#define SF_SPRITE_STARTON		0x0001
-#define SF_SPRITE_ONCE			0x0002
-#define SF_SPRITE_TEMPORARY		0x8000
+enum SpriteSpawnFlags_t : unsigned char
+{
+	SF_SPRITE_STARTON = 0x0001,
+	SF_SPRITE_ONCE = 0x0002,
+	SF_SPRITE_TEMPORARY = 0x8000,
+};
 
 class CBasePlayer;
 
@@ -123,6 +126,10 @@ public:
 
 	void SetGlowProxySize( float flSize ) { m_flGlowProxySize = flSize; }
 
+	DECLARE_SPAWNFLAGS( SpriteSpawnFlags_t )
+
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_spawnflags )
+
 #if !defined( CLIENT_DLL )
 
 	virtual EdictStateFlags_t ShouldTransmit( const CCheckTransmitInfo *pInfo );
@@ -131,7 +138,7 @@ public:
 	void SetAsTemporary( void ) { AddSpawnFlags( SF_SPRITE_TEMPORARY ); }
 	bool IsTemporary( void ) { return ( HasSpawnFlags( SF_SPRITE_TEMPORARY ) ); }
 	
-	int	ObjectCaps( void )
+	EntityCaps_t	ObjectCaps( void )
 	{ 
 		return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); 
 	}

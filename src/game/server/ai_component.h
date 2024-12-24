@@ -20,6 +20,7 @@ class CAI_Enemies;
 typedef int AI_TaskFailureCode_t;
 struct Task_t;
 struct edict_t;
+enum Capability_t : uint64;
 
 //-----------------------------------------------------------------------------
 // CAI_Component
@@ -125,7 +126,7 @@ protected:
 	
 	const char * 		GetEntClassname();
 	
-	int					CapabilitiesGet();
+	Capability_t					CapabilitiesGet();
 
 	float				GetLastThink( const char *szContext = NULL );
 

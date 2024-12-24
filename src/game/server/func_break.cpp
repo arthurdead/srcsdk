@@ -1128,7 +1128,7 @@ public:
 	bool	CreateVPhysics( void );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() | FCAP_ONOFF_USE; }
+	virtual EntityCaps_t ObjectCaps( void ) { return BaseClass::ObjectCaps() | FCAP_ONOFF_USE; }
 
 	// breakables use an overridden takedamage
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );

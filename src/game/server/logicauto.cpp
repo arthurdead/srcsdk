@@ -28,7 +28,7 @@ public:
 	void Activate(void);
 	void Think(void);
 
-	int ObjectCaps(void) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+	EntityCaps_t ObjectCaps(void) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
 	DECLARE_MAPENTITY();
 

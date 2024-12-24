@@ -1,6 +1,5 @@
 #include "cbase.h"
 #include "input.h"
-#include "in_buttons_heist.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

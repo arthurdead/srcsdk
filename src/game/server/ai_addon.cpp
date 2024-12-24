@@ -101,7 +101,7 @@ int CountAddOns( CAI_BaseNPC *pHost )
 //---------------------------------------------------------
 //---------------------------------------------------------
 BEGIN_MAPENTITY( CAI_AddOn )
-	DEFINE_INPUTFUNC( FIELD_STRING, "Install", InputInstall ),
+	DEFINE_INPUTFUNC( FIELD_PARTIAL_TARGETNAME, "Install", InputInstall ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Remove", InputRemove ),
 END_MAPENTITY()
 
@@ -471,7 +471,8 @@ void CAI_AddOn::DispatchAddOnThink()
 		return;
 	}
 
-	CAI_Agent::Think(); SetNextThink( gpGlobals->curtime + GetThinkInterval() );
+	CAI_Agent::Think();
+	SetNextThink( gpGlobals->curtime + GetThinkInterval() );
 }
 
 QAngle CAI_AddOn::GetLocalOrientation( void )
@@ -530,7 +531,7 @@ void CAI_AddOn::EjectFromHost()
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-void CAI_AddOn::InputInstall( inputdata_t &&inputdata )
+void CAI_AddOn::InputInstall( inputdata_t &&data )
 {
 	CAI_BaseNPC *pHost = dynamic_cast<CAI_BaseNPC *>( gEntList.FindEntityByName( NULL, data.value.String() ) );
 

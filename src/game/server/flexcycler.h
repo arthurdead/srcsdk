@@ -22,7 +22,7 @@ public:
 
 	CFlexCycler() { m_iszSentence = NULL_STRING; m_sentence = 0; }
 	void GenericCyclerSpawn(char *szModel, Vector vecMin, Vector vecMax);
-	virtual int	ObjectCaps( void ) { return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE); }
+	virtual EntityCaps_t ObjectCaps( void ) { return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE); }
 	int OnTakeDamage( const CTakeDamageInfo &info );
 	void Spawn( void );
 	void Think( void );

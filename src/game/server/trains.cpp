@@ -262,7 +262,7 @@ class CPlatTrigger : public CBaseEntity
 {
 	DECLARE_CLASS( CPlatTrigger, CBaseEntity );
 public:
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps(); }
+	virtual EntityCaps_t ObjectCaps( void ) { return BaseClass::ObjectCaps(); }
 	void SpawnInsideTrigger( CFuncPlat *pPlatform );
 	void Touch( CBaseEntity *pOther );
 	CFuncPlat *m_pPlatform;

@@ -48,7 +48,7 @@ public:
 	DECLARE_CLASS( CBaseNPCMaker, CBaseEntity );
 
 	void Spawn( void );
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+	virtual EntityCaps_t ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 	void MakerThink( void );
 	bool HumanHullFits( const Vector &vecLocation );
 	bool CanMakeNPC( bool bIgnoreSolidEntities = false );

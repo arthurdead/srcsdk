@@ -60,7 +60,10 @@ enum SurroundingBoundsType_t : unsigned char
 	USE_COLLISION_BOUNDS_NEVER_VPHYSICS,
 	USE_ROTATION_EXPANDED_SEQUENCE_BOUNDS,
 
-	SURROUNDING_TYPE_BIT_COUNT = 3
+	FIRST_SURROUNDING_TYPE = USE_OBB_COLLISION_BOUNDS,
+	LAST_SURROUNDING_TYPE = USE_ROTATION_EXPANDED_SEQUENCE_BOUNDS,
+
+	SURROUNDING_TYPE_BIT_COUNT = MINIMUM_BITS_NEEDED(LAST_SURROUNDING_TYPE),
 };
 
 #ifdef CLIENT_DLL
@@ -393,7 +396,7 @@ inline float CSharedCollisionProperty::BoundingRadius() const
 //-----------------------------------------------------------------------------
 inline bool CSharedCollisionProperty::IsBoundsDefinedInEntitySpace() const
 {
-	return (( m_usSolidFlags & FSOLID_FORCE_WORLD_ALIGNED ) == 0 ) &&
+	return (( m_usSolidFlags & FSOLID_FORCE_WORLD_ALIGNED ) == FSOLID_NONE ) &&
 			( m_nSolidType != SOLID_BBOX ) && ( m_nSolidType != SOLID_NONE );
 }
 
@@ -419,7 +422,7 @@ inline SolidFlags_t CSharedCollisionProperty::GetSolidFlags( void ) const
 
 inline bool CSharedCollisionProperty::IsSolidFlagSet( SolidFlags_t flagMask ) const
 {
-	return (m_usSolidFlags & flagMask) != 0;
+	return (m_usSolidFlags & flagMask) != FSOLID_NONE;
 }
 
 inline bool CSharedCollisionProperty::IsSolid() const

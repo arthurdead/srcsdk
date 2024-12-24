@@ -543,8 +543,8 @@ public:
 	void					DestroyItem( void );
 	virtual void			Kill( void );
 
-	virtual int				CapabilitiesGet( void ) { return 0; }
-	virtual	int				ObjectCaps( void );
+	virtual Capability_t				CapabilitiesGet( void ) { return bits_CAP_NONE; }
+	virtual	EntityCaps_t				ObjectCaps( void );
 
 	bool					IsRemoveable() { return m_bRemoveable; }
 	void					SetRemoveable( bool bRemoveable ) { m_bRemoveable = bRemoveable; }

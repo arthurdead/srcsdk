@@ -58,7 +58,7 @@ protected:
 	
 	DECLARE_MAPENTITY();
 
-	virtual int	ObjectCaps(void);
+	virtual EntityCaps_t ObjectCaps(void);
 
 	Vector m_vecMoveDir;
 
@@ -110,7 +110,7 @@ class CMomentaryRotButton : public CRotButton
 public:
 	void	Spawn ( void );
 	bool	CreateVPhysics( void );
-	virtual int	ObjectCaps( void );
+	virtual EntityCaps_t ObjectCaps( void );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	void	UseMoveDone( void );
 	void	ReturnMoveDone( void );

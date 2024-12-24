@@ -792,13 +792,10 @@ CBaseEntity *CGlobalEntityList::FindEntityProcedural( const char *szName, CBaseE
 			CNullEntityFilter pFilter;
 			return pSearchingEntity->MyCombatCharacterPointer()->FindNamedEntity(szName, &pFilter);
 		}
-		else 
-		{
-			Warning( "Invalid entity search name %s\n", szName );
-			Assert(0);
-		}
 	}
 
+	Warning( "Invalid entity search name %s\n", szName );
+	Assert(0);
 	return NULL;
 }
 
@@ -949,6 +946,7 @@ CBaseEntity	*CGlobalEntityList::FindEntityByOutputTarget( CBaseEntity *pStartEnt
 
 	return NULL;
 }
+
 CBaseEntity	*CGlobalEntityList::FindEntityByTarget( CBaseEntity *pStartEntity, const char *szName )
 {
 	const CEntInfo *pInfo = pStartEntity ? GetEntInfoPtr( pStartEntity->GetRefEHandle() )->m_pNext : FirstEntInfo();

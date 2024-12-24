@@ -19,7 +19,7 @@ public:
 	DECLARE_CLASS( CCycler, CAI_BaseNPC );
 
 	void GenericCyclerSpawn(char *szModel, Vector vecMin, Vector vecMax);
-	virtual int	ObjectCaps( void ) { return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE); }
+	virtual EntityCaps_t ObjectCaps( void ) { return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE); }
 	int OnTakeDamage( const CTakeDamageInfo &info );
 	void Spawn( void );
 	void Precache( void );

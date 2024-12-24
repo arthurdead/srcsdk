@@ -21,7 +21,7 @@
 
 struct SoundChannels
 {
-	int			channel;
+	SoundChannel_t			channel;
 	const char *name;
 };
 
@@ -124,7 +124,7 @@ static const char *_SoundLevelToString( soundlevel_t level )
 	return sz;
 }
 
-static const char *_ChannelToString( int channel )
+static const char *_ChannelToString( SoundChannel_t channel )
 {
 	int c = ARRAYSIZE( g_pChannelNames );
 
@@ -219,7 +219,7 @@ soundlevel_t TextToSoundLevel( const char *key )
 // Input  : *name - 
 // Output : static int
 //-----------------------------------------------------------------------------
-int TextToChannel( const char *name )
+SoundChannel_t TextToChannel( const char *name )
 {
 	if ( !name )
 	{
@@ -230,7 +230,7 @@ int TextToChannel( const char *name )
 
 	if ( Q_strncasecmp( name, "chan_", strlen( "chan_" ) ) )
 	{
-		return atoi( name );
+		return (SoundChannel_t)atoi( name );
 	}
 
 	int c = ARRAYSIZE( g_pChannelNames );
@@ -269,7 +269,7 @@ const char *SoundLevelToString( soundlevel_t level )
 	return sz;
 }
 
-const char *ChannelToString( int channel )
+const char *ChannelToString( SoundChannel_t channel )
 {
 	int c = ARRAYSIZE( g_pChannelNames );
 
@@ -470,18 +470,18 @@ const char *CSoundParametersInternal::VolumeToString( void ) const
 
 const char *CSoundParametersInternal::ChannelToString( void ) const 
 {
-	return _ChannelToString( channel );
+	return _ChannelToString( (SoundChannel_t)channel );
 }
 
 const char *CSoundParametersInternal::SoundLevelToString( void ) const
 {
 	if ( soundlevel.range == 0 )
 	{
-		return _SoundLevelToString( (soundlevel_t)(int)soundlevel.start );
+		return _SoundLevelToString( (soundlevel_t)(unsigned int)soundlevel.start );
 	}
 
 	static char sz[ 64 ];
-	Q_snprintf( sz, sizeof( sz ),  "%i, %i", (soundlevel_t)(int)soundlevel.start, (soundlevel_t)(int)(soundlevel.start + soundlevel.range ) );
+	Q_snprintf( sz, sizeof( sz ),  "%i, %i", (soundlevel_t)(unsigned int)soundlevel.start, (soundlevel_t)(unsigned int)(soundlevel.start + soundlevel.range ) );
 	return sz;
 }
 

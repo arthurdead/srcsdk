@@ -13,9 +13,9 @@
 // ---------------------------
 //  Navigation Type Bits
 // ---------------------------
-enum Navigation_t 
+enum Navigation_t : unsigned char
 {
-	NAV_NONE = -1,	// error condition
+	NAV_NONE = (unsigned char)-1,	// error condition
 	NAV_GROUND = 0,	// walk/run
 	NAV_JUMP,		// jump/leap
 	NAV_FLY,		// can fly, move all around

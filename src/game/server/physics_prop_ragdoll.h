@@ -37,7 +37,7 @@ public:
 	// Disable auto fading under dx7 or when level fades are specified
 	void DisableAutoFade();
 
-	int ObjectCaps();
+	EntityCaps_t ObjectCaps();
 
 	DECLARE_SERVERCLASS();
 	// Don't treat as a live target

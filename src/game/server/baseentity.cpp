@@ -2454,7 +2454,7 @@ void CBaseEntity::UpdateOnRemove( void )
 //-----------------------------------------------------------------------------
 // capabilities
 //-----------------------------------------------------------------------------
-int CBaseEntity::ObjectCaps( void ) 
+EntityCaps_t CBaseEntity::ObjectCaps( void ) 
 {
 #if 1
 	model_t *pModel = GetModel();
@@ -2465,7 +2465,7 @@ int CBaseEntity::ObjectCaps( void )
 	CBaseEntity *pParent = GetParent();
 	if ( pParent )
 	{
-		int caps = pParent->ObjectCaps();
+		EntityCaps_t caps = pParent->ObjectCaps();
 
 		if ( !bIsBrush )
 			caps &= ( FCAP_ACROSS_TRANSITION | FCAP_IMPULSE_USE | FCAP_CONTINUOUS_USE | FCAP_ONOFF_USE | FCAP_DIRECTIONAL_USE );
@@ -2482,11 +2482,11 @@ int CBaseEntity::ObjectCaps( void )
 		return FCAP_ACROSS_TRANSITION;
 	}
 
-	return 0;
+	return FCAP_NONE;
 #else
 	// We inherit our parent's use capabilities so that we can forward use commands
 	// to our parent.
-	int parentCaps = 0;
+	EntityCaps_t parentCaps = FCAP_NONE;
 	if (GetParent())
 	{
 		parentCaps = GetParent()->ObjectCaps();

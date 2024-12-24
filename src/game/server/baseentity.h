@@ -144,7 +144,7 @@ enum TOGGLE_STATE : unsigned char
 };
 
 // Debug overlay bits
-enum DebugOverlayBits_t : unsigned int
+enum DebugOverlayBits_t : uint64
 {
 	OVERLAY_NONE = 0,
 
@@ -194,7 +194,7 @@ enum DebugOverlayBits_t : unsigned int
 #endif
 };
 
-FLAGENUM_OPERATORS( DebugOverlayBits_t, unsigned int )
+FLAGENUM_OPERATORS( DebugOverlayBits_t, uint64 )
 
 #if !defined SWDS || 1
 struct TimedOverlay_t;
@@ -562,12 +562,19 @@ private:
 
 
 public:
-	int			GetSpawnFlags( void ) const;
-	void		AddSpawnFlags( int nFlags );
-	void		SetSpawnFlags( int nFlags );
-	void		RemoveSpawnFlags( int nFlags );
-	void		ClearSpawnFlags( void );
-	bool		HasSpawnFlags( int nFlags ) const;
+	#define DECLARE_SPAWNFLAGS( type ) \
+		type GetSpawnFlags( void ) const \
+		{ return static_cast<type>(m_spawnflags.Get());  } \
+		void AddSpawnFlags( type nFlags ) \
+		{ m_spawnflags |= static_cast<uint64>(nFlags); } \
+		void SetSpawnFlags( type nFlags ) \
+		{ m_spawnflags = static_cast<uint64>(nFlags); } \
+		void RemoveSpawnFlags( type nFlags ) \
+		{ m_spawnflags &= ~static_cast<uint64>(nFlags); } \
+		void ClearSpawnFlags( void ) \
+		{ m_spawnflags = 0; } \
+		bool HasSpawnFlags( type nFlags ) const \
+		{ return (m_spawnflags & static_cast<uint64>(nFlags)) != 0; }
 
 	Effects_t			GetEffects( void ) const;
 	void		AddEffects( Effects_t nEffects );
@@ -587,7 +594,7 @@ public:
 	void MarkForDeletion();
 
 	// capabilities
-	virtual int	ObjectCaps( void );
+	virtual EntityCaps_t	ObjectCaps( void );
 
 	// Verifies that the data description is valid in debug builds.
 	#ifdef _DEBUG
@@ -940,7 +947,7 @@ public:
 // still realize that they are teammates. (overridden for NPCs that form groups)
 	virtual Class_T Classify ( void );
 	virtual void	DeathNotice ( CBaseEntity *pVictim ) {}// NPC maker children use this to tell the NPC maker that they have died.
-	virtual bool	ShouldAttractAutoAim( CBaseEntity *pAimingEnt ) { return ((GetFlags() & FL_AIMTARGET) != 0); }
+	virtual bool	ShouldAttractAutoAim( CBaseEntity *pAimingEnt ) { return ((GetFlags() & FL_AIMTARGET) != FL_NO_ENTITY_FLAGS); }
 	virtual float	GetAutoAimRadius();
 	virtual Vector	GetAutoAimCenter() { return WorldSpaceCenter(); }
 
@@ -1507,7 +1514,7 @@ public:
 
 	// This creates a normal vphysics simulated object - physics determines where it goes (gravity, friction, etc)
 	// and the entity receives updates from vphysics.  SetAbsOrigin(), etc do not affect the object!
-	IPhysicsObject *VPhysicsInitNormal( SolidType_t solidType, int nSolidFlags, bool createAsleep, solid_t *pSolid = NULL );
+	IPhysicsObject *VPhysicsInitNormal( SolidType_t solidType, SolidFlags_t nSolidFlags, bool createAsleep, solid_t *pSolid = NULL );
 
 	// This creates a vphysics object with a shadow controller that follows the AI
 	// Move the object to where it should be and call UpdatePhysicsShadowToCurrentPosition()
@@ -1709,7 +1716,7 @@ protected:
 
 protected:
 	// FIXME: Make this private! Still too many references to do so...
-	CNetworkVar( int, m_spawnflags );
+	CNetworkVarForDerived( uint64, m_spawnflags, protected );
 
 private:
 	EntityFlags_t		m_iEFlags;	// entity flags EFL_*
@@ -2207,34 +2214,6 @@ inline bool CBaseEntity::Downcast( string_t iszClass, T **ppResult )
 	return false;
 }
 
-inline int CBaseEntity::GetSpawnFlags( void ) const
-{ 
-	return m_spawnflags; 
-}
-
-inline void CBaseEntity::AddSpawnFlags( int nFlags ) 
-{ 
-	m_spawnflags |= nFlags; 
-}
-inline void CBaseEntity::RemoveSpawnFlags( int nFlags ) 
-{ 
-	m_spawnflags &= ~nFlags; 
-}
-inline void CBaseEntity::SetSpawnFlags( int nFlags ) 
-{ 
-	m_spawnflags = nFlags; 
-}
-
-inline void CBaseEntity::ClearSpawnFlags( void ) 
-{ 
-	m_spawnflags = 0; 
-}
-
-inline bool CBaseEntity::HasSpawnFlags( int nFlags ) const
-{ 
-	return (m_spawnflags & nFlags) != 0; 
-}
-
 //-----------------------------------------------------------------------------
 // checks to see if the entity is marked for deletion
 //-----------------------------------------------------------------------------
@@ -2283,7 +2262,7 @@ inline void CBaseEntity::RemoveEFlags( EntityFlags_t nEFlagMask )
 
 inline bool CBaseEntity::IsEFlagSet( EntityFlags_t nEFlagMask ) const
 {
-	return (m_iEFlags & nEFlagMask) != 0;
+	return (m_iEFlags & nEFlagMask) != EFL_NONE;
 }
 
 inline bool CBaseEntity::AllowNavIgnore()

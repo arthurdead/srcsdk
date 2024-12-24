@@ -16,7 +16,12 @@
 bool GetWorldFogParams( CBaseCombatCharacter *character, fogparams_t &fog );
 
 // Spawn Flags
-#define SF_FOG_MASTER		0x0001
+enum FogControllerSpawnFlags_t : unsigned char
+{
+	SF_FOG_MASTER = 0x0001,
+};
+
+FLAGENUM_OPERATORS( FogControllerSpawnFlags_t, unsigned char )
 
 //=============================================================================
 //
@@ -37,6 +42,8 @@ public:
 	// Parse data from a map file
 	virtual void Activate();
 	virtual EdictStateFlags_t UpdateTransmitState();
+
+	DECLARE_SPAWNFLAGS( FogControllerSpawnFlags_t )
 
 	// Input handlers
 	void InputSetStartDist( inputdata_t &&inputdata );

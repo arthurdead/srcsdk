@@ -33,3 +33,8 @@ int CGameTrace::GetEntityIndex() const
 		return -1;
 }
 
+void CGameTrace::SetHitbox( int hitbox )
+{
+	Assert( m_pEnt && !m_pEnt->IsWorld() );
+	hitbox_or_static_prop = hitbox;
+}

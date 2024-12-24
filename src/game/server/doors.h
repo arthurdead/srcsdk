@@ -65,7 +65,7 @@ public:
 
 	void Activate( void );
 
-	virtual int	ObjectCaps( void ) 
+	virtual EntityCaps_t ObjectCaps( void ) 
 	{
 		int flags = BaseClass::ObjectCaps();
 		if ( HasSpawnFlags( SF_DOOR_PUSE ) )

@@ -205,6 +205,8 @@ class CSendTablePrecalc;
 
 enum DTPriority_t : unsigned char;
 
+UNORDEREDENUM_OPERATORS( DTPriority_t, unsigned char )
+
 #define SENDPROP_DEFAULT_PRIORITY ((DTPriority_t)128)
 #define SENDPROP_CHANGES_OFTEN_PRIORITY ((DTPriority_t)64)
 
@@ -345,7 +347,7 @@ inline DTPriority_t SendProp::GetPriority() const
 #ifdef DT_PRIORITY_SUPPORTED
 	return (DTPriority_t)m_priority;
 #else
-	if((m_Flags & SPROP_ALLOCATED_EXTRADATA) != 0) {
+	if((m_Flags & SPROP_ALLOCATED_EXTRADATA) != SPROP_NONE) {
 		if(m_pExtraData) {
 			return (DTPriority_t)m_pExtraData->m_priority;
 		}
@@ -365,7 +367,7 @@ inline void	SendProp::SetPriority( DTPriority_t priority )
 		m_Flags |= SPROP_ALLOCATED_EXTRADATA;
 	}
 
-	if((m_Flags & SPROP_ALLOCATED_EXTRADATA) != 0) {
+	if((m_Flags & SPROP_ALLOCATED_EXTRADATA) != SPROP_NONE) {
 		m_pExtraData->m_priority = (byte)priority;
 	}
 #endif
@@ -437,17 +439,17 @@ inline const char* SendProp::GetName() const
 
 inline bool SendProp::IsSigned() const
 {
-	return !(m_Flags & SPROP_UNSIGNED); 
+	return (m_Flags & SPROP_UNSIGNED) == SPROP_NONE; 
 }
 
 inline bool SendProp::IsExcludeProp() const
 {
-	return (m_Flags & SPROP_EXCLUDE) != 0;
+	return (m_Flags & SPROP_EXCLUDE) != SPROP_NONE;
 }
 
 inline bool	SendProp::IsInsideArray() const
 {
-	return (m_Flags & SPROP_INSIDEARRAY) != 0;
+	return (m_Flags & SPROP_INSIDEARRAY) != SPROP_NONE;
 }
 
 inline void SendProp::SetInsideArray()
@@ -502,8 +504,6 @@ inline DTFlags_t SendProp::GetFlags() const
 
 inline void SendProp::SetFlags( DTFlags_t flags )
 {
-	// Make sure they're using something from the valid set of flags.
-	Assert( !( flags & ~((1 << GAME_SPROP_NUMFLAGBITS) - 1) ) );
 	m_Flags = flags;
 }
 
@@ -514,7 +514,7 @@ inline CSendPropExtra_Base* SendProp::GetExtraData() const
 
 inline void SendProp::SetExtraData( CSendPropExtra_Base *pData )
 {
-	if((m_Flags & SPROP_ALLOCATED_EXTRADATA) != 0) {
+	if((m_Flags & SPROP_ALLOCATED_EXTRADATA) != SPROP_NONE) {
 		if(m_pExtraData) {
 			delete m_pExtraData;
 		}
@@ -771,7 +771,7 @@ void* SendProxy_SendLocalDataTable( const SendProp *pProp, const void *pStruct, 
 float AssignRangeMultiplier( int nBits, double range );
 
 #define SendPropAuto( varName, ... ) \
-	SendPropAuto_impl<typename NetworkVarType<currentSendDTClass::NetworkVar_##varName##_BaseClass>::type>( DT_VARNAME(varName), CNativeFieldInfo<currentSendDTClass::NetworkVar_##varName##_BaseClass>::FIELDTYPE, currentSendDTClass::GetOffset_##varName##_prop(), __VA_ARGS__ )
+	SendPropAuto_impl<typename NetworkVarType<currentSendDTClass::NetworkVar_##varName##_BaseClass>::type>( DT_VARNAME(varName), CNativeFieldInfo<currentSendDTClass::NetworkVar_##varName##_BaseClass>::FIELDTYPE, currentSendDTClass::GetOffset_##varName##_memory(), __VA_ARGS__ )
 #define SendPropAuto_NoCheck( varName, ... ) \
 	SendPropAuto_impl<decltype(currentSendDTClass::varName)>( DT_VARNAME(varName), CNativeFieldInfo<decltype(currentSendDTClass::varName)>::FIELDTYPE, offsetof(currentSendDTClass, varName), __VA_ARGS__ )
 

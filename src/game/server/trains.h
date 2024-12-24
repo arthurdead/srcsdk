@@ -124,7 +124,7 @@ public:
 
 	DECLARE_MAPENTITY();
 
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() | FCAP_DIRECTIONAL_USE | FCAP_USE_ONGROUND; }
+	virtual EntityCaps_t ObjectCaps( void ) { return BaseClass::ObjectCaps() | FCAP_DIRECTIONAL_USE | FCAP_USE_ONGROUND; }
 
 
 	float GetMaxSpeed() const { return m_maxSpeed; }

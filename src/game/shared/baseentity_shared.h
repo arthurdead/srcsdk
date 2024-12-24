@@ -12,25 +12,6 @@
 
 // Simple shared header file for common base entities
 
-// entity capabilities
-// These are caps bits to indicate what an object's capabilities (currently used for +USE, save/restore and level transitions)
-#define		FCAP_MUST_SPAWN				0x00000001		// Spawn after restore
-#define		FCAP_ACROSS_TRANSITION		0x00000002		// should transfer between transitions 
-// UNDONE: This will ignore transition volumes (trigger_transition), but not the PVS!!!
-#define		FCAP_FORCE_TRANSITION		0x00000004		// ALWAYS goes across transitions
-#define		FCAP_NOTIFY_ON_TRANSITION	0x00000008		// Entity will receive Inside/Outside transition inputs when a transition occurs
-
-#define		FCAP_IMPULSE_USE			0x00000010		// can be used by the player
-#define		FCAP_CONTINUOUS_USE			0x00000020		// can be used by the player
-#define		FCAP_ONOFF_USE				0x00000040		// can be used by the player
-#define		FCAP_DIRECTIONAL_USE		0x00000080		// Player sends +/- 1 when using (currently only tracktrains)
-// NOTE: Normally +USE only works in direct line of sight.  Add these caps for additional searches
-#define		FCAP_USE_ONGROUND			0x00000100
-#define		FCAP_USE_IN_RADIUS			0x00000200
-
-#define		FCAP_MASTER					0x10000000		// Can be used to "master" other entities (like multisource)
-#define		FCAP_WCEDIT_POSITION		0x40000000		// Can change position and update Hammer in edit mode
-
 // How many bits are used to transmit parent attachment indices?
 #define NUM_PARENTATTACHMENT_BITS	6
 
@@ -251,7 +232,7 @@ inline void CSharedBaseEntity::ClearEffects( void )
 
 inline bool CSharedBaseEntity::IsEffectActive( Effects_t nEffects ) const
 { 
-	return (m_fEffects & nEffects) != 0; 
+	return (m_fEffects & nEffects) != EF_NONE; 
 }
 
 // convenience functions for fishing out the vectors of this object

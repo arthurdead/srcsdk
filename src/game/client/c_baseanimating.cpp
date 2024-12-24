@@ -3882,7 +3882,7 @@ void C_BaseAnimating::DoAnimationEvents( CStudioHdr *pStudioHdr )
 #endif
 
 	//Adrian: eh? This should never happen.
-	if ( GetSequence() == -1 )
+	if ( GetSequence() == INVALID_SEQUENCE )
 		 return;
 
 	// build root animation

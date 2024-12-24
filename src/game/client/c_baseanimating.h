@@ -785,7 +785,7 @@ public:
 	virtual void SetupWeights( const matrix3x4_t *pBoneToWorld, int nFlexWeightCount, float *pFlexWeights, float *pFlexDelayedWeights );
 	virtual void ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName );
 	void ReleaseRagdoll( void ) { m_bReleaseRagdoll = true;	}
-	virtual int ObjectCaps( void ) { return BaseClass::ObjectCaps(); }
+	virtual EntityCaps_t ObjectCaps( void ) { return BaseClass::ObjectCaps(); }
 	virtual IPVSNotify*				GetPVSNotifyInterface() { return this; }
 
 	void	HandleAnimatedFriction( void );

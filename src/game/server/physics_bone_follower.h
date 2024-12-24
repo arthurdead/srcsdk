@@ -79,7 +79,7 @@ public:
 	void VPhysicsShadowCollision( int index, gamevcollisionevent_t *pEvent );
 
 	bool TestCollision( const Ray_t &ray, unsigned int mask, trace_t& trace );
-	int	 ObjectCaps( void );
+	EntityCaps_t ObjectCaps( void );
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	
 	void Touch( CBaseEntity *pOther );

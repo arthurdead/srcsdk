@@ -1428,7 +1428,7 @@ Activity CAI_BaseNPC::GetScriptCustomMoveActivity( void )
 		if ( eActivity == ACT_INVALID )
 		{
 			// Not an activity, at least make sure it's a valid sequence.
-			if ( LookupSequence( STRING( m_hCine->m_iszCustomMove ) ) != ACT_INVALID )
+			if ( LookupSequence( STRING( m_hCine->m_iszCustomMove ) ) != INVALID_SEQUENCE )
 			{
 				eActivity = ACT_SCRIPT_CUSTOM_MOVE;
 			}
@@ -1451,9 +1451,9 @@ Activity CAI_BaseNPC::GetScriptCustomMoveActivity( void )
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int CAI_BaseNPC::GetScriptCustomMoveSequence( void )
+sequence_t CAI_BaseNPC::GetScriptCustomMoveSequence( void )
 {
-	int iSequence = ACTIVITY_NOT_AVAILABLE;
+	sequence_t iSequence = ACTIVITY_NOT_AVAILABLE;
 
 	// If we have a scripted sequence entity, use it's custom move
 	if ( m_hCine != NULL )

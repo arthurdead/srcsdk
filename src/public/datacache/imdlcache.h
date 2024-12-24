@@ -37,23 +37,20 @@ namespace OptimizedModel
 //-----------------------------------------------------------------------------
 // Reference to a loaded studiomdl 
 //-----------------------------------------------------------------------------
-typedef unsigned short MDLHandle_t;
+enum MDLHandle_t : unsigned short;
+inline const MDLHandle_t MDLHANDLE_INVALID = (MDLHandle_t)~0;
+
+UNORDEREDENUM_OPERATORS( MDLHandle_t, unsigned short )
 
 inline MDLHandle_t VoidPtrToMDLHandle( void *ptr )
 {
-	return (MDLHandle_t)(((int)ptr)&0xffff);
+	return (MDLHandle_t)(unsigned short)(((unsigned int)ptr)&0xffff);
 }
-
-enum
-{
-	MDLHANDLE_INVALID = (MDLHandle_t)~0 
-};
-
 
 //-----------------------------------------------------------------------------
 // Cache data types
 //-----------------------------------------------------------------------------
-enum MDLCacheDataType_t
+enum MDLCacheDataType_t : unsigned int
 {
 	// Callbacks to get called when data is loaded or unloaded for these:
 	MDLCACHE_STUDIOHDR = 0,
@@ -81,7 +78,7 @@ public:
 //-----------------------------------------------------------------------------
 // Flags for flushing 
 //-----------------------------------------------------------------------------
-enum MDLCacheFlush_t
+enum MDLCacheFlush_t : unsigned int
 {
 	MDLCACHE_FLUSH_STUDIOHDR		= 0x01,
 	MDLCACHE_FLUSH_STUDIOHWDATA		= 0x02,
@@ -94,6 +91,8 @@ enum MDLCacheFlush_t
 	MDLCACHE_FLUSH_IGNORELOCK       = 0x80000000,
 	MDLCACHE_FLUSH_ALL              = 0xFFFFFFFF
 };
+
+FLAGENUM_OPERATORS( MDLCacheFlush_t, unsigned int )
 
 //-----------------------------------------------------------------------------
 // The main MDL cacher 

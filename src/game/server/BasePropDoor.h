@@ -43,7 +43,7 @@ public:
 	void Spawn();
 	void Precache();
 	void Activate();
-	int	ObjectCaps();
+	EntityCaps_t ObjectCaps();
 
 	virtual bool IsAbleToCloseAreaPortals( void ) const;
 

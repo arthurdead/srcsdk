@@ -29,6 +29,7 @@ struct studiohdr_t;
 class IMaterial;
 class CStudioHdr;
 struct MaterialLightingState_t;
+enum DrawModelFlags_t : unsigned int;
 
 FORWARD_DECLARE_HANDLE( LightCacheHandle_t ); 
 
@@ -58,6 +59,8 @@ struct DrawModelState_t
 enum ModelInstanceHandle_t : unsigned short;
 inline const ModelInstanceHandle_t MODEL_INSTANCE_INVALID = (ModelInstanceHandle_t)~0;
 
+UNORDEREDENUM_OPERATORS( ModelInstanceHandle_t, unsigned short )
+
 struct ModelRenderInfo_t
 {
 	Vector origin;
@@ -67,7 +70,7 @@ struct ModelRenderInfo_t
 	const matrix3x4_t *pModelToWorld;
 	const matrix3x4_t *pLightingOffset;
 	const Vector *pLightingOrigin;
-	int flags;
+	DrawModelFlags_t flags;
 	int entity_index;
 	int skin;
 	int body;
@@ -113,7 +116,7 @@ struct StaticLightingQuery_t : public LightingQuery_t
 abstract_class IVModelRender
 {
 public:
-	virtual int		DrawModel(	int flags,
+	virtual int		DrawModel(	DrawModelFlags_t flags,
 								IClientRenderable *pRenderable,
 								ModelInstanceHandle_t instance,
 								int entity_index, 

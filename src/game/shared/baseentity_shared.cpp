@@ -97,7 +97,7 @@ bool CheckEmitReasonablePhysicsSpew()
 //-----------------------------------------------------------------------------
 // Purpose: Spawn some blood particles
 //-----------------------------------------------------------------------------
-void SpawnBlood(Vector vecSpot, const Vector &vecDir, int bloodColor, float flDamage)
+void SpawnBlood(Vector vecSpot, const Vector &vecDir, BloodColor_t bloodColor, float flDamage)
 {
 	UTIL_BloodDrips( vecSpot, vecDir, bloodColor, (int)flDamage );
 }
@@ -164,29 +164,29 @@ const Vector &CSharedBaseEntity::WorldSpaceCenter( ) const
 }
 
 #if !defined( CLIENT_DLL )
-#define CHANGE_FLAGS(flags,newFlags) { EntityBehaviorFlags_t old = flags; flags = (newFlags); gEntList.ReportEntityFlagsChanged( this, old, flags ); }
+#define CHANGE_FLAGS(flags,op,newFlags) { EntityBehaviorFlags_t old = flags; flags op (newFlags); gEntList.ReportEntityFlagsChanged( this, old, flags ); }
 #else
-#define CHANGE_FLAGS(flags,newFlags) (flags = (newFlags))
+#define CHANGE_FLAGS(flags,op,newFlags) flags = (newFlags)
 #endif
 
 void CSharedBaseEntity::AddFlag( EntityBehaviorFlags_t flags )
 {
-	CHANGE_FLAGS( m_fFlags, m_fFlags | flags );
+	CHANGE_FLAGS( m_fFlags, |=, flags );
 }
 
 void CSharedBaseEntity::RemoveFlag( EntityBehaviorFlags_t flagsToRemove )
 {
-	CHANGE_FLAGS( m_fFlags, m_fFlags & ~flagsToRemove );
+	CHANGE_FLAGS( m_fFlags, &=, ~flagsToRemove );
 }
 
 void CSharedBaseEntity::ClearFlags( void )
 {
-	CHANGE_FLAGS( m_fFlags, FL_NONE );
+	CHANGE_FLAGS( m_fFlags, =, FL_NO_ENTITY_FLAGS );
 }
 
 void CSharedBaseEntity::ToggleFlag( EntityBehaviorFlags_t flagToToggle )
 {
-	CHANGE_FLAGS( m_fFlags, m_fFlags ^ flagToToggle );
+	CHANGE_FLAGS( m_fFlags, ^=, flagToToggle );
 }
 
 void CSharedBaseEntity::SetEffects( Effects_t nEffects )

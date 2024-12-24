@@ -1216,7 +1216,7 @@ void CAI_BaseNPC::ImpactTrace( trace_t *pTrace, DamageTypes_t iDamageType, const
 // that individual NPC's can have more or less resistance
 // to damage done to certain hitgroups.
 //---------------------------------------------------------
-float CAI_BaseNPC::GetHitgroupDamageMultiplier( int iHitGroup, const CTakeDamageInfo &info )
+float CAI_BaseNPC::GetHitgroupDamageMultiplier( Hitgroup_t iHitGroup, const CTakeDamageInfo &info )
 {
 	switch( iHitGroup )
 	{
@@ -2747,7 +2747,7 @@ CBaseEntity *CAI_BaseNPC::EyeLookTarget( void )
 
 		CBaseEntity *pEntity = NULL;
 
-		for ( CEntitySphereQuery sphere( GetAbsOrigin(), 1024, 0 ); (pEntity = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity() )
+		for ( CEntitySphereQuery sphere( GetAbsOrigin(), 1024, CONTENTS_EMPTY ); (pEntity = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity() )
 		{
 			if (pEntity == this)
 			{
@@ -4365,9 +4365,9 @@ int CAI_BaseNPC::MeleeAttack2Conditions ( float flDot, float flDist )
 }
 
 // Get capability mask
-int CAI_BaseNPC::CapabilitiesGet( void ) const
+Capability_t CAI_BaseNPC::CapabilitiesGet( void ) const
 {
-	int capability = m_afCapability;
+	Capability_t capability = m_afCapability;
 	if ( GetActiveWeapon() )
 	{
 		capability |= GetActiveWeapon()->CapabilitiesGet();
@@ -4380,7 +4380,7 @@ int CAI_BaseNPC::CapabilitiesGet( void ) const
 //------------------------------------------------------------------------------
 void CAI_BaseNPC::InputAddCapabilities( inputdata_t &&inputdata )
 {
-	CapabilitiesAdd(inputdata.value.Int());
+	CapabilitiesAdd((Capability_t)inputdata.value.UInt64());
 }
 
 //------------------------------------------------------------------------------
@@ -4388,11 +4388,11 @@ void CAI_BaseNPC::InputAddCapabilities( inputdata_t &&inputdata )
 //------------------------------------------------------------------------------
 void CAI_BaseNPC::InputRemoveCapabilities( inputdata_t &&inputdata )
 {
-	CapabilitiesRemove(inputdata.value.Int());
+	CapabilitiesRemove((Capability_t)inputdata.value.UInt64());
 }
 
 // Set capability mask
-int CAI_BaseNPC::CapabilitiesAdd( int capability )
+Capability_t CAI_BaseNPC::CapabilitiesAdd( Capability_t capability )
 {
 	m_afCapability |= capability;
 
@@ -4400,7 +4400,7 @@ int CAI_BaseNPC::CapabilitiesAdd( int capability )
 }
 
 // Set capability mask
-int CAI_BaseNPC::CapabilitiesRemove( int capability )
+Capability_t CAI_BaseNPC::CapabilitiesRemove( Capability_t capability )
 {
 	m_afCapability &= ~capability;
 
@@ -4410,7 +4410,7 @@ int CAI_BaseNPC::CapabilitiesRemove( int capability )
 // Clear capability mask
 void CAI_BaseNPC::CapabilitiesClear( void )
 {
-	m_afCapability = 0;
+	m_afCapability = bits_CAP_NONE;
 }
 
 
@@ -4451,7 +4451,7 @@ void CAI_BaseNPC::GatherAttackConditions( CBaseEntity *pTarget, float flDist )
 	// checking for corresponding Activities in the model file, then do the simple checks to validate
 	// those attack types.
 
-	int		capability;
+	Capability_t		capability;
 	Vector  targetPos;
 	bool	bWeaponHasLOS;
 	int		condition;
@@ -6359,7 +6359,7 @@ Activity CAI_BaseNPC::NPC_TranslateActivity( Activity eNewActivity )
 			// ---------------------------------------------------------------
 			// Some NPCs don't have a cover activity defined so just use idle
 			// ---------------------------------------------------------------
-			if (SelectWeightedSequence( nCoverActivity ) == ACTIVITY_NOT_AVAILABLE)
+			if (SelectWeightedSequence( nCoverActivity ) == INVALID_SEQUENCE)
 			{
 				nCoverActivity = ACT_IDLE;
 			}
@@ -6482,18 +6482,19 @@ Activity CAI_BaseNPC::TranslateActivity( Activity idealActivity, Activity *pIdea
 //			translatedActivity - 
 //			weaponActivity - 
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::ResolveActivityToSequence(Activity NewActivity, int &iSequence, Activity &translatedActivity, Activity &weaponActivity)
+void CAI_BaseNPC::ResolveActivityToSequence(Activity NewActivity, sequence_t &iSequence, Activity &translatedActivity, Activity &weaponActivity)
 {
 	AI_PROFILE_SCOPE( CAI_BaseNPC_ResolveActivityToSequence );
 
 	if ( NewActivity == ACT_SPECIFIC_SEQUENCE )
 	{
-		translatedActivity = weaponActivity = ACT_SPECIFIC_SEQUENCE;
+		translatedActivity = ACT_SPECIFIC_SEQUENCE;
+		weaponActivity = ACT_SPECIFIC_SEQUENCE;
 		iSequence = m_nIdealSequence;
 		return;
 	}
 
-	iSequence = ACTIVITY_NOT_AVAILABLE;
+	iSequence = INVALID_SEQUENCE;
 
 	translatedActivity = TranslateActivity( NewActivity, &weaponActivity );
 
@@ -6506,7 +6507,7 @@ void CAI_BaseNPC::ResolveActivityToSequence(Activity NewActivity, int &iSequence
 	{
 		iSequence = SelectWeightedSequence( translatedActivity );
 
-		if ( iSequence == ACTIVITY_NOT_AVAILABLE )
+		if ( iSequence == INVALID_SEQUENCE )
 		{
 			static CAI_BaseNPC *pLastWarn;
 			static Activity lastWarnActivity;
@@ -6528,10 +6529,10 @@ void CAI_BaseNPC::ResolveActivityToSequence(Activity NewActivity, int &iSequence
 		}
 	}
 
-	if ( iSequence == ACT_INVALID )
+	if ( iSequence == INVALID_SEQUENCE )
 	{
 		// Abject failure. Use sequence zero.
-		iSequence = 0;
+		iSequence = ROOT_SEQUENCE;
 	}
 }
 
@@ -6545,7 +6546,7 @@ void CAI_BaseNPC::ResolveActivityToSequence(Activity NewActivity, int &iSequence
 //-----------------------------------------------------------------------------
 extern ConVar ai_sequence_debug;
 
-void CAI_BaseNPC::SetActivityAndSequence(Activity NewActivity, int iSequence, Activity translatedActivity, Activity weaponActivity)
+void CAI_BaseNPC::SetActivityAndSequence(Activity NewActivity, sequence_t iSequence, Activity translatedActivity, Activity weaponActivity)
 {
 	m_translatedActivity = translatedActivity;
 
@@ -6559,7 +6560,7 @@ void CAI_BaseNPC::SetActivityAndSequence(Activity NewActivity, int iSequence, Ac
 	}
 
 	// Set to the desired anim, or default anim if the desired is not present
-	if ( iSequence > ACTIVITY_NOT_AVAILABLE )
+	if ( iSequence != INVALID_SEQUENCE )
 	{
 		if ( GetSequence() != iSequence || !SequenceLoops() )
 		{
@@ -6689,12 +6690,12 @@ void CAI_BaseNPC::SetIdealActivity( Activity NewActivity )
 	if ( ShouldPlayFakeSequenceGesture( m_IdealActivity, m_IdealTranslatedActivity ) )
 	{
 		Activity nGesture = SelectFakeSequenceGesture( m_IdealActivity, m_IdealTranslatedActivity );
-		if (nGesture != -1)
+		if (nGesture != ACT_INVALID)
 		{
 			PlayFakeSequenceGesture( nGesture, m_IdealActivity, m_IdealTranslatedActivity );
 		}
 	}
-	else if (GetFakeSequenceGesture() != -1)
+	else if (GetFakeSequenceGesture() != INVALID_ANIMLAYER)
 	{
 		// Reset the current gesture sequence if there is one
 		ResetFakeSequenceGesture();
@@ -6708,8 +6709,8 @@ void CAI_BaseNPC::SetIdealActivity( Activity NewActivity )
 void CAI_BaseNPC::AdvanceToIdealActivity(void)
 {
 	// If there is a transition sequence between the current sequence and the ideal sequence...
-	int nNextSequence = FindTransitionSequence(GetSequence(), m_nIdealSequence, NULL);
-	if (nNextSequence != -1)
+	sequence_t nNextSequence = FindTransitionSequence(GetSequence(), m_nIdealSequence, NULL);
+	if (nNextSequence != INVALID_SEQUENCE)
 	{
 		// We found a transition sequence or possibly went straight to
 		// the ideal sequence.
@@ -6725,7 +6726,7 @@ void CAI_BaseNPC::AdvanceToIdealActivity(void)
 			Activity eTransitionActivity = GetSequenceActivity(nNextSequence);
 			if (eTransitionActivity != ACT_INVALID)
 			{
-				int nDiscard;
+				sequence_t nDiscard;
 				ResolveActivityToSequence(eTransitionActivity, nDiscard, eTranslatedActivity, eWeaponActivity);
 			}
 
@@ -6749,7 +6750,7 @@ void CAI_BaseNPC::AdvanceToIdealActivity(void)
 	}
 
 	// If there was a gesture imitating a sequence, get rid of it
-	if ( GetFakeSequenceGesture() != -1 )
+	if ( GetFakeSequenceGesture() != INVALID_ANIMLAYER )
 	{
 		ResetFakeSequenceGesture();
 	}
@@ -6810,7 +6811,7 @@ void CAI_BaseNPC::MaintainActivity(void)
 			}
 			// Else a transition sequence is in progress, do nothing.
 		}
-		else if (GetFakeSequenceGesture() != -1)
+		else if (GetFakeSequenceGesture() != INVALID_ANIMLAYER)
 		{
 			// Don't advance even if the sequence gesture is finished, as advancing would just play the original activity afterwards
 		}
@@ -6870,7 +6871,7 @@ inline void CAI_BaseNPC::PlayFakeSequenceGesture( Activity nActivity, Activity n
 	}
 }
 
-inline int CAI_BaseNPC::GetFakeSequenceGesture()
+inline animlayerindex_t CAI_BaseNPC::GetFakeSequenceGesture()
 {
 	return m_FakeSequenceGestureLayer;
 }
@@ -6878,7 +6879,7 @@ inline int CAI_BaseNPC::GetFakeSequenceGesture()
 void CAI_BaseNPC::ResetFakeSequenceGesture()
 {
 	SetLayerCycle( m_FakeSequenceGestureLayer, 1.0f );
-	m_FakeSequenceGestureLayer = -1;
+	m_FakeSequenceGestureLayer = INVALID_ANIMLAYER;
 }
 
 //-----------------------------------------------------------------------------
@@ -6886,7 +6887,7 @@ void CAI_BaseNPC::ResetFakeSequenceGesture()
 //-----------------------------------------------------------------------------
 bool CAI_BaseNPC::IsActivityFinished( void )
 {
-	if (GetFakeSequenceGesture() != -1)
+	if (GetFakeSequenceGesture() != INVALID_ANIMLAYER)
 	{
 		return IsLayerFinished( GetFakeSequenceGesture() );
 	}
@@ -6934,23 +6935,23 @@ void CAI_BaseNPC::OnChangeActivity( Activity eNewActivity )
 //=========================================================
 void CAI_BaseNPC::SetSequenceByName( const char *szSequence )
 {
-	int iSequence = LookupSequence( szSequence );
+	sequence_t iSequence = LookupSequence( szSequence );
 
-	if ( iSequence > ACTIVITY_NOT_AVAILABLE )
+	if ( iSequence != INVALID_SEQUENCE )
 		SetSequenceById( iSequence );
 	else
 	{
 		DevWarning( 2, "%s has no sequence %s to match request\n", GetClassname(), szSequence );
-		SetSequence( 0 );	// Set to the reset anim (if it's there)
+		SetSequence( ROOT_SEQUENCE );	// Set to the reset anim (if it's there)
 	}
 }
 
 //-----------------------------------------------------------------------------
 
-void CAI_BaseNPC::SetSequenceById( int iSequence )
+void CAI_BaseNPC::SetSequenceById( sequence_t iSequence )
 {
 	// Set to the desired anim, or default anim if the desired is not present
-	if ( iSequence > ACTIVITY_NOT_AVAILABLE )
+	if ( iSequence != INVALID_SEQUENCE )
 	{
 		if ( GetSequence() != iSequence || !SequenceLoops() )
 		{
@@ -6964,7 +6965,7 @@ void CAI_BaseNPC::SetSequenceById( int iSequence )
 	{
 		// Not available try to get default anim
 		DevWarning( 2, "%s invalid sequence requested\n", GetClassname() );
-		SetSequence( 0 );	// Set to the reset anim (if it's there)
+		SetSequence( ROOT_SEQUENCE );	// Set to the reset anim (if it's there)
 	}
 }
 
@@ -11523,7 +11524,7 @@ CAI_BaseNPC::CAI_BaseNPC(void)
 	m_iDynamicInteractionsAllowed = TRS_NONE;
 	m_flSpeedModifier = 1.0f;
 
-	m_FakeSequenceGestureLayer = -1;
+	m_FakeSequenceGestureLayer = INVALID_ANIMLAYER;
 
 	m_iLastHolsteredWeapon = -1;
 }
@@ -11986,7 +11987,7 @@ ConVar sv_test_scripted_sequences( "sv_test_scripted_sequences", "0", FCVAR_NONE
 bool CAI_BaseNPC::CineCleanup()
 {
 	CAI_ScriptedSequence *pOldCine = m_hCine.Get();
-	int nSavedFlags = ( m_hCine ? m_hCine->m_savedFlags : GetFlags() );
+	EntityBehaviorFlags_t nSavedFlags = ( m_hCine ? m_hCine->m_savedFlags : GetFlags() );
 
  	bool bDestroyCine = false;
 	if ( IsRunningDynamicInteraction() )
@@ -12163,7 +12164,7 @@ bool CAI_BaseNPC::CineCleanup()
 	}
 
 	//	SetAnimation( m_NPCState );
-	CLEARBITS(m_spawnflags, SF_NPC_WAIT_FOR_SCRIPT );
+	RemoveSpawnFlags( SF_NPC_WAIT_FOR_SCRIPT );
 
 	if ( bDestroyCine )
 	{
@@ -12586,7 +12587,7 @@ bool CAI_BaseNPC::IsTemplate( void )
 // Movement code for walking + flying
 //
 //-----------------------------------------------------------------------------
-int CAI_BaseNPC::FlyMove( const Vector& pfPosition, unsigned int mask )
+bool CAI_BaseNPC::FlyMove( const Vector& pfPosition, ContentsFlags_t mask )
 {
 	Vector		oldorg, neworg;
 	trace_t		trace;
@@ -12617,7 +12618,7 @@ int CAI_BaseNPC::FlyMove( const Vector& pfPosition, unsigned int mask )
 //			iMode - 
 // Output : Returns nonzero on success, zero on failure.
 //-----------------------------------------------------------------------------
-int CAI_BaseNPC::WalkMove( const Vector& vecPosition, unsigned int mask )
+bool CAI_BaseNPC::WalkMove( const Vector& vecPosition, ContentsFlags_t mask )
 {	
 	if ( GetFlags() & (FL_FLY | FL_SWIM) )
 	{
@@ -12626,7 +12627,7 @@ int CAI_BaseNPC::WalkMove( const Vector& vecPosition, unsigned int mask )
 
 	if ( (GetFlags() & FL_ONGROUND) == 0 )
 	{
-		return 0;
+		return false;
 	}
 
 	trace_t	trace;
@@ -12699,7 +12700,7 @@ int CAI_BaseNPC::WalkMove( const Vector& vecPosition, unsigned int mask )
 
 //-----------------------------------------------------------------------------
 
-static void AIMsgGuts( CAI_BaseNPC *pAI, unsigned flags, const char *pszMsg )
+static void AIMsgGuts( CAI_BaseNPC *pAI, AIMsgFlags flags, const char *pszMsg )
 {
 	int			len		= strlen( pszMsg );
 	const char *pszFmt2 = NULL;
@@ -12720,7 +12721,7 @@ static void AIMsgGuts( CAI_BaseNPC *pAI, unsigned flags, const char *pszMsg )
 		 gpGlobals->tickcount );
 }
 
-void DevMsg( CAI_BaseNPC *pAI, unsigned flags, const char *pszFormat, ... )
+void DevMsg( CAI_BaseNPC *pAI, AIMsgFlags flags, const char *pszFormat, ... )
 {
 	if ( (flags & AIMF_IGNORE_SELECTED) || (pAI->m_debugOverlays & OVERLAY_NPC_SELECTED_BIT) )
 	{
