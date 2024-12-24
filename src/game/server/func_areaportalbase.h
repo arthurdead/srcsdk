@@ -25,7 +25,7 @@ public:
 	virtual			~CFuncAreaPortalBase();
 
 	// Areaportals must be placed in each map for preprocess, they can't use transitions
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+	virtual EntityCaps_t ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 	
 	// This is called each frame for each client to all portals to close 
 	// when the viewer is far enough away, or on the backside.

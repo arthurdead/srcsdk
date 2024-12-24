@@ -33,7 +33,7 @@ struct virtualmodel_t;
 typedef unsigned char byte;
 struct virtualterrainparams_t;
 class CPhysCollide;
-typedef unsigned short MDLHandle_t;
+enum MDLHandle_t : unsigned short;
 class CUtlBuffer;
 class IClientRenderable;
 
@@ -63,6 +63,8 @@ protected:
 
 enum modelindex_t : int;
 inline const modelindex_t INVALID_MODEL_INDEX = (modelindex_t)-1;
+
+UNORDEREDENUM_OPERATORS( modelindex_t, int )
 
 // MODEL INDEX RULES
 // If index >= 0, then index references the precached model string table

@@ -5265,7 +5265,7 @@ bool SweepBoxToStudio( IPhysicsSurfaceProps *pProps, const Ray_t& ray, CStudioHd
 	if ( hitbox >= 0 )
 	{
 		tr.hitgroup = set->pHitbox(hitbox)->group;
-		tr.hitbox = hitbox;
+		tr.SetHitbox( hitbox );
 		const mstudiobone_t *pBone = pStudioHdr->pBone( set->pHitbox(hitbox)->bone );
 		tr.contents = pBone->contents | CONTENTS_HITBOX;
 		tr.physicsbone = pBone->physicsbone;
@@ -5304,7 +5304,7 @@ bool TraceToStudio( IPhysicsSurfaceProps *pProps, const Ray_t& ray, CStudioHdr *
 		mstudiobbox_t *pbox = set->pHitbox(i);
 
 		// Filter based on contents mask
-		int fBoneContents = pStudioHdr->pBone( pbox->bone )->contents;
+		ContentsFlags_t fBoneContents = pStudioHdr->pBone( pbox->bone )->contents;
 		if ( ( fBoneContents & fContentsMask ) == 0 )
 			continue;
 		
@@ -5366,7 +5366,7 @@ bool TraceToStudio( IPhysicsSurfaceProps *pProps, const Ray_t& ray, CStudioHdr *
 		mstudiobbox_t *pbox = set->pHitbox(hitbox);
 		VectorMA( ray.m_Start, tr.fraction, ray.m_Delta, tr.endpos );
 		tr.hitgroup = set->pHitbox(hitbox)->group;
-		tr.hitbox = hitbox;
+		tr.SetHitbox( hitbox );
 		const mstudiobone_t *pBone = pStudioHdr->pBone( pbox->bone );
 		tr.contents = pBone->contents | CONTENTS_HITBOX;
 		tr.physicsbone = pBone->physicsbone;

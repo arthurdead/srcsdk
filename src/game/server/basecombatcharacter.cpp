@@ -797,7 +797,7 @@ void CBaseCombatCharacter::Spawn( void )
 
 	RemoveRagdoll();
 
-	UpdateLightIntensity( EyePosition() );
+	UpdateLightIntensity( IsPlayer() ? entindex() : UTIL_GetLocalPlayer(), EyePosition() );
 }
 
 void CBaseCombatCharacter::NotifySystemEvent( CBaseEntity *pNotify, notify_system_event_t eventType, const notify_system_event_params_t &params )
@@ -809,7 +809,7 @@ void CBaseCombatCharacter::NotifySystemEvent( CBaseEntity *pNotify, notify_syste
 	}
 }
 
-void CBaseCombatCharacter::OnSequenceSet( int nOldSequence )
+void CBaseCombatCharacter::OnSequenceSet( sequence_t nOldSequence )
 {
 	BaseClass::OnSequenceSet( nOldSequence );
 }

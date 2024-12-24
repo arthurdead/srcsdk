@@ -349,7 +349,7 @@ public:
 
 	CFlextalkActor() { m_iszSentence = NULL_STRING; m_sentence = 0; }
 	//void GenericCyclerSpawn(char *szModel, Vector vecMin, Vector vecMax);
-	//virtual int	ObjectCaps( void ) { return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE); }
+	//virtual EntityCaps_t ObjectCaps( void ) { return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE); }
 	//int OnTakeDamage( CBaseEntity *pInflictor, CBaseEntity *pAttacker, float flDamage, int bitsDamageType );
 	//void Spawn( void );
 	//void Precache( void );

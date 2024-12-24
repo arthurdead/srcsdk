@@ -166,7 +166,7 @@ public:
 	virtual void	Spawn( void );
 
 	virtual void	CreateServerVehicle( void );
-	virtual int		ObjectCaps( void ) { return BaseClass::ObjectCaps() | FCAP_IMPULSE_USE; };
+	virtual EntityCaps_t ObjectCaps( void ) { return BaseClass::ObjectCaps() | FCAP_IMPULSE_USE; };
 	virtual void	GetVectors(Vector* pForward, Vector* pRight, Vector* pUp) const;
 	virtual void	VehicleAngleVectors( const QAngle &angles, Vector *pForward, Vector *pRight, Vector *pUp );
 	virtual void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );

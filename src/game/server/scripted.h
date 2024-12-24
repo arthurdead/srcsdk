@@ -17,21 +17,24 @@
 //
 #define MAX_SCRIPT_EVENTS				8
 
+enum AiScriptedSequenceSF_t : unsigned short
+{
+	SF_SCRIPT_WAITTILLSEEN =			1,
+	SF_SCRIPT_EXITAGITATED =			2,
+	SF_SCRIPT_REPEATABLE =			4,		// Whether the script can be played more than once.
+	SF_SCRIPT_LEAVECORPSE =			8,
+	SF_SCRIPT_START_ON_SPAWN =		16,
+	SF_SCRIPT_NOINTERRUPT =			32,
+	SF_SCRIPT_OVERRIDESTATE =			64,
+	SF_SCRIPT_DONT_TELEPORT_AT_END =	128,		// Don't fixup end position with a teleport when the SS is finished
+	SF_SCRIPT_LOOP_IN_POST_IDLE =		256,		// Loop in the post idle animation after playing the action animation.
+	SF_SCRIPT_HIGH_PRIORITY =			512,		// If set, we don't allow other scripts to steal our spot in the queue.
+	SF_SCRIPT_SEARCH_CYCLICALLY =		1024,	// Start search from last entity found.
+	SF_SCRIPT_NO_COMPLAINTS	 =		2048,	// doesn't bitch if it can't find anything
+	SF_SCRIPT_ALLOW_DEATH =			4096,	// the actor using this scripted sequence may die without interrupting the scene (used for scripted deaths)
+};
 
-#define SF_SCRIPT_WAITTILLSEEN			1
-#define SF_SCRIPT_EXITAGITATED			2
-#define SF_SCRIPT_REPEATABLE			4		// Whether the script can be played more than once.
-#define SF_SCRIPT_LEAVECORPSE			8
-#define SF_SCRIPT_START_ON_SPAWN		16
-#define SF_SCRIPT_NOINTERRUPT			32
-#define SF_SCRIPT_OVERRIDESTATE			64
-#define SF_SCRIPT_DONT_TELEPORT_AT_END	128		// Don't fixup end position with a teleport when the SS is finished
-#define SF_SCRIPT_LOOP_IN_POST_IDLE		256		// Loop in the post idle animation after playing the action animation.
-#define SF_SCRIPT_HIGH_PRIORITY			512		// If set, we don't allow other scripts to steal our spot in the queue.
-#define SF_SCRIPT_SEARCH_CYCLICALLY		1024	// Start search from last entity found.
-#define SF_SCRIPT_NO_COMPLAINTS			2048	// doesn't bitch if it can't find anything
-#define SF_SCRIPT_ALLOW_DEATH			4096	// the actor using this scripted sequence may die without interrupting the scene (used for scripted deaths)
-
+FLAGENUM_OPERATORS( AiScriptedSequenceSF_t, unsigned short )
 
 enum script_moveto_t
 {
@@ -74,7 +77,7 @@ public:
 	void Spawn( void );
 	virtual void Blocked( CBaseEntity *pOther );
 	virtual void Touch( CBaseEntity *pOther );
-	virtual int	 ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
+	virtual EntityCaps_t ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
 	virtual void Activate( void );
 	virtual void UpdateOnRemove( void );
 	void StartThink();
@@ -82,6 +85,8 @@ public:
 	void StopThink();
 
 	DECLARE_MAPENTITY();
+
+	DECLARE_SPAWNFLAGS( AiScriptedSequenceSF_t )
 
 	void Pain( void );
 	void Die( void );
@@ -177,9 +182,9 @@ private:
 	float m_startTime;				// Time when script actually started, used for synchronization
 	bool m_bWaitForBeginSequence;	// Set to true when we are told to MoveToPosition. Holds the actor in the pre-action idle until BeginSequence is called.
 
-	int m_saved_effects;
-	int m_savedFlags;
-	int m_savedCollisionGroup;
+	Effects_t m_saved_effects;
+	EntityBehaviorFlags_t m_savedFlags;
+	Collision_Group_t m_savedCollisionGroup;
 
 	bool m_interruptable;
 	bool m_sequenceStarted;

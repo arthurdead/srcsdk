@@ -139,7 +139,6 @@ server_base_dep = declare_dependency(
 		join_paths(server_src_dir,'game.cpp'),
 		join_paths(server_src_dir,'game_ui.cpp'),
 		join_paths(server_src_dir,'gameinterface.cpp'),
-		join_paths(server_src_dir,'gametrace_dll.cpp'),
 		join_paths(server_src_dir,'gameweaponmanager.cpp'),
 		join_paths(server_src_dir,'gib.cpp'),
 		join_paths(server_src_dir,'globals.cpp'),
@@ -325,8 +324,8 @@ server_base_dep = declare_dependency(
 		join_paths(server_src_dir,'recast','recast_offmesh_connection.cpp'),
 		join_paths(server_src_dir,'ndebugoverlay.cpp'),
 		join_paths(shared_src_dir,'voice_gamemgr.cpp'),
-		join_paths(public_dir,'dt_utlvector_send.cpp'),
-		join_paths(public_dir,'dt_send.cpp'),
+		#join_paths(public_dir,'dt_utlvector_send.cpp'),
+		#join_paths(public_dir,'dt_send.cpp'),
 		join_paths(public_dir,'server_class.cpp'),
 	),
 	include_directories: include_directories(

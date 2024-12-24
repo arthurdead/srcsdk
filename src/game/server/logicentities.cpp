@@ -1227,7 +1227,7 @@ public:
 	void Spawn( );
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	void Use( ::CBaseEntity *pActivator, ::CBaseEntity *pCaller, USE_TYPE useType, float value );
-	int	ObjectCaps( void ) { return(BaseClass::ObjectCaps() | FCAP_MASTER); }
+	EntityCaps_t ObjectCaps( void ) { return(BaseClass::ObjectCaps() | FCAP_MASTER); }
 	bool IsTriggered( ::CBaseEntity *pActivator );
 	void Register( void );
 

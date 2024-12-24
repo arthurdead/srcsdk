@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "tier0/platform.h"
+
 #ifdef NULL
 #undef NULL
 #endif
@@ -65,6 +67,13 @@ const HPanel INVALID_PANEL = (HPanel)0xffffffff;
 enum HFont: unsigned long;
 const HFont INVALID_FONT = (HFont)0; // the value of an invalid font handle
 }
+
+UNORDEREDENUM_OPERATORS( vgui::VPANEL, unsigned int )
+UNORDEREDENUM_OPERATORS( vgui::HScheme, unsigned long )
+UNORDEREDENUM_OPERATORS( vgui::HTexture, int )
+UNORDEREDENUM_OPERATORS( vgui::HCursor, unsigned long )
+UNORDEREDENUM_OPERATORS( vgui::HPanel, unsigned long )
+UNORDEREDENUM_OPERATORS( vgui::HFont, unsigned long )
 
 inline bool operator==(vgui::VPANEL rhs, std::nullptr_t)
 { return rhs == vgui::INVALID_VPANEL; }

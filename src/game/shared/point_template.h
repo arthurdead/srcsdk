@@ -37,6 +37,16 @@ typedef C_PointTemplate CSharedPointTemplate;
 	#define CPointTemplate C_PointTemplate
 #endif
 
+enum PointTemplateSpawnFlags_t : unsigned char
+{
+	SF_POINTTEMPLATE_DONTREMOVETEMPLATEENTITIES = 0x0001,
+
+// Level designers can suppress the uniquification of the spawned entity
+// names with a spawnflag, provided they guarantee that only one instance
+// of the entities will ever be spawned at a time.
+	SF_POINTTEMPLATE_PRESERVE_NAMES = 0x0002,
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -53,6 +63,10 @@ public:
 
 	virtual void	Spawn( void );
 	virtual void	Precache();
+
+	DECLARE_SPAWNFLAGS( PointTemplateSpawnFlags_t )
+
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_spawnflags )
 
 	// Template initialization
 	void			StartBuildingTemplates( void );

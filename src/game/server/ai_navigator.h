@@ -303,14 +303,14 @@ public:
 	// Query or change the movement activity
 	Activity 			GetMovementActivity() const;
 	Activity 			SetMovementActivity(Activity activity);
-	int		 			GetMovementSequence();
-	void				SetMovementSequence( int sequence );
+	sequence_t		 			GetMovementSequence();
+	void				SetMovementSequence( sequence_t sequence );
 
 	// Query or change the Arrival activity
 	Activity 			GetArrivalActivity() const;
 	void				SetArrivalActivity( Activity activity );
-	int					GetArrivalSequence( int curSequence );
-	void				SetArrivalSequence( int sequence );
+	sequence_t					GetArrivalSequence( sequence_t curSequence );
+	void				SetArrivalSequence( sequence_t sequence );
 
 	// Set the facing direction at arrival
 	void				SetArrivalDirection( const Vector &goalDirection );

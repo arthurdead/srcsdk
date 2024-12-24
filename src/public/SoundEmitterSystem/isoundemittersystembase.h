@@ -23,8 +23,10 @@ DECLARE_LOGGING_CHANNEL( LOG_SOUND );
 #define SOUNDGENDER_MACRO "$gender"
 #define SOUNDGENDER_MACRO_LENGTH 7		// Length of above including $
 
-typedef short HSOUNDSCRIPTHANDLE;
-#define SOUNDEMITTER_INVALID_HANDLE	(HSOUNDSCRIPTHANDLE)-1
+enum HSOUNDSCRIPTHANDLE : unsigned short;
+inline const HSOUNDSCRIPTHANDLE SOUNDEMITTER_INVALID_HANDLE	= (HSOUNDSCRIPTHANDLE)-1;
+
+UNORDEREDENUM_OPERATORS( HSOUNDSCRIPTHANDLE, unsigned short )
 
 class IFileList;
 
@@ -50,10 +52,11 @@ struct CSoundParameters
 		delay_msec	= 0;
 	}
 
-	int				channel;
+	SoundChannel_t				channel;
 	float			volume;
 	int				pitch;
-	int				pitchlow, pitchhigh;
+	int				pitchlow;
+	int pitchhigh;
 	soundlevel_t	soundlevel;
 	// For weapon sounds...
 	bool			play_to_owner_only;
@@ -64,11 +67,11 @@ struct CSoundParameters
 
 // A bit of a hack, but these are just utility function which are implemented in the SouneParametersInternal.cpp file which all users of this lib also compile
 const char *SoundLevelToString( soundlevel_t level );
-const char *ChannelToString( int channel );
+const char *ChannelToString( SoundChannel_t channel );
 const char *VolumeToString( float volume );
 const char *PitchToString( float pitch );
 soundlevel_t TextToSoundLevel( const char *key );
-int TextToChannel( const char *name );
+SoundChannel_t TextToChannel( const char *name );
 
 
 enum gender_t

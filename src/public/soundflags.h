@@ -30,6 +30,8 @@ enum SoundChannel_t : int
 	CHAN_USER_BASE	= (CHAN_VOICE_BASE+128)		// Anything >= this number is allocated to game code.
 };
 
+UNORDEREDENUM_OPERATORS( SoundChannel_t, int )
+
 //-----------------------------------------------------------------------------
 // common volume values
 //-----------------------------------------------------------------------------
@@ -96,6 +98,8 @@ enum soundlevel_t : unsigned int
 	//       256-511 are reserved for sounds using goldsrc compatibility attenuation.
 };
 
+UNORDEREDENUM_OPERATORS( soundlevel_t, unsigned int )
+
 #define MAX_SNDLVL_BITS		9	// Used to encode 0-255 for regular soundlevel_t's and 256-511 for goldsrc-compatible ones.
 #define MIN_SNDLVL_VALUE	0
 #define MAX_SNDLVL_VALUE	((1<<MAX_SNDLVL_BITS)-1)
@@ -114,7 +118,7 @@ inline soundlevel_t ATTN_TO_SNDLVL(float a)
 
 inline float SNDLVL_TO_ATTN(soundlevel_t s)
 {
-	return (s > soundlevel_t::SNDLVL_50dB)? (20.0f / float(s - soundlevel_t::SNDLVL_50dB)) : 4.0f;
+	return ((unsigned int)s > (unsigned int)soundlevel_t::SNDLVL_50dB) ? (soundlevel_t)(20.0f / float((unsigned int)s - (unsigned int)soundlevel_t::SNDLVL_50dB)) : 4.0f;
 }
 
 // This is a limit due to network encoding.

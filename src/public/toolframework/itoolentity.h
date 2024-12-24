@@ -18,6 +18,7 @@
 #include "engine/ishadowmgr.h"
 #include "engine/ivmodelinfo.h"
 #include "engine/IClientLeafSystem.h"
+#include "shadowflags.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -55,22 +56,7 @@ class CServerBaseTempEntity;
 enum HTOOLHANDLE : unsigned int;
 inline const HTOOLHANDLE HTOOLHANDLE_INVALID = (HTOOLHANDLE)0;
 
-
-//-----------------------------------------------------------------------------
-// If you change this, change the flags in IClientShadowMgr.h also
-//-----------------------------------------------------------------------------
-enum ClientShadowFlags_t : unsigned int
-{
-	SHADOW_FLAGS_USE_RENDER_TO_TEXTURE	= (SHADOW_FLAGS_LAST_FLAG<<1),
-	SHADOW_FLAGS_ANIMATING_SOURCE		= (SHADOW_FLAGS_LAST_FLAG<<2),
-	SHADOW_FLAGS_USE_DEPTH_TEXTURE		= (SHADOW_FLAGS_LAST_FLAG<<3),
-	SHADOW_FLAGS_CUSTOM_DRAW			= (SHADOW_FLAGS_LAST_FLAG<<4),
-	CLIENT_SHADOW_FLAGS_LAST_FLAG		= SHADOW_FLAGS_CUSTOM_DRAW
-
-	//if you add new flags you must update ShadowFlags_t from public/engine/ishadowmgr.h
-};
-
-FLAGENUM_OPERATORS( ClientShadowFlags_t, unsigned int )
+UNORDEREDENUM_OPERATORS( HTOOLHANDLE, unsigned int )
 
 //-----------------------------------------------------------------------------
 // Opaque pointer returned from Find* methods, don't store this, you need to 

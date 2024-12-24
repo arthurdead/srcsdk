@@ -49,11 +49,11 @@ void CAI_GoalEntity::DelayedRefresh()
 	if ( m_fStartActive )
 	{
 		Assert( !(m_flags & ACTIVE) );
-		InputActivate( ignored );
+		InputActivate( Move(ignored) );
 		m_fStartActive = false;
 	}
 	else
-		InputUpdateActors( ignored );
+		InputUpdateActors( Move(ignored) );
 	
 	SetContextThink( NULL, 0, "Refresh" );
 }
@@ -209,7 +209,7 @@ void CAI_GoalEntity::ExitDormant( void )
 		m_flags &= ~DORMANT;
 
 		inputdata_t ignored;
-		InputUpdateActors( ignored );
+		InputUpdateActors( Move(ignored) );
 	}
 }
 
@@ -220,7 +220,7 @@ void CAI_GoalEntity::UpdateOnRemove()
 	if ( m_flags & ACTIVE )
 	{
 		inputdata_t inputdata;
-		InputDeactivate( inputdata );
+		InputDeactivate( Move(inputdata) );
 	}
 	BaseClass::UpdateOnRemove();
 }

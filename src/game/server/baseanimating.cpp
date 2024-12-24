@@ -2114,7 +2114,7 @@ void CBaseAnimating::GetEyeballs( Vector &origin, QAngle &angles )
 
 //=========================================================
 //=========================================================
-int CBaseAnimating::FindTransitionSequence( int iCurrentSequence, int iGoalSequence, int *piDir )
+sequence_t CBaseAnimating::FindTransitionSequence( sequence_t iCurrentSequence, sequence_t iGoalSequence, int *piDir )
 {
 	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 
@@ -2123,7 +2123,7 @@ int CBaseAnimating::FindTransitionSequence( int iCurrentSequence, int iGoalSeque
 		int iDir = 1;
 		int sequence = ::FindTransitionSequence( GetModelPtr(), iCurrentSequence, iGoalSequence, &iDir );
 		if (iDir != 1)
-			return -1;
+			return INVALID_SEQUENCE;
 		else
 			return sequence;
 	}
@@ -2132,13 +2132,13 @@ int CBaseAnimating::FindTransitionSequence( int iCurrentSequence, int iGoalSeque
 }
 
 
-bool CBaseAnimating::GotoSequence( int iCurrentSequence, float flCurrentCycle, float flCurrentRate, int iGoalSequence, int &nNextSequence, float &flNextCycle, int &iNextDir )
+bool CBaseAnimating::GotoSequence( sequence_t iCurrentSequence, float flCurrentCycle, float flCurrentRate, sequence_t iGoalSequence, sequence_t &nNextSequence, float &flNextCycle, int &iNextDir )
 {
 	return ::GotoSequence( GetModelPtr(), iCurrentSequence, flCurrentCycle, flCurrentRate, iGoalSequence, nNextSequence, flNextCycle, iNextDir );
 }
 
 
-int CBaseAnimating::GetEntryNode( int iSequence )
+int CBaseAnimating::GetEntryNode( sequence_t iSequence )
 {
 	CStudioHdr *pstudiohdr = GetModelPtr();
 	if (! pstudiohdr)
@@ -2148,7 +2148,7 @@ int CBaseAnimating::GetEntryNode( int iSequence )
 }
 
 
-int CBaseAnimating::GetExitNode( int iSequence )
+int CBaseAnimating::GetExitNode( sequence_t iSequence )
 {
 	CStudioHdr *pstudiohdr = GetModelPtr();
 	if (! pstudiohdr)

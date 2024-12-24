@@ -45,11 +45,11 @@ void GetSequenceLinearMotion( CStudioHdr *pstudiohdr, sequence_t iSequence, cons
 const char *GetSequenceName( CStudioHdr *pstudiohdr, sequence_t sequence );
 const char *GetSequenceActivityName( CStudioHdr *pstudiohdr, sequence_t iSequence );
 
-int GetSequenceFlags( CStudioHdr *pstudiohdr, sequence_t sequence );
+SequenceFlags_t GetSequenceFlags( CStudioHdr *pstudiohdr, sequence_t sequence );
 int GetAnimationEvent( CStudioHdr *pstudiohdr, sequence_t sequence, animevent_t *pNPCEvent, float flStart, float flEnd, int index );
 bool HasAnimationEventOfType( CStudioHdr *pstudiohdr, sequence_t sequence, int type );
 
-int FindTransitionSequence( CStudioHdr *pstudiohdr, int iCurrentSequence, int iGoalSequence, int *piDir );
+sequence_t FindTransitionSequence( CStudioHdr *pstudiohdr, sequence_t iCurrentSequence, sequence_t iGoalSequence, int *piDir );
 bool GotoSequence( CStudioHdr *pstudiohdr, int iCurrentSequence, float flCurrentCycle, float flCurrentRate, sequence_t iGoalSequence, sequence_t &nNextSequence, float &flNextCycle, int &iNextDir );
 
 void SetBodygroup( CStudioHdr *pstudiohdr, int& body, int iGroup, int iValue );

@@ -9,7 +9,12 @@
 #include "triggers.h"
 #include "igamesystem.h"
 
-#define SF_TONEMAP_MASTER			0x0001
+enum TonemapControllerSpawnFlags_t : unsigned char
+{
+	SF_TONEMAP_MASTER = 0x0001,
+};
+
+FLAGENUM_OPERATORS( TonemapControllerSpawnFlags_t, unsigned char )
 
 //-----------------------------------------------------------------------------
 // Purpose: Entity that controls player's tonemap
@@ -27,6 +32,8 @@ public:
 	EdictStateFlags_t		UpdateTransmitState( void );
 	void	UpdateTonemapScaleBlend( void );
 	void	UpdateTonemapScaleBlendMultiplayer( void );
+
+	DECLARE_SPAWNFLAGS( TonemapControllerSpawnFlags_t )
 
 	bool	IsMaster( void ) const					{ return HasSpawnFlags( SF_TONEMAP_MASTER ); }
 

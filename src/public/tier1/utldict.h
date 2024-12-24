@@ -19,7 +19,7 @@
 
 #include "tier0/memdbgon.h"
 
-enum EDictCompareType
+enum EDictCompareType : unsigned char
 {
 	k_eDictCompareTypeCaseSensitive=0,
 	k_eDictCompareTypeCaseInsensitive=1,
@@ -46,7 +46,7 @@ public:
 	// constructor, destructor
 	// Left at growSize = 0, the memory will first allocate 1 element and double in size
 	// at each increment.
-	CUtlDict( int compareType = k_eDictCompareTypeCaseInsensitive, int growSize = 0, int initSize = 0 );
+	CUtlDict( EDictCompareType compareType = k_eDictCompareTypeCaseInsensitive, int growSize = 0, int initSize = 0 );
 	CUtlDict( bool compareType, int growSize = 0, int initSize = 0 )
 		: CUtlDict( compareType ? k_eDictCompareTypeCaseInsensitive : k_eDictCompareTypeCaseSensitive, growSize, initSize )
 	{
@@ -114,7 +114,7 @@ protected:
 // constructor, destructor
 //-----------------------------------------------------------------------------
 template <class T, class I>
-CUtlDict<T, I>::CUtlDict( int compareType, int growSize, int initSize ) : m_Elements( growSize, initSize )
+CUtlDict<T, I>::CUtlDict( EDictCompareType compareType, int growSize, int initSize ) : m_Elements( growSize, initSize )
 {
 	if ( compareType == k_eDictCompareTypeFilenames )
 	{

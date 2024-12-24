@@ -44,7 +44,7 @@ PMaterialHandle g_Blood_Drops = NULL;
 //			g - 
 //			b - 
 //-----------------------------------------------------------------------------
-void GetBloodColor( int bloodtype, colorentry_t &color )
+void GetBloodColor( BloodColor_t bloodtype, colorentry_t &color )
 {
 #ifdef _DEBUG
 	if(bloodtype == DONT_BLEED)
@@ -81,7 +81,7 @@ void GetBloodColor( int bloodtype, colorentry_t &color )
 //			b - 
 //			flags - 
 //-----------------------------------------------------------------------------
-void FX_BloodSpray( const Vector &origin, const Vector &normal, float scale, unsigned char r, unsigned char g, unsigned char b, int flags )
+void FX_BloodSpray( const Vector &origin, const Vector &normal, float scale, unsigned char r, unsigned char g, unsigned char b, BloodSprayFlags_t flags )
 {
 	//debugoverlay->AddLineOverlay( origin, origin + normal * 72, 255, 255, 255, true, 10 ); 
 
@@ -478,7 +478,7 @@ void FX_BloodBulletImpact( const Vector &origin, const Vector &normal, float sca
 
 struct ParticleForBlood_t
 {
-	int nColor;
+	BloodColor_t nColor;
 	const char *lpszParticleSystemName;
 };
 

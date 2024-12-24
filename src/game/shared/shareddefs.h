@@ -16,6 +16,8 @@
 #include "engine/ivmodelinfo.h"
 #include "networkvar.h"
 #include "datamap.h"
+#include "soundflags.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 
 enum AmmoIndex_t : unsigned short;
 
@@ -378,24 +380,10 @@ enum EntityDissolve_t : unsigned char
 	ENTITY_DISSOLVE_ELECTRICAL_LIGHT,
 	ENTITY_DISSOLVE_CORE,
 
-	// NOTE: Be sure to up the bits if you make more dissolve types
-	ENTITY_DISSOLVE_BITS = 3
-};
+	LAST_DISSOLVE_TYPE = ENTITY_DISSOLVE_CORE,
 
-// ---------------------------
-//  Hit Group standards
-// ---------------------------
-enum Hitgroup_t : unsigned int
-{
-	HITGROUP_GENERIC =	0,
-	HITGROUP_HEAD =		1,
-	HITGROUP_CHEST =		2,
-	HITGROUP_STOMACH =	3,
-	HITGROUP_LEFTARM =	4,	
-	HITGROUP_RIGHTARM =	5,
-	HITGROUP_LEFTLEG =	6,
-	HITGROUP_RIGHTLEG =	7,
-	HITGROUP_GEAR =		10,			// alerts NPC, but doesn't do damage or bleed (1/100th damage)
+	// NOTE: Be sure to up the bits if you make more dissolve types
+	ENTITY_DISSOLVE_BITS = MINIMUM_BITS_NEEDED(LAST_DISSOLVE_TYPE),
 };
 
 #define PLAYER_FATAL_FALL_SPEED		1024 // approx 60 feet
@@ -490,7 +478,9 @@ enum VGUIScreenFlags_t : unsigned char
 	VGUI_SCREEN_TRANSPARENT = 0x8,
 	VGUI_SCREEN_ONLY_USABLE_BY_OWNER = 0x10,
 
-	VGUI_SCREEN_MAX_BITS = 5
+	VGUI_SCREEN_LAST_FLAG = VGUI_SCREEN_ONLY_USABLE_BY_OWNER,
+
+	VGUI_SCREEN_MAX_BITS = MINIMUM_BITS_NEEDED(VGUI_SCREEN_LAST_FLAG),
 };
 
 FLAGENUM_OPERATORS( VGUIScreenFlags_t, unsigned char )
@@ -555,6 +545,32 @@ enum
 // Shared think context stuff
 #define	MAX_CONTEXT_LENGTH		32
 #define NO_THINK_CONTEXT	-1
+
+// entity capabilities
+enum EntityCaps_t : uint64
+{
+	FCAP_NONE = 0,
+
+// These are caps bits to indicate what an object's capabilities (currently used for +USE, save/restore and level transitions)
+	FCAP_MUST_SPAWN = 0x00000001,		// Spawn after restore
+	FCAP_ACROSS_TRANSITION = 0x00000002,		// should transfer between transitions 
+	// UNDONE: This will ignore transition volumes (trigger_transition), but not the PVS!!!
+	FCAP_FORCE_TRANSITION = 0x00000004,		// ALWAYS goes across transitions
+	FCAP_NOTIFY_ON_TRANSITION = 0x00000008,		// Entity will receive Inside/Outside transition inputs when a transition occurs
+
+	FCAP_IMPULSE_USE = 0x00000010,		// can be used by the player
+	FCAP_CONTINUOUS_USE = 0x00000020,		// can be used by the player
+	FCAP_ONOFF_USE = 0x00000040,		// can be used by the player
+	FCAP_DIRECTIONAL_USE = 0x00000080,		// Player sends +/- 1 when using (currently only tracktrains)
+	// NOTE: Normally +USE only works in direct line of sight.  Add these caps for additional searches
+	FCAP_USE_ONGROUND = 0x00000100,
+	FCAP_USE_IN_RADIUS = 0x00000200,
+
+	FCAP_MASTER = 0x10000000,		// Can be used to "master" other entities (like multisource)
+	FCAP_WCEDIT_POSITION = 0x40000000,		// Can change position and update Hammer in edit mode
+};
+
+FLAGENUM_OPERATORS( EntityCaps_t, uint64 )
 
 // entity flags, CBaseEntity::m_iEFlags
 enum EntityFlags_t : uint64
@@ -621,6 +637,8 @@ FLAGENUM_OPERATORS( EntityFlags_t, uint64 )
 
 enum EntityBehaviorFlags_t : uint64
 {
+	FL_NO_ENTITY_FLAGS = 0,
+
 	FL_ONGROUND = (1<<0),	// At rest / on the ground
 	FL_DUCKING = (1<<1),	// Player flag -- Player is fully crouched
 	FL_ANIMDUCKING = (1<<2),	// Player flag -- Player is in the process of crouching or uncrouching but could be in transition
@@ -668,13 +686,15 @@ FLAGENUM_OPERATORS( EntityBehaviorFlags_t, uint64 )
 //-----------------------------------------------------------------------------
 // EFFECTS
 //-----------------------------------------------------------------------------
-enum : unsigned char
+enum BloodSprayFlags_t : unsigned char
 {
 	FX_BLOODSPRAY_DROPS	= 0x01,
 	FX_BLOODSPRAY_GORE	= 0x02,
 	FX_BLOODSPRAY_CLOUD	= 0x04,
 	FX_BLOODSPRAY_ALL		= 0xFF,
 };
+
+FLAGENUM_OPERATORS( BloodSprayFlags_t, unsigned char )
 
 //-----------------------------------------------------------------------------
 #define MAX_SCREEN_OVERLAYS		10
@@ -842,34 +862,14 @@ struct ModelScale
 	float		m_flModelScaleStartTime;
 };
 
-#include "soundflags.h"
-
 struct CSoundParameters;
-typedef short HSOUNDSCRIPTHANDLE;
+
 //-----------------------------------------------------------------------------
 // Purpose: Aggregates and sets default parameters for EmitSound function calls
 //-----------------------------------------------------------------------------
 struct EmitSound_t
 {
-	EmitSound_t() :
-		m_nChannel( CHAN_AUTO ),
-		m_pSoundName( 0 ),
-		m_flVolume( VOL_NORM ),
-		m_SoundLevel( SNDLVL_NONE ),
-		m_nFlags( SND_NOFLAGS ),
-		m_nPitch( PITCH_NORM ),
-		m_nSpecialDSP( 0 ),
-		m_pOrigin( 0 ),
-		m_flSoundTime( 0.0f ),
-		m_pflSoundDuration( 0 ),
-		m_bEmitCloseCaption( true ),
-		m_bWarnOnMissingCloseCaption( false ),
-		m_bWarnOnDirectWaveReference( false ),
-		m_nSpeakerEntity( -1 ),
-		m_UtlVecSoundOrigin(),
-		m_hSoundScriptHandle( -1 )
-	{
-	}
+	EmitSound_t();
 
 	EmitSound_t( const CSoundParameters &src );
 

@@ -28,6 +28,7 @@ enum Activity : unsigned short
 	#include "ai_activity_enum.inc"
 };
 
+UNORDEREDENUM_OPERATORS( Activity, unsigned short )
 
 #endif // AI_ACTIVITY_H
 

@@ -27,16 +27,56 @@ ConVar ai_debug_looktargets( "ai_debug_looktargets", "0" );
 ConVar ai_debug_expressions( "ai_debug_expressions", "0", FCVAR_NONE, "Show random expression decisions for NPCs." );
 static ConVar scene_showfaceto( "scene_showfaceto", "0", FCVAR_ARCHIVE, "When playing back, show the directions of faceto events." );
 
+BEGIN_MAPENTITY( CAI_BaseActor, MAPENT_NPCCLASS, "The base class for all head/body/eye expressive NPCS." )
 
-BEGIN_MAPENTITY( CAI_BaseActor, MAPENT_NPCCLASS )
+	DEFINE_MAP_FIELD( m_bDontUseSemaphore,
+		"DontUseSpeechSemaphore",
+		"Don't Use Speech Semaphore?",
+			"Friendly NPCs are not allowed to speak if another friendly NPC is speaking."
+			"In some cases we don't want speaking NPCs to prevent other NPCs from speaking (for instance, if there is a friendly NPC speaking for a long time on a monitor)."
+			"To make this NPC not prevent other NPCs from talking, make it not grab the semaphore when it speaks.",
+		"0", {
+			{"0", "No (Use speech semaphore)"},
+			{"1", "Yes (Don't use speech semaphore)"},
+		}
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_bDontUseSemaphore, "DontUseSpeechSemaphore" ),
+	DEFINE_MAP_FIELD( m_iszExpressionOverride,
+		FIELD_POOLED_SOUNDNAME,
+		"ExpressionOverride",
+		NULL,
+		"Enter a VCD file to override facial expressions on this NPC."
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_iszExpressionOverride, "ExpressionOverride" ),
-
-	DEFINE_INPUTFUNC( FIELD_STRING,	"SetExpressionOverride",	InputSetExpressionOverride ),
+	DEFINE_MAP_INPUT( InputSetExpressionOverride,
+		"SetExpressionOverride",
+		FIELD_POOLED_SCENENAME
+	),
 
 END_MAPENTITY()
+
+CAI_BaseActor::CAI_BaseActor()
+ :	m_fLatchedPositions( 0 ),
+	m_latchedEyeOrigin( vec3_origin ),
+	m_latchedEyeDirection( vec3_origin ),
+	m_latchedHeadDirection( vec3_origin ),
+	m_flBlinktime( 0 ),
+	m_hLookTarget( NULL ),
+	m_iszExpressionScene( NULL_STRING ),
+	m_iszIdleExpression( NULL_STRING ),
+	m_iszAlertExpression( NULL_STRING ),
+	m_iszCombatExpression( NULL_STRING ),
+	m_iszDeathExpression( NULL_STRING ),
+	m_iszExpressionOverride( NULL_STRING ),
+	m_bRemarkablePolling( false )
+{
+	memset( m_flextarget, 0, 64 * sizeof( m_flextarget[0] ) );
+}
+
+CAI_BaseActor::~CAI_BaseActor()
+{
+	delete m_pExpresser;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: clear out latched state
@@ -111,6 +151,17 @@ bool CAI_BaseActor::IsServerSideFlexController( char const *szName )
 			return true;
 	}
 	return false;
+}
+
+void CAI_BaseActor::Init( FlexWeight_t &index, const char *szName ) 
+{ 
+	// Make this fatal!!!
+	if ( !IsServerSideFlexController( szName ) )
+	{
+		Error( "You forgot to add flex controller %s to list in CAI_BaseActor::IsServerSideFlexController().", szName );
+	}
+
+	index = (FlexWeight_t)FindFlexController( szName ); 
 }
 
 void CAI_BaseActor::SetModel( const char *szModelName )

@@ -19,13 +19,13 @@ static constexpr int CShadowMgr_Shadow_t_m_Flags_offset = (
 	sizeof(void*)
 );
 
-static constexpr int CShadowMgr_SHADOW_DISABLED_value = (SHADOW_LAST_FLAG << 1);
+static constexpr int CShadowMgr_SHADOW_DISABLED_value = (SHADOW_LAST_CREATION_FLAG << 1);
 
 static int IShadowMgr_CreateShadow_index = -1;
 static int IShadowMgr_CreateShadowEx_index = -1;
 static int IShadowMgr_DestroyShadow_index = -1;
 
-using IShadowMgr_CreateShadowEx_t = ShadowHandle_t(IShadowMgr::*)(IMaterial*, IMaterial*, void*, int);
+using IShadowMgr_CreateShadowEx_t = ShadowHandle_t(IShadowMgr::*)(IMaterial*, IMaterial*, void*, ShadowCreateFlags_t);
 
 static decltype(&IShadowMgr::CreateShadow) IShadowMgr_CreateShadow_ptr = NULL;
 static IShadowMgr_CreateShadowEx_t IShadowMgr_CreateShadowEx_ptr = NULL;
@@ -86,14 +86,14 @@ HACKMGR_CLASS_API const FlashlightStateMod_t &IShadowMgr::GetFlashlightStateMod(
 	return tmp;
 }
 
-static ShadowHandle_t IShadowMgr_CreateShadow_hook( IShadowMgr *pthis, IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, int creationFlags )
+static ShadowHandle_t IShadowMgr_CreateShadow_hook( IShadowMgr *pthis, IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, ShadowCreateFlags_t creationFlags )
 {
 	ShadowHandle_t handle = (pthis->*IShadowMgr_CreateShadow_ptr)(pMaterial, pModelMaterial, pBindProxy, creationFlags);
 	if(handle != SHADOW_HANDLE_INVALID) {
 		const unsigned char *pInfo = (const unsigned char *)&pthis->GetInfo( handle );
 		const unsigned short flags = *(const unsigned short *)(pInfo + CShadowMgr_Shadow_t_m_Flags_offset);
 
-		if(flags & SHADOW_FLASHLIGHT) {
+		if(((ShadowCreateFlags_t)flags & SHADOW_CREATE_FLASHLIGHT) != SHADOW_NO_CREATION_FLAGS) {
 			FlashlightState_t &state = const_cast<FlashlightState_t &>(pthis->GetFlashlightState(handle));
 			if(state.m_Reserved == INVALID_FLASHLIGHT_MOD_IDX || !s_FlashlightMods.IsValidIndex( state.m_Reserved )) {
 				state.m_Reserved = s_FlashlightMods.AddToTail();
@@ -103,14 +103,14 @@ static ShadowHandle_t IShadowMgr_CreateShadow_hook( IShadowMgr *pthis, IMaterial
 	return handle;
 }
 
-static ShadowHandle_t IShadowMgr_CreateShadowEx_hook( IShadowMgr *pthis, IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, int creationFlags )
+static ShadowHandle_t IShadowMgr_CreateShadowEx_hook( IShadowMgr *pthis, IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, ShadowCreateFlags_t creationFlags )
 {
 	ShadowHandle_t handle = (pthis->*IShadowMgr_CreateShadowEx_ptr)(pMaterial, pModelMaterial, pBindProxy, creationFlags);
 	if(handle != SHADOW_HANDLE_INVALID) {
 		const unsigned char *pInfo = (const unsigned char *)&pthis->GetInfo( handle );
 		const unsigned short flags = *(const unsigned short *)(pInfo + CShadowMgr_Shadow_t_m_Flags_offset);
 
-		if(flags & SHADOW_FLASHLIGHT) {
+		if(((ShadowCreateFlags_t)flags & SHADOW_CREATE_FLASHLIGHT) != SHADOW_NO_CREATION_FLAGS) {
 			FlashlightState_t &state = const_cast<FlashlightState_t &>(pthis->GetFlashlightState(handle));
 			if(state.m_Reserved == INVALID_FLASHLIGHT_MOD_IDX || !s_FlashlightMods.IsValidIndex( state.m_Reserved )) {
 				state.m_Reserved = s_FlashlightMods.AddToTail();
@@ -126,7 +126,7 @@ static void IShadowMgr_DestroyShadow_hook( IShadowMgr *pthis, ShadowHandle_t han
 		const unsigned char *pInfo = (const unsigned char *)&pthis->GetInfo( handle );
 		const unsigned short flags = *(const unsigned short *)(pInfo + CShadowMgr_Shadow_t_m_Flags_offset);
 
-		if(flags & SHADOW_FLASHLIGHT) {
+		if(((ShadowCreateFlags_t)flags & SHADOW_CREATE_FLASHLIGHT) != SHADOW_NO_CREATION_FLAGS) {
 			FlashlightState_t &state = const_cast<FlashlightState_t &>(pthis->GetFlashlightState(handle));
 			if(state.m_Reserved != INVALID_FLASHLIGHT_MOD_IDX && s_FlashlightMods.IsValidIndex( state.m_Reserved )) {
 				s_FlashlightMods.Remove( state.m_Reserved );

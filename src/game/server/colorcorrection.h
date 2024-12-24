@@ -12,10 +12,16 @@
 #include <string.h>
 #include "GameEventListener.h"
 #include "baseentity.h"
+#include "igamesystem.h"
 
 // Spawn Flags
-#define SF_COLORCORRECTION_MASTER		0x0001
-#define SF_COLORCORRECTION_CLIENTSIDE	0x0002
+enum ColorCorrectionSpawnFlags_t : unsigned char
+{
+	SF_COLORCORRECTION_MASTER = 0x0001,
+	SF_COLORCORRECTION_CLIENTSIDE = 0x0002,
+};
+
+FLAGENUM_OPERATORS( ColorCorrectionSpawnFlags_t, unsigned char )
 
 //------------------------------------------------------------------------------
 // FIXME: This really should inherit from something	more lightweight
@@ -25,9 +31,9 @@
 //------------------------------------------------------------------------------
 // Purpose : Shadow control entity
 //------------------------------------------------------------------------------
-class CColorCorrection : public CBaseEntity
+class CColorCorrection : public CPointEntity
 {
-	DECLARE_CLASS( CColorCorrection, CBaseEntity );
+	DECLARE_CLASS( CColorCorrection, CPointEntity );
 public:
 	DECLARE_SERVERCLASS();
 	DECLARE_MAPENTITY();
@@ -38,7 +44,9 @@ public:
 	EdictStateFlags_t  UpdateTransmitState();
 	void Activate( void );
 
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+	DECLARE_SPAWNFLAGS( ColorCorrectionSpawnFlags_t )
+
+	virtual EntityCaps_t	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
 	bool IsMaster( void ) const { return HasSpawnFlags( SF_COLORCORRECTION_MASTER ); }
 

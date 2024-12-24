@@ -541,7 +541,7 @@ public:
 	bool					IsFloating();
 
 	// capabilities for save/restore
-	virtual int						ObjectCaps( void );
+	virtual EntityCaps_t ObjectCaps( void );
 
 private:
 	void OnDisableShadowDepthRenderingChanged();

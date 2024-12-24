@@ -253,19 +253,19 @@ inline IServerEntity* CBaseEdict::GetIServerEntity()
 	if ( m_fStateFlags & FL_EDICT_FULL )
 		return (IServerEntity*)m_pUnk;
 	else
-		return 0;
+		return NULL;
 }
 
 inline bool CBaseEdict::IsFree() const
 {
-	return (m_fStateFlags & FL_EDICT_FREE) != 0;
+	return (m_fStateFlags & FL_EDICT_FREE) != FL_EDICT_NONE;
 }
 
 
 
 inline bool	CBaseEdict::HasStateChanged() const
 {
-	return (m_fStateFlags & FL_EDICT_CHANGED) != 0;
+	return (m_fStateFlags & (FL_EDICT_CHANGED | FL_FULL_EDICT_CHANGED)) != FL_EDICT_NONE;
 }
 
 inline void	CBaseEdict::ClearStateChanged()
@@ -359,7 +359,7 @@ inline const IServerEntity* CBaseEdict::GetIServerEntity() const
 	if ( m_fStateFlags & FL_EDICT_FULL )
 		return (IServerEntity*)m_pUnk;
 	else
-		return 0;
+		return NULL;
 }
 
 inline IServerUnknown* CBaseEdict::GetUnknown()

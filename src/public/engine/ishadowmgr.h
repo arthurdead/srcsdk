@@ -15,6 +15,7 @@
 #include "mathlib/vmatrix.h"
 #include "hackmgr/hackmgr.h"
 #include "engine/ivmodelrender.h"
+#include "shadowflags.h"
 
 DECLARE_LOGGING_CHANNEL( LOG_SHADOWS );
 
@@ -30,36 +31,10 @@ class IClientRenderable;
 class ITexture;
 struct FlashlightInstance_t;
 struct FlashlightState_t;
+enum ShadowFlags_t : unsigned short;
 
 // change this when the new version is incompatable with the old
 #define ENGINE_SHADOWMGR_INTERFACE_VERSION	"VEngineShadowMgr002"
-
-
-//-----------------------------------------------------------------------------
-// Flags for the creation method
-//-----------------------------------------------------------------------------
-enum ShadowFlags_t : unsigned int
-{
-	SHADOW_FLAGS_FLASHLIGHT				= (1 << 0),
-	SHADOW_FLAGS_SHADOW					= (1 << 1),
-	SHADOW_FLAGS_LAST_FLAG				= SHADOW_FLAGS_SHADOW,
-
-	//all new flags must come after the flags from game/client/clientshadowmgr.cpp
-	//which in turn come after all the flags from toolframework/itoolentity.h
-	NUM_CLIENT_SHADOW_FLAGS = 4, //number of flags in toolframework/itoolentity.h
-	NUM_CLIENTSHADOWMGR_FLAGS = 4, //number of flags in game/client/clientshadowmgr.cpp
-
-	NEW_SHADOW_FLAGS_BEGIN_BIT = (SHADOW_FLAGS_LAST_FLAG << (NUM_CLIENT_SHADOW_FLAGS + NUM_CLIENTSHADOWMGR_FLAGS)),
-
-	SHADOW_FLAGS_SIMPLE_PROJECTION		= (NEW_SHADOW_FLAGS_BEGIN_BIT << 1),
-	SHADOW_FLAGS_PLAYER_FLASHLIGHT		= (NEW_SHADOW_FLAGS_BEGIN_BIT << 2),
-
-	SHADOW_FLAGS_ACTUAL_LAST_FLAG = SHADOW_FLAGS_PLAYER_FLASHLIGHT,
-
-	SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK = ( SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_SHADOW | SHADOW_FLAGS_SIMPLE_PROJECTION ),
-};
-
-FLAGENUM_OPERATORS( ShadowFlags_t, unsigned int )
 
 //-----------------------------------------------------------------------------
 //
@@ -74,18 +49,21 @@ FLAGENUM_OPERATORS( ShadowFlags_t, unsigned int )
 enum ShadowHandle_t : unsigned short;
 inline const ShadowHandle_t SHADOW_HANDLE_INVALID = (ShadowHandle_t)~0;
 
+UNORDEREDENUM_OPERATORS( ShadowHandle_t, unsigned short )
 
 //-----------------------------------------------------------------------------
 // Used for the creation Flags field of CreateShadow
 //-----------------------------------------------------------------------------
 enum ShadowCreateFlags_t : unsigned int
 {
-	SHADOW_CACHE_VERTS =  ( 1 << 0 ),
-	SHADOW_FLASHLIGHT =   ( 1 << 1 ),
-	SHADOW_LAST_FLAG = SHADOW_FLASHLIGHT,
+	SHADOW_NO_CREATION_FLAGS = 0,
 
-	//(SHADOW_LAST_FLAG << 1) is used by the engine
-	SHADOW_SIMPLE_PROJECTION	= ( SHADOW_LAST_FLAG << 2 ),
+	SHADOW_CREATE_CACHE_VERTS =  ( 1 << 0 ),
+	SHADOW_CREATE_FLASHLIGHT =   ( 1 << 1 ),
+	SHADOW_LAST_CREATION_FLAG = SHADOW_CREATE_FLASHLIGHT,
+
+	//(SHADOW_LAST_CREATION_FLAG << 1) is used by the engine
+	SHADOW_CREATE_SIMPLE_PROJECTION	= ( SHADOW_LAST_CREATION_FLAG << 2 ),
 };
 
 FLAGENUM_OPERATORS( ShadowCreateFlags_t, unsigned int )

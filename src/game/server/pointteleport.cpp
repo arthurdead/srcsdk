@@ -27,7 +27,7 @@ public:
 	void InputTeleportEntity( inputdata_t &&inputdata );
 	void InputTeleportToCurrentPos( inputdata_t &&inputdata );
 
-	int	ObjectCaps( void )
+	EntityCaps_t ObjectCaps( void )
 	{ 
 		return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); 
 	}

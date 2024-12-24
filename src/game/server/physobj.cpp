@@ -1325,7 +1325,7 @@ public:
 		}
 	}
 
-	int ObjectCaps()
+	EntityCaps_t ObjectCaps()
 	{ 
 		int caps = BaseClass::ObjectCaps() | FCAP_WCEDIT_POSITION;
 

@@ -30,6 +30,7 @@ enum Hitgroup_t : unsigned int;
 class CGameTrace : public CBaseTrace
 {
 public:
+	CGameTrace() {}
 
 	// Returns true if hEnt points at the world entity.
 	// If this returns true, then you can't use GetHitBoxIndex().
@@ -69,12 +70,13 @@ public:
 	IHandleEntity *m_pEnt;
 #endif
 
+	void SetHitbox( int hitbox );
+
+private:
 	// NOTE: this member is overloaded.
 	// If hEnt points at the world entity, then this is the static prop index.
 	// Otherwise, this is the hitbox index.
-	int			hitbox;					// box hit by trace in studio
-
-	CGameTrace() {}
+	int			hitbox_or_static_prop;					// box hit by trace in studio
 
 private:
 	// No copy constructors allowed

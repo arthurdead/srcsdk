@@ -31,10 +31,12 @@ class IClientAlphaProperty;
 enum ClientShadowHandle_t : unsigned short;
 inline const ClientShadowHandle_t CLIENTSHADOW_INVALID_HANDLE = (ClientShadowHandle_t)~0;
 
+UNORDEREDENUM_OPERATORS( ClientShadowHandle_t, unsigned short )
+
 //-----------------------------------------------------------------------------
 // What kind of shadows to render?
 //-----------------------------------------------------------------------------
-enum ShadowType_t
+enum ShadowType_t : unsigned int
 {
 	SHADOWS_NONE = 0,
 	SHADOWS_SIMPLE,
@@ -59,10 +61,15 @@ struct RenderableInstance_t
 
 
 // client renderable frame buffer usage flags
-#define ERENDERFLAGS_NEEDS_POWER_OF_TWO_FB  1				// needs refract texture
-#define ERENDERFLAGS_NEEDS_FULL_FB          2				// needs full framebuffer texture
-#define ERENDERFLAGS_REFRACT_ONLY_ONCE_PER_FRAME 4 // even if it needs a the refract texture, don't update it >once/ frame
+enum FBFlags_t : unsigned int
+{
+	ERENDERFLAGS_NONE = 0,
+	ERENDERFLAGS_NEEDS_POWER_OF_TWO_FB = 1,				// needs refract texture
+	ERENDERFLAGS_NEEDS_FULL_FB =        2,				// needs full framebuffer texture
+	ERENDERFLAGS_REFRACT_ONLY_ONCE_PER_FRAME = 4, // even if it needs a the refract texture, don't update it >once/ frame
+};
 
+FLAGENUM_OPERATORS( FBFlags_t, unsigned int )
 
 // This provides a way for entities to know when they've entered or left the PVS.
 // Normally, server entities can use NotifyShouldTransmit to get this info, but client-only
@@ -111,7 +118,7 @@ public:
 	virtual const model_t*			GetModel( ) const = 0;
 public:
 	friend class CClientShadowMgr;
-	virtual int						DO_NOT_USE_DrawModel( int flags ) = 0;
+	virtual int						DO_NOT_USE_DrawModel( DrawModelFlags_t flags ) = 0;
 
 public:
 	// Get the body parameter
@@ -224,8 +231,8 @@ public:
 
 	virtual RenderableTranslucencyType_t ComputeTranslucencyType() = 0;
 
-	virtual int					    GetRenderFlags( void ) = 0; // ERENDERFLAGS_xxx
-	virtual int						DrawModel( int flags, const RenderableInstance_t &instance ) = 0;
+	virtual FBFlags_t					    GetRenderFlags( void ) = 0; // ERENDERFLAGS_xxx
+	virtual int						DrawModel( DrawModelFlags_t flags, const RenderableInstance_t &instance ) = 0;
 
 	// NOTE: This is used by renderables to override the default alpha modulation,
 	// not including fades, for a renderable. The alpha passed to the function
@@ -285,7 +292,7 @@ private:
 		return false;
 	}
 
-	virtual int DrawModel(int flags) final
+	virtual int DrawModel(DrawModelFlags_t flags) final
 	{
 		DebuggerBreak();
 		return 0;
@@ -312,11 +319,11 @@ private:
 
 public:
 	virtual bool DO_NOT_USE_UsesPowerOfTwoFrameBufferTexture() final
-	{ return (GetRenderFlags() & ERENDERFLAGS_NEEDS_POWER_OF_TWO_FB) != 0; }
+	{ return (GetRenderFlags() & ERENDERFLAGS_NEEDS_POWER_OF_TWO_FB) != ERENDERFLAGS_NONE; }
 	virtual bool DO_NOT_USE_UsesFullFrameBufferTexture() final
-	{ return (GetRenderFlags() & ERENDERFLAGS_NEEDS_FULL_FB) != 0; }
+	{ return (GetRenderFlags() & ERENDERFLAGS_NEEDS_FULL_FB) != ERENDERFLAGS_NONE; }
 
-	virtual int DO_NOT_USE_DrawModel(int flags) final
+	virtual int DO_NOT_USE_DrawModel(DrawModelFlags_t flags) final
 	{
 		RenderableInstance_t &instance = GetDefaultRenderableInstance();
 		return static_cast<IClientRenderableMod *>(this)->DrawModel(flags, instance);
@@ -362,7 +369,7 @@ public:
 // Purpose: All client renderables supporting the fast-path mdl
 // rendering algorithm must inherit from this interface
 //-----------------------------------------------------------------------------
-enum RenderableLightingModel_t
+enum RenderableLightingModel_t : signed int
 {
 	LIGHTING_MODEL_NONE = -1,
 	LIGHTING_MODEL_STANDARD = 0,
@@ -372,7 +379,7 @@ enum RenderableLightingModel_t
 	LIGHTING_MODEL_COUNT,
 };
 
-enum ModelDataCategory_t
+enum ModelDataCategory_t : unsigned int
 {
 	MODEL_DATA_LIGHTING_MODEL,	// data type returned is a RenderableLightingModel_t
 	MODEL_DATA_STENCIL,			// data type returned is a ShaderStencilState_t

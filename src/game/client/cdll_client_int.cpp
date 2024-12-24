@@ -475,13 +475,28 @@ CSysModule* game_loopbackDLL = NULL;
 IGameLoopback* g_pGameLoopback = NULL;
 
 CSysModule* serverDLL = NULL;
-IGameServerLoopback* s_GameServerLoopback = NULL;
+static IGameServerLoopback* s_GameServerLoopback = NULL;
 
 IServer *g_pListenServer = NULL;
 
 bool IsListenServerHost()
 {
-	return g_pListenServer && g_pListenServer->IsActive();
+	if(!g_pListenServer)
+		return false;
+
+	INetChannel *nc = (INetChannel *)engine->GetNetChannelInfo();
+	if(!nc)
+		return false;
+
+	IClient *cl = (IClient *)nc->GetMsgHandler();
+	if(!cl)
+		return false;
+
+	IServer *sv = cl->GetServer();
+	if(!sv)
+		return false;
+
+	return (sv == g_pListenServer && sv->IsActive() && nc->IsLoopback());
 }
 
 IGameServerLoopback* GetGameServerLoopback()

@@ -73,6 +73,7 @@
 #include "world.h"
 #include "editor_sendcommand.h"
 #include "ModelSoundsCache.h"
+#include "iserver.h"
 
 #ifndef SWDS
 #include "ienginevgui.h"
@@ -164,7 +165,37 @@ CSysModule* game_loopbackDLL = NULL;
 IGameLoopback* g_pGameLoopback = NULL;
 
 CSysModule* clientDLL = NULL;
-IGameClientLoopback* g_pGameClientLoopback = NULL;
+static IGameClientLoopback* s_pGameClientLoopback = NULL;
+
+IServer *g_pListenServer = NULL;
+
+bool IsListenServerHost( int playerIndex )
+{
+	if(g_bDedicatedServer || !g_pListenServer)
+		return false;
+
+	INetChannel *nc = (INetChannel *)engine->GetPlayerNetInfo( playerIndex ); 
+	if(!nc)
+		return false;
+
+	IClient *cl = (IClient *)nc->GetMsgHandler();
+	if(!cl)
+		return false;
+
+	IServer *sv = cl->GetServer();
+	if(!sv)
+		return false;
+
+	return (sv == g_pListenServer && sv->IsActive() && nc->IsLoopback());
+}
+
+IGameClientLoopback* GetGameClientLoopback( int playerIndex )
+{
+	if( !IsListenServerHost( playerIndex ) )
+		return NULL;
+
+	return s_pGameClientLoopback;
+}
 #endif
 
 CSysModule* vphysicsDLL = NULL;
@@ -583,6 +614,11 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 #endif
 
 #ifndef SWDS
+	if( !g_bDedicatedServer )
+		g_pListenServer = engine->GetIServer();
+#endif
+
+#ifndef SWDS
 	// If not running dedicated, grab the engine vgui interface
 	if ( !g_bTextMode )
 	{
@@ -615,9 +651,9 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 			CreateInterfaceFn clientFactory = Sys_GetFactory(clientDLL);
 			if(clientFactory) {
 				int status = IFACE_OK;
-				g_pGameClientLoopback = (IGameClientLoopback *)clientFactory(GAMECLIENTLOOPBACK_INTERFACE_VERSION, &status);
+				s_pGameClientLoopback = (IGameClientLoopback *)clientFactory(GAMECLIENTLOOPBACK_INTERFACE_VERSION, &status);
 				if(status != IFACE_OK) {
-					g_pGameClientLoopback = NULL;
+					s_pGameClientLoopback = NULL;
 				}
 			}
 		}

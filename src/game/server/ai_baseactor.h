@@ -20,8 +20,6 @@
 // Purpose: The base class for all head/body/eye expressive NPCS.
 //
 //-----------------------------------------------------------------------------
-enum PoseParameter_t { POSE_END=INT_MAX };
-enum FlexWeight_t { FLEX_END=INT_MAX };
 class CInfoRemarkable;
 
 struct AILookTargetArgs_t
@@ -54,43 +52,14 @@ public:
 	// Note, you must add all names to this static function in order for Init to work
 	static bool	IsServerSideFlexController( char const *szName );
 
-	void	Init( FlexWeight_t &index, const char *szName ) 
-	{ 
-		// Make this fatal!!!
-		if ( !IsServerSideFlexController( szName ) )
-		{
-			Error( "You forgot to add flex controller %s to list in CAI_BaseActor::IsServerSideFlexController().", szName );
-		}
-
-		index = (FlexWeight_t)FindFlexController( szName ); 
-	}
+	void	Init( FlexWeight_t &index, const char *szName );
 	void	Set( FlexWeight_t index, float flValue ) { SetFlexWeight( (LocalFlexController_t)index, flValue ); }
 	float	Get( FlexWeight_t index ) { return GetFlexWeight( (LocalFlexController_t)index ); }
 
 
 public:
-	CAI_BaseActor()
-	 :	m_fLatchedPositions( 0 ),
-		m_latchedEyeOrigin( vec3_origin ),
-		m_latchedEyeDirection( vec3_origin ),
-		m_latchedHeadDirection( vec3_origin ),
-		m_flBlinktime( 0 ),
-		m_hLookTarget( NULL ),
-		m_iszExpressionScene( NULL_STRING ),
-		m_iszIdleExpression( NULL_STRING ),
-		m_iszAlertExpression( NULL_STRING ),
-		m_iszCombatExpression( NULL_STRING ),
-		m_iszDeathExpression( NULL_STRING ),
-		m_iszExpressionOverride( NULL_STRING ),
-		m_bRemarkablePolling( false )
-	{
-		memset( m_flextarget, 0, 64 * sizeof( m_flextarget[0] ) );
-	}
-
-	~CAI_BaseActor()
-	{
-		delete m_pExpresser;
-	}
+	CAI_BaseActor();
+	~CAI_BaseActor();
 
 	virtual void			StudioFrameAdvance();
 

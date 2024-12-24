@@ -37,30 +37,7 @@ struct flexsettinghdr_t;
 class CSceneEventInfo
 {
 public:
-	CSceneEventInfo()
-		:
-	m_pEvent( 0 ),
-	m_pScene( 0 ),
-	m_pActor( 0 ),
-	m_hSceneEntity( NULL ),
-	m_bStarted( false ),
-	m_iLayer( -1 ),
-	m_iPriority( 0 ),
-	m_nSequence( 0 ),
-	m_bIsGesture( false ),
-	m_flWeight( 0.0f ),
-	m_hTarget(),
-	m_bIsMoving( false ),
-	m_bHasArrived( false ),
-	m_flInitialYaw( 0.0f ),
-	m_flTargetYaw( 0.0f ),
-	m_flFacingYaw( 0.0f ),
-	m_nType( 0 ),
-	m_flNext( 0.0f ),
-	m_bClientSide( false ),
-	m_pExpHdr( NULL )
-	{
-	}
+	CSceneEventInfo();
 
 	// The event handle of the current scene event
 	CChoreoEvent	*m_pEvent;
@@ -81,9 +58,9 @@ public:
 	//	EVENT local data...
 	// FIXME: Evil, make accessors or figure out better place
 	// FIXME: This won't work, scenes don't save and restore...
-	int						m_iLayer;
+	animlayerindex_t						m_iLayer;
 	int						m_iPriority;
-	int						m_nSequence;
+	sequence_t						m_nSequence;
 	bool					m_bIsGesture;
 	float					m_flWeight; // used for suppressions of posture while moving
 

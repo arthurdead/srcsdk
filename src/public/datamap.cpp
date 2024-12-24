@@ -334,3 +334,29 @@ typedescription_t::typedescription_t(datamap_t *embed, const char *name, int byt
 	m_pGuiName = NULL;
 	m_pDescription = NULL;
 }
+
+void MapField_impl( typedescription_t &ret, const char *name, int offset, int size, fieldtype_t type, fieldflags_t flags_ )
+{
+	if(GetBaseFieldType(type) == FIELD_MODELINDEX) {
+		flags_ |= FTYPEDESC_MODELINDEX;
+	}
+
+	ret.fieldType_ = type;
+	ret.fieldName = name;
+	ret.fieldOffset_[TD_OFFSET_NORMAL] = offset;
+	ret.fieldOffset_[TD_OFFSET_PACKED] = 0;
+	ret.fieldSize = 1;
+	ret.flags = flags_;
+	ret.externalName = NULL;
+	ret.pFieldOps = NULL;
+	ret.inputFunc = NULL;
+	ret.td = NULL;
+	ret.fieldSizeInBytes = size;
+	ret.override_field = NULL;
+	ret.override_count = 0;
+	ret.fieldTolerance = 0;
+
+	ret.m_pDefValue = NULL;
+	ret.m_pGuiName = NULL;
+	ret.m_pDescription = NULL;
+}

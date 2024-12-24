@@ -97,7 +97,9 @@ enum
 //-----------------------------------------------------------------------------
 // DrawModel flags
 //-----------------------------------------------------------------------------
-enum
+enum DrawModelFlags_t : unsigned int;
+
+enum StudioDrawModelFlags_t : unsigned int
 {
 	STUDIORENDER_DRAW_ENTIRE_MODEL		= 0,
 	STUDIORENDER_DRAW_OPAQUE_ONLY		= 0x01,
@@ -126,6 +128,7 @@ enum
 	STUDIORENDER_GENERATE_STATS					= 0x8000,
 };
 
+FLAGENUM_OPERATORS( StudioDrawModelFlags_t, unsigned int )
 
 //-----------------------------------------------------------------------------
 // Standard model vertex formats
@@ -134,7 +137,8 @@ enum
 //        list required forcedmaterialoverrides in models/bsps (rather than
 //        all models supporting all possible overrides, as they do currently).
 #define VERTEX_TEXCOORD0_2D ( ( (uint64) 2 ) << ( TEX_COORD_SIZE_BIT + ( 3*0 ) ) )
-enum MaterialVertexFormat_t
+
+enum MaterialVertexFormat_t : uint64
 {
 	MATERIAL_VERTEX_FORMAT_MODEL_SKINNED		= (VertexFormat_t) VERTEX_POSITION3D | VERTEX_COLOR | VERTEX_NORMAL | VERTEX_TEXCOORD0_2D | VERTEX_BONEWEIGHT(2) | VERTEX_BONE_INDEX | VERTEX_USERDATA_SIZE(4),
 	MATERIAL_VERTEX_FORMAT_MODEL_SKINNED_DX7	= (VertexFormat_t) VERTEX_POSITION3D | VERTEX_COLOR | VERTEX_NORMAL | VERTEX_TEXCOORD0_2D | VERTEX_BONEWEIGHT(2) | VERTEX_BONE_INDEX,
@@ -147,7 +151,7 @@ enum MaterialVertexFormat_t
 //-----------------------------------------------------------------------------
 // What kind of material override is it?
 //-----------------------------------------------------------------------------
-enum OverrideType_t
+enum OverrideType_t : unsigned int
 {
 	OVERRIDE_NORMAL = 0,
 	OVERRIDE_BUILD_SHADOWS,
@@ -394,12 +398,12 @@ public:
 	
 	// Draws the model
 	virtual void DrawModel( DrawModelResults_t *pResults, const DrawModelInfo_t& info, 
-		matrix3x4_t *pBoneToWorld, float *pFlexWeights, float *pFlexDelayedWeights, const Vector &modelOrigin, int flags = STUDIORENDER_DRAW_ENTIRE_MODEL ) = 0;
+		matrix3x4_t *pBoneToWorld, float *pFlexWeights, float *pFlexDelayedWeights, const Vector &modelOrigin, StudioDrawModelFlags_t flags = STUDIORENDER_DRAW_ENTIRE_MODEL ) = 0;
 
 	// Methods related to static prop rendering
-	virtual void DrawModelStaticProp( const DrawModelInfo_t& drawInfo, const matrix3x4_t &modelToWorld, int flags = STUDIORENDER_DRAW_ENTIRE_MODEL ) = 0;
+	virtual void DrawModelStaticProp( const DrawModelInfo_t& drawInfo, const matrix3x4_t &modelToWorld, StudioDrawModelFlags_t flags = STUDIORENDER_DRAW_ENTIRE_MODEL ) = 0;
 	virtual void DrawStaticPropDecals( const DrawModelInfo_t &drawInfo, const matrix3x4_t &modelToWorld ) = 0;
-	virtual void DrawStaticPropShadows( const DrawModelInfo_t &drawInfo, const matrix3x4_t &modelToWorld, int flags ) = 0;
+	virtual void DrawStaticPropShadows( const DrawModelInfo_t &drawInfo, const matrix3x4_t &modelToWorld, StudioDrawModelFlags_t flags ) = 0;
 
 	// Causes a material to be used instead of the materials the model was compiled with
 	virtual void ForcedMaterialOverride( IMaterial *newMaterial, OverrideType_t nOverrideType = OVERRIDE_NORMAL ) = 0;
@@ -442,22 +446,22 @@ public:
 	virtual int GetMaterialList( studiohdr_t *pStudioHdr, int count, IMaterial** ppMaterials ) = 0;
 	virtual int GetMaterialListFromBodyAndSkin( MDLHandle_t studio, int nSkin, int nBody, int nCountOutputMaterials, IMaterial** ppOutputMaterials ) = 0;
 	// draw an array of models with the same state
-	virtual void DrawModelArray( const DrawModelInfo_t &drawInfo, int arrayCount, model_array_instance_t *pInstanceData, int instanceStride, int flags = STUDIORENDER_DRAW_ENTIRE_MODEL ) = 0;
+	virtual void DrawModelArray( const DrawModelInfo_t &drawInfo, int arrayCount, model_array_instance_t *pInstanceData, int instanceStride, StudioDrawModelFlags_t flags = STUDIORENDER_DRAW_ENTIRE_MODEL ) = 0;
 
 	// no debug modes, just fastest drawing path
 	HACKMGR_CLASS_API void DrawModelArrayStaticProp( const DrawModelInfo_t& drawInfo, int nInstanceCount, const MeshInstanceData_t *pInstanceData, ColorMeshInfo_t **pColorMeshes );
 
 	// draw an array of models with the same state
 	HACKMGR_CLASS_API void DrawModelArray( const StudioModelArrayInfo_t &drawInfo, int nCount, 
-		StudioArrayInstanceData_t *pInstanceData, int nInstanceStride, int flags = STUDIORENDER_DRAW_ENTIRE_MODEL );
+		StudioArrayInstanceData_t *pInstanceData, int nInstanceStride, StudioDrawModelFlags_t flags = STUDIORENDER_DRAW_ENTIRE_MODEL );
 
 	// draw an array of models with the same state
 	HACKMGR_CLASS_API void DrawModelShadowArray( int nCount, StudioArrayData_t *pShadowData, 
-		int nInstanceStride, int flags = STUDIORENDER_DRAW_ENTIRE_MODEL );
+		int nInstanceStride, StudioDrawModelFlags_t flags = STUDIORENDER_DRAW_ENTIRE_MODEL );
 
 	// draw an array of models with the same state
 	HACKMGR_CLASS_API void DrawModelArray( const StudioModelArrayInfo2_t &info, int nCount, StudioArrayData_t *pArrayData, 
-		int nInstanceStride, int flags = STUDIORENDER_DRAW_ENTIRE_MODEL );
+		int nInstanceStride, StudioDrawModelFlags_t flags = STUDIORENDER_DRAW_ENTIRE_MODEL );
 };
 
 extern IStudioRender *g_pStudioRender;

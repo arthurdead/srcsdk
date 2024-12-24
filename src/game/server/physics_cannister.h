@@ -70,7 +70,7 @@ public:
 
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );
 
-	int ObjectCaps() 
+	EntityCaps_t ObjectCaps() 
 	{ 
 		return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE);
 	}

@@ -38,7 +38,7 @@ public:
 	void	InputSetEnableShadows( inputdata_t &&inputdata );
 	void	InputSetLightColor( inputdata_t &&inputdata );
 
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+	virtual EntityCaps_t ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
 	DECLARE_SERVERCLASS();
 	DECLARE_MAPENTITY();

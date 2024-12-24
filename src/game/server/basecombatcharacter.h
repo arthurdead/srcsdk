@@ -36,8 +36,10 @@ typedef CHandle<CBaseCombatWeapon> CBaseCombatWeaponHandle;
 //  Capability Bits
 // -------------------------------------
 
-enum Capability_t : unsigned int
+enum Capability_t : uint64
 {
+	bits_CAP_NONE = 0,
+
 	bits_CAP_MOVE_GROUND			= 0x00000001, // walk/run
 	bits_CAP_MOVE_JUMP				= 0x00000002, // jump/leap
 	bits_CAP_MOVE_FLY				= 0x00000004, // can fly, move all around
@@ -78,7 +80,7 @@ enum Capability_t : unsigned int
 	bits_CAP_MOVE_GROUP =  (bits_CAP_MOVE_GROUND | bits_CAP_MOVE_JUMP | bits_CAP_MOVE_FLY | bits_CAP_MOVE_CLIMB | bits_CAP_MOVE_CRAWL | bits_CAP_MOVE_SWIM),
 };
 
-FLAGENUM_OPERATORS( Capability_t, unsigned int )
+FLAGENUM_OPERATORS( Capability_t, uint64 )
 
 class CBaseCombatWeapon;
 

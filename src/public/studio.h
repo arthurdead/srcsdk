@@ -45,14 +45,34 @@ namespace OptimizedModel
 }
 
 enum Activity : unsigned short;
-//enum sequence_t : unsigned short;
-typedef int sequence_t;
+enum sequence_t : unsigned short;
+UNORDEREDENUM_OPERATORS( sequence_t, unsigned short )
+
+enum PoseParameter_t : unsigned char;
+UNORDEREDENUM_OPERATORS( PoseParameter_t, unsigned char )
 
 //TODO!!!! differentiate between a global sequence and a local sequence
 
 inline const Activity INVALID_ACTIVITY = (Activity)-1;
 inline const sequence_t INVALID_SEQUENCE = (sequence_t)-1;
-inline const sequence_t ROOT_SEQUENCE = (sequence_t)0;
+
+// So we have something more succint to check for than '-1'
+#define ACTIVITY_NOT_AVAILABLE INVALID_SEQUENCE
+#define ACT_INVALID INVALID_ACTIVITY
+
+bool operator==(sequence_t, Activity) = delete;
+bool operator!=(sequence_t, Activity) = delete;
+bool operator>(sequence_t, Activity) = delete;
+bool operator>=(sequence_t, Activity) = delete;
+bool operator<(sequence_t, Activity) = delete;
+bool operator<=(sequence_t, Activity) = delete;
+
+bool operator==(Activity, sequence_t) = delete;
+bool operator!=(Activity, sequence_t) = delete;
+bool operator>(Activity, sequence_t) = delete;
+bool operator>=(Activity, sequence_t) = delete;
+bool operator<(Activity, sequence_t) = delete;
+bool operator<=(Activity, sequence_t) = delete;
 
 /*
 ==============================================================================
@@ -135,20 +155,24 @@ private:
 	mstudioquatinterpbone_t(const mstudioquatinterpbone_t& vOther);
 };
 
+enum JiggleBoneFlags_t : unsigned int
+{
+	JIGGLE_IS_FLEXIBLE =				0x01,
+	JIGGLE_IS_RIGID =					0x02,
+	JIGGLE_HAS_YAW_CONSTRAINT =		0x04,
+	JIGGLE_HAS_PITCH_CONSTRAINT =		0x08,
+	JIGGLE_HAS_ANGLE_CONSTRAINT =		0x10,
+	JIGGLE_HAS_LENGTH_CONSTRAINT =	0x20,
+	JIGGLE_HAS_BASE_SPRING =			0x40,
+	JIGGLE_IS_BOING =					0x80,		// simple squash and stretch sinusoid "boing"
+};
 
-#define JIGGLE_IS_FLEXIBLE				0x01
-#define JIGGLE_IS_RIGID					0x02
-#define JIGGLE_HAS_YAW_CONSTRAINT		0x04
-#define JIGGLE_HAS_PITCH_CONSTRAINT		0x08
-#define JIGGLE_HAS_ANGLE_CONSTRAINT		0x10
-#define JIGGLE_HAS_LENGTH_CONSTRAINT	0x20
-#define JIGGLE_HAS_BASE_SPRING			0x40
-#define JIGGLE_IS_BOING					0x80		// simple squash and stretch sinusoid "boing"
+FLAGENUM_OPERATORS( JiggleBoneFlags_t, unsigned int )
 
 struct mstudiojigglebone_t
 {
 
-	int				flags;
+	JiggleBoneFlags_t				flags;
 
 	// general params
 	float			length;					// how from from bone base, along bone, is tip
@@ -436,11 +460,27 @@ struct mstudiobonecontroller_t
 	int					unused[8];
 };
 
+// ---------------------------
+//  Hit Group standards
+// ---------------------------
+enum Hitgroup_t : unsigned int
+{
+	HITGROUP_GENERIC =	0,
+	HITGROUP_HEAD =		1,
+	HITGROUP_CHEST =		2,
+	HITGROUP_STOMACH =	3,
+	HITGROUP_LEFTARM =	4,	
+	HITGROUP_RIGHTARM =	5,
+	HITGROUP_LEFTLEG =	6,
+	HITGROUP_RIGHTLEG =	7,
+	HITGROUP_GEAR =		10,			// alerts NPC, but doesn't do damage or bleed (1/100th damage)
+};
+
 // intersection boxes
 struct mstudiobbox_t
 {
 	int					bone;
-	int					group;				// intersection group
+	Hitgroup_t			group;				// intersection group
 	Vector				bbmin;				// bounding box
 	Vector				bbmax;	
 	int					szhitboxnameindex;	// offset to the name of the hitbox.
@@ -898,21 +938,6 @@ struct mstudioactivitymodifier_t
 #define STUDIO_RLOOP	0x00040000	// controller that wraps shortest distance
 
 // sequence and autolayer flags
-#define STUDIO_LOOPING	0x0001		// ending frame should be the same as the starting frame
-#define STUDIO_SNAP		0x0002		// do not interpolate between previous animation and this one
-#define STUDIO_DELTA	0x0004		// this sequence "adds" to the base sequences, not slerp blends
-#define STUDIO_AUTOPLAY	0x0008		// temporary flag that forces the sequence to always play
-#define STUDIO_POST		0x0010		// 
-#define STUDIO_ALLZEROS	0x0020		// this animation/sequence has no real animation data
-//						0x0040
-#define STUDIO_CYCLEPOSE 0x0080		// cycle index is taken from a pose parameter index
-#define STUDIO_REALTIME	0x0100		// cycle index is taken from a real-time clock, not the animations cycle index
-#define STUDIO_LOCAL	0x0200		// sequence has a local context sequence
-#define STUDIO_HIDDEN	0x0400		// don't show in default selection views
-#define STUDIO_OVERRIDE	0x0800		// a forward declared sequence (empty)
-#define STUDIO_ACTIVITY_SERVER	0x1000		// Has been updated at runtime to activity index
-#define STUDIO_EVENT_SERVER	0x2000		// Has been updated at runtime to event index
-#define STUDIO_WORLD	0x4000		// sequence blends in worldspace
 // autolayer flags
 //							0x0001
 //							0x0002
@@ -929,9 +954,31 @@ struct mstudioactivitymodifier_t
 #define STUDIO_AL_LOCAL		0x1000		// layer is a local context sequence
 //							0x2000
 #define STUDIO_AL_POSE		0x4000		// layer blends using a pose parameter instead of parent cycle
-#define STUDIO_NOFORCELOOP 0x8000	// do not force the animation loop
-#define STUDIO_EVENT_CLIENT 0x10000	// Has been updated at runtime to event index on client
-#define STUDIO_ACTIVITY_CLIENT 0x20000	// Has been updated at runtime to event index on client
+
+enum SequenceFlags_t : unsigned int
+{
+	STUDIO_NO_SEQUENCE_FLAGS = 0,
+	STUDIO_LOOPING =	0x0001,		// ending frame should be the same as the starting frame
+	STUDIO_SNAP =		0x0002,		// do not interpolate between previous animation and this one
+	STUDIO_DELTA =	0x0004,		// this sequence "adds" to the base sequences, not slerp blends
+	STUDIO_AUTOPLAY =	0x0008,		// temporary flag that forces the sequence to always play
+	STUDIO_POST =		0x0010,		// 
+	STUDIO_ALLZEROS =	0x0020,		// this animation/sequence has no real animation data
+	//						0x0040,
+	STUDIO_CYCLEPOSE = 0x0080,		// cycle index is taken from a pose parameter index
+	STUDIO_REALTIME =	0x0100,		// cycle index is taken from a real-time clock, not the animations cycle index
+	STUDIO_LOCAL =	0x0200,		// sequence has a local context sequence
+	STUDIO_HIDDEN =	0x0400,		// don't show in default selection views
+	STUDIO_OVERRIDE =	0x0800,		// a forward declared sequence (empty)
+	STUDIO_ACTIVITY_SERVER =	0x1000,		// Has been updated at runtime to activity index
+	STUDIO_EVENT_SERVER =	0x2000,		// Has been updated at runtime to event index
+	STUDIO_WORLD =	0x4000,		// sequence blends in worldspace
+	STUDIO_NOFORCELOOP = 0x8000,	// do not force the animation loop
+	STUDIO_EVENT_CLIENT = 0x10000,	// Has been updated at runtime to event index on client
+	STUDIO_ACTIVITY_CLIENT = 0x20000,	// Has been updated at runtime to event index on client
+};
+
+FLAGENUM_OPERATORS( SequenceFlags_t, unsigned int )
 
 #ifdef GAME_DLL
 #define STUDIO_ACTIVITY STUDIO_ACTIVITY_SERVER
@@ -953,7 +1000,7 @@ struct mstudioseqdesc_t
 	int					szactivitynameindex;
 	inline char * const pszActivityName( void ) const { return ((char *)this) + szactivitynameindex; }
 
-	int					flags;		// looping/non-looping flags
+	SequenceFlags_t					flags;		// looping/non-looping flags
 
 	unsigned short			activity_server;	// initialized at loadtime to game DLL values
 	unsigned short			activity_client;	// initialized at loadtime to game DLL values
@@ -2361,7 +2408,7 @@ struct studiohdr_t
 
 	int					numlocalseq;				// sequences
 	int					localseqindex;
-  	inline mstudioseqdesc_t *pLocalSeqdesc( sequence_t i ) const { Assert(i == ROOT_SEQUENCE || i < numlocalseq); return (mstudioseqdesc_t *)(((byte *)this) + localseqindex) + i; };
+  	inline mstudioseqdesc_t *pLocalSeqdesc( sequence_t i ) const { Assert((unsigned short)i < numlocalseq); return (mstudioseqdesc_t *)(((byte *)this) + localseqindex) + i; };
 
 //public:
 	bool				SequencesAvailable() const;
@@ -2435,7 +2482,7 @@ struct studiohdr_t
 
 	int					numflexcontrollers;
 	int					flexcontrollerindex;
-	inline mstudioflexcontroller_t *pFlexcontroller( LocalFlexController_t i ) const { Assert( numflexcontrollers == 0 || ( i >= 0 && i < numflexcontrollers ) ); return (mstudioflexcontroller_t *)(((byte *)this) + flexcontrollerindex) + i; };
+	inline mstudioflexcontroller_t *pFlexcontroller( LocalFlexController_t i ) const { Assert( numflexcontrollers == 0 || ( (unsigned char)i < numflexcontrollers ) ); return (mstudioflexcontroller_t *)(((byte *)this) + flexcontrollerindex) + (unsigned char)i; };
 
 	int					numflexrules;
 	int					flexruleindex;
@@ -2664,7 +2711,7 @@ public:
 	inline int			numflexdesc() const{ return m_pStudioHdr->numflexdesc; };
 	inline mstudioflexdesc_t *pFlexdesc( int i ) const { return m_pStudioHdr->pFlexdesc( i ); };
 
-	inline LocalFlexController_t			numflexcontrollers() const{ return (LocalFlexController_t)m_pStudioHdr->numflexcontrollers; };
+	inline int			numflexcontrollers() const{ return m_pStudioHdr->numflexcontrollers; };
 	inline mstudioflexcontroller_t *pFlexcontroller( LocalFlexController_t i ) const { return m_pStudioHdr->pFlexcontroller( i ); };
 
 	inline int			numflexcontrollerui() const{ return m_pStudioHdr->numflexcontrollerui; };

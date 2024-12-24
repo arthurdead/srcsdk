@@ -114,7 +114,7 @@ public:
 		SetNextThink( gpGlobals->curtime );
 	}
 
-	virtual int				ObjectCaps( void ) { return BaseClass::ObjectCaps(); }
+	virtual EntityCaps_t ObjectCaps( void ) { return BaseClass::ObjectCaps(); }
 
 	virtual void			Think();
 

@@ -27,38 +27,7 @@ class CAI_BlendedMotor : public CAI_Motor
 {
 	typedef CAI_Motor BaseClass;
 public:
-	CAI_BlendedMotor( CAI_BaseNPC *pOuter )
-	 :	BaseClass( pOuter )
-	{
-		m_iPrimaryLayer = -1;
-		m_nPrimarySequence = ACT_INVALID;
-
-		m_iSecondaryLayer = -1;
-		m_nSecondarySequence =  ACT_INVALID;
-		m_flSecondaryWeight = 0.0f;
-
-		m_nSavedGoalActivity = ACT_INVALID;
-		m_nSavedTranslatedGoalActivity = ACT_INVALID;
-		m_nGoalSequence = ACT_INVALID;
-
-		m_nPrevMovementSequence = ACT_INVALID;
-		m_nInteriorSequence = ACT_INVALID;
-
-		m_bDeceleratingToGoal = false;
-
-		m_flStartCycle = 0.0f;
-
-		m_flPredictiveSpeedAdjust = 1.0f;
-		m_flReactiveSpeedAdjust = 1.0f;
-		m_vecPrevOrigin1.Init();
-		m_vecPrevOrigin2.Init();
-
-		m_prevYaw = 0.0f;
-		m_doTurn = 0.0f;
-		m_doLeft = 0.0f;
-		m_doRight = 0.0f;
-		m_flNextTurnAct = 0.0f;
-	}
+	CAI_BlendedMotor( CAI_BaseNPC *pOuter );
 
 	void 	MoveClimbStart( const Vector &climbDest, const Vector &climbDir, float climbDist, float yaw );
 	void 	MoveJumpStart( const Vector &velocity );
@@ -103,13 +72,13 @@ private:
 
 	// helpers to simplify code
 	float	GetCycle()														{ return GetOuter()->GetCycle();								}
-	int		AddLayeredSequence( int sequence, int iPriority )				{ return GetOuter()->AddLayeredSequence( sequence, iPriority ); }
-	void	SetLayerWeight( int iLayer, float flWeight )					{ GetOuter()->SetLayerWeight( iLayer, flWeight );				}
-	void	SetLayerPlaybackRate( int iLayer, float flPlaybackRate )		{ GetOuter()->SetLayerPlaybackRate( iLayer, flPlaybackRate );	}
-	void	SetLayerCycle( int iLayer, float flCycle )						{ GetOuter()->SetLayerCycle( iLayer, flCycle );					}
-	void	SetLayerCycle( int iLayer, float flCycle, float flPrevCycle )	{ GetOuter()->SetLayerCycle( iLayer, flCycle, flPrevCycle );	}
-	void	SetLayerNoEvents( int iLayer, bool bNoEvents = true )			{ GetOuter()->SetLayerNoEvents( iLayer, bNoEvents );	}
-	void	RemoveLayer( int iLayer, float flKillRate, float flKillDelay )	{ GetOuter()->RemoveLayer( iLayer, flKillRate, flKillDelay );	}
+	animlayerindex_t		AddLayeredSequence( sequence_t sequence, int iPriority )				{ return GetOuter()->AddLayeredSequence( sequence, iPriority ); }
+	void	SetLayerWeight( animlayerindex_t iLayer, float flWeight )					{ GetOuter()->SetLayerWeight( iLayer, flWeight );				}
+	void	SetLayerPlaybackRate( animlayerindex_t iLayer, float flPlaybackRate )		{ GetOuter()->SetLayerPlaybackRate( iLayer, flPlaybackRate );	}
+	void	SetLayerCycle( animlayerindex_t iLayer, float flCycle )						{ GetOuter()->SetLayerCycle( iLayer, flCycle );					}
+	void	SetLayerCycle( animlayerindex_t iLayer, float flCycle, float flPrevCycle )	{ GetOuter()->SetLayerCycle( iLayer, flCycle, flPrevCycle );	}
+	void	SetLayerNoEvents( animlayerindex_t iLayer, bool bNoEvents = true )			{ GetOuter()->SetLayerNoEvents( iLayer, bNoEvents );	}
+	void	RemoveLayer( animlayerindex_t iLayer, float flKillRate, float flKillDelay )	{ GetOuter()->RemoveLayer( iLayer, flKillRate, flKillDelay );	}
 
 	// --------------------------------
 
@@ -160,19 +129,19 @@ private:
 
 	bool			m_bDeceleratingToGoal;
 
-	int				m_iPrimaryLayer;
-	int				m_iSecondaryLayer;
+	animlayerindex_t				m_iPrimaryLayer;
+	animlayerindex_t				m_iSecondaryLayer;
 
-	int				m_nPrimarySequence;
-	int				m_nSecondarySequence;
+	sequence_t				m_nPrimarySequence;
+	sequence_t				m_nSecondarySequence;
 	float			m_flSecondaryWeight;
 
 	Activity		m_nSavedGoalActivity;
 	Activity		m_nSavedTranslatedGoalActivity;
-	int				m_nGoalSequence;
+	sequence_t				m_nGoalSequence;
 
-	int				m_nPrevMovementSequence;
-	int				m_nInteriorSequence;
+	sequence_t				m_nPrevMovementSequence;
+	sequence_t				m_nInteriorSequence;
 
 	float			m_flStartCycle;
 
@@ -199,7 +168,7 @@ private:
 	float	GetMoveScriptYaw( void );
 	void	SetMoveScriptAnim( float flNewSpeed );
 
-	int		GetInteriorSequence( int fromSequence );
+	sequence_t		GetInteriorSequence( sequence_t fromSequence );
 };
 
 //-----------------------------------------------------------------------------

@@ -30,7 +30,7 @@ public:
 	void Spawn( void );
 	void Think( void );
 	void Touch( CBaseEntity *pOther );
-	int ObjectCaps( void ) { return BaseClass::ObjectCaps(); }
+	EntityCaps_t ObjectCaps( void ) { return BaseClass::ObjectCaps(); }
 };
 
 LINK_ENTITY_TO_CLASS( spark_shower, CShower );

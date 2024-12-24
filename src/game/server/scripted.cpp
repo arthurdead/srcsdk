@@ -1940,7 +1940,7 @@ public:
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	void FindThink( void );
 	void DelayThink( void );
-	int	 ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
+	EntityCaps_t ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
 
 	// Input handlers
 	void InputBeginSentence( inputdata_t &&inputdata );

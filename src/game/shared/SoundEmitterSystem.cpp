@@ -158,6 +158,26 @@ void WaveTrace( char const *wavname, char const *funcname )
 // Purpose: 
 // Input  : &src - 
 //-----------------------------------------------------------------------------
+EmitSound_t::EmitSound_t() :
+	m_nChannel( CHAN_AUTO ),
+	m_pSoundName( 0 ),
+	m_flVolume( VOL_NORM ),
+	m_SoundLevel( SNDLVL_NONE ),
+	m_nFlags( SND_NOFLAGS ),
+	m_nPitch( PITCH_NORM ),
+	m_nSpecialDSP( 0 ),
+	m_pOrigin( 0 ),
+	m_flSoundTime( 0.0f ),
+	m_pflSoundDuration( 0 ),
+	m_bEmitCloseCaption( true ),
+	m_bWarnOnMissingCloseCaption( false ),
+	m_bWarnOnDirectWaveReference( false ),
+	m_nSpeakerEntity( -1 ),
+	m_UtlVecSoundOrigin(),
+	m_hSoundScriptHandle( SOUNDEMITTER_INVALID_HANDLE )
+{
+}
+
 EmitSound_t::EmitSound_t( const CSoundParameters &src )
 {
 	m_nChannel = src.channel;

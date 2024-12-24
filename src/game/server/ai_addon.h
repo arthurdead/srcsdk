@@ -129,8 +129,8 @@ public:
 protected:
 	CHandle<CAI_BaseNPC>	m_hNPCHost;
 	CHandle<CBaseEntity>	m_hPhysReplacement;
-	int						m_iPhysReplacementSolidFlags;
-	int						m_iPhysReplacementMoveType;
+	SolidFlags_t						m_iPhysReplacementSolidFlags;
+	MoveType_t						m_iPhysReplacementMoveType;
 	QAngle					m_angPhysReplacementLocalOrientation;
 	Vector					m_vecPhysReplacementDetatchForce;
 
@@ -216,7 +216,7 @@ class CAI_AddOnBehaviorConnector : public ADDON
 {
 	DECLARE_CLASS( CAI_AddOnBehaviorConnector, ADDON );
 
-	virtual int ObjectCaps( void )
+	virtual EntityCaps_t ObjectCaps( void )
 	{
 		return BaseClass::ObjectCaps() | FCAP_IMPULSE_USE;
 	}

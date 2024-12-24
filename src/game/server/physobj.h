@@ -50,7 +50,7 @@ public:
 	virtual void Activate();
 	bool	CreateVPhysics();
 	void	Move( const Vector &force );
-	virtual int ObjectCaps();
+	virtual EntityCaps_t ObjectCaps();
 	virtual void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	
 	virtual int DrawDebugTextOverlays(void);

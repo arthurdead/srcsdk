@@ -56,7 +56,8 @@ extern IGameLoopback* g_pGameLoopback;
 extern IGameServerLoopback* g_pGameServerLoopback;
 inline IGameServerLoopback* GetGameServerLoopback()
 { return g_pGameServerLoopback; }
-extern IGameClientLoopback* g_pGameClientLoopback;
+extern IGameClientLoopback* GetGameClientLoopback( int playerIndex );
+extern bool IsListenServerHost( int playerIndex );
 #endif
 
 //-----------------------------------------------------------------------------

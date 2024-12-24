@@ -156,7 +156,6 @@ client_base_dep = declare_dependency(
 		join_paths(client_src_dir,'fx_tracer.cpp'),
 		join_paths(client_src_dir,'fx_trail.cpp'),
 		join_paths(client_src_dir,'fx_water.cpp'),
-		join_paths(client_src_dir,'gametrace_client.cpp'),
 		join_paths(client_src_dir,'glow_outline_effect.cpp'),
 		join_paths(client_src_dir,'glow_overlay.cpp'),
 		join_paths(client_src_dir,'hud.cpp'),

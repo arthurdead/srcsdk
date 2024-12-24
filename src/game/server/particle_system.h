@@ -26,7 +26,7 @@ public:
 	virtual void Spawn( void );
 	virtual void Activate( void );
 	virtual EdictStateFlags_t UpdateTransmitState(void);
-	virtual int	 ObjectCaps( void );
+	virtual EntityCaps_t ObjectCaps( void );
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 	virtual bool GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen );
 

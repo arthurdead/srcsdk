@@ -284,7 +284,7 @@ class CAI_PlayerAlly : public CAI_BaseActor
 public:
 	//---------------------------------
 
-	int			ObjectCaps( void ) { return UsableNPCObjectCaps(BaseClass::ObjectCaps()); }
+	EntityCaps_t ObjectCaps( void ) { return UsableNPCObjectCaps(BaseClass::ObjectCaps()); }
 	void		TalkInit( void );				
 
 	//---------------------------------

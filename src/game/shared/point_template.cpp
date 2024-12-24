@@ -17,35 +17,27 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define SF_POINTTEMPLATE_DONTREMOVETEMPLATEENTITIES		0x0001
-
-// Level designers can suppress the uniquification of the spawned entity
-// names with a spawnflag, provided they guarantee that only one instance
-// of the entities will ever be spawned at a time.
-#define	SF_POINTTEMPLATE_PRESERVE_NAMES					0x0002
-
-
 LINK_ENTITY_TO_CLASS_ALIASED(point_template, PointTemplate);
 
 BEGIN_MAPENTITY_ALIASED( PointTemplate, MAPENT_POINTCLASS )
 	// Keys
 
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[0], FIELD_STRING, "Template01"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[1], FIELD_STRING, "Template02"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[2], FIELD_STRING, "Template03"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[3], FIELD_STRING, "Template04"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[4], FIELD_STRING, "Template05"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[5], FIELD_STRING, "Template06"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[6], FIELD_STRING, "Template07"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[7], FIELD_STRING, "Template08"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[8], FIELD_STRING, "Template09"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[9], FIELD_STRING, "Template10"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[10], FIELD_STRING, "Template11"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[11], FIELD_STRING, "Template12"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[12], FIELD_STRING, "Template13"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[13], FIELD_STRING, "Template14"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[14], FIELD_STRING, "Template15"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[15], FIELD_STRING, "Template16"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[0], FIELD_PARTIAL_TARGETNAME, "Template01"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[1], FIELD_PARTIAL_TARGETNAME, "Template02"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[2], FIELD_PARTIAL_TARGETNAME, "Template03"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[3], FIELD_PARTIAL_TARGETNAME, "Template04"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[4], FIELD_PARTIAL_TARGETNAME, "Template05"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[5], FIELD_PARTIAL_TARGETNAME, "Template06"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[6], FIELD_PARTIAL_TARGETNAME, "Template07"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[7], FIELD_PARTIAL_TARGETNAME, "Template08"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[8], FIELD_PARTIAL_TARGETNAME, "Template09"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[9], FIELD_PARTIAL_TARGETNAME, "Template10"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[10], FIELD_PARTIAL_TARGETNAME, "Template11"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[11], FIELD_PARTIAL_TARGETNAME, "Template12"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[12], FIELD_PARTIAL_TARGETNAME, "Template13"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[13], FIELD_PARTIAL_TARGETNAME, "Template14"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[14], FIELD_PARTIAL_TARGETNAME, "Template15"),
+	DEFINE_KEYFIELD( m_iszTemplateEntityNames[15], FIELD_PARTIAL_TARGETNAME, "Template16"),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "ForceSpawn", InputForceSpawn ),

@@ -2632,7 +2632,7 @@ public:
 	void Precache();
 	//void Activate();
 
-	int	ObjectCaps()
+	EntityCaps_t ObjectCaps()
 	{
 		int caps = BaseClass::ObjectCaps();
 		

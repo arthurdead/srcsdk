@@ -22,7 +22,7 @@ public:
 	DECLARE_MAPENTITY();
 
 	void				Spawn( void );
-	virtual int			ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
+	virtual EntityCaps_t ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
 
 
 	void				ScriptThink( void );

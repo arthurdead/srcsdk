@@ -98,9 +98,9 @@ void CBaseFlex::SetModel( const char *szModelName )
 
 	BaseClass::SetModel( szModelName );
 
-	for (LocalFlexController_t i = LocalFlexController_t(0); i < GetNumFlexControllers(); i++)
+	for (int i = 0; i < GetNumFlexControllers(); i++)
 	{
-		SetFlexWeight( i, 0.0f );
+		SetFlexWeight( (LocalFlexController_t)i, 0.0f );
 	}
 }
 
@@ -112,7 +112,7 @@ void CBaseFlex::SetViewtarget( const Vector &viewtarget )
 
 void CBaseFlex::SetFlexWeight( LocalFlexController_t index, float value )
 {
-	if (index >= 0 && index < GetNumFlexControllers())
+	if ((unsigned char)index < GetNumFlexControllers())
 	{
 		CStudioHdr *pstudiohdr = GetModelPtr( );
 		if (! pstudiohdr)
@@ -132,7 +132,7 @@ void CBaseFlex::SetFlexWeight( LocalFlexController_t index, float value )
 
 float CBaseFlex::GetFlexWeight( LocalFlexController_t index )
 {
-	if (index >= 0 && index < GetNumFlexControllers())
+	if ((unsigned char)index < GetNumFlexControllers())
 	{
 		CStudioHdr *pstudiohdr = GetModelPtr( );
 		if (! pstudiohdr)
@@ -152,16 +152,16 @@ float CBaseFlex::GetFlexWeight( LocalFlexController_t index )
 
 LocalFlexController_t CBaseFlex::FindFlexController( const char *szName )
 {
-	for (LocalFlexController_t i = LocalFlexController_t(0); i < GetNumFlexControllers(); i++)
+	for (int i = 0; i < GetNumFlexControllers(); i++)
 	{
-		if (stricmp( GetFlexControllerName( i ), szName ) == 0)
+		if (stricmp( GetFlexControllerName( (LocalFlexController_t)i ), szName ) == 0)
 		{
-			return i;
+			return (LocalFlexController_t)i;
 		}
 	}
 
 	// AssertMsg( 0, UTIL_VarArgs( "flexcontroller %s couldn't be mapped!!!\n", szName ) );
-	return LocalFlexController_t(0);
+	return INVALID_FLEXCONTROLLER;
 }
 
 
@@ -286,7 +286,7 @@ bool CBaseFlex::ClearSceneEvent( CSceneEventInfo *info, bool fastKill, bool canc
 	case CChoreoEvent::GESTURE:
 	case CChoreoEvent::SEQUENCE: 
 		{
-			if (info->m_iLayer >= 0)
+			if (info->m_iLayer != INVALID_ANIMLAYER)
 			{
 				if ( fastKill )
 				{
@@ -416,7 +416,7 @@ bool CBaseFlex::RequestStartSequenceSceneEvent( CSceneEventInfo *info, CChoreoSc
 	info->m_nSequence = LookupSequence( event->GetParameters() );
 
 	// make sure sequence exists
-	if (info->m_nSequence < 0)
+	if (info->m_nSequence == INVALID_SEQUENCE)
 	{
 		Warning( "CSceneEntity %s :\"%s\" unable to find sequence \"%s\"\n", STRING(GetEntityName()), actor->GetName(), event->GetParameters() );
 		return false;
@@ -452,9 +452,9 @@ bool CBaseFlex::HandleStartSequenceSceneEvent( CSceneEventInfo *info, CChoreoSce
 	Assert( info->m_iLayer == REQUEST_DEFERRED_LAYER_ALLOCATION );
 
 	info->m_nSequence = LookupSequence( event->GetParameters() );
-	info->m_iLayer = -1;
+	info->m_iLayer = INVALID_ANIMLAYER;
 
-	if (info->m_nSequence < 0)
+	if (info->m_nSequence == INVALID_SEQUENCE)
 	{
 		Warning( "CSceneEntity %s :\"%s\" unable to find sequence \"%s\"\n", STRING(GetEntityName()), actor->GetName(), event->GetParameters() );
 		return false;
@@ -475,7 +475,7 @@ bool CBaseFlex::HandleStartSequenceSceneEvent( CSceneEventInfo *info, CChoreoSce
 	info->m_iLayer = AddLayeredSequence( info->m_nSequence, info->m_iPriority + GetScenePriority( scene ) );
 	SetLayerWeight( info->m_iLayer, 0.0 );
 
-	bool looping = ((GetSequenceFlags( GetModelPtr(), info->m_nSequence ) & STUDIO_LOOPING) != 0);
+	bool looping = ((GetSequenceFlags( GetModelPtr(), info->m_nSequence ) & STUDIO_LOOPING) != STUDIO_NO_SEQUENCE_FLAGS);
 	if (!looping)
 	{
 		// figure out the animtime when this was frame 0
@@ -509,9 +509,9 @@ bool CBaseFlex::HandleStartGestureSceneEvent( CSceneEventInfo *info, CChoreoScen
 	Assert( info->m_iLayer == REQUEST_DEFERRED_LAYER_ALLOCATION );
 
 	info->m_nSequence = LookupSequence( event->GetParameters() );
-	info->m_iLayer = -1;
+	info->m_iLayer = INVALID_ANIMLAYER;
 
-	if (info->m_nSequence < 0)
+	if (info->m_nSequence == INVALID_SEQUENCE)
 	{
 		Warning( "CSceneEntity %s :\"%s\" unable to find gesture \"%s\"\n", STRING(GetEntityName()), actor->GetName(), event->GetParameters() );
 		return false;
@@ -639,7 +639,7 @@ bool CBaseFlex::HandleStartGestureSceneEvent( CSceneEventInfo *info, CChoreoScen
 	SetLayerDuration( info->m_iLayer, event->GetDuration() );
 	SetLayerWeight( info->m_iLayer, 0.0 );
 
-	bool looping = ((GetSequenceFlags( GetModelPtr(), info->m_nSequence ) & STUDIO_LOOPING) != 0);
+	bool looping = ((GetSequenceFlags( GetModelPtr(), info->m_nSequence ) & STUDIO_LOOPING) != STUDIO_NO_SEQUENCE_FLAGS);
 	if ( looping )
 	{
 		DevMsg( 1, "vcd error, gesture %s of model %s is marked as STUDIO_LOOPING!\n", 
@@ -1898,7 +1898,7 @@ bool CBaseFlex::ProcessGestureSceneEvent( CSceneEventInfo *info, CChoreoScene *s
 		HandleStartGestureSceneEvent( info, scene, event, info->m_pActor );
 	}
 
-	if (info->m_iLayer >= 0)
+	if (info->m_iLayer != INVALID_ANIMLAYER)
 	{
 		// this happens after StudioFrameAdvance()
 		// FIXME; this needs to be adjusted by npc offset to scene time? Known?
@@ -1977,7 +1977,7 @@ bool CBaseFlex::ProcessSequenceSceneEvent( CSceneEventInfo *info, CChoreoScene *
 		bNewlyAllocated = true;
 	}
 
-	if (info->m_iLayer >= 0)
+	if (info->m_iLayer != INVALID_ANIMLAYER)
 	{
 		float flWeight = event->GetIntensity( scene->GetTime() );
 
@@ -2220,7 +2220,7 @@ void CBaseFlex::DoBodyLean( void )
 		vecDelta.z = clamp( vecDelta.z, -50, 50 );
 
 		float dt = gpGlobals->curtime - GetLastThink();
-		bool bSkip = ((GetFlags() & (FL_FLY | FL_SWIM)) != 0) || (GetMoveParent() != NULL) || (GetGroundEntity() == NULL) || (GetGroundEntity()->IsMoving());
+		bool bSkip = ((GetFlags() & (FL_FLY | FL_SWIM)) != FL_NO_ENTITY_FLAGS) || (GetMoveParent() != NULL) || (GetGroundEntity() == NULL) || (GetGroundEntity()->IsMoving());
 		bSkip |= myNpc->TaskRanAutomovement() || (myNpc->GetVehicleEntity() != NULL);
 
 		if (!bSkip)
@@ -2260,10 +2260,30 @@ void CBaseFlex::DoBodyLean( void )
 	}
 }
 
-
-
-
-
+CSceneEventInfo::CSceneEventInfo()
+	:
+m_pEvent( NULL ),
+m_pScene( NULL ),
+m_pActor( NULL ),
+m_hSceneEntity( NULL ),
+m_bStarted( false ),
+m_iLayer( INVALID_ANIMLAYER ),
+m_iPriority( 0 ),
+m_nSequence( INVALID_SEQUENCE ),
+m_bIsGesture( false ),
+m_flWeight( 0.0f ),
+m_hTarget(),
+m_bIsMoving( false ),
+m_bHasArrived( false ),
+m_flInitialYaw( 0.0f ),
+m_flTargetYaw( 0.0f ),
+m_flFacingYaw( 0.0f ),
+m_nType( 0 ),
+m_flNext( 0.0f ),
+m_bClientSide( false ),
+m_pExpHdr( NULL )
+{
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: initialize weight for background events
@@ -2313,7 +2333,7 @@ public:
 
 	CFlexCycler() { m_iszSentence = NULL_STRING; m_sentence = 0; }
 	void GenericCyclerSpawn(char *szModel, Vector vecMin, Vector vecMax);
-	virtual int	ObjectCaps( void ) { return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE); }
+	virtual EntityCaps_t ObjectCaps( void ) { return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE); }
 	int OnTakeDamage( const CTakeDamageInfo &info );
 	void Spawn( void );
 	void Think( void );
@@ -2340,9 +2360,9 @@ public:
 	LocalFlexController_t LookupFlex( const char *szTarget );
 };
 
-BEGIN_MAPENTITY( CFlexCycler )
+BEGIN_MAPENTITY( CFlexCycler, MAPENT_NPCCLASS, "Actor Cycler" )
 
-	DEFINE_KEYFIELD_AUTO( m_iszSentence, "Sentence" ),
+	DEFINE_MAP_FIELD( m_iszSentence, "Sentence", "Sentence Group" ),
 
 END_MAPENTITY()
 
@@ -2473,10 +2493,10 @@ float predef_flexcontroller_values[7][30] = {
 //-----------------------------------------------------------------------------
 int CFlexCycler::OnTakeDamage( const CTakeDamageInfo &info )
 {
-	int nSequence = GetSequence() + 1;
+	sequence_t nSequence = (sequence_t)((unsigned short)GetSequence() + 1);
 	if (!IsValidSequence( nSequence ))
 	{
-		nSequence = 0;
+		nSequence = ROOT_SEQUENCE;
 	}
 
 	ResetSequence( nSequence );
@@ -2493,11 +2513,11 @@ void CFlexCycler::SetFlexTarget( LocalFlexController_t flexnum )
 	const char *pszType = GetFlexControllerType( flexnum );
 
 	// zero out all other flexes of the same type
-	for (LocalFlexController_t i = LocalFlexController_t(0); i < GetNumFlexControllers(); i++)
+	for (int i = 0; i < GetNumFlexControllers(); i++)
 	{
-		if (i != flexnum)
+		if (i != (unsigned char)flexnum)
 		{
-			const char *pszOtherType = GetFlexControllerType( i );
+			const char *pszOtherType = GetFlexControllerType( (LocalFlexController_t)i );
 			if (stricmp( pszType, pszOtherType ) == 0)
 			{
 				m_flextarget[i] = 0;
@@ -2508,26 +2528,26 @@ void CFlexCycler::SetFlexTarget( LocalFlexController_t flexnum )
 	// HACK, for now, consider then linked is named "right_" or "left_"
 	if (strncmp( "right_", GetFlexControllerName( flexnum ), 6 ) == 0)
 	{
-		m_flextarget[flexnum+1] = m_flextarget[flexnum];
+		m_flextarget[(unsigned char)flexnum+1] = m_flextarget[flexnum];
 	}
 	else if (strncmp( "left_", GetFlexControllerName( flexnum ), 5 ) == 0)
 	{
-		m_flextarget[flexnum-1] = m_flextarget[flexnum];
+		m_flextarget[(unsigned char)flexnum-1] = m_flextarget[flexnum];
 	}
 }
 
 
 LocalFlexController_t CFlexCycler::LookupFlex( const char *szTarget  )
 {
-	for (LocalFlexController_t i = LocalFlexController_t(0); i < GetNumFlexControllers(); i++)
+	for (int i = 0; i < GetNumFlexControllers(); i++)
 	{
-		const char *pszFlex = GetFlexControllerName( i );
+		const char *pszFlex = GetFlexControllerName( (LocalFlexController_t)i );
 		if (stricmp( szTarget, pszFlex ) == 0)
 		{
-			return i;
+			return (LocalFlexController_t)i;
 		}
 	}
-	return LocalFlexController_t(-1);
+	return INVALID_FLEXCONTROLLER;
 }
 
 
@@ -2571,21 +2591,21 @@ void CFlexCycler::Think( void )
 		}
 		else if ( pszExpression && (pszExpression[0] == '1') && (pszExpression[1] == '\0') ) // 1 for maxed controller values
 		{
-			for ( LocalFlexController_t i = LocalFlexController_t(0); i < GetNumFlexControllers(); i++ )
+			for ( int i = 0; i < GetNumFlexControllers(); i++ )
 			{
 				// Max everything out...
 				m_flextarget[i] = 1.0f;
-				SetFlexWeight( i, m_flextarget[i] );
+				SetFlexWeight( (LocalFlexController_t)i, m_flextarget[i] );
 			}
 		}
 		else if ( pszExpression && (pszExpression[0] == '^') && (pszExpression[1] == '\0') ) // ^ for sine wave
 		{
-			for ( LocalFlexController_t i = LocalFlexController_t(0); i < GetNumFlexControllers(); i++ )
+			for ( int i = 0; i < GetNumFlexControllers(); i++ )
 			{
 				// Throw a differently offset sine wave on all of the flex controllers
 				float fFlexTime = i * (1.0f / (float)GetNumFlexControllers()) + gpGlobals->curtime;
 				m_flextarget[i] = sinf( fFlexTime ) * 0.5f + 0.5f;
-				SetFlexWeight( i, m_flextarget[i] );
+				SetFlexWeight( (LocalFlexController_t)i, m_flextarget[i] );
 			}
 		}
 		else if (pszExpression && pszExpression[0] != '\0' && strcmp(pszExpression, "+") != 0)
@@ -2612,16 +2632,16 @@ void CFlexCycler::Think( void )
 				{
 					if (*pszExpression == '-')
 					{
-						for (LocalFlexController_t i = LocalFlexController_t(0); i < GetNumFlexControllers(); i++)
+						for (int i = 0; i < GetNumFlexControllers(); i++)
 						{
 							m_flextarget[i] = 0;
 						}
 					}
 					else if (*pszExpression == '?')
 					{
-						for (LocalFlexController_t i = LocalFlexController_t(0); i < GetNumFlexControllers(); i++)
+						for (int i = 0; i < GetNumFlexControllers(); i++)
 						{
-							Msg( "\"%s\" ", GetFlexControllerName( i ) );
+							Msg( "\"%s\" ", GetFlexControllerName( (LocalFlexController_t)i ) );
 						}
 						Msg( "\n" );
 						flex_expression.SetValue( "" );
@@ -2688,16 +2708,16 @@ void CFlexCycler::Think( void )
 		}
 
 		// slide it up.
-		for (LocalFlexController_t i = LocalFlexController_t(0); i < GetNumFlexControllers(); i++)
+		for (int i = 0; i < GetNumFlexControllers(); i++)
 		{
-			float weight = GetFlexWeight( i );
+			float weight = GetFlexWeight( (LocalFlexController_t)i );
 
 			if (weight != m_flextarget[i])
 			{
 				weight = weight + (m_flextarget[i] - weight) / random_valve->RandomFloat( 2.0, 4.0 );
 			}
 			weight = clamp( weight, 0.0f, 1.0f );
-			SetFlexWeight( i, weight );
+			SetFlexWeight( (LocalFlexController_t)i, weight );
 		}
 
 #if 1

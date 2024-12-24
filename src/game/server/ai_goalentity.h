@@ -24,6 +24,20 @@ class CAI_GoalEntity : public CBaseEntity,
 					   public IEntityListener
 {
 public:
+	enum Flags_t : unsigned char
+	{
+		NO_FLAGS,
+		ACTIVE			= 0x01,
+		RESOLVED_NAME 	= 0x02,
+		DORMANT			= 0x04,
+	};
+	
+	enum SearchType_t : unsigned char
+	{
+		ST_ENTNAME,
+		ST_CLASSNAME,
+	};
+
 	DECLARE_CLASS( CAI_GoalEntity, CBaseEntity );
 	CAI_GoalEntity()
 	 :	m_iszActor(NULL_STRING),
@@ -32,11 +46,11 @@ public:
 	 	m_SearchType(ST_ENTNAME),
 	 	m_iszConceptModifiers(NULL_STRING),
 	 	m_hGoalEntity(NULL),
-	 	m_flags( 0 )
+	 	m_flags( NO_FLAGS )
 	{
 	}
 
-	virtual int	ObjectCaps()	{ return ((BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | FCAP_NOTIFY_ON_TRANSITION); }
+	virtual EntityCaps_t ObjectCaps()	{ return ((BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | FCAP_NOTIFY_ON_TRANSITION); }
 	
 	virtual void	Spawn();
 	virtual int		DrawDebugTextOverlays();
@@ -81,19 +95,6 @@ protected:
 	}
 	
 private:
-	enum Flags_t
-	{
-		ACTIVE			= 0x01,
-		RESOLVED_NAME 	= 0x02,
-		DORMANT			= 0x04,
-	};
-	
-	enum SearchType_t	
-	{
-		ST_ENTNAME,
-		ST_CLASSNAME,
-	};
-
 	void DelayedRefresh();
 	void PruneActors();
 	virtual void ResolveNames();
@@ -107,12 +108,16 @@ private:
 	
 	CUtlVector<AIHANDLE>	m_actors;
 	EHANDLE					m_hGoalEntity;
-	unsigned 				m_flags;
+	Flags_t 				m_flags;
 	
 	
 protected:
 	DECLARE_MAPENTITY();
 };
+
+FLAGENUM_OPERATORS( CAI_GoalEntity::Flags_t, unsigned char )
+
+DECLARE_FIELD_ENUM( CAI_GoalEntity::SearchType_t )
 
 //-------------------------------------
 
