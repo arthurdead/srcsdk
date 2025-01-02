@@ -399,8 +399,8 @@ void CAI_BaseNPC::START_TASK_ADD_GESTURE_WAIT( const Task_t *pTask )
 	Assert( pTask->numData == 1 );
 	Assert( pTask->data[0].CanBeActivity() );
 
-	int iLayer = AddGesture( pTask->data[0].AsActivity() );
-	if (iLayer > 0)
+	animlayerindex_t iLayer = AddGesture( pTask->data[0].AsActivity() );
+	if (iLayer != INVALID_ANIMLAYER)
 	{
 		float flDuration = GetLayerDuration( iLayer );
 

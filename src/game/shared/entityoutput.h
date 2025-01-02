@@ -70,7 +70,7 @@ public:
 	fieldtype_t ValueBaseFieldType() { return m_Value.baseFieldType(); }
 	fieldtype_t ValueRawFieldType() { return m_Value.rawFieldType(); }
 
-	void FireOutput( variant_t Value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, float fDelay = 0 );
+	void FireOutput( const variant_t &Value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, float fDelay = 0 );
 
 	/// Delete every single action in the action list. 
 	void DeleteAllElements( void ) ;

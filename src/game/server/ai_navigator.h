@@ -302,7 +302,7 @@ public:
 	
 	// Query or change the movement activity
 	Activity 			GetMovementActivity() const;
-	Activity 			SetMovementActivity(Activity activity);
+	void 			SetMovementActivity(Activity activity);
 	sequence_t		 			GetMovementSequence();
 	void				SetMovementSequence( sequence_t sequence );
 

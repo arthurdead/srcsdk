@@ -364,7 +364,7 @@ void CBaseProp::CalculateBlockLOS( void )
 // Purpose: Parse this prop's data from the model, if it has a keyvalues section.
 //			Returns true only if this prop is using a model that has a prop_data section that's invalid.
 //-----------------------------------------------------------------------------
-int CBaseProp::ParsePropData( void )
+ParsePropRes_t CBaseProp::ParsePropData( void )
 {
 	KeyValues *modelKeyValues = new KeyValues("");
 	if ( !modelKeyValues->LoadFromBuffer( modelinfo->GetModelName( GetModel() ), modelinfo->GetModelKeyValueText( GetModel() ) ) )
@@ -381,7 +381,7 @@ int CBaseProp::ParsePropData( void )
 		return PARSE_FAILED_NO_DATA;
 	}
 
-	int iResult = g_PropDataSystem.ParsePropFromKV( this, dynamic_cast<IBreakableWithPropData *>(this), pkvPropData, modelKeyValues );
+	ParsePropRes_t iResult = g_PropDataSystem.ParsePropFromKV( this, dynamic_cast<IBreakableWithPropData *>(this), pkvPropData, modelKeyValues );
 	modelKeyValues->deleteThis();
 	return iResult;
 }

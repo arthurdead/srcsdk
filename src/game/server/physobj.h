@@ -71,7 +71,7 @@ public:
 
 	int			ExploitableByPlayer() const { return m_iExploitableByPlayer; }
 
-	virtual int GetPhysicsMode()
+	virtual PhysPropMode_t GetPhysicsMode()
 	{
 		return m_iPhysicsMode;
 	}
@@ -119,7 +119,7 @@ protected:
 
 	CHandle<CBasePlayer>	m_hCarryingPlayer;	// Player who's carrying us
 
-	CNetworkVar( int, m_iPhysicsMode );	// One of the PHYSICS_MULTIPLAYER_ defines.	
+	CNetworkVar( PhysPropMode_t, m_iPhysicsMode );	// One of the PHYSICS_MULTIPLAYER_ defines.	
 	CNetworkVar( float, m_fMass );
 };
 

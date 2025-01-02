@@ -16,43 +16,57 @@ DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_FOUNDRY, "Foundry Server" );
 //-----------------------------------------------------------------------------
 // Purpose: This just marshalls certain FoundryHelpers_ calls to the client.
 //-----------------------------------------------------------------------------
-class CTEFoundryHelpers : public CBaseTempEntity
+class CTEFoundryHelpers_AddHighlight : public CBaseTempEntity
 {
 public:
-	DECLARE_CLASS( CTEFoundryHelpers, CBaseTempEntity );
+	DECLARE_CLASS( CTEFoundryHelpers_AddHighlight, CBaseTempEntity );
 	DECLARE_SERVERCLASS();
 
-	CTEFoundryHelpers( const char *pName ) :
+	CTEFoundryHelpers_AddHighlight( const char *pName ) :
 		CBaseTempEntity( pName )
 	{
 	}
 
 public:
-	CNetworkVar( int, m_iEntity );	// -1 means turn the effect off for all entities.
+	CNetworkHandle( CBaseEntity, m_hEntity );	// -1 means turn the effect off for all entities.
 };
 
-IMPLEMENT_SERVERCLASS_ST( CTEFoundryHelpers, DT_TEFoundryHelpers )
-	SendPropInt( SENDINFO(m_iEntity), 32, 0 ),
+IMPLEMENT_SERVERCLASS_ST( CTEFoundryHelpers_AddHighlight, DT_TEFoundryHelpers_AddHighlight )
+	SendPropAuto( m_hEntity ),
 END_SEND_TABLE()
 
 // Singleton to fire TEMuzzleFlash objects
-static CTEFoundryHelpers g_TEFoundryHelpers( "FoundryHelpers" );
+static CTEFoundryHelpers_AddHighlight g_TEFoundryHelpers_AddHighlight( "FoundryHelpers_AddHighlight" );
 
+class CTEFoundryHelpers_ClearHighlights : public CBaseTempEntity
+{
+public:
+	DECLARE_CLASS( CTEFoundryHelpers_ClearHighlights, CBaseTempEntity );
+	DECLARE_SERVERCLASS();
+
+	CTEFoundryHelpers_ClearHighlights( const char *pName ) :
+		CBaseTempEntity( pName )
+	{
+	}
+};
+
+IMPLEMENT_SERVERCLASS_ST( CTEFoundryHelpers_ClearHighlights, DT_TEFoundryHelpers_ClearHighlights )
+END_SEND_TABLE()
+
+static CTEFoundryHelpers_ClearHighlights g_TEFoundryHelpers_ClearHighlights( "FoundryHelpers_ClearHighlights" );
 
 void FoundryHelpers_ClearEntityHighlightEffects()
 {
-	g_TEFoundryHelpers.m_iEntity = -1;
-	
 	CBroadcastRecipientFilter filter;
-	g_TEFoundryHelpers.Create( filter, 0 );
+	g_TEFoundryHelpers_ClearHighlights.Create( filter, 0 );
 }
 
 void FoundryHelpers_AddEntityHighlightEffect( CBaseEntity *pEnt )
 {
-	g_TEFoundryHelpers.m_iEntity = pEnt->entindex();
+	g_TEFoundryHelpers_AddHighlight.m_hEntity = pEnt->GetRefEHandle();
 	
 	CBroadcastRecipientFilter filter;
-	g_TEFoundryHelpers.Create( filter, 0 );
+	g_TEFoundryHelpers_AddHighlight.Create( filter, 0 );
 }
 
 

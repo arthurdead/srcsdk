@@ -69,6 +69,8 @@ namespace ResponseRules
 class CBaseFilter;
 class CGlobalEvent;
 
+enum DeathFrame_t : unsigned char;
+
 typedef CBitVec<MAX_CONDITIONS> CAI_ScheduleBits;
 
 // Used to control optimizations mostly dealing with pathfinding for NPCs
@@ -119,7 +121,7 @@ extern bool AIStrongOpt( void );
 	public:
 
 
-enum Interruptability_t
+enum Interruptability_t : unsigned char
 {
 	GENERAL_INTERRUPTABILITY,
 	DAMAGEORDEATH_INTERRUPTABILITY,
@@ -130,37 +132,42 @@ enum Interruptability_t
 // Memory
 //-------------------------------------
 
-#define MEMORY_CLEAR					0
-#define bits_MEMORY_PROVOKED			( 1 << 0 )// right now only used for houndeyes.
-#define bits_MEMORY_INCOVER				( 1 << 1 )// npc knows it is in a covered position.
-#define bits_MEMORY_SUSPICIOUS			( 1 << 2 )// Ally is suspicious of the player, and will move to provoked more easily
-#define	bits_MEMORY_TASK_EXPENSIVE		( 1 << 3 )// NPC has completed a task which is considered costly, so don't do another task this frame
-//#define	bits_MEMORY_				( 1 << 4 )
-#define bits_MEMORY_PATH_FAILED			( 1 << 5 )// Failed to find a path
-#define bits_MEMORY_FLINCHED			( 1 << 6 )// Has already flinched
-//#define bits_MEMORY_ 					( 1 << 7 )
-#define bits_MEMORY_TOURGUIDE			( 1 << 8 )// I have been acting as a tourguide.
-//#define bits_MEMORY_					( 1 << 9 )// 
-#ifndef AI_USES_NAV_MESH
-#define bits_MEMORY_LOCKED_HINT			( 1 << 10 )// 
-#else
-#define bits_MEMORY_LOCKED_AREA			( 1 << 10 )// 
-#endif
-//#define bits_MEMORY_					( 1 << 12 )
+enum MemoryFlags_t : uint64
+{
+	MEMORY_CLEAR =					0,
+	bits_MEMORY_PROVOKED =			( 1 << 0 ),// right now only used for houndeyes.
+	bits_MEMORY_INCOVER =				( 1 << 1 ),// npc knows it is in a covered position.
+	bits_MEMORY_SUSPICIOUS =			( 1 << 2 ),// Ally is suspicious of the player, and will move to provoked more easily
+	bits_MEMORY_TASK_EXPENSIVE =		( 1 << 3 ),// NPC has completed a task which is considered costly, so don't do another task this frame
+	//#define	bits_MEMORY_				( 1 << 4 ),
+	bits_MEMORY_PATH_FAILED =			( 1 << 5 ),// Failed to find a path
+	bits_MEMORY_FLINCHED =			( 1 << 6 ),// Has already flinched
+	//#define bits_MEMORY_ 					( 1 << 7 ),
+	bits_MEMORY_TOURGUIDE =			( 1 << 8 ),// I have been acting as a tourguide.
+	//#define bits_MEMORY_					( 1 << 9 ),// 
+	#ifndef AI_USES_NAV_MESH
+	bits_MEMORY_LOCKED_HINT =			( 1 << 10 ),// 
+	#else
+	bits_MEMORY_LOCKED_AREA =			( 1 << 10 ),// 
+	#endif
+	//#define bits_MEMORY_					( 1 << 12 ),
 
-#define bits_MEMORY_TURNING				( 1 << 13 )// Turning, don't interrupt me.
-#define bits_MEMORY_TURNHACK			( 1 << 14 )
+	bits_MEMORY_TURNING =				( 1 << 13 ),// Turning, don't interrupt me.
+	bits_MEMORY_TURNHACK =			( 1 << 14 ),
 
-#define bits_MEMORY_HAD_ENEMY			( 1 << 15 )// Had an enemy
-#define bits_MEMORY_HAD_PLAYER			( 1 << 16 )// Had player
-#define bits_MEMORY_HAD_LOS				( 1 << 17 )// Had LOS to enemy
+	bits_MEMORY_HAD_ENEMY =			( 1 << 15 ),// Had an enemy
+	bits_MEMORY_HAD_PLAYER =			( 1 << 16 ),// Had player
+	bits_MEMORY_HAD_LOS =				( 1 << 17 ),// Had LOS to enemy
 
-#define bits_MEMORY_MOVED_FROM_SPAWN	( 1 << 18 )// Has moved since spawning.
+	bits_MEMORY_MOVED_FROM_SPAWN =	( 1 << 18 ),// Has moved since spawning.
 
-#define bits_MEMORY_CUSTOM4				( 1 << 28 )	// NPC-specific memory
-#define bits_MEMORY_CUSTOM3				( 1 << 29 )	// NPC-specific memory
-#define bits_MEMORY_CUSTOM2				( 1 << 30 )	// NPC-specific memory
-#define bits_MEMORY_CUSTOM1				( 1 << 31 )	// NPC-specific memory
+	bits_MEMORY_CUSTOM4 =				( 1 << 28 ),	// NPC-specific memory
+	bits_MEMORY_CUSTOM3 =				( 1 << 29 ),	// NPC-specific memory
+	bits_MEMORY_CUSTOM2 =				( 1 << 30 ),	// NPC-specific memory
+	bits_MEMORY_CUSTOM1 =				( 1ull << 31 ),	// NPC-specific memory
+};
+
+FLAGENUM_OPERATORS( MemoryFlags_t, uint64 )
 
 //-------------------------------------
 // Spawn flags
@@ -1106,8 +1113,8 @@ private:
 	Activity			m_IdealWeaponActivity;			// Desired weapon animation state
 	animlayerindex_t					m_FakeSequenceGestureLayer;		// The gesture layer impersonating a sequence (-1 if invalid)
 
-	CNetworkVar(int, m_iDeathPose );
-	CNetworkVar(int, m_iDeathFrame );
+	CNetworkSequence( m_iDeathPose );
+	CNetworkVar( DeathFrame_t, m_iDeathFrame );
 
 public:
 	//-----------------------------------------------------
@@ -1202,8 +1209,8 @@ public:
 	float				GetAcceptableTimeSeenEnemy( void )		{ return m_flAcceptableTimeSeenEnemy; }
 	virtual	CAI_BaseNPC *CreateCustomTarget( const Vector &vecOrigin, float duration = -1 );
 
-	void				SetDeathPose( const int &iDeathPose ) { m_iDeathPose = iDeathPose; }
-	void				SetDeathPoseFrame( const int &iDeathPoseFrame ) { m_iDeathFrame = iDeathPoseFrame; }
+	void				SetDeathPose( sequence_t iDeathPose ) { m_iDeathPose = iDeathPose; }
+	void				SetDeathPoseFrame( DeathFrame_t iDeathPoseFrame ) { m_iDeathFrame = iDeathPoseFrame; }
 	
 	void				SelectDeathPose( const CTakeDamageInfo &info );
 	virtual bool		ShouldPickADeathPose( void ) { return true; }
@@ -1284,7 +1291,19 @@ public:
 	virtual void		DelayGrenadeCheck(float delay) { ; }
 	virtual void		AddGrenades( int inc, CBaseEntity *pLastGrenade = NULL ) { ; }
 
-	int					GetScriptState() { return m_scriptState; }
+	// Scripted sequence Info
+	enum SCRIPTSTATE : unsigned char
+	{
+		SCRIPT_PLAYING = 0,				// Playing the action animation.
+		SCRIPT_WAIT,						// Waiting on everyone in the script to be ready. Plays the pre idle animation if there is one.
+		SCRIPT_POST_IDLE,					// Playing the post idle animation after playing the action animation.
+		SCRIPT_CLEANUP,					// Cancelling the script / cleaning up.
+		SCRIPT_WALK_TO_MARK,				// Walking to the scripted sequence position.
+		SCRIPT_RUN_TO_MARK,				// Running to the scripted sequence position.
+		SCRIPT_CUSTOM_MOVE_TO_MARK,	// Moving to the scripted sequence position while playing a custom movement animation.
+	};
+
+	SCRIPTSTATE					GetScriptState() { return m_scriptState; }
 
 	//-----------------------------------------------------
 	// Dynamic scripted NPC interactions
@@ -1661,18 +1680,6 @@ public:
 	//
 	//-----------------------------------------------------
 
-	// Scripted sequence Info
-	enum SCRIPTSTATE
-	{
-		SCRIPT_PLAYING = 0,				// Playing the action animation.
-		SCRIPT_WAIT,						// Waiting on everyone in the script to be ready. Plays the pre idle animation if there is one.
-		SCRIPT_POST_IDLE,					// Playing the post idle animation after playing the action animation.
-		SCRIPT_CLEANUP,					// Cancelling the script / cleaning up.
-		SCRIPT_WALK_TO_MARK,				// Walking to the scripted sequence position.
-		SCRIPT_RUN_TO_MARK,				// Running to the scripted sequence position.
-		SCRIPT_CUSTOM_MOVE_TO_MARK,	// Moving to the scripted sequence position while playing a custom movement animation.
-	};
-
 	bool				ExitScriptedSequence();
 	bool				CineCleanup();
 
@@ -1713,15 +1720,15 @@ public:
 	//
 	//-----------------------------------------------------
 
-	inline void			Remember( int iMemory ) 		{ m_afMemory |= iMemory; }
-	inline void			Forget( int iMemory ) 			{ m_afMemory &= ~iMemory; }
-	inline bool			HasMemory( int iMemory ) 		{ if ( m_afMemory & iMemory ) return TRUE; return FALSE; }
-	inline bool			HasAllMemories( int iMemory ) 	{ if ( (m_afMemory & iMemory) == iMemory ) return TRUE; return FALSE; }
+	inline void			Remember( MemoryFlags_t iMemory ) 		{ m_afMemory |= iMemory; }
+	inline void			Forget( MemoryFlags_t iMemory ) 			{ m_afMemory &= ~iMemory; }
+	inline bool			HasMemory( MemoryFlags_t iMemory ) 		{ return ( m_afMemory & iMemory ) != MEMORY_CLEAR; }
+	inline bool			HasAllMemories( MemoryFlags_t iMemory ) 	{ return ( (m_afMemory & iMemory) == iMemory ); }
 
 	virtual CAI_Enemies *GetEnemies( void );
 	virtual void		RemoveMemory( void );
 
-	virtual void		ChangeFaction( int nNewFaction );
+	virtual void		ChangeFaction( Faction_T nNewFaction );
 
 	virtual bool		UpdateEnemyMemory( CBaseEntity *pEnemy, const Vector &position, CBaseEntity *pInformer = NULL );
 	virtual float		GetReactionDelay( CBaseEntity *pEnemy );
@@ -1738,8 +1745,8 @@ public:
 
 	// Weapon holstering
 	virtual bool		CanHolsterWeapon( void );
-	virtual int			HolsterWeapon( void );
-	virtual int			UnholsterWeapon( void );
+	virtual animlayerindex_t			HolsterWeapon( void );
+	virtual animlayerindex_t			UnholsterWeapon( void );
 	void				InputHolsterWeapon( inputdata_t &&inputdata );
 	void				InputHolsterAndDestroyWeapon( inputdata_t &&inputdata );
 	void				InputUnholsterWeapon( inputdata_t &&inputdata );
@@ -1770,7 +1777,7 @@ protected:
 
 protected:
 	CAI_Enemies *		m_pEnemies;	// Holds information about enemies / danger positions / shared between sqaud members
-	int					m_afMemory;
+	MemoryFlags_t					m_afMemory;
 	EHANDLE				m_hEnemyOccluder;	// The entity my enemy is hiding behind.
 
 	float				m_flSumDamage;				// How much consecutive damage I've received
@@ -3131,19 +3138,19 @@ inline void CAI_Component::SetGoalEnt( CBaseEntity *pGoalEnt )
 
 //-----------------------------------------------------------------------------
 
-inline void CAI_Component::Remember( int iMemory )
+inline void CAI_Component::Remember( MemoryFlags_t iMemory )
 {
 	GetOuter()->Remember( iMemory );
 }
 //-----------------------------------------------------------------------------
 
-inline void CAI_Component::Forget( int iMemory )
+inline void CAI_Component::Forget( MemoryFlags_t iMemory )
 {
 	GetOuter()->Forget( iMemory );
 }
 //-----------------------------------------------------------------------------
 
-inline bool CAI_Component::HasMemory( int iMemory )
+inline bool CAI_Component::HasMemory( MemoryFlags_t iMemory )
 {
 	return GetOuter()->HasMemory( iMemory );
 }

@@ -115,8 +115,8 @@ public:
 	string_t		GetBasePropData( void ) { return m_iszBasePropData; }
 	void			SetInteraction( propdata_interactions_t Interaction ) { m_iInteractions |= (1 << Interaction); }
 	bool			HasInteraction( propdata_interactions_t Interaction ) { return ( m_iInteractions & (1 << Interaction) ) != 0; }
-	void			SetPhysicsMode(int iMode){}
-	int				GetPhysicsMode() { return PHYSICS_SOLID; }
+	void			SetPhysicsMode(PhysPropMode_t iMode){}
+	PhysPropMode_t				GetPhysicsMode() { return PHYSICS_SOLID; }
 	void			SetBreakMode( break_t mode ) {}
 	break_t		GetBreakMode( void ) const { return BREAK_DEFAULT; }
 

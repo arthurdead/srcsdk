@@ -8,14 +8,14 @@
 LINK_ENTITY_TO_CLASS(player, CHeistPlayer);
 
 BEGIN_SEND_TABLE_NOBASE(CHeistPlayer, DT_HeistLocalPlayerExclusive)
-	SendPropAuto(m_bMaskingUp),
+	SendPropAuto( m_bMaskingUp ),
 END_SEND_TABLE()
 
 BEGIN_SEND_TABLE_NOBASE(CHeistPlayer, DT_HeistNonLocalPlayerExclusive)
 END_SEND_TABLE()
 
 IMPLEMENT_SERVERCLASS_ST(CHeistPlayer, DT_Heist_Player)
-	SendPropAuto(m_flLeaning, 6, -1.0f, 1.0f),
+	SendPropAuto( m_flLeaning, 6, -1.0f, 1.0f ),
 
 	SendPropDataTable("heistlocaldata", 0, &REFERENCE_SEND_TABLE(DT_HeistLocalPlayerExclusive), SendProxy_SendLocalDataTable),
 	SendPropDataTable("heistnonlocaldata", 0, &REFERENCE_SEND_TABLE(DT_HeistNonLocalPlayerExclusive), SendProxy_SendNonLocalDataTable),
@@ -82,9 +82,9 @@ void CHeistPlayer::PreThink()
 
 	const float lean_speed = sv_heist_lean_speed.GetFloat();
 
-	if(m_nButtons & IN_LEAN_LEFT) {
+	if((m_nButtons & IN_LEAN_LEFT) != IN_NONE) {
 		m_flLeaning = Approach(-1.0f, m_flLeaning, lean_speed);
-	} else if(m_nButtons & IN_LEAN_RIGHT) {
+	} else if((m_nButtons & IN_LEAN_RIGHT) != IN_NONE) {
 		m_flLeaning = Approach(1.0f, m_flLeaning, lean_speed);
 	} else {
 		m_flLeaning = Approach(0.0f, m_flLeaning, lean_speed);

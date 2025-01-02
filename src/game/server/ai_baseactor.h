@@ -154,7 +154,7 @@ public:
 	void					ClearExpression();
 	const char *			GetExpression();
 
-	enum
+	enum : unsigned char
 	{
 		SCENE_AI_BLINK = 1,
 		SCENE_AI_HOLSTER,
@@ -176,7 +176,7 @@ public:
 
 	DECLARE_MAPENTITY();
 private:
-	enum
+	enum : unsigned char
 	{
 		HUMANOID_LATCHED_EYE	= 0x0001,
 		HUMANOID_LATCHED_HEAD	= 0x0002,

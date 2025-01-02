@@ -91,13 +91,13 @@ float CAI_Path::GetPathDistanceToGoal( const Vector &startPos )
 
 //-----------------------------------------------------------------------------
 
-Activity CAI_Path::SetMovementActivity(Activity activity)
+void CAI_Path::SetMovementActivity(Activity activity)
 { 
 	Assert( activity != ACT_RESET && activity != ACT_INVALID );
 	//Msg("Set movement to %s\n", ActivityList_NameForIndex(activity) );
 
-	m_sequence = ACT_INVALID;
-	return (m_activity = activity);	
+	m_sequence = INVALID_SEQUENCE;
+	m_activity = activity;	
 }
 
 //-----------------------------------------------------------------------------
@@ -116,23 +116,23 @@ Activity CAI_Path::GetArrivalActivity( ) const
 void CAI_Path::SetArrivalActivity(Activity activity)
 {
 	m_arrivalActivity = activity;
-	m_arrivalSequence = ACT_INVALID;
+	m_arrivalSequence = INVALID_SEQUENCE;
 }
 
 //-----------------------------------------------------------------------------
 
-int CAI_Path::GetArrivalSequence( ) const
+sequence_t CAI_Path::GetArrivalSequence( ) const
 {
 	if ( !m_Waypoints.IsEmpty() )
 	{
 		return m_arrivalSequence;
 	}
-	return ACT_INVALID;
+	return INVALID_SEQUENCE;
 }
 
 //-----------------------------------------------------------------------------
 
-void CAI_Path::SetArrivalSequence( int sequence )
+void CAI_Path::SetArrivalSequence( sequence_t sequence )
 {
 	m_arrivalSequence = sequence;
 }
@@ -631,12 +631,12 @@ CAI_Path::CAI_Path()
 	m_goalPos			= vec3_origin;			// Our ultimate goal position
 	m_goalTolerance		= 0.0;					// How close do we need to get to the goal
 	m_activity			= ACT_INVALID;			// The activity to use during motion
-	m_sequence			= ACT_INVALID;
+	m_sequence			= INVALID_SEQUENCE;
 	m_target			= NULL;
 	m_goalFlags			= 0;
 	m_routeStartTime	= FLT_MAX;
 	m_arrivalActivity	= ACT_INVALID;
-	m_arrivalSequence	= ACT_INVALID;
+	m_arrivalSequence	= INVALID_SEQUENCE;
 
 	m_waypointTolerance = DEF_WAYPOINT_TOLERANCE;
 

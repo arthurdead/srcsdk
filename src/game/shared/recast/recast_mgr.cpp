@@ -426,9 +426,9 @@ unsigned char CRecastMgr::DetermineAreaID( CSharedBaseEntity *pEntity, const Vec
 
 	// Determine areaId
 	bool usedPolyAreas[20];
-	V_memset( usedPolyAreas, 0, ARRAYSIZE(usedPolyAreas) * sizeof(bool) );
+	V_memset( usedPolyAreas, 0, sizeof(usedPolyAreas) );
 	CSharedBaseEntity *pEnts[256];
-	int n = UTIL_EntitiesInBox( pEnts, 256, pEntity->GetAbsOrigin() + mins - Vector(64.0f, 64.0f, 64.0f), pEntity->GetAbsOrigin() + maxs + Vector(64.0f, 64.0f, 64.0f), 0 );
+	int n = UTIL_EntitiesInBox( pEnts, 256, pEntity->GetAbsOrigin() + mins - Vector(64.0f, 64.0f, 64.0f), pEntity->GetAbsOrigin() + maxs + Vector(64.0f, 64.0f, 64.0f), CONTENTS_EMPTY );
 	for( int i = 0; i < n; i++ )
 	{
 		CSharedBaseEntity *pEnt = pEnts[i];

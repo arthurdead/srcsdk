@@ -173,7 +173,7 @@ CBaseEntityOutput::~CBaseEntityOutput()
 // Input  : pActivator - Entity that initiated this sequence of actions.
 //			pCaller - Entity that is actually causing the event.
 //-----------------------------------------------------------------------------
-void CBaseEntityOutput::FireOutput(variant_t Value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, float fDelay)
+void CBaseEntityOutput::FireOutput(const variant_t &Value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, float fDelay)
 {
 	//
 	// Iterate through all eventactions and fire them off.
@@ -198,7 +198,7 @@ void CBaseEntityOutput::FireOutput(variant_t Value, CSharedBaseEntity *pActivato
 			variant_t ValueOverride;
 			ValueOverride.SetStringT( ev->m_iParameter );
 			// I found this while making point_advanced_finder. FireOutput()'s own delay parameter doesn't work with...uh...parameters.
-			g_EventQueue.AddEvent( STRING(ev->m_iTarget), STRING(ev->m_iTargetInput), ValueOverride, ev->m_flDelay + fDelay, pActivator, pCaller, ev->m_iIDStamp );
+			g_EventQueue.AddEvent( STRING(ev->m_iTarget), STRING(ev->m_iTargetInput), Move(ValueOverride), ev->m_flDelay + fDelay, pActivator, pCaller, ev->m_iIDStamp );
 		}
 
 		if ( ev->m_flDelay )
@@ -298,7 +298,7 @@ void COutputEvent::FireOutput(CSharedBaseEntity *pActivator, CSharedBaseEntity *
 {
 	variant_t Val;
 	Val.SetVoid();
-	CBaseEntityOutput::FireOutput(Val, pActivator, pCaller, fDelay);
+	CBaseEntityOutput::FireOutput(Move(Val), pActivator, pCaller, fDelay);
 }
 
 
@@ -550,7 +550,7 @@ void CEventQueue::Dump( void )
 //-----------------------------------------------------------------------------
 // Purpose: adds the action into the correct spot in the priority queue, targeting entity via string name
 //-----------------------------------------------------------------------------
-EventQueuePrioritizedEvent_t *CEventQueue::AddEvent( const char *target, const char *targetInput, variant_t Value, float fireDelay, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, int outputID )
+EventQueuePrioritizedEvent_t *CEventQueue::AddEvent( const char *target, const char *targetInput, const variant_t &Value, float fireDelay, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, int outputID )
 {
 	// build the new event
 	EventQueuePrioritizedEvent_t *newEvent = new EventQueuePrioritizedEvent_t;
@@ -571,7 +571,7 @@ EventQueuePrioritizedEvent_t *CEventQueue::AddEvent( const char *target, const c
 //-----------------------------------------------------------------------------
 // Purpose: adds the action into the correct spot in the priority queue, targeting entity via pointer
 //-----------------------------------------------------------------------------
-EventQueuePrioritizedEvent_t *CEventQueue::AddEvent( CSharedBaseEntity *target, const char *targetInput, variant_t Value, float fireDelay, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, int outputID )
+EventQueuePrioritizedEvent_t *CEventQueue::AddEvent( CSharedBaseEntity *target, const char *targetInput, const variant_t &Value, float fireDelay, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, int outputID )
 {
 	// build the new event
 	EventQueuePrioritizedEvent_t *newEvent = new EventQueuePrioritizedEvent_t;
@@ -593,7 +593,7 @@ EventQueuePrioritizedEvent_t *CEventQueue::AddEvent( CSharedBaseEntity *target, 
 {
 	variant_t Value;
 	Value.SetVoid();
-	EventQueuePrioritizedEvent_t *newEvent = AddEvent( target, action, Value, fireDelay, pActivator, pCaller, outputID );
+	EventQueuePrioritizedEvent_t *newEvent = AddEvent( target, action, Move(Value), fireDelay, pActivator, pCaller, outputID );
 	return newEvent;
 }
 

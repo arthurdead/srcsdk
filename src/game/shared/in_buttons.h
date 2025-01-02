@@ -13,6 +13,8 @@
 
 enum InButtons_t : uint64
 {
+	IN_NONE = 0,
+
 	IN_ATTACK = (1 << 0),
 	IN_JUMP = (1 << 1),
 	IN_DUCK = (1 << 2),

@@ -378,6 +378,19 @@ public:
 	static inline auto NATIVESIZE = sizeof(native_type);
 };
 
+template< class Type, fieldtype_t fieldType >
+class CEntityOutputTemplate;
+
+template< class Type, fieldtype_t fieldType >
+class CNativeFieldInfo<CEntityOutputTemplate<Type, fieldType>>
+{
+public:
+	using native_type = Type;
+	using info_type = CDatamapFieldInfo<fieldType>;
+	static inline auto FIELDTYPE = fieldType;
+	static inline auto NATIVESIZE = sizeof(native_type);
+};
+
 inline fieldtype_t GetBaseFieldType( fieldtype_t type )
 { return (fieldtype_t)((uint64)type & (uint64)FIELD_TYPE_MASK); }
 inline unsigned char GetFieldTypeFlags( fieldtype_t type )
@@ -554,8 +567,8 @@ public:
 abstract_class ICustomFieldOps
 {
 private:
-	virtual void Unused1( const FieldInfo_t &fieldInfo, void * ) {}
-	virtual void Unused2( const FieldInfo_t &fieldInfo, void * ) {}
+	virtual void Unused1( const FieldInfo_t &fieldInfo, void * ) final {}
+	virtual void Unused2( const FieldInfo_t &fieldInfo, void * ) final {}
 
 public:
 	virtual bool IsEmpty( const FieldInfo_t &fieldInfo ) = 0;
@@ -579,29 +592,39 @@ extern void MapField_impl( typedescription_t &ret, const char *name, int offset,
 
 struct FGdChoice
 {
-	FGdChoice(const char *value_, const char *name_)
-		: value(value_), name(name_)
+	[[nodiscard]] FGdChoice()
+		: name(NULL)
 	{
+		value[0] = '\0';
 	}
 
-	const char *value;
+	[[nodiscard]] FGdChoice(const char *value_, const char *name_)
+		: name(name_)
+	{
+		V_strncpy(value, value_, sizeof(value));
+	}
+
+	char value[64];
 	const char *name;
 };
 
-struct typedescription_t
+struct [[nodiscard]] typedescription_t
 {
 	friend class CByteswap;
+	friend struct map_datamap_t;
 
-	typedescription_t();
+	[[nodiscard]] typedescription_t();
 	typedescription_t(const typedescription_t &) = delete;
-	typedescription_t &operator=(const typedescription_t &) = delete;
-	typedescription_t(typedescription_t &&) = default;
-	typedescription_t &operator=(typedescription_t &&) = delete;
+	typedescription_t &operator=(const typedescription_t &other);
+	[[nodiscard]] typedescription_t(typedescription_t &&other);
+	typedescription_t &operator=(typedescription_t &&other);
 
-	typedescription_t(fieldtype_t type, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname, float tol);
-	typedescription_t(fieldtype_t type, const char *name, inputfunc_t func, fieldflags_t flags_, const char *fgdname);
-	typedescription_t(ICustomFieldOps *funcs, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname, float tol);
-	typedescription_t(datamap_t *embed, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname);
+	[[nodiscard]] typedescription_t(fieldtype_t type, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname, float tol);
+	[[nodiscard]] typedescription_t(fieldtype_t type, const char *name, inputfunc_t func, fieldflags_t flags_, const char *fgdname);
+	[[nodiscard]] typedescription_t(ICustomFieldOps *funcs, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname, float tol);
+	[[nodiscard]] typedescription_t(datamap_t *embed, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname);
+
+	~typedescription_t();
 
 private:
 	friend void MapField_impl( typedescription_t &ret, const char *name, int offset, int size, fieldtype_t type, fieldflags_t flags_ );
@@ -652,10 +675,10 @@ public:
 	// Tolerance for field errors for float fields
 	float				fieldTolerance;
 
-	const char *m_pDefValue;
+	char m_pDefValue[64];
 	const char *m_pGuiName;
 	const char *m_pDescription;
-	const FGdChoice *m_pChoices;
+	FGdChoice *m_pChoices;
 	int m_nChoicesLen;
 };
 
@@ -688,21 +711,34 @@ T *FieldInfo_t::GetField() const
 #define DEFINE_MAP_FIELD(name, ...) \
 	MapField_impl<decltype(classNameTypedef::name)>( #name, offsetof(classNameTypedef, name) __VA_OPT__(, __VA_ARGS__) )
 
-#define DEFINE_MAP_INPUT(name, ...) \
-	MapField_impl( #name, static_cast<inputfunc_t>(&classNameTypedef::name) __VA_OPT__(, __VA_ARGS__) )
+#define DEFINE_MAP_FIELD_ARRAYELEM(name, i, ...) \
+	MapField_impl<decltype(classNameTypedef::name[0])>( #name "[" #i "]", (offsetof(classNameTypedef, name) + (sizeof(classNameTypedef::name[0]) * i)) __VA_OPT__(, __VA_ARGS__) )
 
-inline typedescription_t MapField_impl( const char *name, inputfunc_t func, const char *fgdname, fieldtype_t type )
-{
-	typedescription_t ret;
-	MapField_impl(ret, name, 0, sizeof(inputfunc_t), type, FTYPEDESC_INPUT );
-	ret.m_pGuiName = fgdname;
-	ret.externalName = fgdname;
-	ret.inputFunc = func;
-	return ret;
-}
+#define DEFINE_MAP_INPUT_FUNC(name, ...) \
+	MapInput_impl( #name, static_cast<inputfunc_t>(&classNameTypedef::name) __VA_OPT__(, __VA_ARGS__) )
+
+#define DEFINE_MAP_INPUT_FIELD(name, ...) \
+	MapInput_impl<decltype(classNameTypedef::name)>( #name, offsetof(classNameTypedef, name) __VA_OPT__(, __VA_ARGS__) )
+
+#define DEFINE_MAP_OUTPUT(name, ...) \
+	MapOutput_impl<decltype(classNameTypedef::name)>( #name, offsetof(classNameTypedef, name) __VA_OPT__(, __VA_ARGS__) )
+
+class CBaseEntityOutput;
+
+template< class Type, fieldtype_t fieldType >
+class CEntityOutputTemplate;
+
+template <typename T> struct is_output_ { static constexpr inline const bool value = false; };
+template<> struct is_output_<CBaseEntityOutput> { static constexpr inline const bool value = true; };
+template< class Type, fieldtype_t fieldType > struct is_output_<CEntityOutputTemplate<Type, fieldType>> { static constexpr inline const bool value = true; };
+template <typename T>
+constexpr inline const bool is_output_v = is_output_<T>::value;
+
+[[nodiscard]] typedescription_t MapInput_impl( const char *name, inputfunc_t func, fieldtype_t type, const char *fgdname );
+[[nodiscard]] typedescription_t MapInput_impl( const char *name, inputfunc_t func, fieldtype_t type, const char *fgdname, const char *desc );
 
 template <typename T>
-typedescription_t MapField_impl( const char *name, int offset, fieldtype_t type, fieldflags_t flags_ )
+[[nodiscard]] typedescription_t MapField_impl( const char *name, int offset, fieldtype_t type, fieldflags_t flags_ )
 {
 	typedescription_t ret;
 	MapField_impl(ret, name, offset, sizeof(T), type, FTYPEDESC_KEY|flags_ );
@@ -710,56 +746,117 @@ typedescription_t MapField_impl( const char *name, int offset, fieldtype_t type,
 }
 
 template <typename T>
-typedescription_t MapField_impl( const char *name, int offset )
+[[nodiscard]] typedescription_t MapOutput_impl( const char *name, int offset, const char *fgdname )
+{
+	typedescription_t ret;
+	MapField_impl(ret, name, offset, sizeof(T), CNativeFieldInfo<T>::FIELDTYPE, FTYPEDESC_OUTPUT );
+	ret.pFieldOps = eventFuncs;
+	ret.externalName = fgdname;
+	ret.m_pGuiName = fgdname;
+	return ret;
+}
+
+template <typename T>
+[[nodiscard]] typedescription_t MapInput_impl( const char *name, int offset, fieldtype_t type, const char *fgdname )
+{
+	typedescription_t ret;
+	MapField_impl(ret, name, offset, sizeof(T), type, FTYPEDESC_INPUT );
+	ret.externalName = fgdname;
+	ret.m_pGuiName = fgdname;
+	return ret;
+}
+
+template <typename T>
+[[nodiscard]] typedescription_t MapField_impl( const char *name, int offset )
 {
 	return MapField_impl<T>( name, offset, CNativeFieldInfo<T>::FIELDTYPE, FTYPEDESC_NONE );
 }
 
 template <typename T>
-typedescription_t MapField_impl( const char *name, int offset, const char *fgdname )
+[[nodiscard]] typedescription_t MapField_impl( const char *name, int offset, fieldtype_t type, fieldflags_t flags_, const char *fgdname, const char *uiname, const char *desc )
 {
-	typedescription_t ret = MapField_impl<T>( name, offset, CNativeFieldInfo<T>::FIELDTYPE, FTYPEDESC_NONE );
+	typedescription_t ret = MapField_impl<T>( name, offset, type, flags_ );
 	ret.externalName = fgdname;
-	return ret;
-}
-
-template <typename T>
-typedescription_t MapField_impl( const char *name, int offset, const char *fgdname, const char *uiname )
-{
-	typedescription_t ret = MapField_impl<T>( name, offset, CNativeFieldInfo<T>::FIELDTYPE, FTYPEDESC_NONE, fgdname );
 	ret.m_pGuiName = uiname;
-	return ret;
-}
-
-template <typename T>
-typedescription_t MapField_impl( const char *name, int offset, const char *fgdname, const char *uiname, const char *desc )
-{
-	typedescription_t ret = MapField_impl<T>( name, offset, CNativeFieldInfo<T>::FIELDTYPE, FTYPEDESC_NONE, fgdname, uiname );
 	ret.m_pDescription = desc;
 	return ret;
 }
 
 template <typename T>
-typedescription_t MapField_impl( const char *name, int offset, fieldtype_t type, const char *fgdname, const char *uiname, const char *desc )
+[[nodiscard]] typedescription_t MapField_impl( const char *name, int offset, fieldtype_t type, const char *fgdname, const char *uiname, const char *desc )
 {
-	typedescription_t ret = MapField_impl<T>( name, offset, type, FTYPEDESC_NONE, fgdname, uiname, desc );
+	return MapField_impl<T>( name, offset, type, FTYPEDESC_NONE, fgdname, uiname, desc );
+}
+
+template <typename T>
+[[nodiscard]] typedescription_t MapField_impl( const char *name, int offset, fieldtype_t type, const char *fgdname, const char *uiname )
+{
+	return MapField_impl<T>( name, offset, type, FTYPEDESC_NONE, fgdname, uiname, NULL );
+}
+
+template <typename T>
+[[nodiscard]] typedescription_t MapField_impl( const char *name, int offset, fieldtype_t type, const char *fgdname )
+{
+	return MapField_impl<T>( name, offset, type, FTYPEDESC_NONE, fgdname, NULL, NULL );
+}
+
+template <typename T>
+[[nodiscard]] typedescription_t MapInput_impl( const char *name, int offset, fieldtype_t type, const char *fgdname, const char *desc )
+{
+	typedescription_t ret = MapInput_impl<T>(name, offset, type, fgdname);
+	ret.m_pDescription = desc;
 	return ret;
 }
 
 template <typename T>
-typedescription_t MapField_impl( const char *name, int offset, const char *fgdname, const char *uiname, const char *desc, const char *defval )
+[[nodiscard]] typedescription_t MapOutput_impl( const char *name, int offset, const char *fgdname, const char *desc )
 {
-	typedescription_t ret = MapField_impl<T>( name, offset, CNativeFieldInfo<T>::FIELDTYPE, FTYPEDESC_NONE, fgdname, uiname, desc );
-	ret.m_pDefValue = defval;
+	typedescription_t ret = MapOutput_impl<T>(name, offset, fgdname);
+	ret.m_pDescription = desc;
+	return ret;
+}
+
+template <typename T>
+[[nodiscard]] typedescription_t MapField_impl( const char *name, int offset, const char *fgdname )
+{
+	typedescription_t ret = MapField_impl<T>( name, offset );
+	ret.externalName = fgdname;
+	return ret;
+}
+
+template <typename T>
+[[nodiscard]] typedescription_t MapField_impl( const char *name, int offset, const char *fgdname, const char *uiname )
+{
+	typedescription_t ret = MapField_impl<T>( name, offset, fgdname );
+	ret.m_pGuiName = uiname;
+	return ret;
+}
+
+template <typename T>
+[[nodiscard]] typedescription_t MapField_impl( const char *name, int offset, const char *fgdname, const char *uiname, const char *desc )
+{
+	typedescription_t ret = MapField_impl<T>( name, offset, fgdname, uiname );
+	ret.m_pDescription = desc;
+	return ret;
+}
+
+template <typename T>
+[[nodiscard]] typedescription_t MapField_impl( const char *name, int offset, const char *fgdname, const char *uiname, const char *desc, const char *defval )
+{
+	typedescription_t ret = MapField_impl<T>( name, offset, fgdname, uiname, desc );
+	V_strncpy(ret.m_pDefValue, defval, sizeof(ret.m_pDefValue));
 	return ret;
 }
 
 template <typename T, int len>
-typedescription_t MapField_impl( const char *name, int offset, const char *fgdname, const char *uiname, const char *desc, const char *defval, const FGdChoice (&choices)[len] )
+[[nodiscard]] typedescription_t MapField_impl( const char *name, int offset, const char *fgdname, const char *uiname, const char *desc, const char *defval, FGdChoice (&&choices)[len] )
 {
-	typedescription_t ret = MapField_impl<T>( name, offset, CNativeFieldInfo<T>::FIELDTYPE, FTYPEDESC_NONE, fgdname, uiname, desc, defval );
-	ret.m_pChoices = choices;
+	typedescription_t ret = MapField_impl<T>( name, offset, fgdname, uiname, desc, defval );
 	ret.m_nChoicesLen = len;
+	ret.m_pChoices = new FGdChoice[len];
+	for(int i = 0; i < len; ++i) {
+		ret.m_pChoices[i++] = Move(choices[i]);
+	}
 	return ret;
 }
 
@@ -799,6 +896,8 @@ public:
 //-----------------------------------------------------------------------------
 struct datamap_t
 {
+	virtual ~datamap_t();
+
 	typedescription_t	*dataDesc;
 	int					dataNumFields;
 	char const			*dataClassName;
@@ -812,6 +911,8 @@ struct datamap_t
 #if defined( _DEBUG )
 	bool				bValidityChecked;
 #endif // _DEBUG
+
+	bool allocated_descs;
 };
 
 struct pred_datamap_t : public datamap_t
@@ -828,6 +929,26 @@ struct pred_datamap_t : public datamap_t
 };
 
 extern pred_datamap_t *g_pPredDatamapsHead;
+
+class FgdHelper
+{
+};
+
+class FgdAxisHelper : FgdHelper
+{
+};
+
+class FgdColorHelper : FgdHelper
+{
+};
+
+class FgdCylinderHelper : FgdHelper
+{
+};
+
+class FgdFrustumHelper : FgdHelper
+{
+};
 
 struct map_datamap_t : public datamap_t
 {
@@ -848,9 +969,12 @@ struct map_datamap_t : public datamap_t
 	map_datamap_t(const char *name, int type, const char *description);
 	map_datamap_t(const char *name, datamap_t *base, int type, const char *description);
 
+	void PostProcess();
+
 	map_datamap_t *m_pNext;
 	int m_nType;
 	const char *m_pDescription;
+	CUtlVector<FgdHelper> m_vecHelpers;
 };
 
 extern map_datamap_t *g_pMapDatamapsHead;

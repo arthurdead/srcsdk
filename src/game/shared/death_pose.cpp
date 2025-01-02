@@ -9,7 +9,7 @@
 
 #ifdef CLIENT_DLL
 
-void GetRagdollCurSequenceWithDeathPose( C_BaseAnimating *entity, matrix3x4_t *curBones, float flTime, int activity, int frame )
+void GetRagdollCurSequenceWithDeathPose( C_BaseAnimating *entity, matrix3x4_t *curBones, float flTime, sequence_t activity, DeathFrame_t frame )
 {
 	// blow the cached prev bones
 	entity->InvalidateBoneCache();
@@ -18,7 +18,7 @@ void GetRagdollCurSequenceWithDeathPose( C_BaseAnimating *entity, matrix3x4_t *c
 
 	entity->Interpolate( flTime );
 	
-	if ( activity != ACT_INVALID )
+	if ( activity != INVALID_SEQUENCE )
 	{
 		Vector vNewOrigin = entity->GetAbsOrigin();
 		Vector vDirection = vNewOrigin - vPrevOrigin;
@@ -115,10 +115,10 @@ Activity GetDeathPoseActivity( CBaseAnimating *entity, const CTakeDamageInfo &in
 	return aActivity;
 }
 
-void SelectDeathPoseActivityAndFrame( CBaseAnimating *entity, const CTakeDamageInfo &info, int hitgroup, Activity& activity, int& frame )
+void SelectDeathPoseActivityAndFrame( CBaseAnimating *entity, const CTakeDamageInfo &info, Hitgroup_t hitgroup, Activity& activity, DeathFrame_t& frame )
 {
 	activity = ACT_INVALID;
-	frame = 0;
+	frame = DEATH_FRAME_INVALID;
 
 	if ( !entity->GetModelPtr() )
 		return;

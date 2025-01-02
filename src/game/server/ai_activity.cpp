@@ -43,9 +43,9 @@ void CAI_BaseNPC::AddActivityToSR(const char *actName, Activity actID)
 
 #ifdef _DEBUG
 	if(!g_bRegisteringAliases) {
-		static Activity lastActID = (Activity)-3;
-		Assert( lastActID == (Activity)-3 || (actID < LAST_SHARED_ACTIVITY && actID == lastActID + 1) );
-		lastActID = actID;
+		static unsigned short lastActID = (unsigned short)-3;
+		Assert( lastActID == (unsigned short)-3 || (actID < LAST_SHARED_ACTIVITY && actID == (Activity)(lastActID + 1)) );
+		lastActID = (unsigned short)actID;
 	}
 #endif
 
@@ -58,7 +58,7 @@ void CAI_BaseNPC::AddActivityToSR(const char *actName, Activity actID)
 //-----------------------------------------------------------------------------
 const char *CAI_BaseNPC::GetActivityName(Activity actID) 
 {
-	if ( actID == -1 )
+	if ( actID == ACT_INVALID )
 		return "ACT_INVALID";
 
 	// m_pActivitySR only contains public activities, ActivityList_NameForIndex() has them all

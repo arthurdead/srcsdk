@@ -31,7 +31,7 @@ public:
 	void Activate( void );
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	void CalculateBlockLOS( void );
-	int  ParsePropData( void );
+	ParsePropRes_t  ParsePropData( void );
 
 	// Updates the prop as obstacle on navigation mesh
 	void UpdateNavObstacle( bool bForce = false );
@@ -167,8 +167,8 @@ public:
 	void			SetInteraction( propdata_interactions_t Interaction ) { m_iInteractions |= (1 << Interaction); }
 	void			RemoveInteraction( propdata_interactions_t Interaction ) { m_iInteractions &= ~(1 << Interaction); }
 	bool			HasInteraction( propdata_interactions_t Interaction ) { return ( m_iInteractions & (1 << Interaction) ) != 0; }
-	void			SetPhysicsMode(int iMode){}
-	int				GetPhysicsMode() { return PHYSICS_SOLID; }
+	void			SetPhysicsMode(PhysPropMode_t iMode){}
+	PhysPropMode_t				GetPhysicsMode() { return PHYSICS_SOLID; }
 	void			SetBreakMode( break_t mode ) { m_breakMode = mode; }
 	break_t		GetBreakMode( void ) const { return m_breakMode; }
 
@@ -240,7 +240,7 @@ private:
 	void RampToDefaultFadeScale();
 
 private:
-	enum PhysgunState_t
+	enum PhysgunState_t : unsigned char
 	{
 		PHYSGUN_MUST_BE_DETACHED = 0,
 		PHYSGUN_IS_DETACHING,
@@ -278,9 +278,14 @@ protected:
 };
 
 // Spawnflags
-#define SF_DYNAMICPROP_USEHITBOX_FOR_RENDERBOX		64
-#define SF_DYNAMICPROP_NO_VPHYSICS					128
-#define SF_DYNAMICPROP_DISABLE_COLLISION			256
+enum DynPropSF_t : unsigned short
+{
+	SF_DYNAMICPROP_USEHITBOX_FOR_RENDERBOX =		64,
+	SF_DYNAMICPROP_NO_VPHYSICS =					128,
+	SF_DYNAMICPROP_DISABLE_COLLISION =			256,
+};
+
+FLAGENUM_OPERATORS( DynPropSF_t, unsigned short )
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -304,6 +309,8 @@ public:
 	void	OnRestore( void );
 	bool	OverridePropdata( void );
 	virtual void	HandleAnimEvent( animevent_t *pEvent );
+
+	DECLARE_SPAWNFLAGS( DynPropSF_t )
 
 	// baseentity - watch dynamic hierarchy updates
 	virtual void	SetParent( CBaseEntity* pNewParent, int iAttachment = -1 );
@@ -380,6 +387,8 @@ public:
 	bool CreateVPhysics( void );
 	bool OverridePropdata( void );
 
+	DECLARE_SPAWNFLAGS( PhysPropSF_t )
+
 	// Attempt to replace a dynamic_cast
 	virtual bool IsPropPhysics() { return true; }
 
@@ -426,12 +435,12 @@ public:
 	float	GetMassScale( void ) { return m_massScale; }
 
 // IBreakableWithPropData:
-	void SetPhysicsMode(int iMode)
+	void SetPhysicsMode(PhysPropMode_t iMode)
 	{
 		m_iPhysicsMode = iMode;
 	}
 
-	int		GetPhysicsMode() { return m_iPhysicsMode; }
+	PhysPropMode_t		GetPhysicsMode() { return m_iPhysicsMode; }
 
 // IMultiplayerPhysics:
 	float	GetMass() { return m_fMass; }
@@ -466,7 +475,7 @@ private:
 	bool		m_bHasBeenAwakened;
 	float		m_fNextCheckDisableMotionContactsTime;
 
-	CNetworkVar( int, m_iPhysicsMode );	// One of the PHYSICS_MULTIPLAYER_ defines.	
+	CNetworkVar( PhysPropMode_t, m_iPhysicsMode );	// One of the PHYSICS_MULTIPLAYER_ defines.	
 	CNetworkVar( float, m_fMass );
 
 	bool m_usingCustomCollisionBounds;

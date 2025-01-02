@@ -925,7 +925,7 @@ int CAI_BaseNPC::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 	}
 
 	// react to the damage (get mad)
-	if ( ( (GetFlags() & FL_NPC) == 0 ) || !info.GetAttacker() )
+	if ( ( (GetFlags() & FL_NPC) == FL_NO_ENTITY_FLAGS ) || !info.GetAttacker() )
 		return 1;
 
 	// If the attacker was an NPC or client update my position memory
@@ -5129,7 +5129,7 @@ void CAI_BaseNPC::RunAI( void )
 	}
 
 #ifdef _DEBUG
-	m_bSelected = ( (m_debugOverlays & OVERLAY_NPC_SELECTED_BIT) != 0 );
+	m_bSelected = ( (m_debugOverlays & OVERLAY_NPC_SELECTED_BIT) != OVERLAY_NONE );
 #endif
 
 	m_bConditionsGathered = false;
@@ -7470,20 +7470,20 @@ bool CAI_BaseNPC::CanHolsterWeapon( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int	CAI_BaseNPC::HolsterWeapon( void )
+animlayerindex_t	CAI_BaseNPC::HolsterWeapon( void )
 {
 	if ( IsWeaponHolstered() )
-		return -1;
+		return INVALID_ANIMLAYER;
 
 	Activity activity = TranslateActivity( ACT_DISARM );
-	int iHolsterGesture = FindGestureLayer( activity );
-	if ( iHolsterGesture != -1 )
+	animlayerindex_t iHolsterGesture = FindGestureLayer( activity );
+	if ( iHolsterGesture != INVALID_ANIMLAYER )
 		return iHolsterGesture;
 
-	int iLayer = AddGesture( activity, true );
+	animlayerindex_t iLayer = AddGesture( activity, true );
 	//iLayer = AddGesture( ACT_GESTURE_DISARM, true );
 
-	if (iLayer != -1)
+	if (iLayer != INVALID_ANIMLAYER)
 	{
 		// Prevent firing during the holster / unholster
 		float flDuration = GetLayerDuration( iLayer );
@@ -7515,14 +7515,14 @@ int	CAI_BaseNPC::HolsterWeapon( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CAI_BaseNPC::UnholsterWeapon( void )
+animlayerindex_t CAI_BaseNPC::UnholsterWeapon( void )
 {
 	if ( !IsWeaponHolstered() )
- 		return -1;
+ 		return INVALID_ANIMLAYER;
 
 	Activity activity = TranslateActivity( ACT_ARM );
-	int iHolsterGesture = FindGestureLayer( activity );
-	if ( iHolsterGesture != -1 )
+	animlayerindex_t iHolsterGesture = FindGestureLayer( activity );
+	if ( iHolsterGesture != INVALID_ANIMLAYER )
 		return iHolsterGesture;
 
 	int i = m_iLastHolsteredWeapon;
@@ -7545,10 +7545,10 @@ int CAI_BaseNPC::UnholsterWeapon( void )
 	{
 		SetActiveWeapon( GetWeapon(i) );
 
-		int iLayer = AddGesture( TranslateActivity( ACT_ARM ), true );
+		animlayerindex_t iLayer = AddGesture( TranslateActivity( ACT_ARM ), true );
 		//iLayer = AddGesture( ACT_GESTURE_ARM, true );
 
-		if (iLayer != -1)
+		if (iLayer != INVALID_ANIMLAYER)
 		{
 			// Prevent firing during the holster / unholster
 			float flDuration = GetLayerDuration( iLayer );
@@ -7576,7 +7576,7 @@ int CAI_BaseNPC::UnholsterWeapon( void )
 		return iLayer;
 	}
 
-	return -1;
+	return INVALID_ANIMLAYER;
 }
 
 //-----------------------------------------------------------------------------
@@ -7670,7 +7670,7 @@ bool CAI_BaseNPC::DoHolster( void )
 		SetActiveWeapon( NULL );
 
 		//Force the NPC to recalculate it's arrival activity since it'll most likely be wrong now that we don't have a weapon out.
-		GetNavigator()->SetArrivalSequence( ACT_INVALID );
+		GetNavigator()->SetArrivalSequence( INVALID_SEQUENCE );
 
 		if ( m_iDesiredWeaponState == DESIREDWEAPONSTATE_CHANGING_DESTROY )
 		{
@@ -7702,7 +7702,7 @@ bool CAI_BaseNPC::DoUnholster( void )
 		GetActiveWeapon()->Deploy();
 
 		//Force the NPC to recalculate it's arrival activity since it'll most likely be wrong now.
-		GetNavigator()->SetArrivalSequence( ACT_INVALID );
+		GetNavigator()->SetArrivalSequence( INVALID_SEQUENCE );
 
 		if ( m_iDesiredWeaponState != DESIREDWEAPONSTATE_IGNORE )
 		{
@@ -7796,8 +7796,8 @@ void CAI_BaseNPC::InputChangeWeapon( inputdata_t &&inputdata )
 	}
 	else
 	{
-		int iHolsterLayer = HolsterWeapon();
-		if (GetLayerActivity(iHolsterLayer) == -1)
+		animlayerindex_t iHolsterLayer = HolsterWeapon();
+		if (GetLayerActivity(iHolsterLayer) == ACT_INVALID)
 		{
 			Weapon_Switch(pSwitchTo);
 			return;
@@ -8144,7 +8144,7 @@ void CAI_BaseNPC::RemoveMemory( void )
 //-----------------------------------------------------------------------------
 // Purpose: Change faction NPC belongs to
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::ChangeFaction( int nNewFaction )
+void CAI_BaseNPC::ChangeFaction( Faction_T nNewFaction )
 {
 	BaseClass::ChangeFaction( nNewFaction );
 
@@ -8976,7 +8976,7 @@ void CAI_BaseNPC::HandleAnimEvent( animevent_t *pEvent )
 			int nSequence = atoi(pEvent->options);
 			if (nSequence != -1)
 			{
-				pWeapon->ResetSequence(nSequence);
+				pWeapon->ResetSequence((sequence_t)nSequence);
 			}
 		}
 		break;
@@ -8987,8 +8987,8 @@ void CAI_BaseNPC::HandleAnimEvent( animevent_t *pEvent )
 		CBaseCombatWeapon *pWeapon = GetActiveWeapon();
 		if ((pWeapon) && (pEvent->options))
 		{
-			int nSequence = pWeapon->LookupSequence(pEvent->options);
-			if (nSequence != -1)
+			sequence_t nSequence = pWeapon->LookupSequence(pEvent->options);
+			if (nSequence != INVALID_SEQUENCE)
 			{
 				pWeapon->ResetSequence(nSequence);
 			}
@@ -10421,7 +10421,7 @@ Vector CAI_BaseNPC::BodyTarget( const Vector &posSrc, bool bNoisy )
 
 bool CAI_BaseNPC::ShouldMoveAndShoot()
 { 
-	return ( ( CapabilitiesGet() & bits_CAP_MOVE_SHOOT ) != 0 ); 
+	return ( ( CapabilitiesGet() & bits_CAP_MOVE_SHOOT ) != bits_CAP_NONE ); 
 }
 
 
@@ -11092,104 +11092,415 @@ CBaseCombatCharacter* CAI_BaseNPC::GetEnemyCombatCharacterPointer()
 
 BEGIN_MAPENTITY( CAI_BaseNPC, MAPENT_NPCCLASS )
 
-	DEFINE_KEYFIELD_AUTO( m_SleepState, "sleepstate" ),
-	DEFINE_KEYFIELD_AUTO( m_flWakeRadius, "wakeradius" ),
-	DEFINE_KEYFIELD_AUTO( m_bWakeSquad, "wakesquad" ),
+	DEFINE_MAP_FIELD( m_SleepState,
+		"sleepstate",
+		"Sleep State",
+		"Holds the NPC in stasis until specified condition. See also 'Wake Radius' and 'Wake Squad'.",
+		UTIL_VarArgs("%i", AISS_AWAKE), {
+			{UTIL_VarArgs("%i", AISS_AWAKE), "None"},
+			{UTIL_VarArgs("%i", AISS_WAITING_FOR_THREAT), "Waiting for threat"},
+			{UTIL_VarArgs("%i", AISS_WAITING_FOR_PVS), "Waiting for PVS"},
+			{UTIL_VarArgs("%i", AISS_WAITING_FOR_INPUT), "Waiting for input, ignore PVS"},
+			{UTIL_VarArgs("%i", AISS_AUTO_PVS), "Auto PVS"},
+			{UTIL_VarArgs("%i", AISS_AUTO_PVS_AFTER_PVS), "Auto PVS after PVS"},
+		}
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_bIgnoreUnseenEnemies, "ignoreunseenenemies" ),
+	DEFINE_MAP_FIELD( m_flWakeRadius,
+		"wakeradius",
+		"Wake Radius",
+		"Auto-wake if player within this distance",
+		"0"
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_SquadName, "squadname" ),
+	DEFINE_MAP_FIELD( m_bWakeSquad,
+		"wakesquad",
+		"Wake Squad",
+		"Wake all of the NPCs squadmates if the NPC is woken",
+		"0"
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_spawnEquipment, "additionalequipment" ),
+	DEFINE_MAP_FIELD( m_bIgnoreUnseenEnemies,
+		"ignoreunseenenemies",
+		"Ignore unseen enemies",
+		"Prefer visible enemies, regardless of distance or relationship priority",
+		"0"
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_iszEnemyFilterName, "enemyfilter" ),
+	DEFINE_MAP_FIELD( m_SquadName,
+		"squadname",
+		"Squad Name",
+		"NPCs that are in the same squad (i.e. have matching squad names) will share information about enemies, and will take turns attacking and covering each other."
+	),
+
+	DEFINE_MAP_FIELD( m_spawnEquipment,
+		"additionalequipment",
+		"Weapon Held",
+		"Gives the NPC a weapon. NPCs may attack oddly or not attack if they don't know how to use a particular weapon."
+	),
+
+	DEFINE_MAP_FIELD( m_iszEnemyFilterName,
+		"enemyfilter",
+		"Enemy Filter",
+		"Filter by which to filter potential enemies"
+	),
 
 	// Outputs
-	DEFINE_OUTPUT( m_OnDamaged,				"OnDamaged" ),
-	DEFINE_OUTPUT( m_OnDeath,					"OnDeath" ),
-	DEFINE_OUTPUT( m_OnHalfHealth,				"OnHalfHealth" ),
-	DEFINE_OUTPUT( m_OnFoundEnemy,				"OnFoundEnemy" ),
-	DEFINE_OUTPUT( m_OnLostEnemyLOS,			"OnLostEnemyLOS" ),
-	DEFINE_OUTPUT( m_OnLostEnemy,				"OnLostEnemy" ),
-	DEFINE_OUTPUT( m_OnFoundPlayer,			"OnFoundPlayer" ),
-	DEFINE_OUTPUT( m_OnLostPlayerLOS,			"OnLostPlayerLOS" ),
-	DEFINE_OUTPUT( m_OnLostPlayer,				"OnLostPlayer" ),
-	DEFINE_OUTPUT( m_OnHearWorld,				"OnHearWorld" ),
-	DEFINE_OUTPUT( m_OnHearPlayer,				"OnHearPlayer" ),
-	DEFINE_OUTPUT( m_OnHearCombat,				"OnHearCombat" ),
-	DEFINE_OUTPUT( m_OnDamagedByPlayer,		"OnDamagedByPlayer" ),
-	DEFINE_OUTPUT( m_OnDamagedByPlayerSquad,	"OnDamagedByPlayerSquad" ),
-	DEFINE_OUTPUT( m_OnDenyCommanderUse,		"OnDenyCommanderUse" ),
-	DEFINE_OUTPUT( m_OnRappelTouchdown,			"OnRappelTouchdown" ),
-	DEFINE_OUTPUT( m_OnWake,					"OnWake" ),
-	DEFINE_OUTPUT( m_OnSleep,					"OnSleep" ),
-	DEFINE_OUTPUT( m_OnForcedInteractionStarted,	"OnForcedInteractionStarted" ),
-	DEFINE_OUTPUT( m_OnForcedInteractionAborted,	"OnForcedInteractionAborted" ),
-	DEFINE_OUTPUT( m_OnForcedInteractionFinished,	"OnForcedInteractionFinished" ),
+	DEFINE_MAP_OUTPUT( m_OnDamaged,
+		"OnDamaged",
+		"Fired when this NPC takes damage."
+	),
 
+	DEFINE_MAP_OUTPUT( m_OnDeath,
+		"OnDeath",
+		"Fired when this NPC is killed."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnHalfHealth,
+		"OnHalfHealth",
+		"Fired when this NPC reaches half of its maximum health."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnFoundEnemy,
+		"OnFoundEnemy",
+		"Fired when this NPC establishes line of sight to its enemy (outputs entity)."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnLostEnemyLOS,
+		"OnLostEnemyLOS",
+		"Fired when this NPC loses line of sight to its enemy."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnLostEnemy,
+		"OnLostEnemy"
+		"Fired when this NPC loses its enemy. Usually due to the enemy being killed/removed, or because this NPC has selected a newer, more dangerous enemy."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnFoundPlayer,
+		"OnFoundPlayer",
+		"Fired when this NPC establishes line of sight to its enemy, and that enemy is a player (outputs player entity)."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnLostPlayerLOS,
+		"OnLostPlayerLOS",
+		"Fired when this NPC loses line of sight to its enemy, and that enemy is a player."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnLostPlayer,
+		"OnLostPlayer",
+		"Fired when this NPC loses its enemy, and that enemy was a player. Usually due to the enemy being killed/removed, or because this NPC has selected a newer, more dangerous enemy."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnHearWorld,
+		"OnHearWorld",
+		"Fired when this NPC hears a sound (other than combat or the player)."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnHearPlayer,
+		"OnHearPlayer",
+		"Fired when this NPC hears the player."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnHearCombat,
+		"OnHearCombat",
+		"Fired when this NPC hears combat sounds."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnDamagedByPlayer,
+		"OnDamagedByPlayer",
+		"Fired when this NPC is hurt by a player."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnDamagedByPlayerSquad,
+		"OnDamagedByPlayerSquad",
+		"Fired when this NPC is hurt by a player OR by one of the player's squadmates."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnDenyCommanderUse,
+		"OnDenyCommanderUse",
+		"Fired when this NPC has refused to join the player's squad."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnRappelTouchdown,
+		"OnRappelTouchdown"
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnWake,
+		"OnWake",
+		"Fired when this NPC comes out of a sleep state."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnSleep,
+		"OnSleep",
+		"Fired when this NPC enters a sleep state."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnForcedInteractionStarted,
+		"OnForcedInteractionStarted",
+		"Fired when the NPC starts a forced interaction."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnForcedInteractionAborted,
+		"OnForcedInteractionAborted",
+		"Fired when the NPC aborts a forced interaction for some reason (target NPC died, couldn't be pathed to, etc)"
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnForcedInteractionFinished,
+		"OnForcedInteractionFinished",
+		"NPCs in actbusies can no longer perform dynamic interactions."
+	),
 
 	// Inputs
-	DEFINE_INPUTFUNC( FIELD_STRING, "SetRelationship", InputSetRelationship ),
-	DEFINE_INPUTFUNC( FIELD_STRING, "SetEnemyFilter", InputSetEnemyFilter ),
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetHealth", InputSetHealth ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetHealthFraction", InputSetHealthFraction ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "BeginRappel", InputBeginRappel ),
-	DEFINE_INPUTFUNC( FIELD_STRING, "SetSquad", InputSetSquad ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "Wake", InputWake ),
-	DEFINE_INPUTFUNC( FIELD_STRING, "ForgetEntity", InputForgetEntity ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "IgnoreDangerSounds", InputIgnoreDangerSounds ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "Break", InputBreak ),
-	DEFINE_INPUTFUNC( FIELD_VOID,	"StartScripting",	InputStartScripting ),
-	DEFINE_INPUTFUNC( FIELD_VOID,	"StopScripting",	InputStopScripting ),
-	DEFINE_INPUTFUNC( FIELD_VOID,	"GagEnable",	InputGagEnable ),
-	DEFINE_INPUTFUNC( FIELD_VOID,	"GagDisable",	InputGagDisable ),
-	DEFINE_INPUTFUNC( FIELD_VOID,	"InsideTransition",	InputInsideTransition ),
-	DEFINE_INPUTFUNC( FIELD_VOID,	"OutsideTransition",	InputOutsideTransition ),
-	DEFINE_INPUTFUNC( FIELD_VOID,	"ActivateSpeedModifier", InputActivateSpeedModifier ),
-	DEFINE_INPUTFUNC( FIELD_VOID,	"DisableSpeedModifier", InputDisableSpeedModifier ),
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetSpeedModRadius", InputSetSpeedModifierRadius ),
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetSpeedModSpeed", InputSetSpeedModifierSpeed ),
-	DEFINE_INPUTFUNC( FIELD_VOID,	"HolsterWeapon", InputHolsterWeapon ),
-	DEFINE_INPUTFUNC( FIELD_VOID,	"HolsterAndDestroyWeapon", InputHolsterAndDestroyWeapon ),
-	DEFINE_INPUTFUNC( FIELD_VOID,	"UnholsterWeapon", InputUnholsterWeapon ),
-	DEFINE_INPUTFUNC( FIELD_STRING,	"ForceInteractionWithNPC", InputForceInteractionWithNPC ),
-	DEFINE_INPUTFUNC( FIELD_STRING, "UpdateEnemyMemory", InputUpdateEnemyMemory ),
-	DEFINE_INPUTFUNC( FIELD_STRING, "CreateAddon", InputCreateAddon ),
+	DEFINE_MAP_INPUT_FUNC( InputSetRelationship,
+		FIELD_POOLED_STRING,
+		"SetRelationship",
+		"Changes this entity's relationship with another entity or class. Format: <entityname/classname> <D_HT/D_FR/D_LI/D_NU> <priority>"
+	),
 
-	DEFINE_INPUT( m_iDynamicInteractionsAllowed,		FIELD_INTEGER, "SetDynamicInteractions" ),
+	DEFINE_MAP_INPUT_FUNC( InputSetEnemyFilter,
+		FIELD_PARTIAL_TARGETNAME,
+		"SetEnemyFilter",
+		"Changes this NPC's enemy filter to the named filter."
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_bInAScript, "SpawnWithStartScripting" ),
+	DEFINE_MAP_INPUT_FUNC( InputSetHealth,
+		FIELD_INTEGER,
+		"SetHealth",
+		"Set this NPC's health."
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_FriendlyFireOverride, "FriendlyFireOverride" ),
+	DEFINE_MAP_INPUT_FUNC( InputSetHealthFraction,
+		FIELD_FLOAT,
+		"SetHealthFraction"
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_flSpeedModifier, "BaseSpeedModifier" ),
+	DEFINE_MAP_INPUT_FUNC( InputBeginRappel,
+		FIELD_VOID,
+		"BeginRappel",
+		"BeginRappel"
+	),
 
-	DEFINE_OUTPUT( m_OnItemPickup, "OnItemPickup" ),
-	DEFINE_OUTPUT( m_OnItemDrop, "OnItemDrop" ),
+	DEFINE_MAP_INPUT_FUNC( InputSetSquad,
+		FIELD_POOLED_STRING,
+		"SetSquad",
+		"Set the name of this NPC's squad. It will be removed from any existing squad automatically. Leaving the parameter blank will remove the NPC from any existing squad."
+	),
 
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetFriendlyFire", InputSetFriendlyFire ),
+	DEFINE_MAP_INPUT_FUNC( InputWake,
+		FIELD_VOID,
+		"Wake",
+		"Wakes up the NPC if it is sleeping."
+	),
 
-	DEFINE_INPUTFUNC( FIELD_STRING, "GiveWeaponHolstered", InputGiveWeaponHolstered ),
-	DEFINE_INPUTFUNC( FIELD_STRING, "ChangeWeapon", InputChangeWeapon ),
-	DEFINE_INPUTFUNC( FIELD_STRING, "PickupWeapon", InputPickupWeapon ),
-	DEFINE_INPUTFUNC( FIELD_STRING, "PickupItem", InputPickupItem ),
-	DEFINE_OUTPUT( m_OnHolsterWeapon,	"OnHolsterWeapon" ),
-	DEFINE_OUTPUT( m_OnUnholsterWeapon,	"OnUnholsterWeapon" ),
+	DEFINE_MAP_INPUT_FUNC( InputForgetEntity,
+		FIELD_EXACT_TARGETNAME_OR_CLASSNAME,
+		"ForgetEntity",
+		"Clears out the NPC's knowledge of a named entity."
+	),
 
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "AddCapabilities", InputAddCapabilities ),
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "RemoveCapabilities", InputRemoveCapabilities ),
+	DEFINE_MAP_INPUT_FUNC( InputIgnoreDangerSounds,
+		FIELD_FLOAT,
+		"IgnoreDangerSounds",
+		"Ignore danger sounds for the specified number of seconds."
+	),
 
-	DEFINE_INPUTFUNC( FIELD_STRING, "SetCondition", InputSetCondition ),
-	DEFINE_INPUTFUNC( FIELD_STRING, "ClearCondition", InputClearCondition ),
+	DEFINE_MAP_INPUT_FUNC( InputBreak,
+		FIELD_VOID,
+		"Break",
+		"Makes the NPC die and disappear."
+	),
 
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetThinkNPC", InputSetThinkNPC ),
+	DEFINE_MAP_INPUT_FUNC( InputStartScripting,
+		FIELD_VOID,
+		"StartScripting",
+		"Enter scripting state. In this state, NPCs ignore a variety of stimulus that would make them break out of their scripts:"
+		"They ignore danger sounds, ignore +USE, don't idle speak or respond to other NPC's idle speech, and so on."
+	),
 
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetDistLook", InputSetDistLook ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetDistTooFar", InputSetDistTooFar ),
+	DEFINE_MAP_INPUT_FUNC( InputStopScripting,
+		FIELD_VOID,
+		"StopScripting",
+		"Exit scripting state."
+	),
 
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpeedModifier", InputSetSpeedModifier ),
+	DEFINE_MAP_INPUT_FUNC( InputGagEnable,
+		FIELD_VOID,
+		"GagEnable",
+		"Turn on the NPC Gag flag. NPC won't speak outside of choreographed scenes."
+	),
 
-	DEFINE_OUTPUT( m_OnStateChange,	"OnStateChange" ),
+	DEFINE_MAP_INPUT_FUNC( InputGagDisable,
+		FIELD_VOID,
+		"GagDisable",
+		"Turn off the NPC Gag flag."
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputInsideTransition,
+		FIELD_VOID,
+		"InsideTransition"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputOutsideTransition,
+		FIELD_VOID,
+		"OutsideTransition",
+		"Use this input to teleport the NPC to a hintnode with the Player Squad Transition Point hint type."
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputActivateSpeedModifier,
+		FIELD_VOID,
+		"ActivateSpeedModifier"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputDisableSpeedModifier,
+		FIELD_VOID,
+		"DisableSpeedModifier"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputSetSpeedModifierRadius,
+		FIELD_INTEGER,
+		"SetSpeedModRadius"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputSetSpeedModifierSpeed,
+		FIELD_INTEGER,
+		"SetSpeedModSpeed"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputHolsterWeapon,
+		FIELD_VOID,
+		"HolsterWeapon",
+		"Force the NPC to holster their weapon. Ignored if the NPC is scripting, if the NPC's weapon is already holstered, or if the NPC doesn't use weapons."
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputHolsterAndDestroyWeapon,
+		FIELD_VOID,
+		"HolsterAndDestroyWeapon",
+		"Identical to HolsterWeapon, except the weapon is destroyed once it has been holstered and concealed."
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputUnholsterWeapon,
+		FIELD_VOID,
+		"UnholsterWeapon",
+		"Force the NPC to draw their weapon. Ignored if the NPC is scripting, if the NPC's weapon is already drawn, or if the NPC doesn't use weapons."
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputForceInteractionWithNPC,
+		FIELD_POOLED_STRING,
+		"ForceInteractionWithNPC",
+		"Force the NPC to use a dynamic interaction with another NPC. Parameter format: <target NPC name> <dynamic interaction name>"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputUpdateEnemyMemory,
+		FIELD_PARTIAL_TARGETNAME,
+		"UpdateEnemyMemory"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputCreateAddon,
+		FIELD_EXACT_CLASSNAME,
+		"CreateAddon"
+	),
+
+	DEFINE_MAP_INPUT_FIELD( m_iDynamicInteractionsAllowed,
+		FIELD_INTEGER,
+		"SetDynamicInteractions"
+	),
+
+	DEFINE_MAP_FIELD( m_bInAScript,
+		"SpawnWithStartScripting"
+	),
+
+	DEFINE_MAP_FIELD( m_FriendlyFireOverride,
+		"FriendlyFireOverride"
+	),
+
+	DEFINE_MAP_FIELD( m_flSpeedModifier,
+		"BaseSpeedModifier"
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnItemPickup,
+		"OnItemPickup"
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnItemDrop,
+		"OnItemDrop"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputSetFriendlyFire,
+		FIELD_INTEGER,
+		"SetFriendlyFire"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputGiveWeaponHolstered,
+		FIELD_EXACT_CLASSNAME,
+		"GiveWeaponHolstered"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputChangeWeapon,
+		FIELD_EXACT_CLASSNAME,
+		"ChangeWeapon"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputPickupWeapon,
+		FIELD_PARTIAL_TARGETNAME_OR_CLASSNAME,
+		"PickupWeapon"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputPickupItem,
+		FIELD_PARTIAL_TARGETNAME_OR_CLASSNAME,
+		"PickupItem"
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnHolsterWeapon,
+		"OnHolsterWeapon"
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnUnholsterWeapon,
+		"OnUnholsterWeapon"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputAddCapabilities,
+		FIELD_UINTEGER64,
+		"AddCapabilities"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputRemoveCapabilities,
+		FIELD_UINTEGER64,
+		"RemoveCapabilities"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputSetCondition,
+		FIELD_POOLED_STRING,
+		"SetCondition"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputClearCondition,
+		FIELD_POOLED_STRING,
+		"ClearCondition"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputSetThinkNPC,
+		FIELD_FLOAT,
+		"SetThinkNPC"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputSetDistLook,
+		FIELD_FLOAT,
+		"SetDistLook"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputSetDistTooFar,
+		FIELD_FLOAT,
+		"SetDistTooFar"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputSetSpeedModifier,
+		FIELD_FLOAT,
+		"SetSpeedModifier"
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnStateChange,
+		"OnStateChange"
+	),
 
 END_MAPENTITY()
 
@@ -11239,7 +11550,7 @@ void CAI_BaseNPC::Activate( void )
 
 #ifdef AI_MONITOR_FOR_OSCILLATION
 	m_ScheduleHistory.RemoveAll();
-#endif//AI_MONITOR_FOR_OSCILLATION
+#endif //AI_MONITOR_FOR_OSCILLATION
 
 }
 

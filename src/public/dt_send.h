@@ -771,9 +771,9 @@ void* SendProxy_SendLocalDataTable( const SendProp *pProp, const void *pStruct, 
 float AssignRangeMultiplier( int nBits, double range );
 
 #define SendPropAuto( varName, ... ) \
-	SendPropAuto_impl<typename NetworkVarType<currentSendDTClass::NetworkVar_##varName##_BaseClass>::type>( DT_VARNAME(varName), CNativeFieldInfo<currentSendDTClass::NetworkVar_##varName##_BaseClass>::FIELDTYPE, currentSendDTClass::GetOffset_##varName##_memory(), __VA_ARGS__ )
+	SendPropAuto_impl<typename NetworkVarType<currentSendDTClass::NetworkVar_##varName##_BaseClass>::type>( DT_VARNAME(varName), CNativeFieldInfo<currentSendDTClass::NetworkVar_##varName##_BaseClass>::FIELDTYPE, currentSendDTClass::GetOffset_##varName##_memory() __VA_OPT__(, __VA_ARGS__) )
 #define SendPropAuto_NoCheck( varName, ... ) \
-	SendPropAuto_impl<decltype(currentSendDTClass::varName)>( DT_VARNAME(varName), CNativeFieldInfo<decltype(currentSendDTClass::varName)>::FIELDTYPE, offsetof(currentSendDTClass, varName), __VA_ARGS__ )
+	SendPropAuto_impl<decltype(currentSendDTClass::varName)>( DT_VARNAME(varName), CNativeFieldInfo<decltype(currentSendDTClass::varName)>::FIELDTYPE, offsetof(currentSendDTClass, varName) __VA_OPT__(, __VA_ARGS__) )
 
 void SendPropAuto_impl(
 	SendPropEx &ret,

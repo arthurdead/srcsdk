@@ -127,7 +127,7 @@ void CModelSoundsCache::BuildAnimationEventSoundList( CStudioHdr *hdr, CUtlVecto
 	// Find all animation events which fire off sound script entries...
 	for ( int iSeq=0; iSeq < hdr->GetNumSeq(); iSeq++ )
 	{
-		mstudioseqdesc_t *pSeq = &hdr->pSeqdesc( iSeq );
+		mstudioseqdesc_t *pSeq = &hdr->pSeqdesc( (sequence_t)iSeq );
 		
 		// Now read out all the sound events with their timing
 		for ( int iEvent=0; iEvent < (int)pSeq->numevents; iEvent++ )

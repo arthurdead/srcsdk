@@ -22,32 +22,126 @@ LINK_ENTITY_TO_CLASS_ALIASED(point_template, PointTemplate);
 BEGIN_MAPENTITY_ALIASED( PointTemplate, MAPENT_POINTCLASS )
 	// Keys
 
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[0], FIELD_PARTIAL_TARGETNAME, "Template01"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[1], FIELD_PARTIAL_TARGETNAME, "Template02"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[2], FIELD_PARTIAL_TARGETNAME, "Template03"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[3], FIELD_PARTIAL_TARGETNAME, "Template04"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[4], FIELD_PARTIAL_TARGETNAME, "Template05"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[5], FIELD_PARTIAL_TARGETNAME, "Template06"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[6], FIELD_PARTIAL_TARGETNAME, "Template07"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[7], FIELD_PARTIAL_TARGETNAME, "Template08"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[8], FIELD_PARTIAL_TARGETNAME, "Template09"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[9], FIELD_PARTIAL_TARGETNAME, "Template10"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[10], FIELD_PARTIAL_TARGETNAME, "Template11"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[11], FIELD_PARTIAL_TARGETNAME, "Template12"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[12], FIELD_PARTIAL_TARGETNAME, "Template13"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[13], FIELD_PARTIAL_TARGETNAME, "Template14"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[14], FIELD_PARTIAL_TARGETNAME, "Template15"),
-	DEFINE_KEYFIELD( m_iszTemplateEntityNames[15], FIELD_PARTIAL_TARGETNAME, "Template16"),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 0,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template01",
+		"Template 1"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 1,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template02",
+		"Template 2"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 2,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template03",
+		"Template 3"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 3,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template04",
+		"Template 4"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 4,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template05",
+		"Template 5"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 5,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template06",
+		"Template 6"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 6,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template07",
+		"Template 7"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 7,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template08",
+		"Template 8"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 8,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template09",
+		"Template 9"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 9,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template10",
+		"Template 10"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 10,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template11",
+		"Template 11"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 11,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template12",
+		"Template 12"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 12,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template13",
+		"Template 13"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 13,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template14",
+		"Template 14"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 14,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template15",
+		"Template 15"
+	),
+
+	DEFINE_MAP_FIELD_ARRAYELEM( m_iszTemplateEntityNames, 15,
+		FIELD_PARTIAL_TARGETNAME,
+		"Template16",
+		"Template 16"
+	),
 
 	// Inputs
-	DEFINE_INPUTFUNC( FIELD_VOID, "ForceSpawn", InputForceSpawn ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "ForceSpawnRandomTemplate", InputForceSpawnRandomTemplate ),
+	DEFINE_MAP_INPUT_FUNC( InputForceSpawn,
+		FIELD_VOID,
+		"ForceSpawn"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputForceSpawnRandomTemplate,
+		FIELD_VOID,
+		"ForceSpawnRandomTemplate"
+	),
 
 	// Outputs
-	DEFINE_OUTPUT( m_pOutputOnSpawned, "OnEntitySpawned" ),
-	DEFINE_OUTPUT( m_pOutputOutEntity, "OutSpawnedEntity" ),
+	DEFINE_MAP_OUTPUT( m_pOutputOnSpawned,
+		"OnEntitySpawned",
+		"Fired after spawning an instance of this template."
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_bFixupExpanded, "FixupMode" ),
+	DEFINE_MAP_OUTPUT( m_pOutputOutEntity,
+		"OutSpawnedEntity"
+	),
+
+	DEFINE_MAP_FIELD( m_bFixupExpanded,
+		"FixupMode"
+	),
 
 END_MAPENTITY()
 

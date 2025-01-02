@@ -57,26 +57,30 @@ class CUserCmd;
 #define WEAPON_ALTFIRE_HUD_HINT_COUNT	1
 #define WEAPON_RELOAD_HUD_HINT_COUNT	1
 
-//Start with a constraint in place (don't drop to floor)
-#define	SF_WEAPON_START_CONSTRAINED	(1<<0)	
-#define SF_WEAPON_NO_PLAYER_PICKUP	(1<<1)
-#define SF_WEAPON_NO_PHYSCANNON_PUNT (1<<2)
+enum BaseWeaponSF_t : uint64
+{
+	//Start with a constraint in place (don't drop to floor)
+	SF_WEAPON_START_CONSTRAINED =	(1<<0),	
+	SF_WEAPON_NO_PLAYER_PICKUP =	(1<<1),
+	SF_WEAPON_NO_PHYSCANNON_PUNT = (1<<2),
 
-// I really, REALLY hope no weapon uses their own spawnflags.
-// If you want yours to use spawnflags, start at 16 just to be safe.
+	// I really, REALLY hope no weapon uses their own spawnflags.
+	// If you want yours to use spawnflags, start at 16 just to be safe.
+	SF_WEAPON_NO_NPC_PICKUP =	(1<<3), // Prevents NPCs from picking up the weapon.
+	SF_WEAPON_PRESERVE_AMMO = (1<<4), // Prevents the weapon from filling up to max automatically when dropped or picked up by players.
+	SF_WEAPON_PRESERVE_NAME =	(1<<5), // Prevents the weapon's name from being cleared upon being picked up by a player.
+	SF_WEAPON_ALWAYS_TOUCHABLE =	(1<<6), // Makes a weapon always touchable/pickupable, even through walls.
 
-#define SF_WEAPON_NO_NPC_PICKUP	(1<<3) // Prevents NPCs from picking up the weapon.
-#define SF_WEAPON_PRESERVE_AMMO (1<<4) // Prevents the weapon from filling up to max automatically when dropped or picked up by players.
-#define SF_WEAPON_PRESERVE_NAME	(1<<5) // Prevents the weapon's name from being cleared upon being picked up by a player.
-#define SF_WEAPON_ALWAYS_TOUCHABLE	(1<<6) // Makes a weapon always touchable/pickupable, even through walls.
+	// ----------------------------------------------
+	// These spawnflags are not supposed to be used by level designers.
+	// They're just my way of trying to avoid adding new variables
+	// that have to stay in memory and save/load.
+	// ----------------------------------------------
+	SF_WEAPON_NO_AUTO_SWITCH_WHEN_EMPTY = (1<<7), // So weapons with ammo preserved at 0 don't switch.
+	SF_WEAPON_USED = (1<<8), // Weapon is being +USE'd, not bumped
+};
 
-// ----------------------------------------------
-// These spawnflags are not supposed to be used by level designers.
-// They're just my way of trying to avoid adding new variables
-// that have to stay in memory and save/load.
-// ----------------------------------------------
-#define SF_WEAPON_NO_AUTO_SWITCH_WHEN_EMPTY (1<<6) // So weapons with ammo preserved at 0 don't switch.
-#define SF_WEAPON_USED (1<<7) // Weapon is being +USE'd, not bumped
+FLAGENUM_OPERATORS( BaseWeaponSF_t, uint64 )
 
 //Percent
 #define	CLIP_PERC_THRESHOLD		0.75f	
@@ -239,6 +243,8 @@ public:
 
 	virtual void			Spawn( void );
 	virtual void			Precache( void );
+
+	DECLARE_SPAWNFLAGS( BaseWeaponSF_t )
 
 	void					SetAmmoFromMapper( float flAmmo, bool bSecondary = false );
 	virtual bool			KeyValue( const char *szKeyName, const char *szValue );
