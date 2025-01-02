@@ -276,12 +276,12 @@ void CPropData::ParsePropDataFile( void )
 //			are OUTSIDE the "prop_data" KV section in the model, but may be contained WITHIN the 
 //			specified Base's "prop_data" section (i.e. in propdata.txt)
 //-----------------------------------------------------------------------------
-int CPropData::ParsePropFromKV( CSharedBaseEntity *pProp, IBreakableWithPropData *pBreakableInterface, KeyValues *pSection, KeyValues *pInteractionSection )
+ParsePropRes_t CPropData::ParsePropFromKV( CSharedBaseEntity *pProp, IBreakableWithPropData *pBreakableInterface, KeyValues *pSection, KeyValues *pInteractionSection )
 {
 	if ( !pBreakableInterface )
 		return PARSE_FAILED_BAD_DATA;
 
-	int iBaseResult = PARSE_SUCCEEDED;
+	ParsePropRes_t iBaseResult = PARSE_SUCCEEDED;
 
 	// Do we have a base?
 	char const *pszBase = pSection->GetString( "base" );
@@ -454,7 +454,7 @@ int CPropData::ParsePropFromKV( CSharedBaseEntity *pProp, IBreakableWithPropData
 //-----------------------------------------------------------------------------
 // Purpose: Fill out a prop's with base data parsed from the propdata file
 //-----------------------------------------------------------------------------
-int CPropData::ParsePropFromBase( CSharedBaseEntity *pProp, IBreakableWithPropData *pBreakableInterface, const char *pszPropData )
+ParsePropRes_t CPropData::ParsePropFromBase( CSharedBaseEntity *pProp, IBreakableWithPropData *pBreakableInterface, const char *pszPropData )
 {
 	if ( !m_bPropDataLoaded )
 		return PARSE_FAILED_NO_DATA;

@@ -1832,7 +1832,7 @@ void CBaseEntity::Activate( void )
 
 // give health. 
 // Returns the amount of health actually taken.
-int CBaseEntity::TakeHealth( float flHealth, int bitsDamageType )
+int CBaseEntity::TakeHealth( float flHealth, DamageTypes_t bitsDamageType )
 {
 	if ( m_takedamage < DAMAGE_YES )
 		return 0;
@@ -1859,7 +1859,7 @@ int CBaseEntity::OnTakeDamage( const CTakeDamageInfo &info )
 {
 	Vector			vecTemp;
 
-	if ( !m_takedamage )
+	if ( m_takedamage == DAMAGE_NO )
 		return 0;
 
 	if ( info.GetInflictor() )
@@ -1906,18 +1906,19 @@ int CBaseEntity::OnTakeDamage( const CTakeDamageInfo &info )
 		}
 	}
 
+	int dmg = (int)info.GetDamage();
+
 	if ( m_takedamage != DAMAGE_EVENTS_ONLY )
 	{
-	// do the damage
-		m_iHealth -= info.GetDamage();
+		// do the damage
+		m_iHealth -= dmg;
 		if (m_iHealth <= 0)
 		{
 			Event_Killed( info );
-			return 0;
 		}
 	}
 
-	return 1;
+	return dmg;
 }
 
 //-----------------------------------------------------------------------------
@@ -2102,7 +2103,7 @@ int CBaseEntity::VPhysicsTakeDamage( const CTakeDamageInfo &info )
 	return 1;
 }
 
-	// Character killed (only fired once)
+// Character killed (only fired once)
 void CBaseEntity::Event_Killed( const CTakeDamageInfo &info )
 {
 	if( info.GetAttacker() )
@@ -2133,7 +2134,7 @@ void CBaseEntity::SendOnKilledGameEvent( const CTakeDamageInfo &info )
 		if ( info.GetInflictor())
 		{
 			event->SetInt( "entindex_inflictor", info.GetInflictor()->entindex() );
-		}		
+		}
 		event->SetInt( "damagebits", info.GetDamageType() );
 		gameeventmanager->FireEvent( event );
 	}

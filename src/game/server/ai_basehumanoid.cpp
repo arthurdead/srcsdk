@@ -218,7 +218,7 @@ void CAI_BaseHumanoid::TraceAttack( const CTakeDamageInfo &info, const Vector &v
 //-----------------------------------------------------------------------------
 void CAI_BaseHumanoid::StartTaskRangeAttack1( const Task_t *pTask )
 {
-	if ( ( CapabilitiesGet() & bits_CAP_USE_SHOT_REGULATOR ) == 0 )
+	if ( ( CapabilitiesGet() & bits_CAP_USE_SHOT_REGULATOR ) == bits_CAP_NONE )
 	{
 		BaseClass::StartTask( pTask );
 		return;
@@ -269,7 +269,7 @@ void CAI_BaseHumanoid::StartTask( const Task_t *pTask )
 //-----------------------------------------------------------------------------
 void CAI_BaseHumanoid::RunTaskRangeAttack1( const Task_t *pTask )
 {
-	if ( ( CapabilitiesGet() & bits_CAP_USE_SHOT_REGULATOR ) == 0 )
+	if ( ( CapabilitiesGet() & bits_CAP_USE_SHOT_REGULATOR ) == bits_CAP_NONE )
 	{
 		BaseClass::RunTask( pTask );
 		return;

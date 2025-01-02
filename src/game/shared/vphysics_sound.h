@@ -18,7 +18,7 @@ namespace physicssound
 	{
 		void			*pGameData;
 		int				entityIndex;
-		int				soundChannel;
+		SoundChannel_t				soundChannel;
 		float			volume;
 		float			impactSpeed;
 		unsigned short	surfaceProps;
@@ -37,7 +37,7 @@ namespace physicssound
 	};
 
 	void PlayImpactSounds( soundlist_t &list );
-	void AddImpactSound( soundlist_t &list, void *pGameData, int entityIndex, int soundChannel, IPhysicsObject *pObject, int surfaceProps, int surfacePropsHit, float volume, float impactSpeed );
+	void AddImpactSound( soundlist_t &list, void *pGameData, int entityIndex, SoundChannel_t soundChannel, IPhysicsObject *pObject, int surfaceProps, int surfacePropsHit, float volume, float impactSpeed );
 
 	struct breaksound_t
 	{

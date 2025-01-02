@@ -444,7 +444,7 @@ void CAI_FearGoal::DisableGoal( CAI_BaseNPC *pAI )
 //-----------------------------------------------------------------------------
 void CAI_FearGoal::InputActivate( inputdata_t &&inputdata )
 {
-	BaseClass::InputActivate( inputdata );
+	BaseClass::InputActivate( Move(inputdata) );
 }
 
 //-----------------------------------------------------------------------------
@@ -453,7 +453,7 @@ void CAI_FearGoal::InputActivate( inputdata_t &&inputdata )
 //-----------------------------------------------------------------------------
 void CAI_FearGoal::InputDeactivate( inputdata_t &&inputdata )
 {
-	BaseClass::InputDeactivate( inputdata );
+	BaseClass::InputDeactivate( Move(inputdata) );
 }
 
 AI_BEGIN_CUSTOM_SCHEDULE_PROVIDER( CAI_FearBehavior )

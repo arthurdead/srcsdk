@@ -15,6 +15,7 @@
 #include "activitylist.h"
 
 class CStringRegistry;
+enum MemoryFlags_t : uint64;
 
 class CAI_BaseNPC;
 
@@ -142,7 +143,7 @@ struct TaskData_t
 		TaskGlobalId_t taskId;
 		SchedGlobalId_t schedId;
 		NPC_STATE nNpcState;
-		int nMemoryId;
+		MemoryFlags_t nMemoryId;
 		pathType_t pathType;
 		goalType_t goalType;
 	};

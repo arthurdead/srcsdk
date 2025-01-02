@@ -16,7 +16,7 @@
 //		movment goal in m_routeGoalType
 //		and to or/and with route
 // =======================================
-enum GoalType_t 
+enum GoalType_t : unsigned char
 {
 	GOALTYPE_NONE,
 	GOALTYPE_TARGETENT,

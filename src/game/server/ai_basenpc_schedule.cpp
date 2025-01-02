@@ -1857,9 +1857,9 @@ void CAI_BaseNPC::PlayFlinchGesture()
 	if ( iFlinchActivity != ACT_INVALID )
 	{
 		//Get the duration of the flinch and delay the next one by that (plus a bit more)
-		int iSequence = GetLayerSequence( FindGestureLayer( iFlinchActivity ) );
+		sequence_t iSequence = GetLayerSequence( FindGestureLayer( iFlinchActivity ) );
 
-		if ( iSequence != ACT_INVALID )
+		if ( iSequence != INVALID_SEQUENCE )
 		{
 			flNextFlinch += SequenceDuration( iSequence );
 		}

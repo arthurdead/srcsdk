@@ -736,9 +736,9 @@ bool CAI_Navigator::UpdateGoalPos( const Vector &goalPos )
 
 //-----------------------------------------------------------------------------
 
-Activity CAI_Navigator::SetMovementActivity(Activity activity)
+void CAI_Navigator::SetMovementActivity(Activity activity)
 {
-	return GetPath()->SetMovementActivity( activity );
+	GetPath()->SetMovementActivity( activity );
 }
 
 //-----------------------------------------------------------------------------
@@ -769,16 +769,16 @@ bool CAI_Navigator::ClearGoal()
 
 //-----------------------------------------------------------------------------
 
-int CAI_Navigator::GetMovementSequence( )
+sequence_t CAI_Navigator::GetMovementSequence( )
 {
-	int sequence = GetPath()->GetMovementSequence( );
-	if (sequence == ACT_INVALID)
+	sequence_t sequence = GetPath()->GetMovementSequence( );
+	if (sequence == INVALID_SEQUENCE)
 	{
 		Activity activity = GetPath()->GetMovementActivity();
 		Assert( activity != ACT_INVALID );
 
 		sequence = GetOuter()->SelectWeightedSequence( GetOuter()->TranslateActivity( activity ) );
-		if ( sequence == ACT_INVALID )
+		if ( sequence == INVALID_SEQUENCE )
 		{
 			DevMsg( GetOuter(), "No appropriate sequence for movement activity %s (%d)\n", GetOuter()->GetActivityName( GetPath()->GetArrivalActivity() ), GetPath()->GetArrivalActivity() );
 
@@ -791,7 +791,7 @@ int CAI_Navigator::GetMovementSequence( )
 				sequence = GetOuter()->SelectWeightedSequence( GetOuter()->TranslateActivity( ACT_WALK ) );
 			}
 		}
-		Assert( sequence != ACT_INVALID );
+		Assert( sequence != INVALID_SEQUENCE );
 		GetPath()->SetMovementSequence( sequence );
 	}
 	return sequence;
@@ -799,7 +799,7 @@ int CAI_Navigator::GetMovementSequence( )
 
 //-----------------------------------------------------------------------------
 
-void CAI_Navigator::SetMovementSequence( int sequence )
+void CAI_Navigator::SetMovementSequence( sequence_t sequence )
 {
 	GetPath()->SetMovementSequence( sequence );
 }
@@ -821,10 +821,10 @@ void CAI_Navigator::SetArrivalActivity(Activity activity)
 
 //-----------------------------------------------------------------------------
 
-int CAI_Navigator::GetArrivalSequence( int curSequence )
+sequence_t CAI_Navigator::GetArrivalSequence( sequence_t curSequence )
 {
-	int sequence = GetPath()->GetArrivalSequence( );
-	if (sequence == ACT_INVALID)
+	sequence_t sequence = GetPath()->GetArrivalSequence( );
+	if (sequence == INVALID_SEQUENCE)
 	{
 		Activity activity = GetOuter()->GetStoppedActivity();
 
@@ -837,7 +837,7 @@ int CAI_Navigator::GetArrivalSequence( int curSequence )
 		Activity translatedActivity = GetOuter()->TranslateActivity( activity );
 		sequence = GetOuter()->SelectWeightedSequence( translatedActivity, curSequence );
 
-		if ( sequence == ACT_INVALID )
+		if ( sequence == INVALID_SEQUENCE )
 		{
 			if ( translatedActivity == ACT_SCRIPT_CUSTOM_MOVE )
 			{
@@ -850,7 +850,7 @@ int CAI_Navigator::GetArrivalSequence( int curSequence )
 				sequence = GetOuter()->SelectWeightedSequence( GetOuter()->TranslateActivity( ACT_IDLE ), curSequence );
 			}
 		}
-		Assert( sequence != ACT_INVALID );
+		Assert( sequence != INVALID_SEQUENCE );
 		GetPath()->SetArrivalSequence( sequence );
 	}
 	return sequence;
@@ -858,7 +858,7 @@ int CAI_Navigator::GetArrivalSequence( int curSequence )
 
 //-----------------------------------------------------------------------------
 
-void CAI_Navigator::SetArrivalSequence( int sequence )
+void CAI_Navigator::SetArrivalSequence( sequence_t sequence )
 {
 	GetPath()->SetArrivalActivity( ACT_INVALID );
 	GetPath()->SetArrivalSequence( sequence );

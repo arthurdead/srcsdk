@@ -90,43 +90,12 @@ public:
 	virtual const EHANDLE& GetRefEHandle() const = 0;
 
 private:
-#ifdef _DEBUG
-	virtual void ComputeFxBlend() final
-	{
-		DebuggerBreak();
-	}
-	virtual int GetFxBlend() final
-	{
-		DebuggerBreak();
-		return 0;
-	}
-#endif
-
-#ifdef _DEBUG
-	virtual bool UsesPowerOfTwoFrameBufferTexture() final
-	{
-		DebuggerBreak();
-		return false;
-	}
-	virtual bool UsesFullFrameBufferTexture() final
-	{
-		DebuggerBreak();
-		return false;
-	}
-#endif
 	virtual bool DO_NOT_USE_UsesPowerOfTwoFrameBufferTexture() final
-	{ return (GetRenderFlags() & ERENDERFLAGS_NEEDS_POWER_OF_TWO_FB) != 0; }
+	{ return (GetRenderFlags() & ERENDERFLAGS_NEEDS_POWER_OF_TWO_FB) != ERENDERFLAGS_NONE; }
 	virtual bool DO_NOT_USE_UsesFullFrameBufferTexture() final
-	{ return (GetRenderFlags() & ERENDERFLAGS_NEEDS_FULL_FB) != 0; }
+	{ return (GetRenderFlags() & ERENDERFLAGS_NEEDS_FULL_FB) != ERENDERFLAGS_NONE; }
 
-#ifdef _DEBUG
-	virtual int DrawModel(int flags) final
-	{
-		DebuggerBreak();
-		return 0;
-	}
-#endif
-	virtual int DO_NOT_USE_DrawModel(int flags) final
+	virtual int DO_NOT_USE_DrawModel(DrawModelFlags_t flags) final
 	{
 		RenderableInstance_t &instance = GetDefaultRenderableInstance();
 		IClientAlphaPropertyMod *pAlphaProp = GetClientAlphaPropertyMod();
@@ -152,13 +121,6 @@ private:
 		return 255;
 	}
 
-#ifdef _DEBUG
-	virtual bool IgnoresZBuffer() const final
-	{
-		DebuggerBreak();
-		return true;
-	}
-#endif
 	virtual bool DO_NOT_USE_IgnoresZBuffer() const final
 	{
 		IClientAlphaPropertyMod *pAlphaProp = const_cast<IClientEntityEx *>(this)->GetClientAlphaPropertyMod();
@@ -167,13 +129,6 @@ private:
 		return false;
 	}
 
-#ifdef _DEBUG
-	virtual bool IsTransparent() final
-	{
-		DebuggerBreak();
-		return true;
-	}
-#endif
 	virtual bool DO_NOT_USE_IsTransparent() final
 	{ return (ComputeTranslucencyType() == RENDERABLE_IS_TRANSLUCENT); }
 

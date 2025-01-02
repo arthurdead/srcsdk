@@ -16,21 +16,21 @@
 
 #define CUE_POINT_TOLERANCE (3.0*12.0)
 
-enum RallySelectMethod_t
+enum RallySelectMethod_t : unsigned char
 {
 	RALLY_POINT_SELECT_CLOSEST = 0,
 	RALLY_POINT_SELECT_RANDOM,
 	RALLY_POINT_SELECT_FURTHEST
 };
 
-enum BranchingMethod_t
+enum BranchingMethod_t : unsigned char
 {
 	BRANCH_RANDOM,
 	BRANCH_CLOSEST,
 	BRANCH_FURTHEST
 };
 
-enum AssaultCue_t
+enum AssaultCue_t : unsigned char
 {
 	CUE_NO_ASSAULT = 0,	// used to indicate that no assault is being conducted presently
 
@@ -41,7 +41,7 @@ enum AssaultCue_t
 	CUE_NONE,
 };
 
-enum
+enum : unsigned char
 {
 	ASSAULT_SENTENCE_HIT_RALLY_POINT = SENTENCE_BASE_BEHAVIOR_INDEX,
 	ASSAULT_SENTENCE_HIT_ASSAULT_POINT,

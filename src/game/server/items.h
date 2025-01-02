@@ -57,7 +57,7 @@ public:
 	virtual void Spawn( void );
 	virtual void Precache();
 
-	unsigned int PhysicsSolidMaskForEntity( void ) const;
+	ContentsFlags_t PhysicsSolidMaskForEntity( void ) const;
 
 	virtual bool HasBloatedCollision( void ) const { return true; } // Does this item increase its collision box to make it easier to pick up?
 

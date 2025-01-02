@@ -50,6 +50,8 @@ class CServerTakeDamageInfo;
 class CServerBaseTempEntity;
 #endif
 
+enum Class_T : unsigned char;
+
 //-----------------------------------------------------------------------------
 // Safe accessor to an entity
 //-----------------------------------------------------------------------------
@@ -303,15 +305,15 @@ public:
 	virtual void RemoveEntityImmediate( CServerBaseEntity *pEntity ) = 0;
 	virtual IEntityFactoryDictionary *GetEntityFactoryDictionary( void ) = 0;
 
-	virtual void SetMoveType( CServerBaseEntity *pEntity, int val ) = 0;
-	virtual void SetMoveType( CServerBaseEntity *pEntity, int val, int moveCollide ) = 0;
-	virtual void ResetSequence( CServerBaseAnimating *pEntity, int nSequence ) = 0;
+	virtual void SetMoveType( CServerBaseEntity *pEntity, MoveType_t val ) = 0;
+	virtual void SetMoveType( CServerBaseEntity *pEntity, MoveType_t val, MoveCollide_t moveCollide ) = 0;
+	virtual void ResetSequence( CServerBaseAnimating *pEntity, sequence_t nSequence ) = 0;
 	virtual void ResetSequenceInfo( CServerBaseAnimating *pEntity ) = 0;
 
 	virtual void ClearMultiDamage( void ) = 0;
 	virtual void ApplyMultiDamage( void ) = 0;
 	virtual void AddMultiDamage( const CServerTakeDamageInfo &pTakeDamageInfo, CServerBaseEntity *pEntity ) = 0;
-	virtual void RadiusDamage( const CServerTakeDamageInfo &info, const Vector &vecSrc, float flRadius, int iClassIgnore, CServerBaseEntity *pEntityIgnore ) = 0;
+	virtual void RadiusDamage( const CServerTakeDamageInfo &info, const Vector &vecSrc, float flRadius, Class_T iClassIgnore, CServerBaseEntity *pEntityIgnore ) = 0;
 
 	virtual ITempEntsSystem *GetTempEntsSystem( void ) = 0;
 	virtual CServerBaseTempEntity *GetTempEntList( void ) = 0;

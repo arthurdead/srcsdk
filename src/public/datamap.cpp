@@ -198,8 +198,73 @@ map_datamap_t::map_datamap_t(const char *name, datamap_t *base, int type, const 
 	bValidityChecked = false;
 #endif
 
+	allocated_descs = false;
+
 	m_pNext = g_pMapDatamapsHead;
 	g_pMapDatamapsHead = this;
+}
+
+datamap_t::~datamap_t()
+{
+	if(allocated_descs) {
+		delete[] dataDesc;
+	}
+}
+
+void map_datamap_t::PostProcess()
+{
+#if 0
+	CUtlVector<typedescription_t *> arrays;
+
+	for(int i = 0; i < dataNumFields; ++i) {
+		if(dataDesc[i].fieldSize > 1) {
+			arrays.AddToTail(&dataDesc[i]);
+		}
+	}
+
+	if(arrays.Count() > 0) {
+		int num = 0;
+
+		FOR_EACH_VEC( arrays, i ) {
+			num += arrays[i]->fieldSize;
+		}
+
+		allocated_descs = true;
+
+		typedescription_t *oldDataDesc = dataDesc;
+		int oldDataNumFields = dataNumFields;
+
+		dataNumFields -= arrays.Count();
+		dataNumFields += num;
+
+		dataDesc = new typedescription_t[dataNumFields];
+		int i = 0;
+		for(int j = 0; j < oldDataNumFields; ++j) {
+			if(arrays.Find(&oldDataDesc[j]) == -1) {
+				dataDesc[i++] = Move(oldDataDesc[j]);
+			}
+		}
+
+		FOR_EACH_VEC( arrays, k ) {
+			int size = (arrays[k]->fieldSizeInBytes / arrays[k]->fieldSize);
+
+			for(int l = 0; l < arrays[k]->fieldSize; ++l) {
+				if(l == (arrays[k]->fieldSize-1)) {
+					dataDesc[i] = Move(*arrays[k]);
+				} else {
+					dataDesc[i] = *arrays[k];
+				}
+
+				dataDesc[i].fieldSize = 1;
+				dataDesc[i].fieldSizeInBytes = size;
+
+				dataDesc[i].fieldOffset_[TD_OFFSET_NORMAL] = (arrays[k]->fieldOffset_[TD_OFFSET_NORMAL] + (size * l));
+
+				++i;
+			}
+		}
+	}
+#endif
 }
 
 pred_datamap_t::pred_datamap_t(const char *name)
@@ -214,6 +279,15 @@ pred_datamap_t::pred_datamap_t(const char *name, datamap_t *base)
 
 	dataClassName = name;
 	baseMap = base;
+
+	packed_offsets_computed = false;
+	packed_size = 0;
+
+#ifdef _DEBUG
+	bValidityChecked = false;
+#endif
+
+	allocated_descs = false;
 
 	m_pNext = g_pPredDatamapsHead;
 	g_pPredDatamapsHead = this;
@@ -236,9 +310,96 @@ typedescription_t::typedescription_t()
 	override_count = 0;
 	fieldTolerance = 0;
 
-	m_pDefValue = NULL;
+	m_pDefValue[0] = '\0';
 	m_pGuiName = NULL;
 	m_pDescription = NULL;
+	m_pChoices = NULL;
+	m_nChoicesLen = 0;
+}
+
+typedescription_t::typedescription_t(typedescription_t &&other)
+{
+	operator=(Move(other));
+}
+
+typedescription_t &typedescription_t::operator=(typedescription_t &&other)
+{
+	fieldType_ = other.fieldType_;
+	fieldName = other.fieldName;
+	fieldOffset_[TD_OFFSET_NORMAL] = other.fieldOffset_[TD_OFFSET_NORMAL];
+	fieldOffset_[TD_OFFSET_PACKED] = other.fieldOffset_[TD_OFFSET_PACKED];
+	fieldSize = other.fieldSize;
+	flags = other.flags;
+	externalName = other.externalName;
+	pFieldOps = other.pFieldOps;
+	inputFunc = other.inputFunc;
+	td = other.td;
+	fieldSizeInBytes = other.fieldSizeInBytes;
+	override_field = other.override_field;
+	override_count = other.override_count;
+	fieldTolerance = other.fieldTolerance;
+
+	V_strncpy(m_pDefValue, other.m_pDefValue, sizeof(m_pDefValue));
+	m_pGuiName = other.m_pGuiName;
+	m_pDescription = other.m_pDescription;
+
+	if(m_pChoices) {
+		delete[] m_pChoices;
+	}
+
+	m_pChoices = other.m_pChoices;
+	m_nChoicesLen = other.m_nChoicesLen;
+
+	other.m_pChoices = NULL;
+	other.m_nChoicesLen = 0;
+
+	return *this;
+}
+
+typedescription_t &typedescription_t::operator=(const typedescription_t &other)
+{
+	fieldType_ = other.fieldType_;
+	fieldName = other.fieldName;
+	fieldOffset_[TD_OFFSET_NORMAL] = other.fieldOffset_[TD_OFFSET_NORMAL];
+	fieldOffset_[TD_OFFSET_PACKED] = other.fieldOffset_[TD_OFFSET_PACKED];
+	fieldSize = other.fieldSize;
+	flags = other.flags;
+	externalName = other.externalName;
+	pFieldOps = other.pFieldOps;
+	inputFunc = other.inputFunc;
+	td = other.td;
+	fieldSizeInBytes = other.fieldSizeInBytes;
+	override_field = other.override_field;
+	override_count = other.override_count;
+	fieldTolerance = other.fieldTolerance;
+
+	V_strncpy(m_pDefValue, other.m_pDefValue, sizeof(m_pDefValue));
+	m_pGuiName = other.m_pGuiName;
+	m_pDescription = other.m_pDescription;
+
+	if(m_pChoices) {
+		delete[] m_pChoices;
+	}
+
+	m_nChoicesLen = other.m_nChoicesLen;
+
+	if(m_nChoicesLen > 0) {
+		m_pChoices = new FGdChoice[m_nChoicesLen];
+		for(int i = 0; i < m_nChoicesLen; ++i) {
+			m_pChoices[i] = other.m_pChoices[i];
+		}
+	} else {
+		m_pChoices = NULL;
+	}
+
+	return *this;
+}
+
+typedescription_t::~typedescription_t()
+{
+	if(m_pChoices) {
+		delete[] m_pChoices;
+	}
 }
 
 typedescription_t::typedescription_t(fieldtype_t type, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname, float tol)
@@ -261,9 +422,11 @@ typedescription_t::typedescription_t(fieldtype_t type, const char *name, int byt
 	override_count = 0;
 	fieldTolerance = tol;
 
-	m_pDefValue = NULL;
+	m_pDefValue[0] = '\0';
 	m_pGuiName = NULL;
 	m_pDescription = NULL;
+	m_pChoices = NULL;
+	m_nChoicesLen = 0;
 }
 
 typedescription_t::typedescription_t(fieldtype_t type, const char *name, inputfunc_t func, fieldflags_t flags_, const char *fgdname)
@@ -286,9 +449,11 @@ typedescription_t::typedescription_t(fieldtype_t type, const char *name, inputfu
 	override_count = 0;
 	fieldTolerance = 0;
 
-	m_pDefValue = NULL;
+	m_pDefValue[0] = '\0';
 	m_pGuiName = NULL;
 	m_pDescription = NULL;
+	m_pChoices = NULL;
+	m_nChoicesLen = 0;
 }
 
 typedescription_t::typedescription_t(ICustomFieldOps *funcs, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname, float tol)
@@ -308,9 +473,11 @@ typedescription_t::typedescription_t(ICustomFieldOps *funcs, const char *name, i
 	override_count = 0;
 	fieldTolerance = tol;
 
-	m_pDefValue = NULL;
+	m_pDefValue[0] = '\0';
 	m_pGuiName = NULL;
 	m_pDescription = NULL;
+	m_pChoices = NULL;
+	m_nChoicesLen = 0;
 }
 
 typedescription_t::typedescription_t(datamap_t *embed, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname)
@@ -330,9 +497,11 @@ typedescription_t::typedescription_t(datamap_t *embed, const char *name, int byt
 	override_count = 0;
 	fieldTolerance = 0;
 
-	m_pDefValue = NULL;
+	m_pDefValue[0] = '\0';
 	m_pGuiName = NULL;
 	m_pDescription = NULL;
+	m_pChoices = NULL;
+	m_nChoicesLen = 0;
 }
 
 void MapField_impl( typedescription_t &ret, const char *name, int offset, int size, fieldtype_t type, fieldflags_t flags_ )
@@ -348,7 +517,13 @@ void MapField_impl( typedescription_t &ret, const char *name, int offset, int si
 	ret.fieldSize = 1;
 	ret.flags = flags_;
 	ret.externalName = NULL;
-	ret.pFieldOps = NULL;
+
+	if((flags_ & FTYPEDESC_OUTPUT) != FTYPEDESC_NONE) {
+		ret.pFieldOps = eventFuncs;
+	} else {
+		ret.pFieldOps = NULL;
+	}
+
 	ret.inputFunc = NULL;
 	ret.td = NULL;
 	ret.fieldSizeInBytes = size;
@@ -356,7 +531,26 @@ void MapField_impl( typedescription_t &ret, const char *name, int offset, int si
 	ret.override_count = 0;
 	ret.fieldTolerance = 0;
 
-	ret.m_pDefValue = NULL;
+	ret.m_pDefValue[0] = '\0';
 	ret.m_pGuiName = NULL;
 	ret.m_pDescription = NULL;
+	ret.m_pChoices = NULL;
+	ret.m_nChoicesLen = 0;
+}
+
+[[nodiscard]] typedescription_t MapInput_impl( const char *name, inputfunc_t func, fieldtype_t type, const char *fgdname )
+{
+	typedescription_t ret;
+	MapField_impl(ret, name, 0, sizeof(inputfunc_t), type, FTYPEDESC_INPUT );
+	ret.m_pGuiName = fgdname;
+	ret.externalName = fgdname;
+	ret.inputFunc = func;
+	return ret;
+}
+
+[[nodiscard]] typedescription_t MapInput_impl( const char *name, inputfunc_t func, fieldtype_t type, const char *fgdname, const char *desc )
+{
+	typedescription_t ret = MapInput_impl( name, func, type, fgdname );
+	ret.m_pDescription = desc;
+	return ret;
 }

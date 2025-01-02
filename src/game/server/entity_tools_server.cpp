@@ -31,7 +31,7 @@ public:
 	int m_iEntityIndex;
 	int m_iHammerID;
 	int m_iSerialNumber;
-	int m_debugOverlays;
+	DebugOverlayBits_t m_debugOverlays;
 };
 
 static CUtlLinkedList<CFoundryEntitySpawnRecord*,int> g_FoundryEntitySpawnRecords;
@@ -71,14 +71,14 @@ public:
 	virtual void RemoveEntity( CBaseEntity *pEntity );
 	virtual void RemoveEntityImmediate( CBaseEntity *pEntity );
 	virtual IEntityFactoryDictionary *GetEntityFactoryDictionary( void );
-	virtual void SetMoveType( CBaseEntity *pEntity, int val );
-	virtual void SetMoveType( CBaseEntity *pEntity, int val, int moveCollide );
-	virtual void ResetSequence( CBaseAnimating *pEntity, int nSequence );
+	virtual void SetMoveType( CBaseEntity *pEntity, MoveType_t val );
+	virtual void SetMoveType( CBaseEntity *pEntity, MoveType_t val, MoveCollide_t moveCollide );
+	virtual void ResetSequence( CBaseAnimating *pEntity, sequence_t nSequence );
 	virtual void ResetSequenceInfo( CBaseAnimating *pEntity );
 	virtual void ClearMultiDamage( void );
 	virtual void ApplyMultiDamage( void );
 	virtual void AddMultiDamage( const CTakeDamageInfo &pTakeDamageInfo, CBaseEntity *pEntity );
-	virtual void RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, float flRadius, int iClassIgnore, CBaseEntity *pEntityIgnore );
+	virtual void RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, float flRadius, Class_T iClassIgnore, CBaseEntity *pEntityIgnore );
 
 	virtual ITempEntsSystem *GetTempEntsSystem( void );
 	virtual CBaseTempEntity *GetTempEntList( void );
@@ -305,8 +305,7 @@ void HandleFoundryEntitySpawnRecords()
 		const char *pBaseMapDataForThisEntity = entData.CurrentBufferPosition();
 		pNewEntity->ParseMapData( &entData );
 
-		if ( pRecord->m_debugOverlays != -1 )
-			pNewEntity->m_debugOverlays = pRecord->m_debugOverlays;
+		pNewEntity->m_debugOverlays |= pRecord->m_debugOverlays;
 
 		pNewEntity->m_iHammerID = pRecord->m_iHammerID;
 
@@ -354,7 +353,7 @@ bool CServerTools::RespawnEntitiesWithEdits( CEntityRespawnInfo *pInfos, int nIn
 			// This is a new spawn.
 			pRecord->m_iEntityIndex = -1;
 			pRecord->m_iSerialNumber = -1;
-			pRecord->m_debugOverlays = -1;
+			pRecord->m_debugOverlays = OVERLAY_NONE;
 		}
 
 		g_FoundryEntitySpawnRecords.AddToTail( pRecord );
@@ -472,17 +471,17 @@ IEntityFactoryDictionary *CServerTools::GetEntityFactoryDictionary( void )
 }
 
 
-void CServerTools::SetMoveType( CBaseEntity *pEntity, int val )
+void CServerTools::SetMoveType( CBaseEntity *pEntity, MoveType_t val )
 {
-	pEntity->SetMoveType( (MoveType_t)val );
+	pEntity->SetMoveType( val );
 }
 
-void CServerTools::SetMoveType( CBaseEntity *pEntity, int val, int moveCollide )
+void CServerTools::SetMoveType( CBaseEntity *pEntity, MoveType_t val, MoveCollide_t moveCollide )
 {
-	pEntity->SetMoveType( (MoveType_t)val, (MoveCollide_t)moveCollide );
+	pEntity->SetMoveType( val, moveCollide );
 }
 
-void CServerTools::ResetSequence( CBaseAnimating *pEntity, int nSequence )
+void CServerTools::ResetSequence( CBaseAnimating *pEntity, sequence_t nSequence )
 {
 	pEntity->ResetSequence( nSequence );
 }
@@ -508,7 +507,7 @@ void CServerTools::AddMultiDamage( const CTakeDamageInfo &pTakeDamageInfo, CBase
 	::AddMultiDamage( pTakeDamageInfo, pEntity );
 }
 
-void CServerTools::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, float flRadius, int iClassIgnore, CBaseEntity *pEntityIgnore )
+void CServerTools::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, float flRadius, Class_T iClassIgnore, CBaseEntity *pEntityIgnore )
 {
 	::RadiusDamage( info, vecSrc, flRadius, iClassIgnore, pEntityIgnore );
 }

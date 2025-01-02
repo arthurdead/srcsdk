@@ -26,15 +26,14 @@ enum
 
 #define DECLARE_MAPENTITY()											\
 	public:																\
-		static typedescription_t m_MapTypeDesc[];							\
 		static map_datamap_t m_MapDataDesc;										\
 		virtual datamap_t *GetMapDataDesc( void );						\
 		template <typename T> friend datamap_t *MapDataDescInit(T *)
 
 #define DECLARE_SIMPLE_MAPEMBEDDED()											\
 	public:																\
-		static typedescription_t m_MapTypeDesc[];							\
 		static map_datamap_t m_MapDataDesc;										\
+		datamap_t *GetMapDataDesc( void );						\
 		template <typename T> friend datamap_t *MapDataDescInit(T *)
 
 #define BEGIN_MAPENTITY( className, ... ) \
@@ -49,6 +48,7 @@ enum
 
 #define BEGIN_SIMPLE_MAPEMBEDDED( className ) \
 	map_datamap_t className::m_MapDataDesc( className::s_pClassnameStr, (datamap_t *)NULL ); \
+	datamap_t *className::GetMapDataDesc( void ) { return &m_MapDataDesc; } \
 	BEGIN_MAPENTITY_GUTS( className )
 
 #ifdef GAME_DLL
@@ -82,17 +82,17 @@ enum
 
 #define END_MAPENTITY() \
 		}; \
-		\
-		if ( sizeof( mapTypeDesc ) > sizeof( mapTypeDesc[0] ) ) \
+		if ( ARRAYSIZE( mapTypeDesc ) > 1 ) \
 		{ \
 			classNameTypedef::m_MapDataDesc.dataNumFields = ARRAYSIZE( mapTypeDesc ) - 1; \
 			classNameTypedef::m_MapDataDesc.dataDesc 	  = &mapTypeDesc[1]; \
 		} \
 		else \
 		{ \
-			classNameTypedef::m_MapDataDesc.dataNumFields = 1; \
-			classNameTypedef::m_MapDataDesc.dataDesc 	  = mapTypeDesc; \
+			classNameTypedef::m_MapDataDesc.dataNumFields = 0; \
+			classNameTypedef::m_MapDataDesc.dataDesc 	  = NULL; \
 		} \
+		classNameTypedef::m_MapDataDesc.PostProcess(); \
 		return &classNameTypedef::m_MapDataDesc; \
 	}
 

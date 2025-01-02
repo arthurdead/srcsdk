@@ -55,7 +55,7 @@ void physicssound::PlayImpactSounds( soundlist_t &list )
 	list.RemoveAll();
 }
 
-void physicssound::AddImpactSound( soundlist_t &list, void *pGameData, int entityIndex, int soundChannel, IPhysicsObject *pObject, int surfaceProps, int surfacePropsHit, float volume, float impactSpeed )
+void physicssound::AddImpactSound( soundlist_t &list, void *pGameData, int entityIndex, SoundChannel_t soundChannel, IPhysicsObject *pObject, int surfaceProps, int surfacePropsHit, float volume, float impactSpeed )
 {
 	impactSpeed += 1e-4;
 	for ( int i = list.Count()-1; i >= 0; --i )

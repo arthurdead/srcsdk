@@ -21,6 +21,7 @@ typedef int AI_TaskFailureCode_t;
 struct Task_t;
 struct edict_t;
 enum Capability_t : uint64;
+enum MemoryFlags_t : uint64;
 
 //-----------------------------------------------------------------------------
 // CAI_Component
@@ -118,9 +119,9 @@ protected:
 	CBaseEntity*		GetGoalEnt();
 	void				SetGoalEnt( CBaseEntity *pGoalEnt );
 	
-	void				Remember( int iMemory );
-	void				Forget( int iMemory );
-	bool				HasMemory( int iMemory );
+	void				Remember( MemoryFlags_t iMemory );
+	void				Forget( MemoryFlags_t iMemory );
+	bool				HasMemory( MemoryFlags_t iMemory );
 
 	CAI_Enemies *		GetEnemies();
 	

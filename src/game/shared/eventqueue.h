@@ -38,9 +38,9 @@ class CEventQueue
 {
 public:
 	// pushes an event into the queue, targeting a string name (m_iName), or directly by a pointer
-	EventQueuePrioritizedEvent_t *AddEvent( const char *target, const char *action, variant_t Value, float fireDelay, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, int outputID = 0 );
 	EventQueuePrioritizedEvent_t *AddEvent( CSharedBaseEntity *target, const char *action, float fireDelay, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, int outputID = 0 );
-	EventQueuePrioritizedEvent_t *AddEvent( CSharedBaseEntity *target, const char *action, variant_t Value, float fireDelay, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, int outputID = 0 );
+	EventQueuePrioritizedEvent_t *AddEvent( const char *target, const char *action, const variant_t &Value, float fireDelay, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, int outputID = 0 );
+	EventQueuePrioritizedEvent_t *AddEvent( CSharedBaseEntity *target, const char *action, const variant_t &Value, float fireDelay, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, int outputID = 0 );
 
 	void CancelEvents( CSharedBaseEntity *pCaller );
 	void CancelEventOn( CSharedBaseEntity *pTarget, const char *sInputName );

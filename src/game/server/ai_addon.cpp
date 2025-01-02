@@ -101,8 +101,17 @@ int CountAddOns( CAI_BaseNPC *pHost )
 //---------------------------------------------------------
 //---------------------------------------------------------
 BEGIN_MAPENTITY( CAI_AddOn )
-	DEFINE_INPUTFUNC( FIELD_PARTIAL_TARGETNAME, "Install", InputInstall ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "Remove", InputRemove ),
+
+	DEFINE_MAP_INPUT_FUNC( InputInstall,
+		FIELD_PARTIAL_TARGETNAME,
+		"Install"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputRemove,
+		FIELD_VOID,
+		"Remove"
+	),
+
 END_MAPENTITY()
 
 //---------------------------------------------------------

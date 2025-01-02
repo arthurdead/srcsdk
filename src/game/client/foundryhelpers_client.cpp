@@ -162,9 +162,8 @@ void FoundryHelpers_ClearEntityHighlightEffects()
 	g_EntityHighlightEffects.Purge();
 }
 
-void FoundryHelpers_AddEntityHighlightEffect( int iEntity )
+void FoundryHelpers_AddEntityHighlightEffect( EHANDLE hEnt )
 {
-	EHANDLE hEnt = cl_entitylist->GetBaseEntity( iEntity );
 	if ( hEnt.IsValid() )
 		g_EntityHighlightEffects.AddToTail( hEnt );
 }
@@ -173,26 +172,40 @@ void FoundryHelpers_AddEntityHighlightEffect( int iEntity )
 //-----------------------------------------------------------------------------
 // Purpose: This marshalls calls from the server to the client.
 //-----------------------------------------------------------------------------
-class C_TEFoundryHelpers : public C_BaseTempEntity
+class C_TEFoundryHelpers_AddHighlight : public C_BaseTempEntity
 {
 public:
-	DECLARE_CLASS( C_TEFoundryHelpers, C_BaseTempEntity );
+	DECLARE_CLASS( C_TEFoundryHelpers_AddHighlight, C_BaseTempEntity );
 	DECLARE_CLIENTCLASS();
 
 	virtual void PostDataUpdate( DataUpdateType_t updateType );
 
-	int m_iEntity;
+	EHANDLE m_hEntity;
 };
 
-void C_TEFoundryHelpers::PostDataUpdate( DataUpdateType_t updateType )
+void C_TEFoundryHelpers_AddHighlight::PostDataUpdate( DataUpdateType_t updateType )
 {
-	if ( m_iEntity == -1 )
-		FoundryHelpers_ClearEntityHighlightEffects();
-	else
-		FoundryHelpers_AddEntityHighlightEffect( m_iEntity );
+	FoundryHelpers_AddEntityHighlightEffect( m_hEntity );
 }
 
-IMPLEMENT_CLIENTCLASS_EVENT_DT( C_TEFoundryHelpers, DT_TEFoundryHelpers, CTEFoundryHelpers )
-	RecvPropInt( RECVINFO(m_iEntity) )
+IMPLEMENT_CLIENTCLASS_EVENT_DT( C_TEFoundryHelpers_AddHighlight, DT_TEFoundryHelpers_AddHighlight, CTEFoundryHelpers_AddHighlight )
+	RecvPropEHandle( RECVINFO(m_hEntity) )
+END_RECV_TABLE()
+
+class C_TEFoundryHelpers_ClearHighlights : public C_BaseTempEntity
+{
+public:
+	DECLARE_CLASS( C_TEFoundryHelpers_ClearHighlights, C_BaseTempEntity );
+	DECLARE_CLIENTCLASS();
+
+	virtual void PostDataUpdate( DataUpdateType_t updateType );
+};
+
+void C_TEFoundryHelpers_ClearHighlights::PostDataUpdate( DataUpdateType_t updateType )
+{
+	FoundryHelpers_ClearEntityHighlightEffects();
+}
+
+IMPLEMENT_CLIENTCLASS_EVENT_DT( C_TEFoundryHelpers_ClearHighlights, DT_TEFoundryHelpers_ClearHighlights, CTEFoundryHelpers_ClearHighlights )
 END_RECV_TABLE()
 

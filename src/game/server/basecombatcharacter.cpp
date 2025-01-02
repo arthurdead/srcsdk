@@ -2950,11 +2950,11 @@ void CBaseCombatCharacter::AddFactionRelationship(Faction_T nFaction, Dispositio
 //-----------------------------------------------------------------------------
 void CBaseCombatCharacter::ChangeFaction( Faction_T nNewFaction )
 {
-	int nOldFaction = m_nFaction;
+	Faction_T nOldFaction = m_nFaction;
 
 	if ( ( m_nFaction != FACTION_NONE ) && ( m_aFactions.Count() != 0 ) )
 	{
-		m_aFactions[ m_nFaction ].FindAndFastRemove( this );
+		m_aFactions[ (unsigned char)m_nFaction ].FindAndFastRemove( this );
 	}
 
 	m_nFaction = nNewFaction;
@@ -2966,7 +2966,7 @@ void CBaseCombatCharacter::ChangeFaction( Faction_T nNewFaction )
 			AllocateDefaultFactionRelationships();
 		}
 
-		m_aFactions[ m_nFaction ].AddToTail( this );
+		m_aFactions[ (unsigned char)m_nFaction ].AddToTail( this );
 	}
 
 	// remove any relationship to entities where the relationship may change due to the faction change
@@ -2976,8 +2976,8 @@ void CBaseCombatCharacter::ChangeFaction( Faction_T nNewFaction )
 		{
 			if ( (CBaseEntity *)m_Relationship[ i ].entity && ( (CBaseEntity *)m_Relationship[ i ].entity )->IsNPC() )
 			{
-				int nFaction = ( (CBaseEntity *)m_Relationship[ i ].entity )->MyNPCPointer()->GetFaction();
-				if ( m_FactionRelationship[ m_nFaction ][ nFaction ].disposition != m_FactionRelationship[ nOldFaction ][ nFaction ].disposition )
+				Faction_T nFaction = ( (CBaseEntity *)m_Relationship[ i ].entity )->MyNPCPointer()->GetFaction();
+				if ( m_FactionRelationship[ (unsigned char)m_nFaction ][ (unsigned char)nFaction ].disposition != m_FactionRelationship[ (unsigned char)nOldFaction ][ (unsigned char)nFaction ].disposition )
 				{
 					m_Relationship.FastRemove( i );
 					i--;

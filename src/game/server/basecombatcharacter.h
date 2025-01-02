@@ -424,11 +424,11 @@ public:
 	Faction_T					GetFaction( void ) const { return m_nFaction; }
 	virtual void		ChangeFaction( Faction_T nNewFaction );
 
-	virtual void		ChangeTeam( int iTeamNum );
+	virtual void		ChangeTeam( Team_t iTeamNum );
 
 	virtual void			SetCollisionBounds( const Vector& mins, const Vector &maxs );
 
-	virtual void OnSequenceSet( int nOldSequence );
+	virtual void OnSequenceSet( sequence_t nOldSequence );
 
 	// Nav hull type
 	NavMeshType_t	GetNavMeshType() const				{ return m_navMeshType; }

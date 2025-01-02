@@ -73,14 +73,14 @@ public:
 	// The activity to use during motion
 	//---------------------------------
 	Activity		GetMovementActivity() const					{ return m_activity;				}
-	Activity		SetMovementActivity(Activity activity);
-	int				GetMovementSequence() const 				{ return m_sequence;				}
-	int				SetMovementSequence(int sequence)			{ return (m_sequence = sequence);	}
+	void		SetMovementActivity(Activity activity);
+	sequence_t				GetMovementSequence() const 				{ return m_sequence;				}
+	void				SetMovementSequence(sequence_t sequence)			{ m_sequence = sequence;	}
 
 	Activity		GetArrivalActivity( ) const;
 	void			SetArrivalActivity(Activity activity);
-	int				GetArrivalSequence( ) const;
-	void			SetArrivalSequence(int sequence);
+	sequence_t				GetArrivalSequence( ) const;
+	void			SetArrivalSequence(sequence_t sequence);
 
 	void			SetGoalDirection( const Vector &goalDirection );
 	void			SetGoalDirection( CBaseEntity *pTarget );
@@ -141,14 +141,14 @@ private:
 	//---------------------------------
 	float		m_goalTolerance;			// How close do we need to get to the goal
 	Activity	m_activity;					// The activity to use during motion
-	int			m_sequence;					// The sequence to use during motion
+	sequence_t			m_sequence;					// The sequence to use during motion
 	EHANDLE		m_target;					// Target of this path
 	Vector		m_vecTargetOffset;			// offset from the target in world space
 	float		m_waypointTolerance;
 
 	//---------------------------------
 	Activity	m_arrivalActivity;
-	int			m_arrivalSequence;
+	sequence_t			m_arrivalSequence;
 
 	bool		m_bGoalPosSet;				// Was goal position set (used to check for errors)
 	Vector		m_goalPos;					// Our ultimate goal position

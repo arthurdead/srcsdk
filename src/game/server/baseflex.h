@@ -57,9 +57,9 @@ public:
 	virtual	void		SetViewtarget( const Vector &viewtarget );
 	const Vector		&GetViewtarget( void ) const;
 
-	void				SetFlexWeight( char *szName, float value );
+	void				SetFlexWeight( const char *szName, float value );
 	void				SetFlexWeight( LocalFlexController_t index, float value );
-	float				GetFlexWeight( char *szName );
+	float				GetFlexWeight( const char *szName );
 	float				GetFlexWeight( LocalFlexController_t index );
 
 	// Look up flex controller index by global name
@@ -282,12 +282,12 @@ inline const Vector &CBaseFlex::GetViewtarget( ) const
 	return m_viewtarget.Get();	// bah
 }
 
-inline void CBaseFlex::SetFlexWeight( char *szName, float value )
+inline void CBaseFlex::SetFlexWeight( const char *szName, float value )
 {
 	SetFlexWeight( FindFlexController( szName ), value );
 }
 
-inline float CBaseFlex::GetFlexWeight( char *szName )
+inline float CBaseFlex::GetFlexWeight( const char *szName )
 {
 	return GetFlexWeight( FindFlexController( szName ) );
 }

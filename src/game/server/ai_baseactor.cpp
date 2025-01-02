@@ -48,9 +48,10 @@ BEGIN_MAPENTITY( CAI_BaseActor, MAPENT_NPCCLASS, "The base class for all head/bo
 		"Enter a VCD file to override facial expressions on this NPC."
 	),
 
-	DEFINE_MAP_INPUT( InputSetExpressionOverride,
+	DEFINE_MAP_INPUT_FUNC( InputSetExpressionOverride,
+		FIELD_POOLED_SCENENAME,
 		"SetExpressionOverride",
-		FIELD_POOLED_SCENENAME
+		"Set a VCD file to override facial expressions on this NPC."
 	),
 
 END_MAPENTITY()
@@ -694,9 +695,9 @@ bool CAI_BaseActor::RandomFaceFlex( CSceneEventInfo *info, CChoreoScene *scene, 
 	float intensity = info->UpdateWeight( this ) * event->GetIntensity( scene->GetTime() );
 
 	// slide it up.
-	for (LocalFlexController_t i = LocalFlexController_t(0); i < GetNumFlexControllers(); i++)
+	for (int i = 0; i < GetNumFlexControllers(); i++)
 	{
-		float weight = GetFlexWeight( i );
+		float weight = GetFlexWeight( (LocalFlexController_t)i );
 
 		if (weight != m_flextarget[i])
 		{
@@ -704,7 +705,7 @@ bool CAI_BaseActor::RandomFaceFlex( CSceneEventInfo *info, CChoreoScene *scene, 
 			weight = weight + delta * intensity;
 		}
 		weight = clamp( weight, 0.0f, 1.0f );
-		SetFlexWeight( i, weight );
+		SetFlexWeight( (LocalFlexController_t)i, weight );
 	}
 
 	return true;
@@ -750,7 +751,7 @@ bool CAI_BaseActor::CheckSceneEventCompletion( CSceneEventInfo *info, float curr
 			case SCENE_AI_HOLSTER:
 			case SCENE_AI_UNHOLSTER:
 				{
-					if (info->m_iLayer == -1)
+					if (info->m_iLayer == INVALID_ANIMLAYER)
 					{
 						return true;
 					}
