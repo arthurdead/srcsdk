@@ -1022,11 +1022,32 @@ void ReloadResponseSystem()
 //  write code to save/restore the instanced ones by filename in the block handler above maybe?
 //-----------------------------------------------------------------------------
 
-class CResponseSystemSaveRestoreOps : public CDefCustomFieldOps
+class CResponseSystemSaveRestoreOps : public ICustomFieldOps
 {
 public:
 
-	
+	virtual bool IsEmpty( const FieldInfo_t &fieldInfo )
+	{
+		CResponseSystem **pRS = fieldInfo.GetField<CResponseSystem *>();
+		if ( !*pRS || *pRS == &defaultresponsesytem )
+			return true;
+
+		return false;
+	}
+
+	virtual void MakeEmpty( const FieldInfo_t &fieldInfo )
+	{
+		CResponseSystem **pRS = fieldInfo.GetField<CResponseSystem *>();
+		if ( !*pRS || *pRS == &defaultresponsesytem )
+			return;
+
+		(*pRS)->Clear();
+	}
+
+	virtual bool Parse( const FieldInfo_t &fieldInfo, char const* szValue )
+	{
+		return false;
+	}
 
 } g_ResponseSystemFieldOps;
 

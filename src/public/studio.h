@@ -878,7 +878,7 @@ struct mstudioikrule_t;
 struct mstudioautolayer_t
 {
 //private:
-	short				iSequence;
+	sequence_t				iSequence;
 	short				iPose;
 //public:
 	int					flags;
@@ -2521,7 +2521,7 @@ struct studiohdr_t
 	const mstudioiklock_t &pIKAutoplayLock( int i );
 	int					CountAutoplaySequences() const;
 	int					CopyAutoplaySequences( sequence_t *pOut, int outCount ) const;
-	int					GetAutoplayList( unsigned short **pOut ) const;
+	int					GetAutoplayList( sequence_t **pOut ) const;
 
 	// The collision model mass that jay wanted
 	float				mass;
@@ -2659,17 +2659,17 @@ public:
 	inline int			numbones( void ) const { return m_pStudioHdr->numbones; };
 	inline mstudiobone_t *pBone( int i ) const { return m_pStudioHdr->pBone( i ); };
 	int					RemapAnimBone( int iAnim, int iLocalBone ) const;		// maps local animations bone to global bone
-	int					RemapSeqBone( int iSequence, int iLocalBone ) const;	// maps local sequence bone to global bone
+	int					RemapSeqBone( sequence_t iSequence, int iLocalBone ) const;	// maps local sequence bone to global bone
 
 	bool				SequencesAvailable() const;
 	int					GetNumSeq( void ) const;
 	mstudioanimdesc_t	&pAnimdesc( int i );
 	mstudioseqdesc_t	&pSeqdesc( sequence_t iSequence );
-	int					iRelativeAnim( int baseseq, int relanim ) const;	// maps seq local anim reference to global anim index
+	int					iRelativeAnim( sequence_t baseseq, int relanim ) const;	// maps seq local anim reference to global anim index
 	sequence_t					iRelativeSeq( sequence_t baseseq, sequence_t relseq ) const;		// maps seq local seq reference to global seq index
 
 	Activity					GetSequenceActivity( sequence_t iSequence );
-	void				SetSequenceActivity( int iSequence, Activity iActivity );
+	void				SetSequenceActivity( sequence_t iSequence, Activity iActivity );
 	int					GetActivityListVersion( void );
 	void				SetActivityListVersion( int version );
 	int					GetEventListVersion( void );
@@ -2689,14 +2689,14 @@ public:
 
 	int					GetNumPoseParameters( void ) const;
 	const mstudioposeparamdesc_t &pPoseParameter( int i );
-	int					GetSharedPoseParameter( int iSequence, int iLocalPose ) const;
+	int					GetSharedPoseParameter( sequence_t iSequence, int iLocalPose ) const;
 
 	int					GetNumIKAutoplayLocks( void ) const;
 	const mstudioiklock_t &pIKAutoplayLock( int i );
 
 	inline int			CountAutoplaySequences() const { return m_pStudioHdr->CountAutoplaySequences(); };
 	inline int			CopyAutoplaySequences( sequence_t *pOut, int outCount ) const { return m_pStudioHdr->CopyAutoplaySequences( pOut, outCount ); };
-	inline int			GetAutoplayList( unsigned short **pOut ) const { return m_pStudioHdr->GetAutoplayList( pOut ); };
+	inline int			GetAutoplayList( sequence_t **pOut ) const { return m_pStudioHdr->GetAutoplayList( pOut ); };
 
 	inline int			GetNumBoneControllers( void ) const { return m_pStudioHdr->numbonecontrollers; };
 	inline mstudiobonecontroller_t *pBonecontroller( int i ) const { return m_pStudioHdr->pBonecontroller( i ); };

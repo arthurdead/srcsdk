@@ -20,6 +20,11 @@
 #include "engine/ivmodelinfo.h"
 #include "tier1/fmtstr.h"
 
+#if defined( CLIENT_DLL )
+#include "cdll_int.h"
+
+#endif
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -118,7 +123,7 @@ void CPredictionCopy::DescribeFields( difftype_t dt, const char *fmt, ... )
 	Assert( m_pCurrentClassName );
 
 	const char *fieldname = "empty";
-	int flags = 0;
+	fieldflags_t flags = FTYPEDESC_NONE;
 
 	if ( m_pCurrentField )
 	{
@@ -139,7 +144,7 @@ void CPredictionCopy::DescribeFields( difftype_t dt, const char *fmt, ... )
 	( *m_FieldCompareFunc )( 
 		m_pCurrentClassName,
 		fieldname,
-		g_FieldNames[ m_pCurrentField->fieldType ],
+		GetFieldName( m_pCurrentField->rawType(), false ),
 		isnetworked,
 		isnoterrorchecked,
 		dt != IDENTICAL ? true : false,
@@ -236,10 +241,24 @@ void CPredictionCopy::DescribeShort( difftype_t dt, short *outvalue, const short
 	if ( dt == DIFFERS )
 	{
 		int i = 0;
-		ReportFieldsDiffer( "short differs (net %i pred %i) diff(%i)\n", (int)(invalue[i]), (int)(outvalue[i]), (int)(outvalue[i] - invalue[i]) );
+		ReportFieldsDiffer( "short differs (net %hi pred %hi) diff(%hi)\n", invalue[i], outvalue[i], (outvalue[i] - invalue[i]) );
 	}
 
-	DescribeFields( dt, "short (%i)\n", (int)(outvalue[0]) );
+	DescribeFields( dt, "short (%hi)\n", outvalue[0] );
+}
+
+void CPredictionCopy::DescribeUShort( difftype_t dt, unsigned short *outvalue, const unsigned short *invalue, int count )
+{
+	if ( !m_bErrorCheck )
+		return;
+
+	if ( dt == DIFFERS )
+	{
+		int i = 0;
+		ReportFieldsDiffer( "ushort differs (net %hu pred %hu) diff(%hu)\n", invalue[i], outvalue[i], (outvalue[i] - invalue[i]) );
+	}
+
+	DescribeFields( dt, "ushort (%hu)\n", outvalue[0] );
 }
 
 void CPredictionCopy::WatchShort( difftype_t dt, short *outvalue, const short *invalue, int count )
@@ -247,13 +266,16 @@ void CPredictionCopy::WatchShort( difftype_t dt, short *outvalue, const short *i
 	if ( m_pWatchField != m_pCurrentField )
 		return;
 
-	WatchMsg( "short (%i)", (int)(outvalue[0]) );
+	WatchMsg( "short (%hi)", outvalue[0] );
 }
 
-#if defined( CLIENT_DLL )
-#include "cdll_int.h"
+void CPredictionCopy::WatchUShort( difftype_t dt, unsigned short *outvalue, const unsigned short *invalue, int count )
+{
+	if ( m_pWatchField != m_pCurrentField )
+		return;
 
-#endif
+	WatchMsg( "ushort (%hu)", outvalue[0] );
+}
 
 void CPredictionCopy::DescribeInt( difftype_t dt, int *outvalue, const int *invalue, int count )
 {
@@ -267,6 +289,20 @@ void CPredictionCopy::DescribeInt( difftype_t dt, int *outvalue, const int *inva
 	}
 
 	DescribeFields( dt, "integer (%i)\n", outvalue[0] );
+}
+
+void CPredictionCopy::DescribeUInt( difftype_t dt, unsigned int *outvalue, const unsigned int *invalue, int count )
+{
+	if ( !m_bErrorCheck )
+		return;
+
+	if ( dt == DIFFERS )
+	{
+		int i = 0;
+		ReportFieldsDiffer( "uint differs (net %u pred %u) diff(%u)\n", invalue[i], outvalue[i], outvalue[i] - invalue[i] );
+	}
+
+	DescribeFields( dt, "uinteger (%u)\n", outvalue[0] );
 }
 
 void CPredictionCopy::DescribeModelindex( difftype_t dt, modelindex_t *outvalue, const modelindex_t *invalue, int count )
@@ -310,12 +346,34 @@ void CPredictionCopy::DescribeInt64( difftype_t dt, int64 *outvalue, const int64
 	DescribeFields( dt, "integer64 (%lli)\n", outvalue[0] );
 }
 
+void CPredictionCopy::DescribeUInt64( difftype_t dt, uint64 *outvalue, const uint64 *invalue, int count )
+{
+	if ( !m_bErrorCheck )
+		return;
+
+	if ( dt == DIFFERS )
+	{
+		int i = 0;
+		ReportFieldsDiffer( "uint64 differs (net %llu pred %llu) diff(%llu)\n", invalue[i], outvalue[i], outvalue[i] - invalue[i] );
+	}
+
+	DescribeFields( dt, "uinteger64 (%llu)\n", outvalue[0] );
+}
+
 void CPredictionCopy::WatchInt( difftype_t dt, int *outvalue, const int *invalue, int count )
 {
 	if ( m_pWatchField != m_pCurrentField )
 		return;
 
 	WatchMsg( "integer (%i)", outvalue[0] );
+}
+
+void CPredictionCopy::WatchUInt( difftype_t dt, unsigned int *outvalue, const unsigned int *invalue, int count )
+{
+	if ( m_pWatchField != m_pCurrentField )
+		return;
+
+	WatchMsg( "uinteger (%u)", outvalue[0] );
 }
 
 void CPredictionCopy::WatchModelindex( difftype_t dt, modelindex_t *outvalue, const modelindex_t *invalue, int count )
@@ -345,6 +403,14 @@ void CPredictionCopy::WatchInt64( difftype_t dt, int64 *outvalue, const int64 *i
 		return;
 
 	WatchMsg( "integer64 (%lli)", outvalue[0] );
+}
+
+void CPredictionCopy::WatchUInt64( difftype_t dt, uint64 *outvalue, const uint64 *invalue, int count )
+{
+	if ( m_pWatchField != m_pCurrentField )
+		return;
+
+	WatchMsg( "uinteger64 (%llu)", outvalue[0] );
 }
 
 void CPredictionCopy::DescribeBool( difftype_t dt, bool *outvalue, const bool *invalue, int count )
@@ -610,6 +676,17 @@ void CPredictionCopy::CopyShort( difftype_t dt, short *outvalue, const short *in
 	CopyData( dt, sizeof(short) * count, (char *)outvalue, (const char *)invalue ); 
 }
 
+void CPredictionCopy::CopyUShort( difftype_t dt, unsigned short *outvalue, const unsigned short *invalue, int count )
+{
+	if ( !m_bPerformCopy )
+		return;
+
+	if ( dt == IDENTICAL )
+		return;
+
+	CopyData( dt, sizeof(unsigned short) * count, (char *)outvalue, (const char *)invalue ); 
+}
+
 CPredictionCopy::difftype_t CPredictionCopy::CompareShort( short *outvalue, const short *invalue, int count )
 {
 	if ( !m_bErrorCheck )
@@ -629,6 +706,24 @@ CPredictionCopy::difftype_t CPredictionCopy::CompareShort( short *outvalue, cons
 	return IDENTICAL;
 }
 
+CPredictionCopy::difftype_t CPredictionCopy::CompareUShort( unsigned short *outvalue, const unsigned short *invalue, int count )
+{
+	if ( !m_bErrorCheck )
+		return DIFFERS;
+
+	if ( CanCheck() )
+	{
+		for ( int i = 0; i < count; i++ )
+		{
+			if ( outvalue[ i ] == invalue[ i ] )
+				continue;
+
+			return DIFFERS;
+		}
+	}
+
+	return IDENTICAL;
+}
 
 void CPredictionCopy::CopyInt( difftype_t dt, int *outvalue, const int *invalue, int count )
 {
@@ -641,6 +736,17 @@ void CPredictionCopy::CopyInt( difftype_t dt, int *outvalue, const int *invalue,
 	CopyData( dt, sizeof(int) * count, (char *)outvalue, (const char *)invalue );
 }
 
+void CPredictionCopy::CopyUInt( difftype_t dt, unsigned int *outvalue, const unsigned int *invalue, int count )
+{
+	if ( !m_bPerformCopy )
+		return;
+
+	if ( dt == IDENTICAL )
+		return;
+
+	CopyData( dt, sizeof(unsigned int) * count, (char *)outvalue, (const char *)invalue );
+}
+
 void CPredictionCopy::CopyInt64( difftype_t dt, int64 *outvalue, const int64 *invalue, int count )
 {
 	if ( !m_bPerformCopy )
@@ -650,6 +756,17 @@ void CPredictionCopy::CopyInt64( difftype_t dt, int64 *outvalue, const int64 *in
 		return;
 
 	CopyData( dt, sizeof(int64) * count, (char *)outvalue, (const char *)invalue );
+}
+
+void CPredictionCopy::CopyUInt64( difftype_t dt, uint64 *outvalue, const uint64 *invalue, int count )
+{
+	if ( !m_bPerformCopy )
+		return;
+
+	if ( dt == IDENTICAL )
+		return;
+
+	CopyData( dt, sizeof(uint64) * count, (char *)outvalue, (const char *)invalue );
 }
 
 void CPredictionCopy::CopyModelindex( difftype_t dt, modelindex_t *outvalue, const modelindex_t *invalue, int count )

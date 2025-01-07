@@ -45,28 +45,44 @@ typedef void ( *FN_FIELD_COMPARE )( const char *classname, const char *fieldname
 class CPredictionCopy
 {
 public:
-	typedef enum
+	enum difftype_t
 	{
 		DIFFERS = 0,
 		IDENTICAL,
 		WITHINTOLERANCE,
-	} difftype_t;
+	};
 
 	CPredictionCopy( int type, void *dest, bool dest_packed, void const *src, bool src_packed,
 		bool counterrors = false, bool reporterrors = false, bool performcopy = true, 
 		bool describefields = false, FN_FIELD_COMPARE func = NULL );
 
+	void	CopyChar( difftype_t dt, char *outvalue, const char *invalue, int count );
+	void	CopyUChar( difftype_t dt, unsigned char *outvalue, const unsigned char *invalue, int count );
+	void	CopySChar( difftype_t dt, signed char *outvalue, const signed char *invalue, int count );
+
 	void	CopyShort( difftype_t dt, short *outvalue, const short *invalue, int count );
+	void	CopyUShort( difftype_t dt, unsigned short *outvalue, const unsigned short *invalue, int count );
+
 	void	CopyInt( difftype_t dt, int *outvalue, const int *invalue, int count );		// Copy an int
+	void	CopyUInt( difftype_t dt, unsigned int *outvalue, const unsigned int *invalue, int count );		// Copy an int
+
 	void	CopyInt64( difftype_t dt, int64 *outvalue, const int64 *invalue, int count );		// Copy an int
+	void	CopyUInt64( difftype_t dt, uint64 *outvalue, const uint64 *invalue, int count );		// Copy an int
+
 	void	CopyModelindex( difftype_t dt, modelindex_t *outvalue, const modelindex_t *invalue, int count );		// Copy an int
+
 	void	CopyBool( difftype_t dt, bool *outvalue, const bool *invalue, int count );		// Copy a bool
+
 	void	CopyFloat( difftype_t dt, float *outvalue, const float *invalue, int count );	// Copy a float
+
 	void	CopyString( difftype_t dt, char *outstring, const char *instring );			// Copy a null-terminated string
+
 	void	CopyVector( difftype_t dt, Vector& outValue, const Vector &inValue );				// Copy a vector
 	void	CopyVector( difftype_t dt, Vector* outValue, const Vector *inValue, int count );	// Copy a vector array
+
 	void	CopyQuaternion( difftype_t dt, Quaternion& outValue, const Quaternion &inValue );				// Copy a quaternion
 	void	CopyQuaternion( difftype_t dt, Quaternion* outValue, const Quaternion *inValue, int count );				// Copy a quaternion array
+
 	void	CopyEHandle( difftype_t dt, EHANDLE *outvalue, EHANDLE const *invalue, int count );
 
 	void	FORCEINLINE CopyData( difftype_t dt, int size, char *outdata, const char *indata )		// Copy a binary data block
@@ -89,46 +105,98 @@ private:
 	void	DumpWatchField( typedescription_t *field );
 	void	WatchMsg( PRINTF_FORMAT_STRING const char *fmt, ... );
 
+	difftype_t	CompareChar( char *outvalue, const char *invalue, int count );
+	difftype_t	CompareUChar( unsigned char *outvalue, const unsigned char *invalue, int count );
+	difftype_t	CompareSChar( signed char *outvalue, const signed char *invalue, int count );
+
 	difftype_t	CompareShort( short *outvalue, const short *invalue, int count );
+	difftype_t	CompareUShort( unsigned short *outvalue, const unsigned short *invalue, int count );
+
 	difftype_t	CompareInt( int *outvalue, const int *invalue, int count );		// Compare an int
+	difftype_t	CompareUInt( unsigned int *outvalue, const unsigned int *invalue, int count );		// Compare an int
+
 	difftype_t	CompareInt64( int64 *outvalue, const int64 *invalue, int count );		// Compare an int
+	difftype_t	CompareUInt64( uint64 *outvalue, const uint64 *invalue, int count );		// Compare an int
+
 	difftype_t	CompareModelindex( modelindex_t *outvalue, const modelindex_t *invalue, int count );		// Compare an int
+
 	difftype_t	CompareBool( bool *outvalue, const bool *invalue, int count );		// Compare a bool
+
 	difftype_t	CompareFloat( float *outvalue, const float *invalue, int count );	// Compare a float
+
 	difftype_t	CompareData( int size, char *outdata, const char *indata );		// Compare a binary data block
+
 	difftype_t	CompareString( char *outstring, const char *instring );			// Compare a null-terminated string
+
 	difftype_t	CompareVector( Vector& outValue, const Vector &inValue );				// Compare a vector
 	difftype_t	CompareVector( Vector* outValue, const Vector *inValue, int count );	// Compare a vector array
+
 	difftype_t	CompareQuaternion( Quaternion& outValue, const Quaternion &inValue );				// Compare a Quaternion
 	difftype_t	CompareQuaternion( Quaternion* outValue, const Quaternion *inValue, int count );	// Compare a Quaternion array
+
 	difftype_t	CompareEHandle( EHANDLE *outvalue, EHANDLE const *invalue, int count );
 
+	void	DescribeChar( difftype_t dt, char *outvalue, const char *invalue, int count );
+	void	DescribeUChar( difftype_t dt, unsigned char *outvalue, const unsigned char *invalue, int count );
+	void	DescribeSChar( difftype_t dt, signed char *outvalue, const signed char *invalue, int count );
+
 	void	DescribeShort( difftype_t dt, short *outvalue, const short *invalue, int count );
+	void	DescribeUShort( difftype_t dt, unsigned short *outvalue, const unsigned short *invalue, int count );
+
 	void	DescribeInt( difftype_t dt, int *outvalue, const int *invalue, int count );		// Compare an int
+	void	DescribeUInt( difftype_t dt, unsigned int *outvalue, const unsigned int *invalue, int count );		// Compare an int
+
 	void	DescribeModelindex( difftype_t dt, modelindex_t *outvalue, const modelindex_t *invalue, int count );		// Compare an int
+
 	void	DescribeInt64( difftype_t dt, int64 *outvalue, const int64 *invalue, int count );		// Compare an int
+	void	DescribeUInt64( difftype_t dt, uint64 *outvalue, const uint64 *invalue, int count );		// Compare an int
+
 	void	DescribeBool( difftype_t dt, bool *outvalue, const bool *invalue, int count );		// Compare a bool
+
 	void	DescribeFloat( difftype_t dt, float *outvalue, const float *invalue, int count );	// Compare a float
+
 	void	DescribeData( difftype_t dt, int size, char *outdata, const char *indata );		// Compare a binary data block
+
 	void	DescribeString( difftype_t dt, char *outstring, const char *instring );			// Compare a null-terminated string
+
 	void	DescribeVector( difftype_t dt, Vector& outValue, const Vector &inValue );				// Compare a vector
+
 	void	DescribeVector( difftype_t dt, Vector* outValue, const Vector *inValue, int count );	// Compare a vector array
+
 	void	DescribeQuaternion( difftype_t dt, Quaternion& outValue, const Quaternion &inValue );				// Compare a Quaternion
 	void	DescribeQuaternion( difftype_t dt, Quaternion* outValue, const Quaternion *inValue, int count );	// Compare a Quaternion array
+
 	void	DescribeEHandle( difftype_t dt, EHANDLE *outvalue, EHANDLE const *invalue, int count );
 
+	void	WatchChar( difftype_t dt, char *outvalue, const char *invalue, int count );
+	void	WatchUChar( difftype_t dt, unsigned char *outvalue, const unsigned char *invalue, int count );
+	void	WatchSChar( difftype_t dt, signed char *outvalue, const signed char *invalue, int count );
+
 	void	WatchShort( difftype_t dt, short *outvalue, const short *invalue, int count );
+	void	WatchUShort( difftype_t dt, unsigned short *outvalue, const unsigned short *invalue, int count );
+
 	void	WatchInt( difftype_t dt, int *outvalue, const int *invalue, int count );		// Compare an int
+	void	WatchUInt( difftype_t dt, unsigned int *outvalue, const unsigned int *invalue, int count );		// Compare an int
+
 	void	WatchModelindex( difftype_t dt, modelindex_t *outvalue, const modelindex_t *invalue, int count );		// Compare an int
+
 	void	WatchInt64( difftype_t dt, int64 *outvalue, const int64 *invalue, int count );		// Compare an int
+	void	WatchUInt64( difftype_t dt, uint64 *outvalue, const uint64 *invalue, int count );		// Compare an int
+
 	void	WatchBool( difftype_t dt, bool *outvalue, const bool *invalue, int count );		// Compare a bool
+
 	void	WatchFloat( difftype_t dt, float *outvalue, const float *invalue, int count );	// Compare a float
+
 	void	WatchData( difftype_t dt, int size, char *outdata, const char *indata );		// Compare a binary data block
+
 	void	WatchString( difftype_t dt, char *outstring, const char *instring );			// Compare a null-terminated string
+
 	void	WatchVector( difftype_t dt, Vector& outValue, const Vector &inValue );				// Compare a vector
 	void	WatchVector( difftype_t dt, Vector* outValue, const Vector *inValue, int count );	// Compare a vector array
+
 	void	WatchQuaternion( difftype_t dt, Quaternion& outValue, const Quaternion &inValue );				// Compare a Quaternion
 	void	WatchQuaternion( difftype_t dt, Quaternion* outValue, const Quaternion *inValue, int count );	// Compare a Quaternion array
+
 	void	WatchEHandle( difftype_t dt, EHANDLE *outvalue, EHANDLE const *invalue, int count );
 
 	// Report function
@@ -176,18 +244,35 @@ class CPredictionDescribeData
 public:
 	CPredictionDescribeData( void const *src, bool src_packed, FN_FIELD_DESCRIPTION func = 0 );
 
+	void	DescribeChar( const char *invalue, int count );
+	void	DescribeUChar( const unsigned char *invalue, int count );
+	void	DescribeSChar( const signed char *invalue, int count );
+
 	void	DescribeShort( const short *invalue, int count );
+	void	DescribeUShort( const unsigned short *invalue, int count );
+
 	void	DescribeInt( const int *invalue, int count );		
+	void	DescribeUInt( const unsigned int *invalue, int count );		
+
 	void	DescribeInt64( const int64 *invalue, int count );		
+	void	DescribeUInt64( const uint64 *invalue, int count );		
+
 	void	DescribeModelindex( const modelindex_t *invalue, int count );
+
 	void	DescribeBool( const bool *invalue, int count );	
+
 	void	DescribeFloat( const float *invalue, int count );	
+
 	void	DescribeData( int size, const char *indata );		
+
 	void	DescribeString( const char *instring );			
+
 	void	DescribeVector( const Vector &inValue );
 	void	DescribeVector( const Vector *inValue, int count );
+
 	void	DescribeQuaternion( const Quaternion &inValue );
 	void	DescribeQuaternion( const Quaternion *inValue, int count );
+
 	void	DescribeEHandle( EHANDLE const *invalue, int count );
 
 	void	DumpDescription( datamap_t *pMap );

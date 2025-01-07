@@ -12,6 +12,24 @@
 
 // Simple shared header file for common base entities
 
+enum GenericSpawnFlags_t : uint64;
+
+FLAGENUM_OPERATORS( GenericSpawnFlags_t, uint64 )
+
+#define DECLARE_SPAWNFLAGS( type ) \
+	type GetSpawnFlags( void ) const \
+	{ return static_cast<type>(m_spawnflags.Get());  } \
+	void AddSpawnFlags( type nFlags ) \
+	{ m_spawnflags |= static_cast<GenericSpawnFlags_t>(nFlags); } \
+	void SetSpawnFlags( type nFlags ) \
+	{ m_spawnflags = static_cast<GenericSpawnFlags_t>(nFlags); } \
+	void RemoveSpawnFlags( type nFlags ) \
+	{ m_spawnflags &= ~static_cast<GenericSpawnFlags_t>(nFlags); } \
+	void ClearSpawnFlags( void ) \
+	{ m_spawnflags = static_cast<GenericSpawnFlags_t>(0); } \
+	bool HasSpawnFlags( type nFlags ) const \
+	{ return (m_spawnflags & static_cast<GenericSpawnFlags_t>(nFlags)) != static_cast<GenericSpawnFlags_t>(0); }
+
 // How many bits are used to transmit parent attachment indices?
 #define NUM_PARENTATTACHMENT_BITS	6
 

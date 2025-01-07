@@ -244,7 +244,7 @@ protected:
 	CSharedBasePlayer *GetBasePlayer( void )				{ return m_pPlayer; }
 
 	// Allow inheriting classes to override SelectWeightedSequence
-	virtual int SelectWeightedSequence( Activity activity );
+	virtual sequence_t SelectWeightedSequence( Activity activity );
 	virtual void RestartMainSequence();
 
 	virtual void GetOuterAbsVelocity( Vector& vel );
@@ -355,7 +355,7 @@ protected:
 	Activity m_eCurrentMainSequenceActivity;	
 
 	// Specific full-body sequence to play
-	int		m_nSpecificMainSequence;
+	sequence_t		m_nSpecificMainSequence;
 
 	// Weapon data.
 	CHandle<CSharedBaseCombatWeapon>	m_hActiveWeapon;
@@ -368,7 +368,7 @@ protected:
 	float m_flMaxGroundSpeed;
 
 	// movement playback options
-	int m_nMovementSequence;
+	sequence_t m_nMovementSequence;
 	LegAnimType_t m_LegAnimType;
 };
 

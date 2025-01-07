@@ -67,7 +67,7 @@ DataTableProp PropFloat(
 	int offset,						// Offset into container structure.
 	int sizeofVar=SIZEOF_IGNORE,
 	int nBits=32,					// Number of bits to use when encoding.
-	int flags=0,
+	DTFlags_t flags=SPROP_NONE,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT	// High value. If HIGH_DEFAULT, it's (1<<nBits).
 	);
@@ -77,7 +77,7 @@ DataTableProp PropVector(
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,
 	int nBits=32,					// Number of bits (for each floating-point component) to use when encoding.
-	int flags=SPROP_NOSCALE,
+	DTFlags_t flags=SPROP_NOSCALE,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT	// High value. If HIGH_DEFAULT, it's (1<<nBits).
 	);
@@ -87,7 +87,7 @@ DataTableProp PropAngle(
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,
 	int nBits=32,
-	int flags=0
+	DTFlags_t flags=SPROP_NONE
 	);
 
 DataTableProp PropInt(
@@ -95,7 +95,7 @@ DataTableProp PropInt(
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by SENDINFO macro.
 	int nBits=-1,					// Set to -1 to automatically pick (max) number of bits based on size of element.
-	int flags=0
+	DTFlags_t flags=SPROP_NONE
 	);
 
 DataTableProp PropBool(
@@ -108,7 +108,7 @@ DataTableProp PropString(
 	const char *pVarName,
 	int offset,
 	int bufferLen,
-	int flags=0
+	DTFlags_t flags=SPROP_NONE
 	);
 
 DataTableProp PropEHandle(
@@ -119,7 +119,7 @@ DataTableProp PropEHandle(
 DataTableProp PropDataTable(
 	const char *pVarName,
 	int offset,
-	int flags,
+	DTFlags_t flags,
 	DataTable *pTable,
 	DataTableProxyFn varProxy=DataTableProxy_StaticDataTable
 	);

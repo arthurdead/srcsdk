@@ -901,8 +901,8 @@ int CStudioHdr::GetNumSeq( void ) const
 
 mstudioseqdesc_t &CStudioHdr::pSeqdesc( sequence_t i )
 {
-	Assert( i < GetNumSeq() );
-	if ( i >= GetNumSeq() )
+	Assert( (unsigned short)i < GetNumSeq() );
+	if ( (unsigned short)i >= GetNumSeq() )
 	{
 		// Return a zero'd out struct reference if we've got nothing.
 		// C_BaseObject::StopAnimGeneratedSounds was crashing due to this function
@@ -1002,7 +1002,7 @@ const mstudioposeparamdesc_t &CStudioHdr::pPoseParameter( int i )
 // Purpose:
 //-----------------------------------------------------------------------------
 
-int CStudioHdr::GetSharedPoseParameter( int iSequence, int iLocalPose ) const
+int CStudioHdr::GetSharedPoseParameter( sequence_t iSequence, int iLocalPose ) const
 {
 	if (m_pVModel == NULL)
 	{
@@ -1326,7 +1326,7 @@ int	CStudioHdr::CopyAutoplaySequences( unsigned short *pOut, int outCount ) cons
 // Purpose:	maps local sequence bone to global bone
 //-----------------------------------------------------------------------------
 
-int	CStudioHdr::RemapSeqBone( int iSequence, int iLocalBone ) const	
+int	CStudioHdr::RemapSeqBone( sequence_t iSequence, int iLocalBone ) const	
 {
 	// remap bone
 	if (m_pVModel)

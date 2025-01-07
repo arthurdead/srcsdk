@@ -14,6 +14,8 @@
 #include "tier1/utlvector.h"
 #include "recast_imgr.h"
 
+enum RecastOfffMeshConnSF_t : unsigned short;
+
 class CMapMesh;
 
 struct FastLZCompressor : public dtTileCacheCompressor
@@ -69,7 +71,7 @@ private:
 #endif // CLIENT_DLL
 
 private:
-	int meshFlags;
+	RecastOfffMeshConnSF_t meshFlags;
 
 	CUtlVector< float > offMeshConnVerts;
 	CUtlVector< float > offMeshConnRad;

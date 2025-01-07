@@ -91,11 +91,7 @@ void LinearAllocator::free(void* /*ptr*/)
 
 MeshProcess::MeshProcess( NavMeshType_t type )
 {
-#ifndef CLIENT_DLL
-	meshFlags = (SF_OFFMESHCONN_TYPE_FLAGS_START << type);
-#else
-	meshFlags = 0;
-#endif // CLIENT_DLL
+	meshFlags = (RecastOfffMeshConnSF_t)(SF_OFFMESHCONN_TYPE_FLAGS_START << type);
 
 	// One time parse all
 	parseAll();
@@ -143,8 +139,8 @@ void MeshProcess::parseAll()
 void MeshProcess::parseConnection( COffMeshConnection *pOffMeshConn )
 {
 	// Only parse connections for which we have the flag set
-	int spawnFlags = pOffMeshConn->GetSpawnFlags();
-	if( (spawnFlags & meshFlags) != 0 ) 
+	RecastOfffMeshConnSF_t spawnFlags = pOffMeshConn->GetSpawnFlags();
+	if( (spawnFlags & meshFlags) != SF_OFFMESHCONN_NONE ) 
 	{
 		CBaseEntity *pTarget = gEntList.FindEntityByName( NULL, pOffMeshConn->m_target );
 		if( pTarget )
@@ -164,7 +160,7 @@ void MeshProcess::parseConnection( COffMeshConnection *pOffMeshConn )
 
 			float rad = 0.0f;
 			for(int i = 0; i < RECAST_NAVMESH_NUM; ++i) {
-				if( (spawnFlags & (SF_OFFMESHCONN_TYPE_FLAGS_START << i)) != 0 )
+				if( (spawnFlags & (RecastOfffMeshConnSF_t)(SF_OFFMESHCONN_TYPE_FLAGS_START << i)) != SF_OFFMESHCONN_NONE )
 					TestAgentRadius( i, rad );
 			}
 

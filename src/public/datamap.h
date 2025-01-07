@@ -246,6 +246,14 @@ enum MemLevel_t : unsigned char;
 enum GPUMemLevel_t : unsigned char;
 enum NPC_STATE : unsigned char;
 
+template <>
+class CDatamapFieldInfo<FIELD_VOID>
+{
+public:
+	using info_type = CDatamapFieldInfo<FIELD_VOID>;
+	static inline auto FIELDTYPE = FIELD_VOID;
+};
+
 DECLARE_FIELD_INFO( FIELD_FLOAT,		float )
 DECLARE_FIELD_INFO( FIELD_POOLED_STRING,		string_t )
 DECLARE_FIELD_INFO( FIELD_VECTOR,		Vector )
@@ -389,6 +397,16 @@ public:
 	using info_type = CDatamapFieldInfo<fieldType>;
 	static inline auto FIELDTYPE = fieldType;
 	static inline auto NATIVESIZE = sizeof(native_type);
+};
+
+class COutputEvent;
+
+template <>
+class CNativeFieldInfo<COutputEvent>
+{
+public:
+	using info_type = CDatamapFieldInfo<FIELD_VOID>;
+	static inline auto FIELDTYPE = FIELD_VOID;
 };
 
 inline fieldtype_t GetBaseFieldType( fieldtype_t type )
@@ -898,6 +916,9 @@ struct datamap_t
 {
 	virtual ~datamap_t();
 
+	datamap_t();
+	datamap_t( const char *name );
+
 	typedescription_t	*dataDesc;
 	int					dataNumFields;
 	char const			*dataClassName;
@@ -1004,24 +1025,24 @@ extern map_datamap_t *g_pMapDatamapsHead;
 	virtual datamap_t *GetDataDescMap( void );
 
 #define BEGIN_DATADESC( className ) \
-	datamap_t className::m_DataMap = { 0, 0, #className, NULL }; \
+	datamap_t className::m_DataMap( #className ); \
 	datamap_t *className::GetDataDescMap( void ) { return &m_DataMap; } \
 	datamap_t *className::GetBaseMap() { datamap_t *pResult; DataMapAccess((BaseClass *)NULL, &pResult); return pResult; } \
 	BEGIN_DATADESC_GUTS( className )
 
 #define BEGIN_DATADESC_NO_BASE( className ) \
-	datamap_t className::m_DataMap = { 0, 0, #className, NULL }; \
+	datamap_t className::m_DataMap( #className ); \
 	datamap_t *className::GetDataDescMap( void ) { return &m_DataMap; } \
 	datamap_t *className::GetBaseMap() { return NULL; } \
 	BEGIN_DATADESC_GUTS( className )
 
 #define BEGIN_SIMPLE_DATADESC( className ) \
-	datamap_t className::m_DataMap = { 0, 0, #className, NULL }; \
+	datamap_t className::m_DataMap( #className ); \
 	datamap_t *className::GetBaseMap() { return NULL; } \
 	BEGIN_DATADESC_GUTS( className )
 
 #define BEGIN_SIMPLE_DATADESC_( className, BaseClass ) \
-	datamap_t className::m_DataMap = { 0, 0, #className, NULL }; \
+	datamap_t className::m_DataMap( #className ); \
 	datamap_t *className::GetBaseMap() { datamap_t *pResult; DataMapAccess((BaseClass *)NULL, &pResult); return pResult; } \
 	BEGIN_DATADESC_GUTS( className )
 

@@ -25,7 +25,7 @@ DataTableProp PropFloat(
 	int offset,						// Offset into container structure.
 	int sizeofVar,
 	int nBits,					// Number of bits to use when encoding.
-	int flags,
+	DTFlags_t flags,
 	float fLowValue,			// For floating point, low and high values.
 	float fHighValue	// High value. If HIGH_DEFAULT, it's (1<<nBits).
 	)
@@ -42,7 +42,7 @@ DataTableProp PropVector(
 	int offset,
 	int sizeofVar,
 	int nBits,					// Number of bits (for each floating-point component) to use when encoding.
-	int flags,
+	DTFlags_t flags,
 	float fLowValue,			// For floating point, low and high values.
 	float fHighValue	// High value. If HIGH_DEFAULT, it's (1<<nBits).
 	)
@@ -59,7 +59,7 @@ DataTableProp PropAngle(
 	int offset,
 	int sizeofVar,
 	int nBits,
-	int flags
+	DTFlags_t flags
 	)
 {
 #if !defined (CLIENT_DLL)
@@ -74,7 +74,7 @@ DataTableProp PropInt(
 	int offset,
 	int sizeofVar,	// Handled by SENDINFO macro.
 	int nBits,					// Set to -1 to automatically pick (max) number of bits based on size of element.
-	int flags
+	DTFlags_t flags
 	)
 {
 #if !defined (CLIENT_DLL)
@@ -101,7 +101,7 @@ DataTableProp PropString(
 	const char *pVarName,
 	int offset,
 	int bufferLen,
-	int flags
+	DTFlags_t flags
 	)
 {
 #if !defined (CLIENT_DLL)

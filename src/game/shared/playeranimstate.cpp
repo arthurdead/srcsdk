@@ -132,7 +132,7 @@ void CPlayerAnimState::ClearAnimationState()
 	m_bDying = false;
 	m_bCurrentFeetYawInitialized = false;
 	m_flLastAnimationStateClearTime = gpGlobals->curtime;
-	m_nSpecificMainSequence = -1;
+	m_nSpecificMainSequence = INVALID_SEQUENCE;
 
 	ResetGestureSlots();
 }
@@ -277,7 +277,7 @@ void CPlayerAnimState::DoAnimationEvent( PlayerAnimEvent_t event, int nData )
 		break;
 
 	case PLAYERANIMEVENT_CUSTOM_SEQUENCE:
-		m_nSpecificMainSequence = nData;
+		m_nSpecificMainSequence = (sequence_t)nData;
 		RestartMainSequence();
 		break;
 
@@ -318,7 +318,7 @@ void CPlayerAnimState::PlayFlinchGesture( Activity iActivity )
 	if ( !IsGestureSlotActive( GESTURE_SLOT_FLINCH ) )
 	{
 		// See if we have the custom flinch. If not, revert to chest
-		if ( iActivity != ACT_MP_GESTURE_FLINCH_CHEST && GetBasePlayer()->SelectWeightedSequence( iActivity ) == -1 )
+		if ( iActivity != ACT_MP_GESTURE_FLINCH_CHEST && GetBasePlayer()->SelectWeightedSequence( iActivity ) == INVALID_SEQUENCE )
 		{
 			RestartGesture( GESTURE_SLOT_FLINCH, ACT_MP_GESTURE_FLINCH_CHEST );
 		}
@@ -356,7 +356,7 @@ bool CPlayerAnimState::InitGestureSlots( void )
 
 	for ( int iGesture = 0; iGesture < GESTURE_SLOT_COUNT; ++iGesture )
 	{
-		m_aGestureSlots[iGesture].m_pAnimLayer = pPlayer->GetAnimOverlayForModify( iGesture );
+		m_aGestureSlots[iGesture].m_pAnimLayer = pPlayer->GetAnimOverlayForModify( (animlayerindex_t)iGesture );
 		if ( !m_aGestureSlots[iGesture].m_pAnimLayer )
 			return false;
 
@@ -489,12 +489,12 @@ bool CPlayerAnimState::VerifyAnimLayerInSlot( int iGestureSlot )
 		return false;
 	}
 
-	const CSharedAnimationLayer *pExpected = GetBasePlayer()->GetAnimOverlay( iGestureSlot );
+	const CSharedAnimationLayer *pExpected = GetBasePlayer()->GetAnimOverlay( (animlayerindex_t)iGestureSlot );
 	if ( m_aGestureSlots[iGestureSlot].m_pAnimLayer != pExpected )
 	{
 		AssertMsg3( false, "Gesture slot %d pointing to wrong address %p. Updating to new address %p.", iGestureSlot, m_aGestureSlots[iGestureSlot].m_pAnimLayer, pExpected );
 		Msg( "Gesture slot %d pointing to wrong address %p. Updating to new address %p.\n", iGestureSlot, m_aGestureSlots[iGestureSlot].m_pAnimLayer, pExpected );
-		m_aGestureSlots[iGestureSlot].m_pAnimLayer = GetBasePlayer()->GetAnimOverlayForModify( iGestureSlot );
+		m_aGestureSlots[iGestureSlot].m_pAnimLayer = GetBasePlayer()->GetAnimOverlayForModify( (animlayerindex_t)iGestureSlot );
 	}
 
 	return true;
@@ -570,8 +570,8 @@ void CPlayerAnimState::AddToGestureSlot( int iGestureSlot, Activity iGestureActi
 		return;
 
 	// Get the sequence.
-	int iGestureSequence = pPlayer->SelectWeightedSequence( iGestureActivity );
-	if ( iGestureSequence <= 0 )
+	sequence_t iGestureSequence = pPlayer->SelectWeightedSequence( iGestureActivity );
+	if ( iGestureSequence == INVALID_SEQUENCE )
 		return;
 
 #ifdef CLIENT_DLL 
@@ -721,7 +721,7 @@ void CPlayerAnimState::ShowDebugInfo( void )
 	}
 }
 
-int CPlayerAnimState::SelectWeightedSequence( Activity activity )
+sequence_t CPlayerAnimState::SelectWeightedSequence( Activity activity )
 {
 	return GetBasePlayer()->SelectWeightedSequence( activity );
 }
@@ -1105,7 +1105,7 @@ void CPlayerAnimState::ComputeMainSequence()
 	m_eCurrentMainSequenceActivity = idealActivity;
 
 	// Hook to force playback of a specific requested full-body sequence
-	if ( m_nSpecificMainSequence >= 0 )
+	if ( m_nSpecificMainSequence != INVALID_SEQUENCE )
 	{
 		if ( pPlayer->GetSequence() != m_nSpecificMainSequence )
 		{
@@ -1117,20 +1117,15 @@ void CPlayerAnimState::ComputeMainSequence()
 		if ( !pPlayer->IsSequenceFinished() )
 			return;
 
-		m_nSpecificMainSequence = -1;
+		m_nSpecificMainSequence = INVALID_SEQUENCE;
 		RestartMainSequence();
 		ResetGroundSpeed();
 	}
 
 	// Export to our outer class..
-	int animDesired = SelectWeightedSequence( TranslateActivity( idealActivity ) );
+	sequence_t animDesired = SelectWeightedSequence( TranslateActivity( idealActivity ) );
 	if ( pPlayer->GetSequenceActivity( pPlayer->GetSequence() ) == pPlayer->GetSequenceActivity( animDesired ) )
 		return;
-
-	if ( animDesired < 0 )
-	{
-		 animDesired = 0;
-	}
 
 	pPlayer->ResetSequence( animDesired );
 
@@ -1529,7 +1524,7 @@ void CPlayerAnimState::GetMovementFlags( CStudioHdr *pStudioHdr )
 	}
 
 	// skip tests if it's not a movement animation
-	if ( m_nMovementSequence < 0 || !( GetBasePlayer()->GetFlags() & FL_ONGROUND ) || pStudioHdr->pSeqdesc( m_nMovementSequence ).groupsize[0] == 1 )
+	if ( m_nMovementSequence == INVALID_SEQUENCE || !( GetBasePlayer()->GetFlags() & FL_ONGROUND ) || pStudioHdr->pSeqdesc( m_nMovementSequence ).groupsize[0] == 1 )
 	{
 		return;
 	}
@@ -1923,19 +1918,11 @@ void CPlayerAnimState::DebugShowAnimStateForPlayer()
 	// Write out the layers and their data.
 	for ( int iAnim = 0; iAnim < GetBasePlayer()->GetNumAnimOverlays(); ++iAnim )
 	{
-#ifdef CLIENT_DLL
-		const C_AnimationLayer *pLayer = GetBasePlayer()->GetAnimOverlay( iAnim );
-		if ( pLayer && ( pLayer->m_nOrder != C_BaseAnimatingOverlay::MAX_OVERLAYS ) )
+		const CSharedAnimationLayer *pLayer = GetBasePlayer()->GetAnimOverlay( (animlayerindex_t)iAnim );
+		if ( pLayer && ( pLayer->m_nOrder != CSharedBaseAnimatingOverlay::MAX_OVERLAYS ) )
 		{
 			Anim_StatePrintf( iLine++, "Layer %s: Weight: %.2f, Cycle: %.2f", GetSequenceName( GetBasePlayer()->GetModelPtr(), pLayer->m_nSequence ), (float)pLayer->m_flWeight, (float)pLayer->m_flCycle );
 		}
-#else
-		const CAnimationLayer *pLayer = GetBasePlayer()->GetAnimOverlay( iAnim );
-		if ( pLayer && ( pLayer->m_nOrder != CBaseAnimatingOverlay::MAX_OVERLAYS ) )
-		{
-			Anim_StatePrintf( iLine++, "Layer %s: Weight: %.2f, Cycle: %.2f", GetSequenceName( GetBasePlayer()->GetModelPtr(), pLayer->m_nSequence ), (float)pLayer->m_flWeight, (float)pLayer->m_flCycle );
-		}
-#endif
 	}
 
 	// Write out the speed data.

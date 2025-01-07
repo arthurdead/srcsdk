@@ -99,6 +99,7 @@ class CGlobalEvent;
 class CCollisionProperty;
 class DensityWeightsMap;
 enum density_type_t : unsigned char;
+enum GenericSpawnFlags_t : uint64;
 
 typedef CUtlVector< CBaseEntity* > EntityList_t;
 
@@ -562,20 +563,6 @@ private:
 
 
 public:
-	#define DECLARE_SPAWNFLAGS( type ) \
-		type GetSpawnFlags( void ) const \
-		{ return static_cast<type>(m_spawnflags.Get());  } \
-		void AddSpawnFlags( type nFlags ) \
-		{ m_spawnflags |= static_cast<uint64>(nFlags); } \
-		void SetSpawnFlags( type nFlags ) \
-		{ m_spawnflags = static_cast<uint64>(nFlags); } \
-		void RemoveSpawnFlags( type nFlags ) \
-		{ m_spawnflags &= ~static_cast<uint64>(nFlags); } \
-		void ClearSpawnFlags( void ) \
-		{ m_spawnflags = 0; } \
-		bool HasSpawnFlags( type nFlags ) const \
-		{ return (m_spawnflags & static_cast<uint64>(nFlags)) != 0; }
-
 	Effects_t			GetEffects( void ) const;
 	void		AddEffects( Effects_t nEffects );
 	void		RemoveEffects( Effects_t nEffects );
@@ -1716,7 +1703,7 @@ protected:
 
 protected:
 	// FIXME: Make this private! Still too many references to do so...
-	CNetworkVarForDerived( uint64, m_spawnflags, protected );
+	CNetworkVarForDerived( GenericSpawnFlags_t, m_spawnflags, protected );
 
 private:
 	EntityFlags_t		m_iEFlags;	// entity flags EFL_*

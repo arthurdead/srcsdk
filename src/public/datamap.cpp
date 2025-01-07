@@ -144,6 +144,29 @@ int GetFieldSize( fieldtype_t type )
 pred_datamap_t *g_pPredDatamapsHead = NULL;
 map_datamap_t *g_pMapDatamapsHead = NULL;
 
+datamap_t::datamap_t()
+	: datamap_t(NULL)
+{
+}
+
+datamap_t::datamap_t(const char *name)
+{
+	dataDesc = NULL;
+	dataNumFields = 0;
+
+	dataClassName = name;
+	baseMap = NULL;
+
+	packed_offsets_computed = false;
+	packed_size = 0;
+
+#ifdef _DEBUG
+	bValidityChecked = false;
+#endif
+
+	allocated_descs = false;
+}
+
 map_datamap_t::map_datamap_t(const char *name)
 	: map_datamap_t(name, NULL, -1, NULL)
 {

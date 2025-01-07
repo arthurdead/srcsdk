@@ -222,7 +222,7 @@ const char *variant_t::String( void ) const
 	static char strbuffer[512];
 	switch(baseFieldType()) {
 	case FIELD_VOID:
-		V_snprintf(strbuffer, sizeof(strbuffer), "");
+		strbuffer[0] = '\0';
 		break;
 	case FIELD_FLOAT:
 		V_snprintf(strbuffer, sizeof(strbuffer), "%f", flVal);
@@ -307,7 +307,7 @@ const char *variant_t::String( void ) const
 			}
 			V_snprintf(strbuffer, sizeof(strbuffer), "%s", STRING(name));
 		} else {
-			V_snprintf(strbuffer, sizeof(strbuffer), "");
+			strbuffer[0] = '\0';
 		}
 	} break;
 	case FIELD_EHANDLE: {
@@ -319,7 +319,7 @@ const char *variant_t::String( void ) const
 			}
 			V_snprintf(strbuffer, sizeof(strbuffer), "%s", STRING(name));
 		} else {
-			V_snprintf(strbuffer, sizeof(strbuffer), "");
+			strbuffer[0] = '\0';
 		}
 	} break;
 	case FIELD_EDICTPTR: {

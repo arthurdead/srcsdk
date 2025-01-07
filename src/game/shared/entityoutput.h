@@ -70,8 +70,6 @@ public:
 	fieldtype_t ValueBaseFieldType() { return m_Value.baseFieldType(); }
 	fieldtype_t ValueRawFieldType() { return m_Value.rawFieldType(); }
 
-	void FireOutput( const variant_t &Value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, float fDelay = 0 );
-
 	/// Delete every single action in the action list. 
 	void DeleteAllElements( void ) ;
 
@@ -82,6 +80,10 @@ public:
 	CEventAction *GetFirstAction() { return m_ActionList; }
 
 	const CEventAction *GetActionForTarget( string_t iSearchTarget ) const;
+
+protected:
+	void FireOutput( const variant_t &Value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, float fDelay = 0 );
+
 protected:
 	variant_t m_Value;
 	CEventAction *m_ActionList;
@@ -115,7 +117,7 @@ public:
 	void Set( const Vector &value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
 	{
 		m_Value.SetVector3D( value );
-		FireOutput( m_Value, pActivator, pCaller );
+		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
 	}
 
 	Vector Get() const
@@ -136,7 +138,7 @@ public:
 	void Set( const QAngle &value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
 	{
 		m_Value.SetAngle3D( value );
-		FireOutput( m_Value, pActivator, pCaller );
+		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
 	}
 
 	QAngle Get() const
@@ -158,7 +160,7 @@ public:
 	void Set( const Vector &value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
 	{
 		m_Value.SetPositionVector3D( value );
-		FireOutput( m_Value, pActivator, pCaller );
+		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
 	}
 
 	Vector Get() const
@@ -179,7 +181,7 @@ public:
 	void Set( float value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
 	{
 		m_Value.SetFloat( value );
-		FireOutput( m_Value, pActivator, pCaller );
+		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
 	}
 
 	float Get() const
@@ -200,7 +202,7 @@ public:
 	void Set( int value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
 	{
 		m_Value.SetInt( value );
-		FireOutput( m_Value, pActivator, pCaller );
+		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
 	}
 
 	int Get() const
@@ -226,13 +228,13 @@ public:
 	void Set( const variant_t &value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
 	{
 		m_Value = value;
-		FireOutput( m_Value, pActivator, pCaller );
+		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
 	}
 
 	void Set( variant_t &&value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
 	{
 		m_Value = Move(value);
-		FireOutput( m_Value, pActivator, pCaller );
+		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
 	}
 
 	const variant_t &Get() const
@@ -258,13 +260,13 @@ public:
 	void Set( EHANDLE value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
 	{
 		m_Value.SetEntityH( value );
-		FireOutput( m_Value, pActivator, pCaller );
+		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
 	}
 
 	void Set( CSharedBaseEntity *value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
 	{
 		m_Value.SetEntityH( value );
-		FireOutput( m_Value, pActivator, pCaller );
+		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
 	}
 
 	CSharedBaseEntity *Get() const
@@ -279,6 +281,8 @@ public:
 class COutputEvent : public CBaseEntityOutput
 {
 public:
+	void FireOutput( const variant_t &Value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, float fDelay = 0 ) = delete;
+
 	// void Firing, no parameter
 	void FireOutput( CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, float fDelay = 0 );
 };

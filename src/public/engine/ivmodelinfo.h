@@ -36,6 +36,7 @@ class CPhysCollide;
 enum MDLHandle_t : unsigned short;
 class CUtlBuffer;
 class IClientRenderable;
+enum sequence_t : unsigned short;
 
 //-----------------------------------------------------------------------------
 // Indicates the type of translucency of an unmodulated renderable
@@ -181,7 +182,7 @@ public:
 	virtual unsigned char			ComputeViewScreenFade( const Vector &vecAbsOrigin, float flRadius, float flFadeScale ) const = 0;
 
 	// both client and server
-	virtual int						GetAutoplayList( const studiohdr_t *pStudioHdr, unsigned short **pAutoplayList ) const = 0;
+	virtual int						GetAutoplayList( const studiohdr_t *pStudioHdr, sequence_t **pAutoplayList ) const = 0;
 
 	// Gets a virtual terrain collision model (creates if necessary)
 	// NOTE: This may return NULL if the terrain model cannot be virtualized
