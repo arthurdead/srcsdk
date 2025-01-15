@@ -479,7 +479,7 @@ bool CAI_FollowBehavior::IsFollowTargetInRange( float rangeMultiplier )
 
 //-------------------------------------
 
-bool CAI_FollowBehavior::IsFollowGoalInRange( float tolerance, float zTolerance, int flags )
+bool CAI_FollowBehavior::IsFollowGoalInRange( float tolerance, float zTolerance, AI_FollowFormationFlags_t flags )
 {
 	const Vector &origin = WorldSpaceCenter();
 	const Vector &goal = GetGoalPosition();
@@ -1728,9 +1728,31 @@ bool CAI_FollowBehavior::ShouldAlwaysThink()
 //-----------------------------------------------------------------------------
 
 BEGIN_MAPENTITY( CAI_FollowGoal, MAPENT_POINTCLASS )
-	DEFINE_KEYFIELD_AUTO( m_iFormation, "Formation" ),
 
-	DEFINE_INPUTFUNC( FIELD_VOID, "OutsideTransition",	InputOutsideTransition ),
+	DEFINE_MAP_FIELD( m_iFormation,
+		"formation",
+		"Formation",
+		NULL,
+		UTIL_VarArgs("%i", AIF_SIMPLE), {
+			{UTIL_VarArgs("%i", AIF_SIMPLE), "Close circle"},
+			{UTIL_VarArgs("%i", AIF_WIDE), "Wide circle"},
+			{UTIL_VarArgs("%i", AIF_ANTLION), "Antlion"},
+			{UTIL_VarArgs("%i", AIF_COMMANDER), "Commander"},
+			{UTIL_VarArgs("%i", AIF_TIGHT), "Tight circle"},
+			{UTIL_VarArgs("%i", AIF_MEDIUM), "Medium circle"},
+			{UTIL_VarArgs("%i", AIF_SIDEKICK), "Sidekick"},
+			{UTIL_VarArgs("%i", AIF_HUNTER), "Hunter"},
+			{UTIL_VarArgs("%i", AIF_VORTIGAUNT), "Vortigaunt"},
+			{UTIL_VarArgs("%i", AIF_TOPDOWN_TIGHT), "Tight circle"},
+		}
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputOutsideTransition,
+		FIELD_VOID,
+		"OutsideTransition",
+		"Use this input to teleport the NPC to a hintnode with the Player Squad Transition Point hint type."
+	),
+
 END_MAPENTITY()
 
 //-------------------------------------
@@ -1812,7 +1834,7 @@ struct AI_FollowSlot_t
 struct AI_FollowFormation_t
 {
 	const char *		pszName;
-	unsigned 			flags;
+	AI_FollowFormationFlags_t 			flags;
 	int					nSlots;
 
 	// Range within which can exit formation to seek a follow point

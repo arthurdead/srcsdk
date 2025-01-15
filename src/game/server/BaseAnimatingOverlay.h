@@ -85,8 +85,8 @@ public:
 	Activity	m_nActivity;
 
 	// order of layering on client
-	int		m_nPriority;
-	CNetworkVar( int, m_nOrder );
+	unsigned int		m_nPriority;
+	CNetworkVar( unsigned int, m_nOrder );
 
 	bool	IsActive( void ) const { return ((m_fFlags & ANIM_LAYER_ACTIVE) != ANIM_LAYER_NO_FLAGS); }
 	bool	IsAutokill( void ) const { return ((m_fFlags & ANIM_LAYER_AUTOKILL) != ANIM_LAYER_NO_FLAGS); }

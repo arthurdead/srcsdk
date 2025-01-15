@@ -19,16 +19,58 @@ CGameString g_AssaultPointString( "assault_assaultpoint" );
 CGameString g_RallyPointString( "assault_rallypoint" );
 
 BEGIN_MAPENTITY( CRallyPoint, MAPENT_POINTCLASS )
-	DEFINE_KEYFIELD_AUTO( m_AssaultPointName, "assaultpoint" ),
-	DEFINE_KEYFIELD_AUTO( m_RallySequenceName, "rallysequence" ),
-	DEFINE_KEYFIELD_AUTO( m_flAssaultDelay, "assaultdelay" ),
-	DEFINE_KEYFIELD_AUTO( m_iPriority, "priority" ),
-	DEFINE_KEYFIELD_AUTO( m_iStrictness, "strict" ),
-	DEFINE_KEYFIELD_AUTO( m_bForceCrouch, "forcecrouch" ),
-	DEFINE_KEYFIELD_AUTO( m_bIsUrgent, "urgent" ),
-	DEFINE_KEYFIELD_AUTO( m_bShouldLock, "lockpoint" ),
+	DEFINE_MAP_FIELD( m_AssaultPointName,
+		"assaultpoint",
+		"Assault Point",
+		"Location to move to as assault begins"
+	),
 
-	DEFINE_OUTPUT( m_OnArrival, "OnArrival" ),
+	DEFINE_MAP_FIELD( m_RallySequenceName,
+		"rallysequence",
+		"Rally Sequence",
+		"Override the NPC's wait activity by entering a sequence name."
+	),
+
+	DEFINE_MAP_FIELD( m_flAssaultDelay,
+		"assaultdelay",
+		"Assault Delay",
+		"How long to wait after cue is given before assault begins.",
+		"0"
+	),
+
+	DEFINE_MAP_FIELD( m_iPriority,
+		"priority",
+		"Priority",
+		"Higher priority rally points get selected first.",
+		"1"
+	),
+
+	DEFINE_MAP_FIELD( m_iStrictness,
+		"strict"
+	),
+
+	DEFINE_MAP_FIELD( m_bForceCrouch,
+		"forcecrouch",
+		"Force Crouch",
+		"NPCs using this assault point are forced into crouching while holding it.",
+		"0"
+	),
+
+	DEFINE_MAP_FIELD( m_bIsUrgent,
+		"urgent",
+		"Urgent",
+		"If true, NPCs will consider movement to this rally point as Urgent Navigation. NPCs will ignore prop_physics obstructions, and eventually teleport to reach the point.",
+		"0"
+	),
+
+	DEFINE_MAP_FIELD( m_bShouldLock,
+		"lockpoint"
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnArrival,
+		"OnArrival",
+		"Fires when the NPC reaches this rally point"
+	),
 END_MAPENTITY();
 
 //---------------------------------------------------------
@@ -647,8 +689,8 @@ void CAI_AssaultBehavior::StartTask( const Task_t *pTask )
 			else if( m_hRallyPoint->m_RallySequenceName != NULL_STRING )
 			{
 				// The cue hasn't been given yet, so set to the rally sequence.
-				int sequence = GetOuter()->LookupSequence( STRING( m_hRallyPoint->m_RallySequenceName ) );
-				if( sequence != -1 )
+				sequence_t sequence = GetOuter()->LookupSequence( STRING( m_hRallyPoint->m_RallySequenceName ) );
+				if( sequence != INVALID_SEQUENCE )
 				{
 					GetOuter()->ResetSequence( sequence );
 					GetOuter()->SetIdealActivity( ACT_DO_NOT_DISTURB );
@@ -787,7 +829,7 @@ CRallyPoint *CAI_AssaultBehavior::FindBestRallyPointInRadius( const Vector &vecC
 
 	const int RALLY_SEARCH_ENTS	= 30;
 	CBaseEntity *pEntities[RALLY_SEARCH_ENTS];
-	int iNumEntities = UTIL_EntitiesInSphere( pEntities, RALLY_SEARCH_ENTS, vecCenter, flRadius, 0 );
+	int iNumEntities = UTIL_EntitiesInSphere( pEntities, RALLY_SEARCH_ENTS, vecCenter, flRadius, CONTENTS_EMPTY );
 
 	CRallyPoint *pBest = NULL;
 	int iBestPriority = -1;
@@ -1298,7 +1340,7 @@ int CAI_AssaultBehavior::TranslateSchedule( int scheduleType )
 		break;
 
 	case SCHED_HOLD_RALLY_POINT:
-		if( HasCondition(COND_NO_PRIMARY_AMMO) | HasCondition(COND_LOW_PRIMARY_AMMO) )
+		if( HasCondition(COND_NO_PRIMARY_AMMO) || HasCondition(COND_LOW_PRIMARY_AMMO) )
 		{
 			return SCHED_RELOAD;
 		}

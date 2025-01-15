@@ -26,12 +26,12 @@ class C_AnimationLayer;
 typedef C_AnimationLayer CSharedAnimationLayer;
 #endif
 
-typedef enum
+enum LegAnimType_t : unsigned char
 {
 	LEGANIM_9WAY,		// Legs use a 9-way blend, with "move_x" and "move_y" pose parameters.
 	LEGANIM_8WAY,		// Legs use an 8-way blend with "move_yaw" pose param.
 	LEGANIM_GOLDSRC	// Legs always point in the direction he's running and the torso rotates.
-} LegAnimType_t;
+};
 
 #if defined( CLIENT_DLL )
 class C_BasePlayer;
@@ -91,9 +91,11 @@ enum PlayerAnimEvent_t : int
 };
 
 // Gesture Slots.
-enum
+enum gestureslotindex_t : unsigned char
 {
-	GESTURE_SLOT_ATTACK_AND_RELOAD,
+	GESTURE_SLOT_INVALID = (unsigned char)-1,
+
+	GESTURE_SLOT_ATTACK_AND_RELOAD = 0,
 	GESTURE_SLOT_GRENADE,
 	GESTURE_SLOT_JUMP,
 	GESTURE_SLOT_SWIM,
@@ -102,13 +104,14 @@ enum
 	GESTURE_SLOT_CUSTOM,
 
 	GESTURE_SLOT_COUNT,
+	GESTURE_SLOT_FIRST = GESTURE_SLOT_ATTACK_AND_RELOAD,
 };
 
-#define GESTURE_SLOT_INVALID	-1
+UNORDEREDENUM_OPERATORS( gestureslotindex_t, unsigned char )
 
 struct GestureSlot_t
 {
-	int					m_iGestureSlot;
+	gestureslotindex_t					m_iGestureSlot;
 	Activity			m_iActivity;
 	bool				m_bAutoKill;
 	bool				m_bActive;
@@ -196,7 +199,7 @@ public:
 
 	// Creation/Destruction
 	CPlayerAnimState() {}
-	CPlayerAnimState( CSharedBasePlayer *pPlayer, PlayerMovementData_t &movementData );
+	CPlayerAnimState( CSharedBasePlayer *pPlayer, const PlayerMovementData_t &movementData );
 	virtual ~CPlayerAnimState();
 
 	// This is called by both the client and the server in the same way to trigger events for
@@ -225,11 +228,11 @@ public:
 
 	// Gestures.
 	void	ResetGestureSlots( void );
-	void	ResetGestureSlot( int iGestureSlot );
-	void AddVCDSequenceToGestureSlot( int iGestureSlot, int iGestureSequence, float flCycle = 0.0f, bool bAutoKill = true );
-	CSharedAnimationLayer* GetGestureSlotLayer( int iGestureSlot );
-	bool	IsGestureSlotActive( int iGestureSlot );
-	bool	VerifyAnimLayerInSlot( int iGestureSlot );
+	void	ResetGestureSlot( gestureslotindex_t iGestureSlot );
+	void AddVCDSequenceToGestureSlot( gestureslotindex_t iGestureSlot, sequence_t iGestureSequence, float flCycle = 0.0f, bool bAutoKill = true );
+	CSharedAnimationLayer* GetGestureSlotLayer( gestureslotindex_t iGestureSlot );
+	bool	IsGestureSlotActive( gestureslotindex_t iGestureSlot );
+	bool	VerifyAnimLayerInSlot( gestureslotindex_t iGestureSlot );
 
 	// Feet.
 	// If you are forcing aim yaw, your code is almost definitely broken if you don't include a delay between 
@@ -240,7 +243,7 @@ public:
 
 protected:
 
-	virtual void Init( CSharedBasePlayer *pPlayer, PlayerMovementData_t &movementData ); 
+	virtual void Init( CSharedBasePlayer *pPlayer, const PlayerMovementData_t &movementData ); 
 	CSharedBasePlayer *GetBasePlayer( void )				{ return m_pPlayer; }
 
 	// Allow inheriting classes to override SelectWeightedSequence
@@ -263,9 +266,9 @@ protected:
 	CUtlVector<GestureSlot_t>		m_aGestureSlots;
 	bool	InitGestureSlots( void );
 	void	ShutdownGestureSlots( void );
-	bool	IsGestureSlotPlaying( int iGestureSlot, Activity iGestureActivity );
-	void	AddToGestureSlot( int iGestureSlot, Activity iGestureActivity, bool bAutoKill );
-	virtual void RestartGesture( int iGestureSlot, Activity iGestureActivity, bool bAutoKill = true );
+	bool	IsGestureSlotPlaying( gestureslotindex_t iGestureSlot, Activity iGestureActivity );
+	void	AddToGestureSlot( gestureslotindex_t iGestureSlot, Activity iGestureActivity, bool bAutoKill );
+	virtual void RestartGesture( gestureslotindex_t iGestureSlot, Activity iGestureActivity, bool bAutoKill = true );
 	void	ComputeGestureSequence( CStudioHdr *pStudioHdr );
 	void	UpdateGestureLayer( CStudioHdr *pStudioHdr, GestureSlot_t *pGesture );
 	void	DebugGestureInfo( void );

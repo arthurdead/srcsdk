@@ -23,8 +23,10 @@
 // ----------------------------------------------------------------------------
 // Flags used in the flags field in AI_Waypoint_T
 // ----------------------------------------------------------------------------
-enum WaypointFlags_t 
+enum WaypointFlags_t : unsigned char
 {
+	bits_WP_NO_FLAGS = 0,
+
 	// The type of waypoint
 	bits_WP_TO_DETOUR =			0x01, // move to detour point.
 	bits_WP_TO_PATHCORNER =		0x02, // move to a path corner
@@ -37,6 +39,8 @@ enum WaypointFlags_t
 	bits_WP_PRECISE_MOVEMENT =	0x40, // Precise movement is necessary near this waypoint
 };
 
+FLAGENUM_OPERATORS( WaypointFlags_t, unsigned char )
+
 // ----------------------------------------------------------------------------
 // Purpose: Waypoints that make up an NPC's route. 
 // ----------------------------------------------------------------------------
@@ -46,8 +50,8 @@ struct AI_Waypoint_t
 
 public:
 	AI_Waypoint_t();
-	AI_Waypoint_t( const Vector &vecPosition, float flYaw, Navigation_t navType, int fWaypointFlags, dtPolyRef initPolyRef, NavMeshType_t initMeshType );
-	AI_Waypoint_t( const Vector &vecPosition, float flYaw, Navigation_t navType, int fWaypointFlags );
+	AI_Waypoint_t( const Vector &vecPosition, float flYaw, Navigation_t navType, WaypointFlags_t fWaypointFlags, dtPolyRef initPolyRef, NavMeshType_t initMeshType );
+	AI_Waypoint_t( const Vector &vecPosition, float flYaw, Navigation_t navType, WaypointFlags_t fWaypointFlags );
 	AI_Waypoint_t( const AI_Waypoint_t &from )
 	{
 		memcpy( (void *)this, (void *)&from, sizeof(*this) );
@@ -91,12 +95,12 @@ public:
 
 	//---------------------------------
 	
-	int					Flags() const;
+	WaypointFlags_t					Flags() const;
 	Navigation_t		NavType() const;
 	void				SetNavType( Navigation_t type )		{ m_iWPType = type; }
 
 	// Flag modification method
-	void				ModifyFlags( int fFlags, bool bEnable );
+	void				ModifyFlags( WaypointFlags_t fFlags, bool bEnable );
 
 	bool				IsReducible() { return (pNext && m_iWPType == pNext->m_iWPType && !(m_fWaypointFlags & (bits_WP_TO_GOAL | bits_WP_TO_PATHCORNER | bits_WP_DONT_SIMPLIFY)) ); }
 
@@ -147,7 +151,7 @@ public:
 	EHANDLE			m_hData;
 
 private:
-	int				m_fWaypointFlags;	// See WaypointFlags_t
+	WaypointFlags_t				m_fWaypointFlags;	// See WaypointFlags_t
 	Navigation_t	m_iWPType;			// The type of waypoint
 
 	AI_Waypoint_t *pNext;
@@ -160,7 +164,7 @@ private:
 // ----------------------------------------------------------------------------
 // Inline methods associated with AI_Waypoint_t
 // ----------------------------------------------------------------------------
-inline int AI_Waypoint_t::Flags() const
+inline WaypointFlags_t AI_Waypoint_t::Flags() const
 {
 	return m_fWaypointFlags;
 }
@@ -170,7 +174,7 @@ inline Navigation_t AI_Waypoint_t::NavType() const
 	return m_iWPType;
 }
 
-inline void AI_Waypoint_t::ModifyFlags( int fFlags, bool bEnable )
+inline void AI_Waypoint_t::ModifyFlags( WaypointFlags_t fFlags, bool bEnable )
 {
 	if (bEnable)
 		m_fWaypointFlags |= fFlags;
@@ -233,7 +237,7 @@ public:
 	void			Set(AI_Waypoint_t* route);
 
 	void 			PrependWaypoints( AI_Waypoint_t *pWaypoints );
-	void 			PrependWaypoint( const Vector &newPoint, Navigation_t navType, unsigned waypointFlags, float flYaw = 0 );
+	void 			PrependWaypoint( const Vector &newPoint, Navigation_t navType, WaypointFlags_t waypointFlags, float flYaw = 0 );
 	
 	bool 			IsEmpty() const				{ return ( m_pFirstWaypoint == NULL ); }
 	

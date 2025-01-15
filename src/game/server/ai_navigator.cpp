@@ -152,8 +152,7 @@ CAI_Navigator::~CAI_Navigator()
 
 bool CAI_Navigator::ActivityIsLocomotive( Activity activity ) 
 {
-	// FIXME: should be calling HasMovement() for a sequence
-	return ( activity > ACT_IDLE ); 
+	return GetOuter()->HasMovement( GetOuter()->SelectWeightedSequence( activity ) ); 
 }
 
 //-----------------------------------------------------------------------------
@@ -922,9 +921,9 @@ float CAI_Navigator::GetArrivalSpeed( void )
 		return flSpeed;
 	}
 
-	int sequence = GetArrivalSequence( ACT_INVALID );
+	sequence_t sequence = GetArrivalSequence( INVALID_SEQUENCE );
 
-	if (sequence != ACT_INVALID)
+	if (sequence != INVALID_SEQUENCE)
 	{
 		flSpeed = GetOuter()->GetEntryVelocity( sequence );
 		SetArrivalSpeed( flSpeed );

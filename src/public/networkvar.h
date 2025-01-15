@@ -79,13 +79,13 @@ public:
 	}
 };
 
-extern int InternalCheckDeclareClass( const char *pClassName, const char *pClassNameMatch, void *pTestPtr, void *pBasePtr );
+extern void InternalCheckDeclareClass( const char *pClassName, const char *pClassNameMatch, void *pTestPtr, void *pBasePtr );
 
 
 template <typename T> 
-inline int CheckDeclareClass_Access( T *, const char *pShouldBe )
+inline void CheckDeclareClass_Access( const char *pShouldBe )
 {
-	return T::CheckDeclareClass( pShouldBe );
+	T::CheckDeclareClass( pShouldBe );
 }
 
 #ifndef _STATIC_LINKED
@@ -96,60 +96,65 @@ inline int CheckDeclareClass_Access( T *, const char *pShouldBe )
 
 #ifdef  VALIDATE_DECLARE_CLASS
 	#define CHECK_DECLARE_CLASS_IMPL( DLLClassName, sendTable ) \
-		template <> int CheckDeclareClass_Access<sendTable::ignored>(sendTable::ignored *, const char *pIgnored) \
+		template <> void CheckDeclareClass_Access<sendTable::ignored>(const char *pIgnored) \
 		{ \
-			return DLLClassName::CheckDeclareClass( V_STRINGIFY( DLLClassName ) ); \
+			DLLClassName::CheckDeclareClass( V_STRINGIFY( DLLClassName ) ); \
 		} \
 		namespace sendTable \
 		{ \
-			int verifyDeclareClass = ::CheckDeclareClass_Access( (sendTable::ignored*)NULL, NULL ); \
+			INIT_PRIORITY(65535) class CheckDeclareClassInit_t { \
+			public: \
+				CheckDeclareClassInit_t() { \
+					::CheckDeclareClass_Access<sendTable::ignored>( NULL ); \
+				} \
+			} g_CheckDeclareClassInit; \
 		}
 
-	#define CHECK_DECLARE_CLASS_DECL( className, baseClassName ) \
-		template <typename X> friend int ::CheckDeclareClass_Access(X *, const char *pShouldBe); \
-		static int CheckDeclareClass( const char *pShouldBe ) \
+	#define CHECK_DECLARE_CLASS_DECL( className, ... ) \
+		template <typename X> friend void ::CheckDeclareClass_Access(const char *pShouldBe); \
+		static void CheckDeclareClass( const char *pShouldBe ) \
 		{ \
-			InternalCheckDeclareClass( pShouldBe, V_STRINGIFY( className ), (ThisClass*)0xFFFFF, (BaseClass*)(ThisClass*)0xFFFFF ); \
-			return CheckDeclareClass_Access( (BaseClass *)NULL, baseClassName::s_pClassnameStr ); \
+			InternalCheckDeclareClass( pShouldBe, V_STRINGIFY( className ), reinterpret_cast<ThisClass*>(0xFFFFF), static_cast<BaseClass*>(reinterpret_cast<ThisClass*>(0xFFFFF)) ); \
+			CheckDeclareClass_Access<BaseClass>( __VA_ARGS__::s_pClassnameStr ); \
 		}
 
-	#define CHECK_DECLARE_CLASS_GAMEROOT_DECL( className, baseClassName ) \
-		template <typename X> friend int ::CheckDeclareClass_Access(X *, const char *pShouldBe); \
-		static int CheckDeclareClass( const char *pShouldBe ) \
+	#define CHECK_DECLARE_CLASS_GAMEROOT_DECL( className, ... ) \
+		template <typename X> friend void ::CheckDeclareClass_Access(const char *pShouldBe); \
+		static void CheckDeclareClass( const char *pShouldBe ) \
 		{ \
-			return InternalCheckDeclareClass( pShouldBe, V_STRINGIFY( className ), (ThisClass*)0xFFFFF, (BaseClass*)(ThisClass*)0xFFFFF ); \
+			InternalCheckDeclareClass( pShouldBe, V_STRINGIFY( className ), reinterpret_cast<ThisClass*>(0xFFFFF), static_cast<BaseClass*>(reinterpret_cast<ThisClass*>(0xFFFFF)) ); \
 		}
 
 	#define CHECK_DECLARE_CLASS_NOBASE_DECL( className ) \
-		template <typename X> friend int ::CheckDeclareClass_Access(X *, const char *pShouldBe); \
-		static int CheckDeclareClass( const char *pShouldBe ) \
+		template <typename X> friend void ::CheckDeclareClass_Access(const char *pShouldBe); \
+		static void CheckDeclareClass( const char *pShouldBe ) \
 		{ \
-			return InternalCheckDeclareClass( pShouldBe, V_STRINGIFY( className ), NULL, NULL ); \
+			InternalCheckDeclareClass( pShouldBe, V_STRINGIFY( className ), NULL, NULL ); \
 		} 
 
 #else
 	#define CHECK_DECLARE_CLASS_IMPL( DLLClassName, sendTable )
 
-	#define CHECK_DECLARE_CLASS_DECL( className, baseClassName )
+	#define CHECK_DECLARE_CLASS_DECL( className, ... )
 
-	#define CHECK_DECLARE_CLASS_GAMEROOT_DECL( className, baseClassName )
+	#define CHECK_DECLARE_CLASS_GAMEROOT_DECL( className, ... )
 
 	#define CHECK_DECLARE_CLASS_NOBASE_DECL( className )
 #endif
 
-#define DECLARE_CLASS( className, baseClassName ) \
-	typedef baseClassName BaseClass; \
+#define DECLARE_CLASS( className, ... ) \
+	typedef __VA_ARGS__ BaseClass; \
 	typedef className ThisClass; \
 	static inline const char *s_pClassnameStr = V_STRINGIFY( className ); \
-	CHECK_DECLARE_CLASS_DECL( className, baseClassName )
+	CHECK_DECLARE_CLASS_DECL( className, __VA_ARGS__ )
 
 // Use this macro when you have a base class, but it's part of a library that doesn't use network vars
 // or any of the things that use ThisClass or BaseClass.
-#define DECLARE_CLASS_GAMEROOT( className, baseClassName ) \
-	typedef baseClassName BaseClass; \
+#define DECLARE_CLASS_GAMEROOT( className, ... ) \
+	typedef __VA_ARGS__ BaseClass; \
 	typedef className ThisClass; \
 	static inline const char *s_pClassnameStr = V_STRINGIFY( className ); \
-	CHECK_DECLARE_CLASS_GAMEROOT_DECL( className, baseClassName )
+	CHECK_DECLARE_CLASS_GAMEROOT_DECL( className, __VA_ARGS__ )
 
 #define DECLARE_CLASS_NOBASE( className ) \
 	typedef className ThisClass; \
@@ -157,8 +162,8 @@ inline int CheckDeclareClass_Access( T *, const char *pShouldBe )
 	CHECK_DECLARE_CLASS_NOBASE_DECL( className )
 
 // Deprecated macro formerly used to work around VC++98 bug
-#define DECLARE_CLASS_NOFRIEND( className, baseClassName ) \
-	DECLARE_CLASS( className, baseClassName )
+#define DECLARE_CLASS_NOFRIEND( className, ... ) \
+	DECLARE_CLASS( className, __VA_ARGS__ )
 
 
 // All classes that contain CNetworkVars need a NetworkStateChanged() function. If the class is not an entity,
@@ -202,19 +207,19 @@ static inline void DispatchNetworkStateChanged( T *pObj, unsigned short offset )
 
 #ifndef CLIENT_DLL
 #define DECLARE_EMBEDDED_NETWORKVAR() \
-	template <typename T> friend int ServerClassInit(T *);	\
-	template <typename T> friend int ClientClassInit(T *); \
+	template <typename T> friend void ServerClassInit();	\
+	template <typename T> friend void ClientClassInit(); \
 	virtual void NetworkStateChanged() override = 0; \
 	virtual void NetworkStateChanged( unsigned short offset ) override = 0;
 #else
 #define DECLARE_EMBEDDED_NETWORKVAR() \
-	template <typename T> friend int ServerClassInit(T *);	\
-	template <typename T> friend int ClientClassInit(T *);
+	template <typename T> friend void ServerClassInit();	\
+	template <typename T> friend void ClientClassInit();
 #endif
 
 #define DECLARE_EMBEDDED_NETWORKVAR_NOCHECK() \
-	template <typename T> friend int ServerClassInit(T *);	\
-	template <typename T> friend int ClientClassInit(T *);
+	template <typename T> friend void ServerClassInit();	\
+	template <typename T> friend void ClientClassInit();
 
 template<typename T>
 FORCEINLINE void NetworkVarConstruct( T &x ) { Construct(&x); }
@@ -1661,7 +1666,7 @@ template <typename type, int count, class Changer>
 class CNetworkArrayBase
 {
 public:
-	template <typename T> friend int ServerClassInit(T *);
+	template <typename T> friend void ServerClassInit();
 
 	inline CNetworkArrayBase()
 	{
@@ -1978,7 +1983,7 @@ struct NetworkVarType<CNetworkVarEmbeddedPtrBase<T, C>>
 	class NetworkVar_##name : public NetworkVar_##name##_OuterClass::NetworkVar_##name##_BaseClass \
 	{ \
 	public: \
-		template <typename T> friend int ServerClassInit(T *); \
+		template <typename T> friend void ServerClassInit(); \
 		using base< __VA_OPT__(__VA_ARGS__,) NetworkVar_##name##_OuterClass::NetworkVar_##name >::base; \
 		using NetworkVar_##name##_BaseClass::operator=; \
 		NetworkVar_##name() = default;

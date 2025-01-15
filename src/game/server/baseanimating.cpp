@@ -2629,7 +2629,7 @@ float CBaseAnimating::GetMovementFrame( float flDist )
 // Purpose: does a specific sequence have movement?
 // Output :
 //-----------------------------------------------------------------------------
-bool CBaseAnimating::HasMovement( int iSequence )
+bool CBaseAnimating::HasMovement( sequence_t iSequence )
 {
 	CStudioHdr *pstudiohdr = GetModelPtr( );
 	if (! pstudiohdr)

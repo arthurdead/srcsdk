@@ -1400,15 +1400,15 @@ public:
 	void					SetCellBits( int cellbits = CELL_BASEENTITY_ORIGIN_CELL_BITS );
 	void					UpdateCell();
 	
-	static void SendProxy_CellX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-	static void SendProxy_CellY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-	static void SendProxy_CellZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-	static void SendProxy_CellOrigin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-	static void SendProxy_CellOriginXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-	static void SendProxy_CellOriginZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-	static void SendProxy_AnglesX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-	static void SendProxy_AnglesY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-	static void SendProxy_AnglesZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+	static void SendProxy_CellX( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+	static void SendProxy_CellY( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+	static void SendProxy_CellZ( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+	static void SendProxy_CellOrigin( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+	static void SendProxy_CellOriginXY( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+	static void SendProxy_CellOriginZ( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+	static void SendProxy_AnglesX( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+	static void SendProxy_AnglesY( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+	static void SendProxy_AnglesZ( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 		
 	
 	// Used by the PAS filters to ask the entity where in world space the sounds it emits come from.
@@ -2891,9 +2891,9 @@ typedef CServerOnlyLogicalEntity CLocalOnlyLogicalEntity;
 
 // Network proxy functions
 
-void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_OriginXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-void SendProxy_OriginZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Origin( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_OriginXY( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_OriginZ( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 
 class CAbsQueryScopeGuard
 {

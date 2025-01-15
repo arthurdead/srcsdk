@@ -492,7 +492,7 @@ void CAI_Path::Clear( void )
 	m_goalPos			= vec3_origin;			// Our ultimate goal position
 	m_bGoalPosSet		= false;				// Was goal position set
 	m_bGoalTypeSet		= false;				// Was goal position set
-	m_goalFlags			= false;
+	m_goalFlags			= 0;
 	m_vecTargetOffset	= vec3_origin;
 	m_routeStartTime	= FLT_MAX;
 
@@ -500,11 +500,11 @@ void CAI_Path::Clear( void )
 	// FIXME: split m_goalTolerance into m_buildTolerance and m_moveTolerance, let them be seperatly controllable.
 
 	m_activity			= ACT_INVALID;
-	m_sequence			= ACT_INVALID;
+	m_sequence			= INVALID_SEQUENCE;
 	m_target			= NULL;
 
 	m_arrivalActivity = ACT_INVALID;
-	m_arrivalSequence = ACT_INVALID;
+	m_arrivalSequence = INVALID_SEQUENCE;
 
 	m_goalDirectionTarget = NULL;
 	m_goalDirection = vec3_origin;
@@ -532,11 +532,11 @@ Navigation_t CAI_Path::CurWaypointNavType()	const
 	}
 }
 
-int CAI_Path::CurWaypointFlags() const
+WaypointFlags_t CAI_Path::CurWaypointFlags() const
 {
 	if (!GetCurWaypoint())
 	{
-		return 0;
+		return bits_WP_NO_FLAGS;
 	}
 	else
 	{

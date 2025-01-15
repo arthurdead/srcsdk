@@ -18,7 +18,7 @@ const studiohdr_t *studiohdr_t::FindModel( void **cache, char const *modelname )
 	return modelinfo->FindModel( this, cache, modelname );
 }
 
-virtualmodel_t *studiohdr_t::GetVirtualModel( void ) const
+const virtualmodel_t *studiohdr_t::GetVirtualModel( void ) const
 {
 	if ( numincludemodels == 0 )
 		return NULL;
@@ -31,7 +31,7 @@ const studiohdr_t *virtualgroup_t::GetStudioHdr( ) const
 }
 
 
-byte *studiohdr_t::GetAnimBlock( int iBlock ) const
+const byte *studiohdr_t::GetAnimBlock( int iBlock ) const
 {
 	return modelinfo->GetAnimBlock( this, iBlock );
 }

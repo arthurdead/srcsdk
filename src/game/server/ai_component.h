@@ -159,6 +159,8 @@ protected:
 	}
 
 public:
+	DECLARE_CLASS_NOFRIEND( CAI_ComponentWithOuter, BASE_COMPONENT );
+
 	// Hides base version
 	void SetOuter( NPC_CLASS *pOuter )		{ BASE_COMPONENT::SetOuter((CAI_BaseNPC *)pOuter); }
 	NPC_CLASS * 		GetOuter() 			{ return (NPC_CLASS *)(BASE_COMPONENT::GetOuter()); }

@@ -56,8 +56,8 @@
 
 #define REFERENCE_DATATABLE(tableName)	REFERENCE_SEND_TABLE(tableName)
 
-#define DataTableProp	SendProp
-#define DataTable	SendTable
+#define DataTableProp	SendPropInfo
+#define DataTable	SendTableInfo
 
 #endif
 

@@ -386,7 +386,7 @@ enum
 struct ScriptedNPCInteraction_Phases_t
 {
 	string_t	iszSequence;
-	int			iActivity;
+	Activity			iActivity;
 };
 
 // Allowable delta from the desired dynamic scripted sequence point

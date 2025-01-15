@@ -29,15 +29,15 @@ class CBaseEntity;
 typedef CHandle<CBaseEntity> EHANDLE;
 #endif
 
-enum
+enum PredCopy_t : unsigned char
 {
 	PC_EVERYTHING = 0,
 	PC_NON_NETWORKED_ONLY,
 	PC_NETWORKED_ONLY,
 };
 
-#define PC_DATA_PACKED			true
-#define PC_DATA_NORMAL			false
+#define PC_DATA_PACKED			TD_OFFSET_PACKED
+#define PC_DATA_NORMAL			TD_OFFSET_NORMAL
 
 typedef void ( *FN_FIELD_COMPARE )( const char *classname, const char *fieldname, const char *fieldtype,
 	bool networked, bool noterrorchecked, bool differs, bool withintolerance, const char *value );
@@ -52,7 +52,7 @@ public:
 		WITHINTOLERANCE,
 	};
 
-	CPredictionCopy( int type, void *dest, bool dest_packed, void const *src, bool src_packed,
+	CPredictionCopy( PredCopy_t type, void *dest, bool dest_packed, void const *src, bool src_packed,
 		bool counterrors = false, bool reporterrors = false, bool performcopy = true, 
 		bool describefields = false, FN_FIELD_COMPARE func = NULL );
 
@@ -75,12 +75,10 @@ public:
 
 	void	CopyFloat( difftype_t dt, float *outvalue, const float *invalue, int count );	// Copy a float
 
-	void	CopyString( difftype_t dt, char *outstring, const char *instring );			// Copy a null-terminated string
+	void	CopyCString( difftype_t dt, char *outstring, const char *instring );			// Copy a null-terminated string
 
-	void	CopyVector( difftype_t dt, Vector& outValue, const Vector &inValue );				// Copy a vector
 	void	CopyVector( difftype_t dt, Vector* outValue, const Vector *inValue, int count );	// Copy a vector array
 
-	void	CopyQuaternion( difftype_t dt, Quaternion& outValue, const Quaternion &inValue );				// Copy a quaternion
 	void	CopyQuaternion( difftype_t dt, Quaternion* outValue, const Quaternion *inValue, int count );				// Copy a quaternion array
 
 	void	CopyEHandle( difftype_t dt, EHANDLE *outvalue, EHANDLE const *invalue, int count );
@@ -126,12 +124,10 @@ private:
 
 	difftype_t	CompareData( int size, char *outdata, const char *indata );		// Compare a binary data block
 
-	difftype_t	CompareString( char *outstring, const char *instring );			// Compare a null-terminated string
+	difftype_t	CompareCString( char *outstring, const char *instring );			// Compare a null-terminated string
 
-	difftype_t	CompareVector( Vector& outValue, const Vector &inValue );				// Compare a vector
 	difftype_t	CompareVector( Vector* outValue, const Vector *inValue, int count );	// Compare a vector array
 
-	difftype_t	CompareQuaternion( Quaternion& outValue, const Quaternion &inValue );				// Compare a Quaternion
 	difftype_t	CompareQuaternion( Quaternion* outValue, const Quaternion *inValue, int count );	// Compare a Quaternion array
 
 	difftype_t	CompareEHandle( EHANDLE *outvalue, EHANDLE const *invalue, int count );
@@ -157,13 +153,10 @@ private:
 
 	void	DescribeData( difftype_t dt, int size, char *outdata, const char *indata );		// Compare a binary data block
 
-	void	DescribeString( difftype_t dt, char *outstring, const char *instring );			// Compare a null-terminated string
-
-	void	DescribeVector( difftype_t dt, Vector& outValue, const Vector &inValue );				// Compare a vector
+	void	DescribeCString( difftype_t dt, char *outstring, const char *instring );			// Compare a null-terminated string
 
 	void	DescribeVector( difftype_t dt, Vector* outValue, const Vector *inValue, int count );	// Compare a vector array
 
-	void	DescribeQuaternion( difftype_t dt, Quaternion& outValue, const Quaternion &inValue );				// Compare a Quaternion
 	void	DescribeQuaternion( difftype_t dt, Quaternion* outValue, const Quaternion *inValue, int count );	// Compare a Quaternion array
 
 	void	DescribeEHandle( difftype_t dt, EHANDLE *outvalue, EHANDLE const *invalue, int count );
@@ -189,12 +182,10 @@ private:
 
 	void	WatchData( difftype_t dt, int size, char *outdata, const char *indata );		// Compare a binary data block
 
-	void	WatchString( difftype_t dt, char *outstring, const char *instring );			// Compare a null-terminated string
+	void	WatchCString( difftype_t dt, char *outstring, const char *instring );			// Compare a null-terminated string
 
-	void	WatchVector( difftype_t dt, Vector& outValue, const Vector &inValue );				// Compare a vector
 	void	WatchVector( difftype_t dt, Vector* outValue, const Vector *inValue, int count );	// Compare a vector array
 
-	void	WatchQuaternion( difftype_t dt, Quaternion& outValue, const Quaternion &inValue );				// Compare a Quaternion
 	void	WatchQuaternion( difftype_t dt, Quaternion* outValue, const Quaternion *inValue, int count );	// Compare a Quaternion array
 
 	void	WatchEHandle( difftype_t dt, EHANDLE *outvalue, EHANDLE const *invalue, int count );
@@ -209,11 +200,11 @@ private:
 
 private:
 
-	int				m_nType;
+	PredCopy_t				m_nType;
 	void			*m_pDest;
 	void const		*m_pSrc;
-	int				m_nDestOffsetIndex;
-	int				m_nSrcOffsetIndex;
+	TdOffsetType_t				m_nDestOffsetIndex;
+	TdOffsetType_t				m_nSrcOffsetIndex;
 
 
 	bool			m_bErrorCheck;
@@ -265,12 +256,10 @@ public:
 
 	void	DescribeData( int size, const char *indata );		
 
-	void	DescribeString( const char *instring );			
+	void	DescribeCString( const char *instring );			
 
-	void	DescribeVector( const Vector &inValue );
 	void	DescribeVector( const Vector *inValue, int count );
 
-	void	DescribeQuaternion( const Quaternion &inValue );
 	void	DescribeQuaternion( const Quaternion *inValue, int count );
 
 	void	DescribeEHandle( EHANDLE const *invalue, int count );
@@ -281,7 +270,7 @@ private:
 	void	DescribeFields_R( int chain_count, datamap_t *pMap, typedescription_t *pFields, int fieldCount );
 
 	void const		*m_pSrc;
-	int				m_nSrcOffsetIndex;
+	TdOffsetType_t				m_nSrcOffsetIndex;
 
 	void			Describe( PRINTF_FORMAT_STRING const char *fmt, ... );
 

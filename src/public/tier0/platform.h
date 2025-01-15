@@ -1100,6 +1100,10 @@ inline uint64 Plat_Rdtsc()
 	bool operator>=( Type, Enum ) = delete; \
 	bool operator<( Type, Enum ) = delete; \
 	bool operator<=( Type, Enum ) = delete; \
+	bool operator>( Enum, Enum ) = delete; \
+	bool operator>=( Enum, Enum ) = delete; \
+	bool operator<( Enum, Enum ) = delete; \
+	bool operator<=( Enum, Enum ) = delete; \
 	Enum operator+( Type, Enum ) = delete; \
 	Enum operator-( Type, Enum ) = delete; \
 	Enum operator*( Type, Enum ) = delete; \
@@ -1108,6 +1112,10 @@ inline uint64 Plat_Rdtsc()
 	Enum operator-( Enum, Type ) = delete; \
 	Enum operator*( Enum, Type ) = delete; \
 	Enum operator/( Enum, Type ) = delete; \
+	Enum operator+( Enum, Enum ) = delete; \
+	Enum operator-( Enum, Enum ) = delete; \
+	Enum operator*( Enum, Enum ) = delete; \
+	Enum operator/( Enum, Enum ) = delete; \
 	Enum operator+=( Type &, Enum ) = delete; \
 	Enum operator-=( Type &, Enum ) = delete; \
 	Enum operator*=( Type &, Enum ) = delete; \
@@ -1116,6 +1124,10 @@ inline uint64 Plat_Rdtsc()
 	Enum operator-=( Enum &, Type ) = delete; \
 	Enum operator*=( Enum &, Type ) = delete; \
 	Enum operator/=( Enum &, Type ) = delete; \
+	Enum operator+=( Enum &, Enum ) = delete; \
+	Enum operator-=( Enum &, Enum ) = delete; \
+	Enum operator*=( Enum &, Enum ) = delete; \
+	Enum operator/=( Enum &, Enum ) = delete; \
 	Enum operator-( Enum ) = delete; \
 	Enum operator+( Enum ) = delete; \
 	Enum operator&( Enum, Type ) = delete; \

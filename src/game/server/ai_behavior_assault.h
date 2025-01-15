@@ -41,7 +41,7 @@ enum AssaultCue_t : unsigned char
 	CUE_NONE,
 };
 
-enum : unsigned char
+enum : unsigned short
 {
 	ASSAULT_SENTENCE_HIT_RALLY_POINT = SENTENCE_BASE_BEHAVIOR_INDEX,
 	ASSAULT_SENTENCE_HIT_ASSAULT_POINT,
@@ -75,7 +75,12 @@ class CAI_AssaultGoal : public CAI_GoalEntity
 // Allow diversion from the assault up to this amount of time after last having an enemy
 #define ASSAULT_DIVERSION_TIME		4
 
-#define SF_ASSAULTPOINT_CLEARONARRIVAL	0x00000001
+enum SFAssaultPoint_t : unsigned char
+{
+	SF_ASSAULTPOINT_CLEARONARRIVAL = 0x00000001
+};
+
+FLAGENUM_OPERATORS( SFAssaultPoint_t, unsigned char )
 
 //=============================================================================
 //=============================================================================
@@ -89,6 +94,8 @@ public:
 		m_hLockedBy.Set(NULL);
 		m_sExclusivity = RALLY_EXCLUSIVE_NOT_EVALUATED;
 	}
+
+	DECLARE_SPAWNFLAGS( SFAssaultPoint_t )
 
 	bool Lock( CBaseEntity *pLocker )
 	{
@@ -123,9 +130,9 @@ public:
 	int DrawDebugTextOverlays();
 	bool IsExclusive();
 
-	enum
+	enum RallyExclusivity_t : unsigned char
 	{
-		RALLY_EXCLUSIVE_NOT_EVALUATED = -1,
+		RALLY_EXCLUSIVE_NOT_EVALUATED,
 		RALLY_EXCLUSIVE_NO,
 		RALLY_EXCLUSIVE_YES,
 	};
@@ -137,7 +144,7 @@ public:
 	int			m_iStrictness;
 	bool		m_bForceCrouch;
 	bool		m_bIsUrgent;
-	short		m_sExclusivity;
+	RallyExclusivity_t		m_sExclusivity;
 	bool		m_bShouldLock;
 
 	COutputEvent	m_OnArrival;
@@ -162,6 +169,8 @@ public:
 		// default value, for legacy maps. (sjb)
 		m_flAssaultPointTolerance = CUE_POINT_TOLERANCE;
 	}
+
+	DECLARE_SPAWNFLAGS( SFAssaultPoint_t )
 
 	void 			InputSetClearOnContact( inputdata_t &&inputdata )
 	{

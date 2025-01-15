@@ -643,13 +643,13 @@ void CAI_BaseNPC::SelectDeathPose( const CTakeDamageInfo &info )
 		return;
 
 	Activity aActivity = ACT_INVALID;
-	int iDeathFrame = 0;
+	DeathFrame_t iDeathFrame = DEATH_FRAME_INVALID;
 
 	SelectDeathPoseActivityAndFrame( this, info, LastHitGroup(), aActivity, iDeathFrame );
 	if ( aActivity == ACT_INVALID )
 	{
-		SetDeathPose( ACT_INVALID );
-		SetDeathPoseFrame( 0 );
+		SetDeathPose( INVALID_SEQUENCE );
+		SetDeathPoseFrame( DEATH_FRAME_INVALID );
 		return;
 	}
 
@@ -14804,18 +14804,18 @@ void CAI_BaseNPC::InputForceInteractionWithNPC( inputdata_t &&inputdata )
 		// Use sequence? or activity?
 		if ( m_ScriptedInteractions[i].sPhases[SNPCINT_SEQUENCE].iActivity != ACT_INVALID )
 		{
-			if ( !pNPC->HaveSequenceForActivity( (Activity)m_ScriptedInteractions[i].sPhases[SNPCINT_SEQUENCE].iActivity ) )
+			if ( !pNPC->HaveSequenceForActivity( m_ScriptedInteractions[i].sPhases[SNPCINT_SEQUENCE].iActivity ) )
 			{
 				// Other NPC may have all the matching sequences, but just without the activity specified.
 				// Lets find a single sequence for us, and ensure they have a matching one.
-				int iMySeq = SelectWeightedSequence( (Activity)m_ScriptedInteractions[i].sPhases[SNPCINT_SEQUENCE].iActivity );
-				if ( pNPC->LookupSequence( GetSequenceName(iMySeq) ) == -1 )
+				sequence_t iMySeq = SelectWeightedSequence( m_ScriptedInteractions[i].sPhases[SNPCINT_SEQUENCE].iActivity );
+				if ( pNPC->LookupSequence( GetSequenceName(iMySeq) ) == INVALID_SEQUENCE )
 					continue;
 			}
 		}
 		else
 		{
-			if ( pNPC->LookupSequence( STRING(m_ScriptedInteractions[i].sPhases[SNPCINT_SEQUENCE].iszSequence) ) == -1 )
+			if ( pNPC->LookupSequence( STRING(m_ScriptedInteractions[i].sPhases[SNPCINT_SEQUENCE].iszSequence) ) == INVALID_SEQUENCE )
 				continue;
 		}
 

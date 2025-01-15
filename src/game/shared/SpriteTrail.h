@@ -80,7 +80,7 @@ public:
 #else
 	// Server only code
 
-	virtual int ShouldTransmit( const CCheckTransmitInfo *pInfo );
+	virtual EdictStateFlags_t ShouldTransmit( const CCheckTransmitInfo *pInfo );
 	static CSharedSpriteTrail *SpriteTrailCreate( const char *pSpriteName, const Vector &origin, bool animate );
 
 #endif

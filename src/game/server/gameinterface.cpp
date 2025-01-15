@@ -1247,6 +1247,11 @@ void CServerGameDLL::GameFrame( bool simulating )
 {
 	VPROF( "CServerGameDLL::GameFrame" );
 
+#ifdef _DEBUG
+	// For profiling.. let them enable/disable the networkvar manual mode stuff.
+	g_bUseNetworkVars = s_UseNetworkVars.GetBool();
+#endif
+
 	// Ugly HACK! to prevent the game time from changing when paused
 	if( m_bWasPaused != HackMgr_IsGamePaused() )
 	{
@@ -1284,11 +1289,6 @@ void CServerGameDLL::GameFrame( bool simulating )
 	}
 
 	float oldframetime = gpGlobals->frametime;
-
-#ifdef _DEBUG
-	// For profiling.. let them enable/disable the networkvar manual mode stuff.
-	g_bUseNetworkVars = s_UseNetworkVars.GetBool();
-#endif
 
 	// Delete anything that was marked for deletion
 	//  outside of server frameloop (e.g., in response to concommand)

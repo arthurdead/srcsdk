@@ -1,0 +1,2 @@
+option('src_root_dir', type: 'string', yield: true)
+option('build_libs', type: 'boolean', value: true, yield: true)

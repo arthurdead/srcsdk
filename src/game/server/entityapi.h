@@ -10,7 +10,7 @@
 
 #pragma once
 
-class SendTable;
+class SendTableInfo;
 struct edict_t;
 class ServerClass;
 

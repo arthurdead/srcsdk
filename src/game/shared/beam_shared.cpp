@@ -106,35 +106,6 @@ void RecvProxy_Beam_ScrollSpeed( const CRecvProxyData *pData, void *pStruct, voi
 
 	beam->m_fSpeed = val;
 }
-#else
-void* SendProxy_SendPredictableId( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
-{
-	CBaseEntity *pEntity = (CBaseEntity *)pStruct;
-	if ( !pEntity || !pEntity->m_PredictableID->IsActive() )
-		return NULL;
-
-	if ( !pEntity->GetOwnerEntity() )
-		return NULL;
-
-	CBaseEntity *owner = pEntity->GetOwnerEntity();
-	if ( !owner || !owner->IsPlayer() )
-		return NULL;
-
-	CBasePlayer *pOwner = static_cast< CBasePlayer * >( owner );
-	if ( !pOwner )
-		return NULL;
-
-	int id_player_index = pEntity->m_PredictableID->GetPlayer();
-	int owner_player_index = pOwner->entindex() - 1;
-	// Only send to owner player
-	// FIXME:  Is this ever not the case due to the SetOnly call?
-	if ( id_player_index != owner_player_index )
-		return NULL;
-
-	pRecipients->SetOnly( owner_player_index );
-	return ( void * )pVarData;
-}
-REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableId );
 #endif
 
 LINK_ENTITY_TO_SERVERCLASS( beam, CBeam );

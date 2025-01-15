@@ -31,7 +31,7 @@ public:
 	virtual void Rebuild( char const *filename );
 
 	static void FindOrAddScriptSound( CUtlVector< unsigned short >& sounds, char const *soundname );
-	static void BuildAnimationEventSoundList( CStudioHdr *hdr, CUtlVector< unsigned short >& sounds );
+	static void BuildAnimationEventSoundList( const CStudioHdr *hdr, CUtlVector< unsigned short >& sounds );
 private:
 	char const *GetSoundName( int index );
 };

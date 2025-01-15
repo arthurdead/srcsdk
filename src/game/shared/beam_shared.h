@@ -23,17 +23,22 @@
 #define MAX_BEAM_SCROLLSPEED	100.0f
 #define MAX_BEAM_NOISEAMPLITUDE		64
 
-#define SF_BEAM_STARTON			0x0001
-#define SF_BEAM_TOGGLE			0x0002
-#define SF_BEAM_RANDOM			0x0004
-#define SF_BEAM_RING			0x0008
-#define SF_BEAM_SPARKSTART		0x0010
-#define SF_BEAM_SPARKEND		0x0020
-#define SF_BEAM_DECALS			0x0040
-#define SF_BEAM_SHADEIN			0x0080
-#define SF_BEAM_SHADEOUT		0x0100
-#define	SF_BEAM_TAPEROUT		0x0200	// Tapers to zero
-#define SF_BEAM_TEMPORARY		0x8000
+enum SFBeam_t : unsigned short
+{
+	SF_BEAM_STARTON =		0x0001,
+	SF_BEAM_TOGGLE =			0x0002,
+	SF_BEAM_RANDOM =			0x0004,
+	SF_BEAM_RING =			0x0008,
+	SF_BEAM_SPARKSTART =		0x0010,
+	SF_BEAM_SPARKEND =		0x0020,
+	SF_BEAM_DECALS =			0x0040,
+	SF_BEAM_SHADEIN =			0x0080,
+	SF_BEAM_SHADEOUT =		0x0100,
+	SF_BEAM_TAPEROUT =		0x0200,	// Tapers to zero
+	SF_BEAM_TEMPORARY =		0x8000,
+};
+
+FLAGENUM_OPERATORS( SFBeam_t, unsigned short )
 
 #define ATTACHMENT_INDEX_BITS	5
 #define ATTACHMENT_INDEX_MASK	((1 << ATTACHMENT_INDEX_BITS) - 1)
@@ -74,8 +79,10 @@ public:
 	EntityCaps_t ObjectCaps( void );
 	void	SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
 	EdictStateFlags_t UpdateTransmitState( void );
-	int		ShouldTransmit( const CCheckTransmitInfo *pInfo );
+	EdictStateFlags_t		ShouldTransmit( const CCheckTransmitInfo *pInfo );
 #endif
+
+	DECLARE_SPAWNFLAGS( SFBeam_t )
 
 	virtual int DrawDebugTextOverlays(void);
 
@@ -181,7 +188,7 @@ public:
 	// the end point, or clip against geometry, or clip against
 	// geometry and NPCs. This is only used by env_beams at present, but
 	// need to be in this CBeam because of the way it affects drawing.
-	enum BeamClipStyle_t
+	enum BeamClipStyle_t : unsigned char
 	{
 		kNOCLIP = 0, // don't clip (default)
 		kGEOCLIP = 1,
@@ -274,7 +281,7 @@ public:
 //-----------------------------------------------------------------------------
 // Inline methods 
 //-----------------------------------------------------------------------------
-inline int CSharedBeam::ObjectCaps( void )
+inline EntityCaps_t CSharedBeam::ObjectCaps( void )
 { 
 	return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); 
 }

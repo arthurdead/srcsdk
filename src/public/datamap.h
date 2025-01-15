@@ -594,7 +594,7 @@ public:
 	virtual bool Parse( const FieldInfo_t &fieldInfo, char const* szValue ) = 0;
 };
 
-enum : unsigned char
+enum TdOffsetType_t : unsigned char
 {
 	TD_OFFSET_NORMAL = 0,
 	TD_OFFSET_PACKED = 1,
@@ -669,6 +669,10 @@ private:
 public:
 	int rawOffset() const
 	{ return fieldOffset_[TD_OFFSET_NORMAL]; }
+	int packedOffset() const
+	{ return fieldOffset_[TD_OFFSET_PACKED]; }
+	int Offset( TdOffsetType_t type ) const
+	{ return fieldOffset_[type]; }
 
 	unsigned short		fieldSize;
 	fieldflags_t				flags;
@@ -740,6 +744,8 @@ T *FieldInfo_t::GetField() const
 
 #define DEFINE_MAP_OUTPUT(name, ...) \
 	MapOutput_impl<decltype(classNameTypedef::name)>( #name, offsetof(classNameTypedef, name) __VA_OPT__(, __VA_ARGS__) )
+
+#define DEFINE_KEYFIELD_AUTO DEFINE_MAP_FIELD
 
 class CBaseEntityOutput;
 
@@ -1083,15 +1089,15 @@ extern map_datamap_t *g_pMapDatamapsHead;
 #define END_DATADESC() \
 		}; \
 		\
-		if ( sizeof( dataDesc ) > sizeof( dataDesc[0] ) ) \
+		if ( SIZE_OF_ARRAY( dataDesc ) > 1 ) \
 		{ \
 			classNameTypedef::m_DataMap.dataNumFields = SIZE_OF_ARRAY( dataDesc ) - 1; \
 			classNameTypedef::m_DataMap.dataDesc 	  = &dataDesc[1]; \
 		} \
 		else \
 		{ \
-			classNameTypedef::m_DataMap.dataNumFields = 1; \
-			classNameTypedef::m_DataMap.dataDesc 	  = dataDesc; \
+			classNameTypedef::m_DataMap.dataNumFields = 0; \
+			classNameTypedef::m_DataMap.dataDesc 	  = NULL; \
 		} \
 		return &classNameTypedef::m_DataMap; \
 	}

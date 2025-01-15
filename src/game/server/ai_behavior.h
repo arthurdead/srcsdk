@@ -289,7 +289,7 @@ template <class NPC_CLASS = CAI_BaseNPC, const int ID_SPACE_OFFSET = 100000>
 class CAI_Behavior : public CAI_ComponentWithOuter<NPC_CLASS, CAI_BehaviorBase>
 {
 public:
-	DECLARE_CLASS_NOFRIEND( CAI_Behavior, NPC_CLASS );
+	DECLARE_CLASS_NOFRIEND( CAI_Behavior, CAI_ComponentWithOuter<NPC_CLASS, CAI_BehaviorBase> );
 	
 	enum
 	{

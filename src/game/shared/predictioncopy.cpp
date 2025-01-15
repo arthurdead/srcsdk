@@ -34,7 +34,7 @@
 //
 // --------------------------------------------------------------
 
-CPredictionCopy::CPredictionCopy( int type, void *dest, bool dest_packed, void const *src, bool src_packed, 
+CPredictionCopy::CPredictionCopy( PredCopy_t type, void *dest, bool dest_packed, void const *src, bool src_packed, 
 	bool counterrors /*= false*/, bool reporterrors /*= false*/, bool performcopy /*= true*/,
 	bool describefields /*= false*/, FN_FIELD_COMPARE func /*= NULL*/ )
 {
@@ -614,27 +614,16 @@ void CPredictionCopy::DescribeEHandle( difftype_t dt, EHANDLE *outvalue, EHANDLE
 		ReportFieldsDiffer( "EHandles differ (net) 0x%p (pred) 0x%p\n", (void const *)invalue[ i ].Get(), (void *)outvalue[ i ].Get() );
 	}
 
-#if defined( CLIENT_DLL )
-	C_BaseEntity *ent = outvalue[0].Get();
+	CSharedBaseEntity *ent = outvalue[0].Get();
 	if ( ent )
 	{
 		const char *classname = ent->GetClassname();
-		if ( !classname[0] )
-		{
-			classname = typeid( *ent ).name();
-		}
-
-		DescribeFields( dt, "EHandle (0x%p->%s)", (void *)outvalue[ 0 ], classname );
+		DescribeFields( dt, "EHandle (0x%p->%s)", (void *)ent, classname );
 	}
 	else
 	{
 		DescribeFields( dt, "EHandle (NULL)" );
 	}
-
-#else
-	DescribeFields( dt, "EHandle (0x%p)", (void *)outvalue[ 0 ] );
-#endif
-
 }
 
 void CPredictionCopy::WatchEHandle( difftype_t dt, EHANDLE *outvalue, EHANDLE const *invalue, int count )
@@ -642,27 +631,16 @@ void CPredictionCopy::WatchEHandle( difftype_t dt, EHANDLE *outvalue, EHANDLE co
 	if ( m_pWatchField != m_pCurrentField )
 		return;
 
-#if defined( CLIENT_DLL )
-	C_BaseEntity *ent = outvalue[0].Get();
+	CSharedBaseEntity *ent = outvalue[0].Get();
 	if ( ent )
 	{
 		const char *classname = ent->GetClassname();
-		if ( !classname[0] )
-		{
-			classname = typeid( *ent ).name();
-		}
-
-		WatchMsg( "EHandle (0x%p->%s)", (void *)outvalue[ 0 ], classname );
+		WatchMsg( "EHandle (0x%p->%s)", (void *)ent, classname );
 	}
 	else
 	{
 		WatchMsg( "EHandle (NULL)" );
 	}
-
-#else
-	WatchMsg( "EHandle (0x%p)", (void *)outvalue[ 0 ] );
-#endif
-
 }
 
 void CPredictionCopy::CopyShort( difftype_t dt, short *outvalue, const short *invalue, int count )
@@ -800,6 +778,26 @@ CPredictionCopy::difftype_t CPredictionCopy::CompareInt( int *outvalue, const in
 	return IDENTICAL;
 }
 
+CPredictionCopy::difftype_t CPredictionCopy::CompareUInt( unsigned int *outvalue, const unsigned int *invalue, int count )
+{
+	if ( !m_bErrorCheck )
+		return DIFFERS;
+
+	if ( CanCheck() )
+	{
+		for ( int i = 0; i < count; i++ )
+		{
+			if ( outvalue[ i ] == invalue[ i ] )
+				continue;
+
+			ReportFieldsDiffer( "uint differs (net %u pred %u) diff(%u)\n", invalue[i], outvalue[i], outvalue[i] - invalue[i] );
+			return DIFFERS;
+		}
+	}
+
+	return IDENTICAL;
+}
+
 CPredictionCopy::difftype_t CPredictionCopy::CompareModelindex( modelindex_t *outvalue, const modelindex_t *invalue, int count )
 {
 	if ( !m_bErrorCheck )
@@ -833,6 +831,26 @@ CPredictionCopy::difftype_t CPredictionCopy::CompareInt64( int64 *outvalue, cons
 				continue;
 
 			ReportFieldsDiffer( "int64 differs (net %lli pred %lli) diff(%lli)\n", invalue[i], outvalue[i], outvalue[i] - invalue[i] );
+			return DIFFERS;
+		}
+	}
+
+	return IDENTICAL;
+}
+
+CPredictionCopy::difftype_t CPredictionCopy::CompareUInt64( uint64 *outvalue, const uint64 *invalue, int count )
+{
+	if ( !m_bErrorCheck )
+		return DIFFERS;
+
+	if ( CanCheck() )
+	{
+		for ( int i = 0; i < count; i++ )
+		{
+			if ( outvalue[ i ] == invalue[ i ] )
+				continue;
+
+			ReportFieldsDiffer( "uint64 differs (net %llu pred %llu) diff(%llu)\n", invalue[i], outvalue[i], outvalue[i] - invalue[i] );
 			return DIFFERS;
 		}
 	}
@@ -1162,7 +1180,7 @@ CPredictionCopy::difftype_t CPredictionCopy::CompareEHandle( EHANDLE *outvalue, 
 void CPredictionCopy::CopyFields( int chain_count, datamap_t *pRootMap, typedescription_t *pFields, int fieldCount )
 {
 	int				i;
-	int				flags;
+	fieldflags_t				flags;
 	int				fieldOffsetSrc;
 	int				fieldOffsetDest;
 	int				fieldSize;
@@ -1191,7 +1209,7 @@ void CPredictionCopy::CopyFields( int chain_count, datamap_t *pRootMap, typedesc
 		}
 
 		// Always recurse into embeddeds
-		if ( m_pCurrentField->fieldType != FIELD_EMBEDDED )
+		if ( m_pCurrentField->baseType() != FIELD_EMBEDDED )
 		{
 			// Don't copy fields that are private to server or client
 			if ( flags & FTYPEDESC_PRIVATE )
@@ -1209,8 +1227,8 @@ void CPredictionCopy::CopyFields( int chain_count, datamap_t *pRootMap, typedesc
 		void *pOutputData;
 		void const *pInputData;
 
-		fieldOffsetDest = m_pCurrentField->fieldOffset[ m_nDestOffsetIndex ];
-		fieldOffsetSrc	= m_pCurrentField->fieldOffset[ m_nSrcOffsetIndex ];
+		fieldOffsetDest = m_pCurrentField->Offset( m_nDestOffsetIndex );
+		fieldOffsetSrc	= m_pCurrentField->Offset( m_nSrcOffsetIndex );
 		fieldSize = m_pCurrentField->fieldSize;
 
 		pOutputData = (void *)((char *)m_pDest + fieldOffsetDest );
@@ -1224,7 +1242,7 @@ void CPredictionCopy::CopyFields( int chain_count, datamap_t *pRootMap, typedesc
 
 		difftype_t difftype;
 
-		switch( m_pCurrentField->fieldType )
+		switch( m_pCurrentField->baseType() )
 		{
 		case FIELD_EMBEDDED:
 			{
@@ -1266,12 +1284,7 @@ void CPredictionCopy::CopyFields( int chain_count, datamap_t *pRootMap, typedesc
 			}
 			break;
 
-		case FIELD_TIME:
-		case FIELD_TICK:
-			Assert( 0 );
-			break;
-
-		case FIELD_STRING:
+		case FIELD_CSTRING:
 			{
 				difftype = CompareString( (char *)pOutputData, (char const*)pInputData );
 				CopyString( difftype, (char *)pOutputData, (char const*)pInputData );
@@ -1280,21 +1293,6 @@ void CPredictionCopy::CopyFields( int chain_count, datamap_t *pRootMap, typedesc
 			}
 			break;
 
-		case FIELD_MODELNAME:
-		case FIELD_SOUNDNAME:
-			Assert( 0 );
-			break;
-
-		case FIELD_CUSTOM:
-			Assert( 0 );
-			break;
-
-		case FIELD_CLASSPTR:
-		case FIELD_EDICT:
-			Assert( 0 );
-			break;
-
-		case FIELD_POSITION_VECTOR:
 		case FIELD_VECTOR:
 			{
 				difftype = CompareVector( (Vector *)pOutputData, (Vector const *)pInputData, fieldSize );
@@ -1387,11 +1385,6 @@ void CPredictionCopy::CopyFields( int chain_count, datamap_t *pRootMap, typedesc
 				if ( bShouldWatch ) WatchEHandle( difftype, (EHANDLE *)pOutputData, (EHANDLE const *)pInputData, fieldSize );
 			}
 			break;
-		case FIELD_FUNCTION:
-			{
-			Assert( 0 );
-			}
-			break;
 		case FIELD_VOID:
 			{
 				// Don't do anything, it's an empty data description
@@ -1428,10 +1421,10 @@ static typedescription_t *FindFieldByName_R( const char *fieldname, datamap_t *d
 	for ( int i = 0; i < c; i++ )
 	{
 		typedescription_t *td = &dmap->dataDesc[ i ];
-		if ( td->fieldType == FIELD_VOID )
+		if ( td->baseType() == FIELD_VOID )
 			continue;
 
-		if ( td->fieldType == FIELD_EMBEDDED )
+		if ( td->baseType() == FIELD_EMBEDDED )
 		{
 			// TODO:  this will only find the first subclass with the variable of the specified name
 			//  At some point we might want to support multiple levels of overriding automatically
@@ -1463,10 +1456,10 @@ void ValidateChains_R( datamap_t *dmap )
 	for ( int i = 0; i < c; i++ )
 	{
 		typedescription_t *td = &dmap->dataDesc[ i ];
-		if ( td->fieldType == FIELD_VOID )
+		if ( td->baseType() == FIELD_VOID )
 			continue;
 
-		if ( td->fieldType == FIELD_EMBEDDED )
+		if ( td->baseType() == FIELD_EMBEDDED )
 		{
 			ValidateChains_R( td->td );
 			continue;
@@ -1637,7 +1630,7 @@ void CPredictionDescribeData::Describe( const char *fmt, ... )
 	Assert( m_pCurrentClassName );
 
 	const char *fieldname = "empty";
-	int flags = 0;
+	fieldflags_t flags = FTYPEDESC_NONE;
 
 	if ( m_pCurrentField )
 	{
@@ -1660,7 +1653,7 @@ void CPredictionDescribeData::Describe( const char *fmt, ... )
 		(*m_FieldDescFunc)( 
 			m_pCurrentClassName, 
 			m_pCurrentField->fieldName, 
-			g_FieldNames[ m_pCurrentField->fieldType ],
+			GetFieldName( m_pCurrentField->rawType(), true ),
 			isnetworked,
 			data );
 	}
@@ -1719,15 +1712,27 @@ void CPredictionDescribeData::DescribeData( int size, const char *indata )
 
 void CPredictionDescribeData::DescribeShort( const short *invalue, int count )
 {
-	Describe( "short (%i)\n", (int)(invalue[0]) );
+	Describe( "short (%hi)\n", invalue[0] );
 }
 
+void CPredictionDescribeData::DescribeUShort( const unsigned short *invalue, int count )
+{
+	Describe( "ushort (%hu)\n", (int)(invalue[0]) );
+}
 
 void CPredictionDescribeData::DescribeInt( const int *invalue, int count )
 {
 	for ( int i = 0; i < count; ++i )
 	{
 		Describe( "[%i] integer (%i)\n", i, invalue[i] );
+	}
+}
+
+void CPredictionDescribeData::DescribeUInt( const unsigned int *invalue, int count )
+{
+	for ( int i = 0; i < count; ++i )
+	{
+		Describe( "[%i] uinteger (%u)\n", i, invalue[i] );
 	}
 }
 
@@ -1744,6 +1749,14 @@ void CPredictionDescribeData::DescribeInt64( const int64 *invalue, int count )
 	for ( int i = 0; i < count; ++i )
 	{
 		Describe( "[%i] integer64 (%lli)\n", i, invalue[i] );
+	}
+}
+
+void CPredictionDescribeData::DescribeUInt64( const uint64 *invalue, int count )
+{
+	for ( int i = 0; i < count; ++i )
+	{
+		Describe( "[%i] uinteger64 (%llu)\n", i, invalue[i] );
 	}
 }
 
@@ -1796,7 +1809,7 @@ void CPredictionDescribeData::DescribeEHandle( EHANDLE const *invalue, int count
 void CPredictionDescribeData::DescribeFields_R( int chain_count, datamap_t *pRootMap, typedescription_t *pFields, int fieldCount )
 {
 	int				i;
-	int				flags;
+	fieldflags_t				flags;
 	int				fieldOffsetSrc;
 	int				fieldSize;
 
@@ -1825,7 +1838,7 @@ void CPredictionDescribeData::DescribeFields_R( int chain_count, datamap_t *pRoo
 
 		void const *pInputData;
 		
-		fieldOffsetSrc = m_pCurrentField->fieldOffset[ m_nSrcOffsetIndex ];
+		fieldOffsetSrc = m_pCurrentField->Offset( m_nSrcOffsetIndex );
 		fieldSize = m_pCurrentField->fieldSize;
 		
 		pInputData = (void const *)((char *)m_pSrc + fieldOffsetSrc );
@@ -1833,7 +1846,7 @@ void CPredictionDescribeData::DescribeFields_R( int chain_count, datamap_t *pRoo
 		// Assume we can report
 		m_bShouldReport = true;
 		
-		switch( m_pCurrentField->fieldType )
+		switch( m_pCurrentField->baseType() )
 		{
 		case FIELD_EMBEDDED:
 			{
@@ -1859,38 +1872,18 @@ void CPredictionDescribeData::DescribeFields_R( int chain_count, datamap_t *pRoo
 		case FIELD_FLOAT:
 			DescribeFloat( (float const *)pInputData, fieldSize );
 			break;
-		case FIELD_TIME:
-		case FIELD_TICK:
-			Assert( 0 );
-			break;
-		case FIELD_STRING:
+		case FIELD_CSTRING:
 			DescribeString( (char const*)pInputData );
 			break;
-			
-		case FIELD_MODELNAME:
-		case FIELD_SOUNDNAME:
-			Assert( 0 );
-			break;
-
-		case FIELD_CUSTOM:
-			Assert( 0 );
-			break;
-			
-		case FIELD_CLASSPTR:
-		case FIELD_EDICT:
-			break;
-		case FIELD_POSITION_VECTOR:
 		case FIELD_VECTOR:
 			DescribeVector( (const Vector *)pInputData, fieldSize );
 			break;
 		case FIELD_QUATERNION:
 			DescribeQuaternion( ( const Quaternion * )pInputData, fieldSize );
 			break;
-			
 		case FIELD_COLOR32:
 			DescribeData( 4*fieldSize, (const char *)pInputData );
 			break;
-			
 		case FIELD_BOOLEAN:
 			DescribeBool( (bool const *)pInputData, fieldSize );
 			break;
@@ -1906,16 +1899,11 @@ void CPredictionDescribeData::DescribeFields_R( int chain_count, datamap_t *pRoo
 		case FIELD_SHORT:
 			DescribeShort( (short const *)pInputData, fieldSize );
 			break;
-			
 		case FIELD_CHARACTER:
 			DescribeData( fieldSize, (const char *)pInputData );
 			break;
-			
 		case FIELD_EHANDLE:
 			DescribeEHandle( (EHANDLE const *)pInputData, fieldSize );
-			break;
-		case FIELD_FUNCTION:
-			Assert( 0 );
 			break;
 		case FIELD_VOID:
 			Describe( "FIELD_VOID: empty field\n" );

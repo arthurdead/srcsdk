@@ -104,7 +104,7 @@ ConVar sv_netvisdist( "sv_netvisdist", "10000", FCVAR_CHEAT | FCVAR_DEVELOPMENTO
 ConVar ent_show_contexts( "ent_show_contexts", "0", 0, "Show entity contexts in ent_text display" );
 
 // This table encodes edict data.
-void SendProxy_AnimTime( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_AnimTime( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)pStruct;
 
@@ -132,7 +132,7 @@ void SendProxy_AnimTime( const SendProp *pProp, const void *pStruct, const void 
 }
 
 // This table encodes edict data.
-void SendProxy_SimulationTime( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_SimulationTime( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)pStruct;
 
@@ -148,7 +148,7 @@ void SendProxy_SimulationTime( const SendProp *pProp, const void *pStruct, const
 	pOut->m_Int = addt;
 }
 
-void* SendProxy_ClientSideAnimation( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+void* SendProxy_ClientSideAnimation( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)pStruct;
 	CBaseAnimating *pAnimating = pEntity->GetBaseAnimating();
@@ -160,8 +160,36 @@ void* SendProxy_ClientSideAnimation( const SendProp *pProp, const void *pStruct,
 }	
 REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_ClientSideAnimation );
 
+void* SendProxy_SendPredictableId( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+{
+	CBaseEntity *pEntity = (CBaseEntity *)pStruct;
+	if ( !pEntity || !pEntity->m_PredictableID->IsActive() )
+		return NULL;
 
-static void* SendProxy_SendPredictableIdTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+	if ( !pEntity->GetOwnerEntity() )
+		return NULL;
+
+	CBaseEntity *owner = pEntity->GetOwnerEntity();
+	if ( !owner || !owner->IsPlayer() )
+		return NULL;
+
+	CBasePlayer *pOwner = static_cast< CBasePlayer * >( owner );
+	if ( !pOwner )
+		return NULL;
+
+	int id_player_index = pEntity->m_PredictableID->GetPlayer();
+	int owner_player_index = pOwner->entindex() - 1;
+	// Only send to owner player
+	// FIXME:  Is this ever not the case due to the SetOnly call?
+	if ( id_player_index != owner_player_index )
+		return NULL;
+
+	pRecipients->SetOnly( owner_player_index );
+	return ( void * )pVarData;
+}
+REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableId );
+
+static void* SendProxy_SendPredictableIdTable( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)pStruct;
 	if ( !pEntity || pEntity->m_PredictableID == INVALID_PREDICTABLE_ID )
@@ -174,7 +202,7 @@ static void* SendProxy_SendPredictableIdTable( const SendProp *pProp, const void
 }
 REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableIdTable );
 
-void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_Origin( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
@@ -194,7 +222,7 @@ void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *p
 //--------------------------------------------------------------------------------------------------------
 // Used when breaking up origin, note we still have to deal with StepSimulation
 //--------------------------------------------------------------------------------------------------------
-void SendProxy_OriginXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_OriginXY( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
@@ -213,7 +241,7 @@ void SendProxy_OriginXY( const SendProp *pProp, const void *pStruct, const void 
 //--------------------------------------------------------------------------------------------------------
 // Used when breaking up origin, note we still have to deal with StepSimulation
 //--------------------------------------------------------------------------------------------------------
-void SendProxy_OriginZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_OriginZ( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
@@ -230,7 +258,7 @@ void SendProxy_OriginZ( const SendProp *pProp, const void *pStruct, const void *
 
 static float const cellEpsilon = 0.001f;
 
-void CBaseEntity::SendProxy_CellX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void CBaseEntity::SendProxy_CellX( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
@@ -248,7 +276,7 @@ void CBaseEntity::SendProxy_CellX( const SendProp *pProp, const void *pStruct, c
 	}
 }
 
-void CBaseEntity::SendProxy_CellY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void CBaseEntity::SendProxy_CellY( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
@@ -266,7 +294,7 @@ void CBaseEntity::SendProxy_CellY( const SendProp *pProp, const void *pStruct, c
 	}
 }
 
-void CBaseEntity::SendProxy_CellZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+void CBaseEntity::SendProxy_CellZ( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
@@ -287,7 +315,7 @@ void CBaseEntity::SendProxy_CellZ( const SendProp *pProp, const void *pStruct, c
 //--------------------------------------------------------------------------------------------------------
 // The origin is adjusted to be relative to current cell
 //--------------------------------------------------------------------------------------------------------
-void CBaseEntity::SendProxy_CellOrigin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+void CBaseEntity::SendProxy_CellOrigin( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
@@ -325,7 +353,7 @@ void CBaseEntity::SendProxy_CellOrigin( const SendProp *pProp, const void *pStru
 //--------------------------------------------------------------------------------------------------------
 // The origin is adjusted to be relative to current cell
 //--------------------------------------------------------------------------------------------------------
-void CBaseEntity::SendProxy_CellOriginXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+void CBaseEntity::SendProxy_CellOriginXY( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
@@ -357,7 +385,7 @@ void CBaseEntity::SendProxy_CellOriginXY( const SendProp *pProp, const void *pSt
 //--------------------------------------------------------------------------------------------------------
 // The origin is adjusted to be relative to current cell
 //--------------------------------------------------------------------------------------------------------
-void CBaseEntity::SendProxy_CellOriginZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+void CBaseEntity::SendProxy_CellOriginZ( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
@@ -381,7 +409,7 @@ void CBaseEntity::SendProxy_CellOriginZ( const SendProp *pProp, const void *pStr
 	Assert( fabs( CoordFromCell( cellwidth, cell[2], pOut->m_Float ) - v->z ) < cellEpsilon );
 }
 
-void SendProxy_Angles( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_Angles( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
@@ -398,7 +426,7 @@ void SendProxy_Angles( const SendProp *pProp, const void *pStruct, const void *p
 	pOut->m_Vector[ 2 ] = anglemod( a->z );
 }
 
-void CBaseEntity::SendProxy_AnglesX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+void CBaseEntity::SendProxy_AnglesX( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
@@ -413,7 +441,7 @@ void CBaseEntity::SendProxy_AnglesX( const SendProp *pProp, const void *pStruct,
 	pOut->m_Float = anglemod( a->x );
 }
 
-void CBaseEntity::SendProxy_AnglesY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+void CBaseEntity::SendProxy_AnglesY( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
@@ -428,7 +456,7 @@ void CBaseEntity::SendProxy_AnglesY( const SendProp *pProp, const void *pStruct,
 	pOut->m_Float = anglemod( a->y );
 }
 
-void CBaseEntity::SendProxy_AnglesZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+void CBaseEntity::SendProxy_AnglesZ( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );

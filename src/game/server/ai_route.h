@@ -48,7 +48,7 @@ public:
 	const Vector &	CurWaypointPos() const;
 	const Vector &	NextWaypointPos() const;
 	float			CurWaypointYaw() const;
-	int				CurWaypointFlags() const;
+	WaypointFlags_t				CurWaypointFlags() const;
 	Navigation_t	CurWaypointNavType() const;
 
 	AI_Waypoint_t * GetTransitionWaypoint();

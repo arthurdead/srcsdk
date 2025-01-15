@@ -117,22 +117,22 @@ void CModelSoundsCache::FindOrAddScriptSound( CUtlVector< unsigned short >& soun
 // Input  : *hdr - 
 //			sounds - 
 //-----------------------------------------------------------------------------
-void CModelSoundsCache::BuildAnimationEventSoundList( CStudioHdr *hdr, CUtlVector< unsigned short >& sounds )
+void CModelSoundsCache::BuildAnimationEventSoundList( const CStudioHdr *hdr, CUtlVector< unsigned short >& sounds )
 {
 	Assert( hdr );
 	
 	// force animation event resolution!!!
-	VerifySequenceIndex( hdr );
+	VerifySequenceIndex( (CStudioHdr *)hdr );
 
 	// Find all animation events which fire off sound script entries...
 	for ( int iSeq=0; iSeq < hdr->GetNumSeq(); iSeq++ )
 	{
-		mstudioseqdesc_t *pSeq = &hdr->pSeqdesc( (sequence_t)iSeq );
+		const mstudioseqdesc_t *pSeq = &hdr->pSeqdesc( (sequence_t)iSeq );
 		
 		// Now read out all the sound events with their timing
 		for ( int iEvent=0; iEvent < (int)pSeq->numevents; iEvent++ )
 		{
-			mstudioevent_t *pEvent = pSeq->pEvent( iEvent );
+			const mstudioevent_t *pEvent = pSeq->pEvent( iEvent );
 
 			int nEvent = pEvent->Event();
 			
@@ -208,7 +208,7 @@ CStudioHdr *ModelSoundsCache_LoadModel( const char *filename )
 #endif
 	if ( IsValidModelIndex( idx ) )
 	{
-		model_t *mdl = (model_t *)modelinfo->GetModel( idx );
+		const model_t *mdl = (model_t *)modelinfo->GetModel( idx );
 		if ( mdl )
 		{
 			CStudioHdr *studioHdr = new CStudioHdr( modelinfo->GetStudiomodel( mdl ), g_pMDLCache ); 

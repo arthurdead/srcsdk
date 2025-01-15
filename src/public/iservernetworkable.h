@@ -25,7 +25,7 @@
 
 
 class ServerClass;
-class SendTable;
+class SendTableInfo;
 struct edict_t;
 #ifdef GAME_DLL
 class CBaseEntity;

@@ -132,8 +132,8 @@ public:
 
 	// Returns name of model
 	virtual const char				*GetModelName( const model_t *model ) const = 0;
-	virtual vcollide_t				*GetVCollide( const model_t *model ) = 0;
-	virtual vcollide_t				*GetVCollide( modelindex_t modelindex ) = 0;
+	virtual const vcollide_t				*GetVCollide( const model_t *model ) = 0;
+	virtual const vcollide_t				*GetVCollide( modelindex_t modelindex ) = 0;
 	virtual void					GetModelBounds( const model_t *model, Vector& mins, Vector& maxs ) const = 0;
 	virtual	void					GetModelRenderBounds( const model_t *model, Vector& mins, Vector& maxs ) const = 0;
 	virtual int						GetModelFrameCount( const model_t *model ) const = 0;
@@ -155,8 +155,8 @@ public:
 
 	virtual const studiohdr_t		*FindModel( const studiohdr_t *pStudioHdr, void **cache, const char *modelname ) const = 0;
 	virtual const studiohdr_t		*FindModel( void *cache ) const = 0;
-	virtual	virtualmodel_t			*GetVirtualModel( const studiohdr_t *pStudioHdr ) const = 0;
-	virtual byte					*GetAnimBlock( const studiohdr_t *pStudioHdr, int iBlock ) const = 0;
+	virtual	const virtualmodel_t			*GetVirtualModel( const studiohdr_t *pStudioHdr ) const = 0;
+	virtual const byte					*GetAnimBlock( const studiohdr_t *pStudioHdr, int iBlock ) const = 0;
 
 	// Available on client only!!!
 	virtual void					GetModelMaterialColorAndLighting( const model_t *model, Vector const& origin,

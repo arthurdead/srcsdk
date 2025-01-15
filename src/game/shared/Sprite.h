@@ -12,12 +12,14 @@
 #include "predictable_entity.h"
 #include "baseentity_shared.h"
 
-enum SpriteSpawnFlags_t : unsigned char
+enum SpriteSpawnFlags_t : unsigned short
 {
 	SF_SPRITE_STARTON = 0x0001,
 	SF_SPRITE_ONCE = 0x0002,
 	SF_SPRITE_TEMPORARY = 0x8000,
 };
+
+FLAGENUM_OPERATORS( SpriteSpawnFlags_t, unsigned short )
 
 class CBasePlayer;
 

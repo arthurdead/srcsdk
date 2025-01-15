@@ -38,7 +38,7 @@ public:
 
 	// assignment
 	Vector32& operator=(const Vector &vOther);
-	operator Vector ();
+	operator Vector () const;
 
 private:
 	unsigned short x:10;
@@ -72,7 +72,7 @@ inline Vector32& Vector32::operator=(const Vector &vOther)
 }
 
 
-inline Vector32::operator Vector ()
+inline Vector32::operator Vector () const
 {
 	Vector tmp;
 
@@ -100,7 +100,7 @@ public:
 
 	// assignment
 	Normal32& operator=(const Vector &vOther);
-	operator Vector ();
+	operator Vector () const;
 
 private:
 	unsigned short x:15;
@@ -123,7 +123,7 @@ inline Normal32& Normal32::operator=(const Vector &vOther)
 }
 
 
-inline Normal32::operator Vector ()
+inline Normal32::operator Vector () const
 {
 	Vector tmp;
 
@@ -150,7 +150,7 @@ public:
 	// assignment
 	// Quaternion& operator=(const Quaternion64 &vOther);
 	Quaternion64& operator=(const Quaternion &vOther);
-	operator Quaternion ();
+	operator Quaternion () const;
 private:
 	uint64 x:21;
 	uint64 y:21;
@@ -159,7 +159,7 @@ private:
 };
 
 
-inline Quaternion64::operator Quaternion ()	
+inline Quaternion64::operator Quaternion ()	const
 {
 	Quaternion tmp;
 
@@ -198,7 +198,7 @@ public:
 	// assignment
 	// Quaternion& operator=(const Quaternion48 &vOther);
 	Quaternion48& operator=(const Quaternion &vOther);
-	operator Quaternion ();
+	operator Quaternion () const;
 private:
 	unsigned short x:16;
 	unsigned short y:16;
@@ -207,7 +207,7 @@ private:
 };
 
 
-inline Quaternion48::operator Quaternion ()	
+inline Quaternion48::operator Quaternion ()	const
 {
 	Quaternion tmp;
 
@@ -245,7 +245,7 @@ public:
 	// assignment
 	// Quaternion& operator=(const Quaternion48 &vOther);
 	Quaternion32& operator=(const Quaternion &vOther);
-	operator Quaternion ();
+	operator Quaternion () const;
 private:
 	unsigned int x:11;
 	unsigned int y:10;
@@ -254,7 +254,7 @@ private:
 };
 
 
-inline Quaternion32::operator Quaternion ()	
+inline Quaternion32::operator Quaternion ()	const
 {
 	Quaternion tmp;
 
@@ -518,7 +518,7 @@ public:
 
 	// assignment
 	Vector48& operator=(const Vector &vOther);
-	operator Vector ();
+	operator Vector () const;
 
 	const float operator[]( int i ) const { return (((float16 *)this)[i]).GetFloat(); }
 
@@ -538,7 +538,7 @@ inline Vector48& Vector48::operator=(const Vector &vOther)
 }
 
 
-inline Vector48::operator Vector ()
+inline Vector48::operator Vector () const
 {
 	Vector tmp;
 
@@ -564,7 +564,7 @@ public:
 	Vector2d32& operator=(const Vector &vOther);
 	Vector2d32& operator=(const Vector2D &vOther);
 
-	operator Vector2D ();
+	operator Vector2D () const;
 
 	void Init( vec_t ix = 0.f, vec_t iy = 0.f);
 
@@ -579,7 +579,7 @@ inline Vector2d32& Vector2d32::operator=(const Vector2D &vOther)
 	return *this; 
 }
 
-inline Vector2d32::operator Vector2D ()
+inline Vector2d32::operator Vector2D () const
 {
 	Vector2D tmp;
 

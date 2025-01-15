@@ -66,19 +66,19 @@ public:
 //		SendPropFloat( NULL, 0, 0, 0, SPROP_NOSCALE )
 //		)
 //
-SendPropEx SendPropUtlVector_impl(
+SendPropInfoEx SendPropUtlVector_impl(
 	const char *pVarName,		// Use SENDINFO_UTLVECTOR to generate these first 4 parameters.
 	int offset,
 	int sizeofVar,
 	EnsureCapacityFn ensureFn,
 
 	int nMaxElements,			// Max # of elements in the array. Keep this as low as possible.
-	SendPropEx pArrayProp,		// Describe the data inside of each element in the array.
+	SendPropInfoEx pArrayProp,		// Describe the data inside of each element in the array.
 	SendTableProxyFn varProxy,	// This can be overridden to control who the array is sent to.
 	DTPriority_t priority,
 
 	void(*UtlVectorElement)( 
-	const SendProp *pProp, 
+	const SendPropInfo *pProp, 
 	const void *pStruct, 
 	const void *pData, 
 	DVariant *pOut, 
@@ -86,14 +86,14 @@ SendPropEx SendPropUtlVector_impl(
 	int objectID ),
 
 	void*(UtlVectorElement_DataTable)( 
-	const SendProp *pProp,
+	const SendPropInfo *pProp,
 	const void *pStructBase, 
 	const void *pData, 
 	CSendProxyRecipients *pRecipients, 
 	int objectID ),
 	
 	void(*UtlVectorLength)( 
-	const SendProp *pProp, 
+	const SendPropInfo *pProp, 
 	const void *pStruct, 
 	const void *pData, 
 	DVariant *pOut, 
@@ -104,7 +104,7 @@ SendPropEx SendPropUtlVector_impl(
 
 template<typename T>
 void SendProxy_UtlVectorElement( 
-	const SendProp *pProp, 
+	const SendPropInfo *pProp, 
 	const void *pStruct, 
 	const void *pData, 
 	DVariant *pOut, 
@@ -133,7 +133,7 @@ void SendProxy_UtlVectorElement(
 
 template<typename T>
 void* SendProxy_UtlVectorElement_DataTable( 
-	const SendProp *pProp,
+	const SendPropInfo *pProp,
 	const void *pStructBase, 
 	const void *pData, 
 	CSendProxyRecipients *pRecipients, 
@@ -159,7 +159,7 @@ void* SendProxy_UtlVectorElement_DataTable(
 
 template<typename T>
 void SendProxy_UtlVectorLength( 
-	const SendProp *pProp, 
+	const SendPropInfo *pProp, 
 	const void *pStruct, 
 	const void *pData, 
 	DVariant *pOut, 
@@ -181,7 +181,7 @@ void SendProxy_UtlVectorLength(
 }
 
 template<typename T>
-SendPropEx SendPropUtlVector(
+SendPropInfoEx SendPropUtlVector(
 	type_identity<T>,
 	const char *pVarName,		// Use SENDINFO_UTLVECTOR to generate these first 4 parameters.
 	int offset,
@@ -189,7 +189,7 @@ SendPropEx SendPropUtlVector(
 	EnsureCapacityFn ensureFn,
 
 	int nMaxElements,			// Max # of elements in the array. Keep this as low as possible.
-	SendPropEx pArrayProp,		// Describe the data inside of each element in the array.
+	SendPropInfoEx pArrayProp,		// Describe the data inside of each element in the array.
 	SendTableProxyFn varProxy=SendProxy_DataTableToDataTable,	// This can be overridden to control who the array is sent to.
 	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
 	)

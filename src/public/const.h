@@ -99,6 +99,46 @@
 #define NUM_NETWORKED_EHANDLE_BITS					(MAX_EDICT_BITS + NUM_NETWORKED_EHANDLE_SERIAL_NUMBER_BITS)
 #define INVALID_NETWORKED_EHANDLE_VALUE				((1 << NUM_NETWORKED_EHANDLE_BITS) - 1)
 
+//===================================================================================================================
+// Player Defines
+
+// Max number of players in a game ( see const.h for ABSOLUTE_PLAYER_LIMIT (256 ) )
+// The Source engine is really designed for 32 or less players.  If you raise this number above 32, you better know what you are doing
+//  and have a good answer for a bunch of perf question related to player simulation, thinking logic, tracelines, networking overhead, etc.
+// But if you are brave or are doing something interesting, go for it...   ywb 9/22/03
+
+//You might be wondering why these aren't multiple of 2. Well the reason is that if servers decide to have HLTV or Replay enabled we need the extra slot.
+//This is ok since MAX_PLAYERS is used for code specific things like arrays and loops, but it doesn't really means that this is the max number of players allowed
+//Since this is decided by the gamerules (and it can be whatever number as long as its less than MAX_PLAYERS).
+#ifdef HEIST_DLL
+	//4 heisters + replay + hltv + 1 spec
+	#define MAX_PLAYERS (4 + 3)
+#else
+	#define MAX_PLAYERS				65  // Absolute max players supported
+#endif
+
+#if MAX_PLAYERS > 32
+#define CGamePlayerBitVec CBitVec<MAX_PLAYERS>
+#else
+#define CGamePlayerBitVec CDWordBitVec
+#endif
+
+enum entityindex_t : int;
+enum edictindex_t : int;
+enum playerindex_t : int;
+enum clientindex_t : int;
+
+inline const entityindex_t INVALID_ENT_INDEX = (entityindex_t)-1;
+inline const edictindex_t INVALID_EDICT_INDEX = (edictindex_t)-1;
+inline const playerindex_t INVALID_PLR_INDEX = (playerindex_t)-1;
+inline const clientindex_t INVALID_CLIENT_INDEX = (clientindex_t)-1;
+
+inline bool IsNetworkedIndex( entityindex_t idx ) { return idx != INVALID_ENT_INDEX && (int)idx < MAX_EDICTS; }
+inline bool IsNetworkedIndex( edictindex_t idx ) { return idx != INVALID_EDICT_INDEX; }
+inline bool IsNetworkedIndex( playerindex_t idx ) { return idx != INVALID_PLR_INDEX; }
+inline bool IsPlayerIndex( entityindex_t idx ) { return (int)idx >= 1 && (int)idx < MAX_PLAYERS; }
+inline bool IsPlayerIndex( edictindex_t idx ) { return (int)idx >= 1 && (int)idx < MAX_PLAYERS; }
+
 // This is the maximum amount of data a PackedEntity can have. Having a limit allows us
 // to use static arrays sometimes instead of allocating memory all over the place.
 #define MAX_PACKEDENTITY_DATA	(16384)
@@ -113,7 +153,7 @@
 //Tony; added for IPlayerInfo V3.
 //Putting all standard possible stances, but GetStance in CBasePlayer will only return standing or ducking by default -
 //up to the mod to specify the others, or override what GetStance returns.
-enum player_Stance
+enum player_Stance : unsigned char
 {
 	PINFO_STANCE_STANDING = 0,
 	PINFO_STANCE_DUCKING,

@@ -34,7 +34,7 @@ ConVar mp_slammoveyaw( "mp_slammoveyaw", "0", FCVAR_REPLICATED | FCVAR_DEVELOPME
 // Input  : *pPlayer - 
 //			&movementData - 
 //-----------------------------------------------------------------------------
-CPlayerAnimState::CPlayerAnimState( CSharedBasePlayer *pPlayer, PlayerMovementData_t &movementData )
+CPlayerAnimState::CPlayerAnimState( CSharedBasePlayer *pPlayer, const PlayerMovementData_t &movementData )
 #ifdef CLIENT_DLL
 	: m_iv_flMaxGroundSpeed( "CPlayerAnimState::m_iv_flMaxGroundSpeed" )
 #endif
@@ -70,7 +70,7 @@ CPlayerAnimState::CPlayerAnimState( CSharedBasePlayer *pPlayer, PlayerMovementDa
 	m_bFirstDyingFrame = true;
 
 	m_eCurrentMainSequenceActivity = ACT_INVALID;	
-	m_nSpecificMainSequence = -1;
+	m_nSpecificMainSequence = INVALID_SEQUENCE;
 
 	// Weapon data.
 	m_hActiveWeapon = NULL;
@@ -92,7 +92,7 @@ CPlayerAnimState::CPlayerAnimState( CSharedBasePlayer *pPlayer, PlayerMovementDa
 	Init( pPlayer, movementData );
 
 	// movement playback options
-	m_nMovementSequence = -1;
+	m_nMovementSequence = INVALID_SEQUENCE;
 	m_LegAnimType = LEGANIM_9WAY;
 
 	InitGestureSlots();
@@ -112,7 +112,7 @@ CPlayerAnimState::~CPlayerAnimState()
 // Input  : *pPlayer - 
 //			&movementData - 
 //-----------------------------------------------------------------------------
-void CPlayerAnimState::Init( CSharedBasePlayer *pPlayer, PlayerMovementData_t &movementData )
+void CPlayerAnimState::Init( CSharedBasePlayer *pPlayer, const PlayerMovementData_t &movementData )
 {
 	// Get the player this animation data works on.
 	m_pPlayer = pPlayer;
@@ -343,7 +343,7 @@ bool CPlayerAnimState::InitGestureSlots( void )
 	m_aGestureSlots.AddMultipleToTail( GESTURE_SLOT_COUNT );
 
 	// Assign all of the the CAnimationLayer pointers to null early in case we bail.
-	for ( int iGesture = 0; iGesture < GESTURE_SLOT_COUNT; ++iGesture )
+	for ( int iGesture = 0; iGesture < (int)GESTURE_SLOT_COUNT; ++iGesture )
 	{
 		m_aGestureSlots[iGesture].m_pAnimLayer = NULL;
 	}
@@ -354,13 +354,13 @@ bool CPlayerAnimState::InitGestureSlots( void )
 	// Set the number of animation overlays we will use.
 	pPlayer->SetNumAnimOverlays( GESTURE_SLOT_COUNT );
 
-	for ( int iGesture = 0; iGesture < GESTURE_SLOT_COUNT; ++iGesture )
+	for ( int iGesture = 0; iGesture < (int)GESTURE_SLOT_COUNT; ++iGesture )
 	{
 		m_aGestureSlots[iGesture].m_pAnimLayer = pPlayer->GetAnimOverlayForModify( (animlayerindex_t)iGesture );
 		if ( !m_aGestureSlots[iGesture].m_pAnimLayer )
 			return false;
 
-		ResetGestureSlot( iGesture );
+		ResetGestureSlot( (gestureslotindex_t)iGesture );
 	}
 
 	return true;
@@ -381,19 +381,19 @@ void CPlayerAnimState::ShutdownGestureSlots( void )
 void CPlayerAnimState::ResetGestureSlots( void )
 {
 	// Clear out all the gesture slots.
-	for ( int iGesture = 0; iGesture < GESTURE_SLOT_COUNT; ++iGesture )
+	for ( int iGesture = 0; iGesture < (int)GESTURE_SLOT_COUNT; ++iGesture )
 	{
-		ResetGestureSlot( iGesture );
+		ResetGestureSlot( (gestureslotindex_t)iGesture );
 	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CPlayerAnimState::ResetGestureSlot( int iGestureSlot )
+void CPlayerAnimState::ResetGestureSlot( gestureslotindex_t iGestureSlot )
 {
 	// Sanity Check
-	Assert( iGestureSlot >= 0 && iGestureSlot < GESTURE_SLOT_COUNT );
+	Assert( iGestureSlot >= GESTURE_SLOT_FIRST && iGestureSlot < GESTURE_SLOT_COUNT );
 
 	if ( !VerifyAnimLayerInSlot( iGestureSlot ) )
 		return;
@@ -463,10 +463,10 @@ void CPlayerAnimState::RunGestureSlotAnimEventsToCompletion( GestureSlot_t *pGes
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-bool CPlayerAnimState::IsGestureSlotActive( int iGestureSlot )
+bool CPlayerAnimState::IsGestureSlotActive( gestureslotindex_t iGestureSlot )
 {
 	// Sanity Check
-	Assert( iGestureSlot >= 0 && iGestureSlot < GESTURE_SLOT_COUNT );
+	Assert( iGestureSlot >= GESTURE_SLOT_FIRST && iGestureSlot < GESTURE_SLOT_COUNT );
 	return m_aGestureSlots[iGestureSlot].m_bActive;
 }
 
@@ -474,14 +474,14 @@ bool CPlayerAnimState::IsGestureSlotActive( int iGestureSlot )
 //-----------------------------------------------------------------------------
 // Purpose: Track down a crash
 //-----------------------------------------------------------------------------
-bool CPlayerAnimState::VerifyAnimLayerInSlot( int iGestureSlot )
+bool CPlayerAnimState::VerifyAnimLayerInSlot( gestureslotindex_t iGestureSlot )
 {
-	if ( iGestureSlot < 0 || iGestureSlot >= GESTURE_SLOT_COUNT )
+	if ( iGestureSlot < GESTURE_SLOT_FIRST || iGestureSlot >= GESTURE_SLOT_COUNT )
 	{
 		return false;
 	}
 
-	if ( GetBasePlayer()->GetNumAnimOverlays() < iGestureSlot + 1 )
+	if ( GetBasePlayer()->GetNumAnimOverlays() < ((int)iGestureSlot + 1) )
 	{
 		AssertMsg2( false, "Player %d doesn't have gesture slot %d any more.", GetBasePlayer()->entindex(), iGestureSlot );
 		Msg( "Player %d doesn't have gesture slot %d any more.\n", GetBasePlayer()->entindex(), iGestureSlot );
@@ -503,10 +503,10 @@ bool CPlayerAnimState::VerifyAnimLayerInSlot( int iGestureSlot )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-bool CPlayerAnimState::IsGestureSlotPlaying( int iGestureSlot, Activity iGestureActivity )
+bool CPlayerAnimState::IsGestureSlotPlaying( gestureslotindex_t iGestureSlot, Activity iGestureActivity )
 {
 	// Sanity Check
-	Assert( iGestureSlot >= 0 && iGestureSlot < GESTURE_SLOT_COUNT );
+	Assert( iGestureSlot >= GESTURE_SLOT_FIRST && iGestureSlot < GESTURE_SLOT_COUNT );
 
 	// Check to see if the slot is active.
 	if ( !IsGestureSlotActive( iGestureSlot ) )
@@ -518,10 +518,10 @@ bool CPlayerAnimState::IsGestureSlotPlaying( int iGestureSlot, Activity iGesture
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPlayerAnimState::RestartGesture( int iGestureSlot, Activity iGestureActivity, bool bAutoKill )
+void CPlayerAnimState::RestartGesture( gestureslotindex_t iGestureSlot, Activity iGestureActivity, bool bAutoKill )
 {
 	// Sanity Check
-	Assert( iGestureSlot >= 0 && iGestureSlot < GESTURE_SLOT_COUNT );
+	Assert( iGestureSlot >= GESTURE_SLOT_FIRST && iGestureSlot < GESTURE_SLOT_COUNT );
 	
 	if ( !VerifyAnimLayerInSlot( iGestureSlot ) )
 			return;
@@ -553,10 +553,10 @@ void CPlayerAnimState::RestartGesture( int iGestureSlot, Activity iGestureActivi
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPlayerAnimState::AddToGestureSlot( int iGestureSlot, Activity iGestureActivity, bool bAutoKill )
+void CPlayerAnimState::AddToGestureSlot( gestureslotindex_t iGestureSlot, Activity iGestureActivity, bool bAutoKill )
 {
 	// Sanity Check
-	Assert( iGestureSlot >= 0 && iGestureSlot < GESTURE_SLOT_COUNT );
+	Assert( iGestureSlot >= GESTURE_SLOT_FIRST && iGestureSlot < GESTURE_SLOT_COUNT );
 
 	CSharedBasePlayer *pPlayer = GetBasePlayer();
 	if ( !pPlayer )
@@ -600,7 +600,7 @@ void CPlayerAnimState::AddToGestureSlot( int iGestureSlot, Activity iGestureActi
 	m_aGestureSlots[iGestureSlot].m_bAutoKill = bAutoKill;
 	m_aGestureSlots[iGestureSlot].m_bActive = true;
 	m_aGestureSlots[iGestureSlot].m_pAnimLayer->m_nActivity = iGestureActivity;
-	m_aGestureSlots[iGestureSlot].m_pAnimLayer->m_nOrder = iGestureSlot;
+	m_aGestureSlots[iGestureSlot].m_pAnimLayer->m_nOrder = (unsigned int)iGestureSlot;
 	m_aGestureSlots[iGestureSlot].m_pAnimLayer->m_nPriority = 0;
 	m_aGestureSlots[iGestureSlot].m_pAnimLayer->m_flCycle = 0.0f;
 	m_aGestureSlots[iGestureSlot].m_pAnimLayer->m_flPrevCycle = 0.0f;
@@ -630,10 +630,10 @@ void CPlayerAnimState::AddToGestureSlot( int iGestureSlot, Activity iGestureActi
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPlayerAnimState::AddVCDSequenceToGestureSlot( int iGestureSlot, int iGestureSequence, float flCycle, bool bAutoKill )
+void CPlayerAnimState::AddVCDSequenceToGestureSlot( gestureslotindex_t iGestureSlot, sequence_t iGestureSequence, float flCycle, bool bAutoKill )
 {
 	// Sanity Check
-	Assert( iGestureSlot >= 0 && iGestureSlot < GESTURE_SLOT_COUNT );
+	Assert( iGestureSlot >= GESTURE_SLOT_FIRST && iGestureSlot < GESTURE_SLOT_COUNT );
 
 	CSharedBasePlayer *pPlayer = GetBasePlayer();
 	if ( !pPlayer )
@@ -705,7 +705,7 @@ void CPlayerAnimState::AddVCDSequenceToGestureSlot( int iGestureSlot, int iGestu
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CSharedAnimationLayer* CPlayerAnimState::GetGestureSlotLayer( int iGestureSlot )
+CSharedAnimationLayer* CPlayerAnimState::GetGestureSlotLayer( gestureslotindex_t iGestureSlot )
 {
 	return m_aGestureSlots[iGestureSlot].m_pAnimLayer;
 }
@@ -1146,9 +1146,9 @@ void CPlayerAnimState::ComputeMainSequence()
 void CPlayerAnimState::ResetGroundSpeed( void )
 {
 #ifdef CLIENT_DLL
-		m_flMaxGroundSpeed = GetCurrentMaxGroundSpeed();
-		m_iv_flMaxGroundSpeed.Reset( gpGlobals->curtime );
-		m_iv_flMaxGroundSpeed.NoteChanged( gpGlobals->curtime, 0, false );
+	m_flMaxGroundSpeed = GetCurrentMaxGroundSpeed();
+	m_iv_flMaxGroundSpeed.Reset( gpGlobals->curtime );
+	m_iv_flMaxGroundSpeed.NoteChanged( gpGlobals->curtime, 0, false );
 #endif
 }
 
@@ -1195,12 +1195,12 @@ void CPlayerAnimState::ComputeFireSequence( void )
 void CPlayerAnimState::ComputeGestureSequence( CStudioHdr *pStudioHdr )
 {
 	// Update all active gesture layers.
-	for ( int iGesture = 0; iGesture < GESTURE_SLOT_COUNT; ++iGesture )
+	for ( int iGesture = 0; iGesture < (int)GESTURE_SLOT_COUNT; ++iGesture )
 	{
 		if ( !m_aGestureSlots[iGesture].m_bActive )
 			continue;
 
-		if ( !VerifyAnimLayerInSlot( iGesture ) )
+		if ( !VerifyAnimLayerInSlot( (gestureslotindex_t)iGesture ) )
 			continue;
 
 		UpdateGestureLayer( pStudioHdr, &m_aGestureSlots[iGesture] );
@@ -2086,7 +2086,7 @@ void CPlayerAnimState::DebugGestureInfo( void )
 	Anim_StatePrintf( iLine++, "Client\n" );
 #endif
 
-	for ( int iGesture = 0; iGesture < GESTURE_SLOT_COUNT; ++iGesture )
+	for ( int iGesture = 0; iGesture < (int)GESTURE_SLOT_COUNT; ++iGesture )
 	{
 		GestureSlot_t *pGesture = &m_aGestureSlots[iGesture];
 		if ( pGesture )

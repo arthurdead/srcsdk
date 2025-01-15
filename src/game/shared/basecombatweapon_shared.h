@@ -30,7 +30,7 @@ typedef CBaseCombatWeapon CSharedBaseCombatWeapon;
 extern void OnBaseCombatWeaponCreated( CBaseCombatWeapon * );
 extern void OnBaseCombatWeaponDestroyed( CBaseCombatWeapon * );
 
-void *SendProxy_SendLocalWeaponDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
+void *SendProxy_SendLocalWeaponDataTable( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
 #endif
 
 #ifdef GAME_DLL

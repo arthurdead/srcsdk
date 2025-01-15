@@ -20,6 +20,7 @@ tier3 = subproject('tier3')
 steamworks = subproject('steamworks')
 game_loopback = subproject('game_loopback')
 recastnavigation_game = subproject('recastnavigation_game')
+bonesetup = subproject('bonesetup')
 
 public_dir = join_paths(src_root_dir,'public')
 common_dir = join_paths(src_root_dir,'common')
@@ -144,7 +145,6 @@ game_shared_base_dep = declare_dependency(
 		join_paths(shared_src_dir,'gametrace_dll.cpp'),
 		join_paths(public_dir,'interval.cpp'),
 		join_paths(public_dir,'SoundParametersInternal.cpp'),
-		join_paths(public_dir,'bone_setup.cpp'),
 		join_paths(public_dir,'bone_accessor.cpp'),
 		join_paths(public_dir,'collisionutils.cpp'),
 		join_paths(public_dir,'dt_shared.cpp'),
@@ -161,7 +161,6 @@ game_shared_base_dep = declare_dependency(
 		join_paths(public_dir,'simple_physics.cpp'),
 		join_paths(public_dir,'stringregistry.cpp'),
 		join_paths(public_dir,'studio.cpp'),
-		join_paths(public_dir,'bone_setup.cpp'),
 		join_paths(public_dir,'tools','bonelist.cpp'),
 		join_paths(public_dir,'crtmemdebug.cpp'),
 		join_paths(public_dir,'sentence.cpp'),
@@ -194,5 +193,6 @@ game_shared_base_dep = declare_dependency(
 		tier2.get_variable('tier2_dep'),
 		tier3.get_variable('tier3_dep'),
 		recastnavigation_game.get_variable('recastnavigation_game_dep'),
+		bonesetup.get_variable('bonesetup_dep'),
 	]
 )

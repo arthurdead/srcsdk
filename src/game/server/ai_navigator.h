@@ -555,7 +555,7 @@ private:
 
     // ---------------------------------
 
-	static bool			ActivityIsLocomotive( Activity );
+	bool			ActivityIsLocomotive( Activity );
     
     // ---------------------------------
 

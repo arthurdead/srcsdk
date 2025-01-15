@@ -34,7 +34,7 @@ AI_Waypoint_t::AI_Waypoint_t()
 
 //-------------------------------------
 
-AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigation_t initNavType, int initWaypointFlags, dtPolyRef initPolyRef, NavMeshType_t initMeshType )
+AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigation_t initNavType, WaypointFlags_t initWaypointFlags, dtPolyRef initPolyRef, NavMeshType_t initMeshType )
 {
 	memset( (void *)this, 0, sizeof(AI_Waypoint_t) );
 
@@ -48,7 +48,7 @@ AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigat
 	flPathDistGoal = -1;
 }
 
-AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigation_t initNavType, int initWaypointFlags )
+AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigation_t initNavType, WaypointFlags_t initWaypointFlags )
 	: AI_Waypoint_t( initPosition, initYaw, initNavType, initWaypointFlags, 0, RECAST_NAVMESH_INVALID )
 {
 }
@@ -86,7 +86,7 @@ void CAI_WaypointList::PrependWaypoints( AI_Waypoint_t *pWaypoints )
 
 //-------------------------------------
 
-void CAI_WaypointList::PrependWaypoint( const Vector &newPoint, Navigation_t navType, unsigned waypointFlags, float flYaw )
+void CAI_WaypointList::PrependWaypoint( const Vector &newPoint, Navigation_t navType, WaypointFlags_t waypointFlags, float flYaw )
 {
 	PrependWaypoints( new AI_Waypoint_t( newPoint, flYaw, navType, waypointFlags ) );
 }

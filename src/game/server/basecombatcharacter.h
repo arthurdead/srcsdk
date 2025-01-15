@@ -492,8 +492,8 @@ public:
 
 public:
 	// returns the last body region that took damage
-	int	LastHitGroup() const				{ return m_LastHitGroup; }
-	void SetLastHitGroup( int nHitGroup )	{ m_LastHitGroup = nHitGroup; }
+	Hitgroup_t	LastHitGroup() const				{ return m_LastHitGroup; }
+	void SetLastHitGroup( Hitgroup_t nHitGroup )	{ m_LastHitGroup = nHitGroup; }
 
 public:
 	CNetworkTime( m_flNextAttack );			// cannot attack again until this time
@@ -541,7 +541,7 @@ private:
 	static CUtlVector< CUtlVector< EHANDLE> > m_aFactions;
 
 	// attack/damage
-	int					m_LastHitGroup;			// the last body region that took damage
+	Hitgroup_t					m_LastHitGroup;			// the last body region that took damage
 	float				m_flDamageAccumulator;	// so very small amounts of damage do not get lost.
 	int					m_iDamageCount;			// # of times NPC has been damaged.  used for tracking 1-shot kills.
 	

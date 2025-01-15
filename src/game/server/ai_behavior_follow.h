@@ -22,7 +22,7 @@
 //-----------------------------------------------------------------------------
 // NOTE: these must correspond with the AI_FollowFormation_t array in AI_Behavior_Follow.cpp!!
 //-----------------------------------------------------------------------------
-enum AI_Formations_t
+enum AI_Formations_t : unsigned char
 {
 	AIF_SIMPLE,
 	AIF_WIDE,
@@ -37,12 +37,18 @@ enum AI_Formations_t
 	AIF_NUM_FORMATIONS,
 };
 
-enum AI_FollowFormationFlags_t
+UNORDEREDENUM_OPERATORS( AI_Formations_t, unsigned char )
+
+DECLARE_FIELD_ENUM( AI_Formations_t )
+
+enum AI_FollowFormationFlags_t : unsigned char
 {
 	AIFF_DEFAULT 					= 0,
 	AIFF_USE_FOLLOW_POINTS 			= 0x01,
 	AIFF_REQUIRE_LOS_OUTSIDE_COMBAT	= 0x02,
 };
+
+FLAGENUM_OPERATORS( AI_FollowFormationFlags_t, unsigned char )
 
 //-----------------------------------------------------------------------------
 //
@@ -62,7 +68,7 @@ public:
 	virtual void DisableGoal( CAI_BaseNPC *pAI  );
 	virtual void InputOutsideTransition( inputdata_t &&inputdata );
 
-	int m_iFormation;
+	AI_Formations_t m_iFormation;
 
 	bool m_bNormalMemoryDiscard = false;
 
@@ -77,7 +83,7 @@ int AIGetNumFollowers( CBaseEntity *pEntity, string_t iszClassname = NULL_STRING
 
 struct AI_FollowNavInfo_t
 {
-	int		flags;
+	AI_FollowFormationFlags_t		flags;
 	Vector  position;
 	float 	range;
 	float	Zrange;
@@ -208,13 +214,13 @@ protected:
 	//----------------------------
 	
 	bool 			UpdateFollowPosition();
-	const int		GetGoalFlags();
+	AI_FollowFormationFlags_t		GetGoalFlags();
 	float 			GetGoalTolerance();
 	bool			PlayerIsPushing();
 
 	bool IsFollowTargetInRange( float rangeMultiplier = 1.0 );
 
-	bool			IsFollowGoalInRange( float tolerance, float zTolerance, int flags );
+	bool			IsFollowGoalInRange( float tolerance, float zTolerance, AI_FollowFormationFlags_t flags );
 	virtual bool	IsChaseGoalInRange();
 
 	void			NoteFailedFollow();
@@ -313,7 +319,7 @@ inline const AI_FollowNavInfo_t &CAI_FollowBehavior::GetFollowGoalInfo()
 
 //-------------------------------------
 
-inline const int CAI_FollowBehavior::GetGoalFlags()
+inline AI_FollowFormationFlags_t CAI_FollowBehavior::GetGoalFlags()
 {
 	return m_FollowNavGoal.flags;
 }

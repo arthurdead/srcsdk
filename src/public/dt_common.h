@@ -212,7 +212,7 @@ FLAGENUM_OPERATORS( DTFlags_t, uint32 )
 	#structVarName "." #varName "[" #i "]"
 #endif
 
-class SendProp;
+class SendPropInfo;
 
 enum SendPropType : unsigned int
 {

@@ -1062,7 +1062,7 @@ AI_Waypoint_t *CRecastMesh::ConstructWaypointsFromStraightPath( pathfind_resultd
 {
 	AI_Waypoint_t *pResultPath = NULL;
 
-	int fWaypointFlags = bits_WP_TO_GOAL;
+	WaypointFlags_t fWaypointFlags = bits_WP_TO_GOAL;
 
 	for (int i = findpathData.nstraightPath - 1; i >= 0; i--)
 	{
@@ -1071,7 +1071,7 @@ AI_Waypoint_t *CRecastMesh::ConstructWaypointsFromStraightPath( pathfind_resultd
 		Vector pos( findpathData.straightPath[i*3], findpathData.straightPath[i*3+2], findpathData.straightPath[i*3+1] );
 
 		AI_Waypoint_t *pNewPath = new AI_Waypoint_t( pos, 0.0f, NAV_GROUND, fWaypointFlags );
-		fWaypointFlags = 0;
+		fWaypointFlags = bits_WP_NO_FLAGS;
 		pNewPath->SetNext( pResultPath );
 
 		// For now, offmesh connections are always considered as edges.
