@@ -17,11 +17,10 @@
 #include <stdarg.h>
 #include "icommandline.h"
 #include "consoleio.h"
-#include "logging.h"
 #include "hackmgr/hackmgr.h"
 #include "Color.h"
 
-#define printf USE_THE_LOGGING_SYSTEM
+#include "logging.h"
 
 class CValidator;
 

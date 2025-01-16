@@ -15,11 +15,10 @@
 #include "Color.h"
 #include "icommandline.h"
 #include "tier0/platform.h"
+#include <stdio.h>
 
 // Used by CColorizedLoggingListener
 #include "tier0/consoleio.h"
-
-#undef printf
 
 /*
 	---- Logging System ----
@@ -662,7 +661,5 @@ PLATFORM_OVERLOAD_ABI_2 LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t 
 
 PLATFORM_INTERFACE_ABI_2 LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color spewColor, const char *pMessage );
 PLATFORM_INTERFACE_ABI_2 LoggingResponse_t LoggingSystem_LogAssert( const char *pMessageFormat, ... ) FMTFUNCTION( 1, 2 );
-
-#define printf USE_THE_LOGGING_SYSTEM
 
 #endif // LOGGING_H

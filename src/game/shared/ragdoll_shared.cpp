@@ -889,9 +889,9 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 	//////////////////////////////
 	// If we get here, it means we couldn't find a suitable ragdoll to remove,
 	// so just remove the furthest one.
+#ifdef CLIENT_DLL
 	int furthestOne = m_LRU.Head();
 	float furthestDistSq = 0;
-#ifdef CLIENT_DLL
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 
 	if (pPlayer && m_LRU.Count() > iMaxRagdollCount) // find the furthest one algorithm

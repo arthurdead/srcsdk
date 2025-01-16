@@ -101,7 +101,7 @@ public:
 
 		unsigned int count = buf.GetUnsignedInt();
 		lights.Reserve( count );
-		for(int i = 0; i < count; ++i) {
+		for(unsigned int i = 0; i < count; ++i) {
 			Vector pos;
 
 			pos.x = buf.GetFloat();
@@ -240,3 +240,4 @@ CON_COMMAND( save_lightcache, "" )
 {
 	SaveLightIntensity();
 }
+

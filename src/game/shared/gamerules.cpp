@@ -2893,9 +2893,9 @@ void CSharedGameRules::SetGlobalFriendlyFire(ThreeState_t val)
 
 void CSharedGameRules::FireGameEvent( IGameEvent *event )
 {
+#ifdef CLIENT_DLL
 	const char *eventName = event->GetName();
 
-#ifdef CLIENT_DLL
 	if ( !Q_strcmp( eventName, "recalculate_holidays" ) )
 	{
 		UTIL_CalculateHolidays();

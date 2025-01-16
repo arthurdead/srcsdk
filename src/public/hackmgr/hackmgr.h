@@ -74,7 +74,7 @@ HACKMGR_API void HackMgr_DependantModuleLoaded(const char *name);
 class IBaseClientDLL;
 #endif
 class IServerGameDLL;
-struct CGlobalVars;
+class CGlobalVars;
 
 #ifndef SWDS
 HACKMGR_API bool HackMgr_Client_PreInit(IBaseClientDLL *pdll, CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory, CGlobalVarsBase *pGlobals);

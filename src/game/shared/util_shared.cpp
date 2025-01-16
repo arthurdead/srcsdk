@@ -31,6 +31,10 @@
 #include "filesystem.h"
 #include "collisionproperty.h"
 
+#ifdef GAME_DLL
+#include "ai_basenpc.h"
+#endif
+
 #ifdef CLIENT_DLL
 	#include "c_te_effect_dispatch.h"
 #else
@@ -700,7 +704,7 @@ unsigned int UTIL_MaskForEntity( CSharedBaseEntity *pEntity, bool brush_only )
 	if(pEntity->IsNPC()) {
 	#ifdef GAME_DLL
 		CAI_BaseNPC *pNPC = pEntity->MyNPCPointer();
-		return brush_only ? MASK_NPCSOLID_BRUSHONLY : MASK_NPCSOLID;
+		return brush_only ? pNPC->GetAITraceMask_BrushOnly() : pNPC->GetAITraceMask();
 	#else
 		return brush_only ? MASK_NPCSOLID_BRUSHONLY : MASK_NPCSOLID;
 	#endif
@@ -1849,14 +1853,14 @@ EHolidayIndex				UTIL_GetHolidayIndex( EHolidayFlag eHoliday )
 
 #ifdef __GNUC__
 	if(__builtin_popcount(eHoliday) != 1) {
-		return -1;
+		return (EHolidayIndex)-1;
 	}
 
 	int i = __builtin_ctz(eHoliday);
 	return (1 << i);
 #else
 	if(__popcnt(eHoliday) != 1) {
-		return -1;
+		return (EHolidayIndex)-1;
 	}
 
 	int i = _tzcnt_u32(eHoliday);
@@ -2469,7 +2473,7 @@ bool UTIL_GetModDir( char *lpszTextOut, unsigned int nSize )
 {
 	// Must pass in a buffer at least large enough to hold the desired string
 	const char *pGameDir = CommandLine()->ParmValue( "-game", CommandLine()->ParmValue( "-defaultgamedir", "hl2" ) );
-	int nGameDirLen = Q_strlen( pGameDir );
+	unsigned int nGameDirLen = Q_strlen( pGameDir );
 	Assert( nGameDirLen <= nSize );
 	if ( nGameDirLen > nSize )
 		return false;

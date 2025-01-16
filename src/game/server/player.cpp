@@ -9791,7 +9791,7 @@ bool CBaseExpresserPlayer::SpeakIfAllowed( AIConcept_t ai_concept, const char *m
 	if ( !IsAlive() )
 		return false;
 
-	//if ( IsAllowedToSpeak( concept, bRespondingToPlayer ) )
+	//if ( IsAllowedToSpeak( ai_concept, bRespondingToPlayer ) )
 	return Speak( ai_concept, modifiers, pszOutResponseChosen, bufsize, filter );
 }
 

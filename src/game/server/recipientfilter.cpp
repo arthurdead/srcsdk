@@ -388,7 +388,7 @@ void CPASAttenuationFilter::Filter( const Vector& origin, float attenuation /*= 
 
 	// Now remove recipients that are outside sound radius
 	float maxAudible = ( 2 * SOUND_NORMAL_CLIP_DIST ) / attenuation;
-	float distance;
+	//float distance;
 	Vector vecRelative;
 
 	int c = GetRecipientCount();

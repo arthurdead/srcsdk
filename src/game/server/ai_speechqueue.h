@@ -82,7 +82,7 @@ public:
 		*/
 		CFollowupTargetSpec_t m_Target;
 
-		inline void Init( const AIConcept_t &concept, const AI_CriteriaSet * RESTRICT contexts, float dtime, const CFollowupTargetSpec_t &target, CBaseEntity *pIssuer );
+		inline void Init( const AIConcept_t &conc, const AI_CriteriaSet * RESTRICT contexts, float dtime, const CFollowupTargetSpec_t &target, CBaseEntity *pIssuer );
 		inline bool IsQuashed() { return !m_Target.IsValid(); }
 		void Quash(); ///< make this response invalid.
 	};
@@ -94,7 +94,7 @@ public:
 	CResponseQueue( int queueSize );
 
 	/// Add a deferred response. 
-	void Add( const AIConcept_t &concept,  ///< concept to dispatch
+	void Add( const AIConcept_t &conc,  ///< concept to dispatch
 			  const AI_CriteriaSet * RESTRICT contexts, ///< the contexts that come with it (may be NULL)
 			  float time,					 ///< when to dispatch it. You can specify a time of zero to mean "immediately."
 			  const CFollowupTargetSpec_t &targetspec, /// All information necessary to target this response
@@ -102,7 +102,7 @@ public:
 			  );
 
 	/// Remove all deferred responses matching the concept and issuer.
-	void Remove( const AIConcept_t &concept,  ///< concept to dispatch
+	void Remove( const AIConcept_t &conc,  ///< concept to dispatch
 		CBaseEntity * const RESTRICT pIssuer = NULL ///< the entity issuing the response, if one exists.
 		) RESTRICT;
 
@@ -125,7 +125,7 @@ public:
 	inline int GetNumExpresserTargets() const;
 	inline CBaseEntity *GetExpresserHost(int which) const;
 
-	void AppendFollowupCriteria( AIConcept_t concept, AI_CriteriaSet &set, CAI_Expresser *pEx,
+	void AppendFollowupCriteria( AIConcept_t conc, AI_CriteriaSet &set, CAI_Expresser *pEx,
 		CAI_ExpresserSink *pSink, CBaseEntity *pTarget, CBaseEntity *pIssuer, DeferredResponseTarget_t nTargetType );
 
 protected:
@@ -152,9 +152,9 @@ protected:
 	CUtlVector<EHANDLE> m_ExpresserTargets; // a list of legitimate expresser targets
 };
 
-inline void CResponseQueue::CDeferredResponse::Init(const AIConcept_t &concept, const AI_CriteriaSet * RESTRICT contexts, float dtime, const CFollowupTargetSpec_t &target, CBaseEntity *pIssuer )
+inline void CResponseQueue::CDeferredResponse::Init(const AIConcept_t &conc, const AI_CriteriaSet * RESTRICT contexts, float dtime, const CFollowupTargetSpec_t &target, CBaseEntity *pIssuer )
 {
-	m_concept = concept; 
+	m_concept = conc; 
 	m_fDispatchTime = dtime;
 	/*
 	m_iTargetType = targetType;
@@ -217,35 +217,36 @@ extern CResponseQueueManager g_ResponseQueueManager;
 // Handy global helper funcs
 
 /// Automatically queue up speech to happen immediately -- calls straight through to response rules add
-inline void QueueSpeak( const AIConcept_t &concept,					///< concept name to say
+inline void QueueSpeak( const AIConcept_t &conc,					///< concept name to say
 					    const CResponseQueue::CFollowupTargetSpec_t& targetspec,	///< kDRT_ANY, kDRT_ALL, etc
 						CBaseEntity *pIssuer = NULL					///< if specifying ANY or ALL, use this to specify the one you *don't* want to speak
 						)
 {
-	return g_ResponseQueueManager.GetQueue()->Add( concept, NULL, 0.0f, targetspec, pIssuer );
+	return g_ResponseQueueManager.GetQueue()->Add( conc, NULL, 0.0f, targetspec, pIssuer );
 }
 
 /// Automatically queue up speech to happen immediately -- calls straight through to response rules add
-inline void QueueSpeak( const AIConcept_t &concept,					///< concept name to say
+inline void QueueSpeak( const AIConcept_t &conc,					///< concept name to say
 					    const CResponseQueue::CFollowupTargetSpec_t& targetspec,	///< kDRT_ANY, kDRT_ALL, etc
 						const AI_CriteriaSet &criteria,				///< criteria to pass in
 					    CBaseEntity *pIssuer = NULL					///< if specifying ANY or ALL, use this to specify the one you *don't* want to speak
 					   )
 {
-	return g_ResponseQueueManager.GetQueue()->Add( concept, &criteria, 0.0f, targetspec, pIssuer );
+	return g_ResponseQueueManager.GetQueue()->Add( conc, &criteria, 0.0f, targetspec, pIssuer );
 }
 
 /// Automatically queue up speech to happen immediately -- calls straight through to response rules add
-inline void QueueSpeak( const AIConcept_t &concept,					///< concept name to say
+inline void QueueSpeak( const AIConcept_t &conc,					///< concept name to say
 					   const EHANDLE &target,						///< which entity shall speak
 					   float delay,									///< how far in the future to speak
 					   const AI_CriteriaSet &criteria,				///< criteria to pass in
 					   CBaseEntity *pIssuer = NULL )
 {
-	return g_ResponseQueueManager.GetQueue()->Add( concept, &criteria, gpGlobals->curtime + delay,
+	return g_ResponseQueueManager.GetQueue()->Add( conc, &criteria, gpGlobals->curtime + delay,
 		CResponseQueue::CFollowupTargetSpec_t(target), pIssuer );
 }
 
 
 
 #endif // AI_SPEECHQUEUE_H
+

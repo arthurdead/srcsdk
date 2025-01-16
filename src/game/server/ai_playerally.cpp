@@ -834,7 +834,7 @@ bool CAI_PlayerAlly::SelectAnswerFriend( CBaseEntity *pFriend, AISpeechSelection
 //-----------------------------------------------------------------------------
 // Purpose: Asks a question now.
 //-----------------------------------------------------------------------------
-bool CAI_PlayerAlly::AskQuestionNow( CBaseEntity *pSpeechTarget, int iQARandomNumber, const char *concept )
+bool CAI_PlayerAlly::AskQuestionNow( CBaseEntity *pSpeechTarget, int iQARandomNumber, const char *conc )
 {
 	m_hPotentialSpeechTarget = pSpeechTarget;
 	m_iQARandomNumber = iQARandomNumber;
@@ -847,7 +847,7 @@ bool CAI_PlayerAlly::AskQuestionNow( CBaseEntity *pSpeechTarget, int iQARandomNu
 
 	AISpeechSelection_t selection;
 
-	if (SelectSpeechResponse( concept, NULL, m_hPotentialSpeechTarget.Get(), &selection ))
+	if (SelectSpeechResponse( conc, NULL, m_hPotentialSpeechTarget.Get(), &selection ))
 	{
 		SetSpeechTarget( selection.hSpeechTarget );
 		ClearPendingSpeech();
@@ -866,7 +866,7 @@ void CAI_PlayerAlly::InputAskQuestion( inputdata_t &inputdata )
 {
 	CBaseEntity *pSpeechTarget = NULL;
 	int iQARandomNumber = 0;
-	const char *concept = TLK_QUESTION;
+	const char *conc = TLK_QUESTION;
 
 	// I didn't feel like using strtok today.
 	CUtlStringList vecStrings;
@@ -880,7 +880,7 @@ void CAI_PlayerAlly::InputAskQuestion( inputdata_t &inputdata )
 		{
 			case 0:		iQARandomNumber = atoi(vecStrings[i]); break;
 			case 1:		pSpeechTarget = gEntList.FindEntityByName(NULL, vecStrings[i], this, inputdata.pActivator, inputdata.pCaller); break;
-			case 2:		concept = vecStrings[i]; break;
+			case 2:		conc = vecStrings[i]; break;
 		}
 	}
 
@@ -895,7 +895,7 @@ void CAI_PlayerAlly::InputAskQuestion( inputdata_t &inputdata )
 		pSpeechTarget = NULL;
 	}
 
-	AskQuestionNow(pSpeechTarget, iQARandomNumber, concept);
+	AskQuestionNow(pSpeechTarget, iQARandomNumber, conc);
 }
 
 //-----------------------------------------------------------------------------
@@ -1694,10 +1694,10 @@ bool CAI_PlayerAlly::IsAllowedToSpeak( AIConcept_t ai_concept, bool bRespondingT
 // Purpose: Specifically for player allies handling followup responses.
 // Better-accounts for unknown concepts so that users are free in what they use.
 //-----------------------------------------------------------------------------
-bool CAI_PlayerAlly::IsAllowedToSpeakFollowup( AIConcept_t concept, CBaseEntity *pIssuer, bool bSpecific )
+bool CAI_PlayerAlly::IsAllowedToSpeakFollowup( AIConcept_t conc, CBaseEntity *pIssuer, bool bSpecific )
 { 
 	CAI_AllySpeechManager *	pSpeechManager	= GetAllySpeechManager();
-	ConceptInfo_t *			pInfo			= pSpeechManager->GetConceptInfo( concept );
+	ConceptInfo_t *			pInfo			= pSpeechManager->GetConceptInfo( conc );
 	ConceptCategory_t		category		= SPEECH_PRIORITY; // Must be SPEECH_PRIORITY to get around semaphore
 
 	if ( !IsOkToSpeak( category, true ) )
@@ -1724,13 +1724,13 @@ bool CAI_PlayerAlly::IsAllowedToSpeakFollowup( AIConcept_t concept, CBaseEntity 
 		}
 	}
 
-	if ( !pSpeechManager->ConceptDelayExpired( concept ) )
+	if ( !pSpeechManager->ConceptDelayExpired( conc ) )
 		return false;
 
-	if ( ( pInfo && pInfo->flags & AICF_SPEAK_ONCE ) && GetExpresser()->SpokeConcept( concept ) )
+	if ( ( pInfo && pInfo->flags & AICF_SPEAK_ONCE ) && GetExpresser()->SpokeConcept( conc ) )
 		return false;
 
-	if ( !GetExpresser()->CanSpeakConcept( concept ) )
+	if ( !GetExpresser()->CanSpeakConcept( conc ) )
 		return false;
 	
 	return true;
@@ -1749,11 +1749,11 @@ bool CAI_PlayerAlly::SpeakIfAllowed( AIConcept_t ai_concept, const char *modifie
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool CAI_PlayerAlly::SpeakIfAllowed( AIConcept_t concept, AI_CriteriaSet* modifiers, bool bRespondingToPlayer, char *pszOutResponseChosen, size_t bufsize ) 
+bool CAI_PlayerAlly::SpeakIfAllowed( AIConcept_t conc, AI_CriteriaSet* modifiers, bool bRespondingToPlayer, char *pszOutResponseChosen, size_t bufsize ) 
 { 
-	if ( IsAllowedToSpeak( concept, bRespondingToPlayer ) )
+	if ( IsAllowedToSpeak( conc, bRespondingToPlayer ) )
 	{
-		return Speak( concept, modifiers, pszOutResponseChosen, bufsize );
+		return Speak( conc, modifiers, pszOutResponseChosen, bufsize );
 	}
 	return false;
 }
@@ -1909,3 +1909,4 @@ AI_BEGIN_CUSTOM_NPC(talk_monster_base,CAI_PlayerAlly)
 AI_END_CUSTOM_NPC()
 
 //-----------------------------------------------------------------------------
+

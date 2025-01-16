@@ -436,7 +436,7 @@ void CSharedTakeDamageInfo::DebugGetDamageTypeString(uint64 damageType, char *ou
 		 outbuflength > 0 && i < (DAMAGE_TYPE_STR_TABLE_ENTRIES - 1);
 		 ++i )
 	{
-		if ( damageType & (1 << i) )
+		if ( damageType & (1ull << i) )
 		{
 			// this bit was set. Print the corresponding entry from the table
 			// (the index is +1 because entry 1 in the table corresponds to 1 << 0)

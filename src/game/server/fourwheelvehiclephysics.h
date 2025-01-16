@@ -24,7 +24,7 @@
 class CBaseAnimating;
 class CFourWheelServerVehicle;
 
-struct CUserCmd;
+class CUserCmd;
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -218,3 +218,4 @@ float RemapAngleRange( float startInterval, float endInterval, float value );
 #define PITCH_CURVE_LINEAR		45	// pitch greater than this is copied out
 
 #endif // FOUR_WHEEL_VEHICLE_PHYSICS_H
+

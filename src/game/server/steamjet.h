@@ -46,7 +46,7 @@ public:
 	CNetworkVar( float, m_Rate );
 	CNetworkVar( float, m_JetLength );	// Length of the jet. Lifetime is derived from this.
 
-	CNetworkVar( int, m_bEmit );		// Emit particles?
+	CNetworkVar( bool, m_bEmit );		// Emit particles?
 	CNetworkVar( bool, m_bFaceLeft );	// For support of legacy env_steamjet, which faced left instead of forward.
 	bool			m_InitialState;
 

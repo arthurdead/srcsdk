@@ -112,7 +112,7 @@ void CUserCmd::MakeInert( void )
 }
 
 //-----------------------------------------------------------------------------
-static bool WriteUserCmdDeltaInt( bf_write *buf, char *what, int from, int to, int bits = 32 )
+static bool WriteUserCmdDeltaInt( bf_write *buf, const char *what, int from, int to, int bits = 32 )
 {
 	if ( from != to )
 	{
@@ -127,7 +127,7 @@ static bool WriteUserCmdDeltaInt( bf_write *buf, char *what, int from, int to, i
 	return false;
 }
 
-static bool WriteUserCmdDeltaULongLong( bf_write *buf, char *what, uint64 from, uint64 to )
+static bool WriteUserCmdDeltaULongLong( bf_write *buf, const char *what, uint64 from, uint64 to )
 {
 	if ( from != to )
 	{
@@ -142,7 +142,7 @@ static bool WriteUserCmdDeltaULongLong( bf_write *buf, char *what, uint64 from, 
 	return false;
 }
 
-static bool WriteUserCmdDeltaShort( bf_write *buf, char *what, int from, int to )
+static bool WriteUserCmdDeltaShort( bf_write *buf, const char *what, int from, int to )
 {
 	if ( from != to )
 	{
@@ -157,7 +157,7 @@ static bool WriteUserCmdDeltaShort( bf_write *buf, char *what, int from, int to 
 	return false;
 }
 
-static bool WriteUserCmdDeltaFloat( bf_write *buf, char *what, float from, float to )
+static bool WriteUserCmdDeltaFloat( bf_write *buf, const char *what, float from, float to )
 {
 	if ( from != to )
 	{
@@ -172,7 +172,7 @@ static bool WriteUserCmdDeltaFloat( bf_write *buf, char *what, float from, float
 	return false;
 }
 
-static bool WriteUserCmdDeltaCoord( bf_write *buf, char *what, float from, float to )
+static bool WriteUserCmdDeltaCoord( bf_write *buf, const char *what, float from, float to )
 {
 	if ( from != to )
 	{
@@ -187,7 +187,7 @@ static bool WriteUserCmdDeltaCoord( bf_write *buf, char *what, float from, float
 	return false;
 }
 
-static bool WriteUserCmdDeltaAngle( bf_write *buf, char *what, float from, float to, int bits )
+static bool WriteUserCmdDeltaAngle( bf_write *buf, const char *what, float from, float to, int bits )
 {
 	if ( from != to )
 	{
@@ -202,7 +202,7 @@ static bool WriteUserCmdDeltaAngle( bf_write *buf, char *what, float from, float
 	return false;
 }
 
-static bool WriteUserCmdDeltaVec3Coord( bf_write *buf, char *what, const Vector &from, const Vector &to )
+static bool WriteUserCmdDeltaVec3Coord( bf_write *buf, const char *what, const Vector &from, const Vector &to )
 {
 	if ( from != to )
 	{

@@ -62,7 +62,7 @@ public:
 	CNetworkVar( float, m_JetLength );	// Length of the jet. Lifetime is derived from this.
 	CNetworkVar( float, m_flRollSpeed );
 
-	CNetworkVar( int, m_bEmit );		// Emit particles?
+	CNetworkVar( bool, m_bEmit );		// Emit particles?
 	CNetworkVar( float, m_flBaseSpread );
 	
 	CSmokeStackLightInfo		m_AmbientLight;

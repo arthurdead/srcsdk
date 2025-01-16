@@ -70,7 +70,7 @@ END_MAPENTITY()
 
 void CFuncTankTrain::Spawn( void )
 {
-	m_takedamage = true;
+	m_takedamage = DAMAGE_EVENTS_ONLY;
 	BaseClass::Spawn();
 }
 

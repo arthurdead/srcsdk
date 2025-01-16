@@ -19,6 +19,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef TF_DLL
+#define ENTITYIO_CURTIME engine->GetServerTime()
+#else
+#define ENTITYIO_CURTIME gpGlobals->curtime
+#endif
+
 #ifdef GAME_DLL
 DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_ENTITYIO, "Entity I/O Server" );
 #else
@@ -201,11 +207,7 @@ void CBaseEntityOutput::FireOutput(variant_t Value, CSharedBaseEntity *pActivato
 			Q_snprintf( szBuffer,
 						sizeof(szBuffer),
 						"(%0.2f) output: (%s,%s) -> (%s,%s,%.1f)(%s)\n",
-#ifdef TF_DLL
-						engine->GetServerTime(),
-#else
-						gpGlobals->curtime,
-#endif
+						ENTITYIO_CURTIME,
 						pCaller ? pCaller->GetClassname() : "NULL",
 						pCaller ? pCaller->GetEntityNameAsCStr() : "NULL",
 						STRING(ev->m_iTarget),
@@ -224,11 +226,7 @@ void CBaseEntityOutput::FireOutput(variant_t Value, CSharedBaseEntity *pActivato
 			Q_snprintf( szBuffer,
 						sizeof(szBuffer),
 						"(%0.2f) output: (%s,%s) -> (%s,%s)(%s)\n",
-#ifdef TF_DLL
-						engine->GetServerTime(),
-#else
-						gpGlobals->curtime,
-#endif
+						ENTITYIO_CURTIME,
 						pCaller ? pCaller->GetClassname() : "NULL",
 						pCaller ? pCaller->GetEntityNameAsCStr() : "NULL", STRING(ev->m_iTarget),
 						STRING(ev->m_iTargetInput),
@@ -522,13 +520,7 @@ void CEventQueue::Dump( void )
 {
 	EventQueuePrioritizedEvent_t *pe = m_Events.m_pNext;
 
-	Log_Msg( LOG_ENTITYIO, "Dumping event queue. Current time is: %.2f\n",
-#ifdef TF_DLL
-		engine->GetServerTime()
-#else
-		gpGlobals->curtime
-#endif
-		);
+	Log_Msg( LOG_ENTITYIO, "Dumping event queue. Current time is: %.2f\n", ENTITYIO_CURTIME);
 
 	while ( pe != NULL )
 	{
@@ -556,11 +548,7 @@ EventQueuePrioritizedEvent_t *CEventQueue::AddEvent( const char *target, const c
 {
 	// build the new event
 	EventQueuePrioritizedEvent_t *newEvent = new EventQueuePrioritizedEvent_t;
-#ifdef TF_DLL
-	newEvent->m_flFireTime = engine->GetServerTime() + fireDelay;	// priority key in the priority queue
-#else
-	newEvent->m_flFireTime = gpGlobals->curtime + fireDelay;	// priority key in the priority queue
-#endif
+	newEvent->m_flFireTime = ENTITYIO_CURTIME + fireDelay;	// priority key in the priority queue
 	newEvent->m_iTarget = MAKE_STRING( target );
 	newEvent->m_pEntTarget = NULL;
 	newEvent->m_iTargetInput = MAKE_STRING( targetInput );
@@ -581,11 +569,7 @@ EventQueuePrioritizedEvent_t *CEventQueue::AddEvent( CSharedBaseEntity *target, 
 {
 	// build the new event
 	EventQueuePrioritizedEvent_t *newEvent = new EventQueuePrioritizedEvent_t;
-#ifdef TF_DLL
-	newEvent->m_flFireTime = engine->GetServerTime() + fireDelay;	// primary priority key in the priority queue
-#else
-	newEvent->m_flFireTime = gpGlobals->curtime + fireDelay;	// primary priority key in the priority queue
-#endif
+	newEvent->m_flFireTime = ENTITYIO_CURTIME + fireDelay;	// primary priority key in the priority queue
 	newEvent->m_iTarget = NULL_STRING;
 	newEvent->m_pEntTarget = target;
 	newEvent->m_iTargetInput = MAKE_STRING( targetInput );
@@ -661,11 +645,7 @@ void CEventQueue::ServiceEvents( void )
 
 	EventQueuePrioritizedEvent_t *pe = m_Events.m_pNext;
 
-#ifdef TF_DLL
-	while ( pe != NULL && pe->m_flFireTime <= engine->GetServerTime() )
-#else
-	while ( pe != NULL && pe->m_flFireTime <= gpGlobals->curtime )
-#endif
+	while ( pe != NULL && pe->m_flFireTime <= ENTITYIO_CURTIME)
 	{
 		MDLCACHE_CRITICAL_SECTION();
 

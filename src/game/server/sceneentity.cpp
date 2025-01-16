@@ -1803,16 +1803,16 @@ void CSceneEntity::InputInterjectResponse( inputdata_t &inputdata )
 		char modifiers[ 512 ];
 		Q_snprintf( modifiers, sizeof( modifiers ), "scene:%s", STRING( GetEntityName() ) );
 
-		AIConcept_t concept(inputdata.value.String());
+		AIConcept_t conc(inputdata.value.String());
 		for ( int i = 0; i < c; i++ )
 		{
 			CAI_BaseActor *npc = candidates[ i ];
 			Assert( npc );
 
 			AI_CriteriaSet set; 
-			npc->GatherCriteria( &set, concept, modifiers );
+			npc->GatherCriteria( &set, conc, modifiers );
 			AI_Response response;
-			if ( !npc->FindResponse( response, concept, &set ) )
+			if ( !npc->FindResponse( response, conc, &set ) )
 				continue;
 
 			float duration = npc->GetResponseDuration( &response );

@@ -433,8 +433,8 @@ void CSlideshowDisplay::BuildSlideShowImagesList( void )
 	FileFindHandle_t matHandle;
 	char szDirectory[_MAX_PATH];
 	char szMatFileName[_MAX_PATH] = {'\0'};
-	char szFileBuffer[ SLIDESHOW_LIST_BUFFER_MAX ];
-	char *pchCurrentLine = NULL;
+	//char szFileBuffer[ SLIDESHOW_LIST_BUFFER_MAX ];
+	//char *pchCurrentLine = NULL;
 
 	Q_snprintf( szDirectory, sizeof( szDirectory ), "materials/vgui/%s/*.vmt", m_szSlideshowDirectory.Get() );
 	const char *pMatFileName = g_pFullFileSystem->FindFirst( szDirectory, &matHandle );

@@ -102,6 +102,9 @@ inline void *ReallocUnattributed( void *pMem, size_t nSize )
 // under linux this malloc() overrides the libc malloc() and so we
 // end up in a recursion (as MemAlloc_Alloc() calls malloc)
 #if defined _MSC_VER
+#ifndef _CRTNOALIAS
+#define _CRTNOALIAS
+#endif
 #define ALLOC_CALL _CRTNOALIAS _CRTRESTRICT 
 #define FREE_CALL _CRTNOALIAS 
 #else
@@ -697,12 +700,14 @@ int _CrtSetDbgFlag( int nNewFlag )
 #define AFNAME(var) __p_ ## var
 #define AFRET(var)  &var
 
+#undef _crtDbgFlag
 int _crtDbgFlag = _CRTDBG_ALLOC_MEM_DF;
 int* AFNAME(_crtDbgFlag)(void)
 {
 	return AFRET(_crtDbgFlag);
 }
 
+#undef _crtBreakAlloc
 long _crtBreakAlloc;      /* Break on this allocation */
 long* AFNAME(_crtBreakAlloc) (void)
 {

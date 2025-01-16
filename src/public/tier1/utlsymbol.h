@@ -44,7 +44,11 @@ public:
 	
 	// operator==
 	bool operator==( CUtlSymbol const& src ) const { return m_Id == src.m_Id; }
+	bool operator!=( CUtlSymbol const& src ) const { return m_Id != src.m_Id; }
+	bool operator==( UtlSymId_t src ) const { return m_Id == src; }
+	bool operator!=( UtlSymId_t src ) const { return m_Id != src; }
 	bool operator==( const char* pStr ) const;
+	bool operator!=( const char* pStr ) const;
 	
 	// Is valid?
 	bool IsValid() const { return m_Id != UTL_INVAL_SYMBOL; }

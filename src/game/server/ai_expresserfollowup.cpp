@@ -101,9 +101,9 @@ static void DispatchComeback( CAI_ExpresserWithFollowup *pExpress, CBaseEntity *
 // Input  : concept - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CAI_ExpresserWithFollowup::Speak( AIConcept_t &concept, const char *modifiers /*= NULL*/, char *pszOutResponseChosen /* = NULL*/, size_t bufsize /* = 0 */, IRecipientFilter *filter /* = NULL */ )
+bool CAI_ExpresserWithFollowup::Speak( AIConcept_t &conc, const char *modifiers /*= NULL*/, char *pszOutResponseChosen /* = NULL*/, size_t bufsize /* = 0 */, IRecipientFilter *filter /* = NULL */ )
 {
-	AI_Response *result = SpeakFindResponse( concept, modifiers );
+	AI_Response *result = SpeakFindResponse( conc, modifiers );
 	if ( !result )
 	{
 		return false;
@@ -158,14 +158,14 @@ static CBaseEntity *AscertainSpeechSubjectFromContext( AI_Response *response, AI
 }
 
 // TODO: Currently uses awful stricmp. Use symbols! Once I know which ones we want, that is. 
-static CResponseQueue::CFollowupTargetSpec_t ResolveFollowupTargetToEntity( AIConcept_t &concept, AI_CriteriaSet &criteria, const char * RESTRICT szTarget, AI_Response * RESTRICT response = NULL )
+static CResponseQueue::CFollowupTargetSpec_t ResolveFollowupTargetToEntity( AIConcept_t &conc, AI_CriteriaSet &criteria, const char * RESTRICT szTarget, AI_Response * RESTRICT response = NULL )
 {
 
 
 
 	if ( Q_stricmp(szTarget, "self") == 0 )
 	{
-		return CResponseQueue::CFollowupTargetSpec_t( kDRT_SPECIFIC, concept.GetSpeaker() );
+		return CResponseQueue::CFollowupTargetSpec_t( kDRT_SPECIFIC, conc.GetSpeaker() );
 	}
 	else if ( Q_stricmp(szTarget, "subject") == 0 )
 	{
@@ -178,7 +178,7 @@ static CResponseQueue::CFollowupTargetSpec_t ResolveFollowupTargetToEntity( AICo
 	}
 	else if ( Q_stricmp(szTarget, "any") == 0 )
 	{
-		return CResponseQueue::CFollowupTargetSpec_t( kDRT_ANY, concept.GetSpeaker() );
+		return CResponseQueue::CFollowupTargetSpec_t( kDRT_ANY, conc.GetSpeaker() );
 	}
 	else if ( Q_stricmp(szTarget, "all") == 0 )
 	{
@@ -186,7 +186,7 @@ static CResponseQueue::CFollowupTargetSpec_t ResolveFollowupTargetToEntity( AICo
 	}
 
 	// last resort, try a named lookup
-	else if ( CBaseEntity *pSpecific = gEntList.FindEntityByName(NULL, szTarget, concept.GetSpeaker()) ) // it could be anything
+	else if ( CBaseEntity *pSpecific = gEntList.FindEntityByName(NULL, szTarget, conc.GetSpeaker()) ) // it could be anything
 	{
 		return CResponseQueue::CFollowupTargetSpec_t( pSpecific );
 	}
@@ -197,20 +197,20 @@ static CResponseQueue::CFollowupTargetSpec_t ResolveFollowupTargetToEntity( AICo
 
 
 // TODO: Currently uses awful stricmp. Use symbols! Once I know which ones we want, that is. 
-static CResponseQueue::CFollowupTargetSpec_t ResolveFollowupTargetToEntity( AIConcept_t &concept, AI_CriteriaSet &criteria, AI_Response * RESTRICT response, AI_ResponseFollowup * RESTRICT followup )
+static CResponseQueue::CFollowupTargetSpec_t ResolveFollowupTargetToEntity( AIConcept_t &conc, AI_CriteriaSet &criteria, AI_Response * RESTRICT response, AI_ResponseFollowup * RESTRICT followup )
 {
 	const char * RESTRICT szTarget = followup->followup_target;
 	const CResponseQueue::CFollowupTargetSpec_t INVALID; // default: invalid result
 	if ( szTarget == NULL )
 		return INVALID; 
 	else
-		return ResolveFollowupTargetToEntity( concept, criteria, szTarget, response );
+		return ResolveFollowupTargetToEntity( conc, criteria, szTarget, response );
 }
 
 
 ConVar chet_debug_idle( "chet_debug_idle", "0", FCVAR_ARCHIVE, "If set one, many debug prints to help track down the TLK_IDLE issue. Set two for super verbose info" );
 // extern ConVar chet_debug_idle;
-bool CAI_ExpresserWithFollowup::Speak( AIConcept_t &concept, const char *modifiers /*= NULL*/, char *pszOutResponseChosen /* = NULL*/, size_t bufsize /* = 0 */, IRecipientFilter *filter /* = NULL */ )
+bool CAI_ExpresserWithFollowup::Speak( AIConcept_t &conc, const char *modifiers /*= NULL*/, char *pszOutResponseChosen /* = NULL*/, size_t bufsize /* = 0 */, IRecipientFilter *filter /* = NULL */ )
 {
 	VPROF("CAI_Expresser::Speak");
 	if ( IsSpeechGloballySuppressed() )
@@ -218,12 +218,12 @@ bool CAI_ExpresserWithFollowup::Speak( AIConcept_t &concept, const char *modifie
 		return false;
 	}
 
-	concept.SetSpeaker(GetOuter());
+	conc.SetSpeaker(GetOuter());
 	AI_CriteriaSet criteria;
-	GatherCriteria(&criteria, concept, modifiers);
+	GatherCriteria(&criteria, conc, modifiers);
 	GetOuter()->ModifyOrAppendDerivedCriteria(criteria);
 	AI_Response result;
-	if ( !FindResponse( result, concept, &criteria ) )
+	if ( !FindResponse( result, conc, &criteria ) )
 	{
 		if (chet_debug_idle.GetBool())
 		{
@@ -246,10 +246,10 @@ bool CAI_ExpresserWithFollowup::Speak( AIConcept_t &concept, const char *modifie
 		}
 	}
 
-	SpeechMsg( GetOuter(), "%s (%x) spoke %s (%f)", STRING(GetOuter()->GetEntityName()), GetOuter(), (const char*)concept, gpGlobals->curtime );
-	// Msg( "%s:%s to %s:%s\n", GetOuter()->GetDebugName(), concept.GetStringConcept(), criteria.GetValue(criteria.FindCriterionIndex("Subject")), pTarget ? pTarget->GetDebugName() : "none" );
+	SpeechMsg( GetOuter(), "%s (%x) spoke %s (%f)", STRING(GetOuter()->GetEntityName()), GetOuter(), (const char*)conc, gpGlobals->curtime );
+	// Msg( "%s:%s to %s:%s\n", GetOuter()->GetDebugName(), conc.GetStringConcept(), criteria.GetValue(criteria.FindCriterionIndex("Subject")), pTarget ? pTarget->GetDebugName() : "none" );
 
-	bool spoke = SpeakDispatchResponse( concept, &result, &criteria, filter );
+	bool spoke = SpeakDispatchResponse( conc, &result, &criteria, filter );
 	if ( pszOutResponseChosen )
 	{
 		result.GetResponse( pszOutResponseChosen, bufsize );
@@ -282,16 +282,16 @@ static float GetSpeechDurationForResponse( const AI_Response * RESTRICT response
 // Purpose: Dispatches the result
 // Input  : *response - 
 //-----------------------------------------------------------------------------
-bool CAI_ExpresserWithFollowup::SpeakDispatchResponse( AIConcept_t &concept, AI_Response *response, AI_CriteriaSet *criteria, IRecipientFilter *filter )
+bool CAI_ExpresserWithFollowup::SpeakDispatchResponse( AIConcept_t &conc, AI_Response *response, AI_CriteriaSet *criteria, IRecipientFilter *filter )
 {
 	// This gives the chance for the other bot to respond.
-	if ( !concept.GetSpeaker().IsValid() )
+	if ( !conc.GetSpeaker().IsValid() )
 	{
-		concept.SetSpeaker(GetOuter());
+		conc.SetSpeaker(GetOuter());
 	}
 
 	bool bInterrupted = IsSpeaking();
-	bool bSuc = CAI_Expresser::SpeakDispatchResponse( concept, response, criteria, filter );
+	bool bSuc = CAI_Expresser::SpeakDispatchResponse( conc, response, criteria, filter );
 	if (!bSuc)
 	{
 		return false;
@@ -308,7 +308,7 @@ bool CAI_ExpresserWithFollowup::SpeakDispatchResponse( AIConcept_t &concept, AI_
 	{
 		if ( followup->followup_entityiotarget && followup->followup_entityioinput )
 		{
-			CBaseEntity * RESTRICT pTarget = ResolveFollowupTargetToEntity( concept, *criteria, followup->followup_entityiotarget, response ).m_hHandle;
+			CBaseEntity * RESTRICT pTarget = ResolveFollowupTargetToEntity( conc, *criteria, followup->followup_entityiotarget, response ).m_hHandle;
 			if ( pTarget )
 			{
 				g_EventQueue.AddEvent( pTarget, followup->followup_entityioinput, variant_t(), followup->followup_entityiodelay, GetOuter(), GetOuter() );
@@ -329,7 +329,7 @@ bool CAI_ExpresserWithFollowup::SpeakDispatchResponse( AIConcept_t &concept, AI_
 				if ( fTimeToLastSpeech > 0 )
 				{	
 					DispatchFollowupThroughQueue( followup->followup_concept, followup->followup_contexts, 
-						ResolveFollowupTargetToEntity( concept, *criteria, response, followup ), 
+						ResolveFollowupTargetToEntity( conc, *criteria, response, followup ), 
 						fTimeToLastSpeech + followup->followup_delay, GetOuter() );
 				}
 				else  // error
@@ -337,11 +337,11 @@ bool CAI_ExpresserWithFollowup::SpeakDispatchResponse( AIConcept_t &concept, AI_
 					// old way, copied from "else" below
 					m_pPostponedFollowup = followup;
 					if ( criteria )
-						m_followupTarget = ResolveFollowupTargetToEntity( concept, *criteria, response, m_pPostponedFollowup );
+						m_followupTarget = ResolveFollowupTargetToEntity( conc, *criteria, response, m_pPostponedFollowup );
 					else
 					{
 						AI_CriteriaSet tmpCriteria;
-						m_followupTarget = ResolveFollowupTargetToEntity( concept, tmpCriteria, response, m_pPostponedFollowup );
+						m_followupTarget = ResolveFollowupTargetToEntity( conc, tmpCriteria, response, m_pPostponedFollowup );
 					}
 				}
 			}
@@ -355,7 +355,7 @@ bool CAI_ExpresserWithFollowup::SpeakDispatchResponse( AIConcept_t &concept, AI_
 				// In this case we do not need to postpone the followup; we just throw it directly
 				// into the queue.
 				DispatchFollowupThroughQueue( followup->followup_concept, followup->followup_contexts, 
-					ResolveFollowupTargetToEntity( concept, *criteria, response, followup ), 
+					ResolveFollowupTargetToEntity( conc, *criteria, response, followup ), 
 					-followup->followup_delay, GetOuter() );
 			}
 			else
@@ -365,11 +365,11 @@ bool CAI_ExpresserWithFollowup::SpeakDispatchResponse( AIConcept_t &concept, AI_
 				// 5.13.08 egr
 				m_pPostponedFollowup = followup;
 				if ( criteria )
-					m_followupTarget = ResolveFollowupTargetToEntity( concept, *criteria, response, m_pPostponedFollowup );
+					m_followupTarget = ResolveFollowupTargetToEntity( conc, *criteria, response, m_pPostponedFollowup );
 				else
 				{
 					AI_CriteriaSet tmpCriteria;
-					m_followupTarget = ResolveFollowupTargetToEntity( concept, tmpCriteria, response, m_pPostponedFollowup );
+					m_followupTarget = ResolveFollowupTargetToEntity( conc, tmpCriteria, response, m_pPostponedFollowup );
 				}
 			}
 		}
@@ -383,7 +383,7 @@ bool CAI_ExpresserWithFollowup::SpeakDispatchResponse( AIConcept_t &concept, AI_
 // for "this many seconds after the beginning of the line" rather than "this may seconds after the end
 // of the line", eg to create a THEN rule when two characters talk over each other.
 // It's static to avoid accidental use of the postponed followup/target members.
-void CAI_ExpresserWithFollowup::DispatchFollowupThroughQueue( const AIConcept_t &concept,
+void CAI_ExpresserWithFollowup::DispatchFollowupThroughQueue( const AIConcept_t &conc,
 															  const char * RESTRICT criteriaStr,
 															  const CResponseQueue::CFollowupTargetSpec_t &target,
 															  float delay,
@@ -406,7 +406,7 @@ void CAI_ExpresserWithFollowup::DispatchFollowupThroughQueue( const AIConcept_t 
 	criteria.AppendCriteria( "From_class", pOuter->GetClassname() );
 
 	criteria.Merge( criteriaStr );
-	g_ResponseQueueManager.GetQueue()->Add( concept, &criteria, gpGlobals->curtime + delay, target, pOuter );
+	g_ResponseQueueManager.GetQueue()->Add( conc, &criteria, gpGlobals->curtime + delay, target, pOuter );
 }
 
 //-----------------------------------------------------------------------------
@@ -467,8 +467,8 @@ void CC_RR_ForceConcept_f( const CCommand &args )
 		criteria.Merge( criteriastring );
 	}
 
-	AIConcept_t concept( args[2] );
-	QueueSpeak( concept, ResolveFollowupTargetToEntity( concept, criteria, args[1] ), criteria );
+	AIConcept_t conc( args[2] );
+	QueueSpeak( conc, ResolveFollowupTargetToEntity( conc, criteria, args[1] ), criteria );
 }
 
 

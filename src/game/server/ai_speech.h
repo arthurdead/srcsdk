@@ -140,8 +140,8 @@ public:
 	virtual bool UseSemaphore()							{ return true; }
 	// Works around issues with CAI_ExpresserHost<> class hierarchy
 	virtual CAI_Expresser *GetSinkExpresser() { return NULL; }
-	virtual bool IsAllowedToSpeakFollowup( AIConcept_t concept, CBaseEntity *pIssuer, bool bSpecific ) { return true; }
-	virtual bool Speak( AIConcept_t concept, AI_CriteriaSet *pCriteria, char *pszOutResponseChosen = NULL, size_t bufsize = 0, IRecipientFilter *filter = NULL ) { return false; }
+	virtual bool IsAllowedToSpeakFollowup( AIConcept_t conc, CBaseEntity *pIssuer, bool bSpecific ) { return true; }
+	virtual bool Speak( AIConcept_t conc, AI_CriteriaSet *pCriteria, char *pszOutResponseChosen = NULL, size_t bufsize = 0, IRecipientFilter *filter = NULL ) { return false; }
 };
 
 struct ConceptHistory_t
@@ -343,7 +343,7 @@ public:
 
 	virtual void	PostSpeakDispatchResponse( AIConcept_t ai_concept, AI_Response *response ) { return; }
 
-	void GatherCriteria( AI_CriteriaSet *outputCritera, const AIConcept_t &concept, const char *modifiers );
+	void GatherCriteria( AI_CriteriaSet *outputCritera, const AIConcept_t &conc, const char *modifiers );
 	float 			GetResponseDuration( AI_Response *response );
 
 	float GetTimeSpeechComplete() const 	{ return this->GetExpresser()->GetTimeSpeechComplete(); }
@@ -385,15 +385,15 @@ inline bool CAI_ExpresserHost<BASE_NPC>::Speak( AIConcept_t ai_concept, const ch
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 template <class BASE_NPC>
-inline bool CAI_ExpresserHost<BASE_NPC>::Speak( AIConcept_t concept, AI_CriteriaSet *pCriteria, char *pszOutResponseChosen /*=NULL*/, size_t bufsize /* = 0 */, IRecipientFilter *filter /* = NULL */ ) 
+inline bool CAI_ExpresserHost<BASE_NPC>::Speak( AIConcept_t conc, AI_CriteriaSet *pCriteria, char *pszOutResponseChosen /*=NULL*/, size_t bufsize /* = 0 */, IRecipientFilter *filter /* = NULL */ ) 
 {
 	AssertOnce( this->GetExpresser()->GetOuter() == this );
 	CAI_Expresser * const RESTRICT pExpresser = this->GetExpresser();
-	concept.SetSpeaker(this);
+	conc.SetSpeaker(this);
 	// add in any local criteria to the one passed on the command line.
-	pExpresser->GatherCriteria( pCriteria, concept, NULL );
+	pExpresser->GatherCriteria( pCriteria, conc, NULL );
 	// call the "I have aleady gathered criteria" version of Expresser::Speak
-	return pExpresser->Speak( concept, pCriteria, pszOutResponseChosen, bufsize, filter ); 
+	return pExpresser->Speak( conc, pCriteria, pszOutResponseChosen, bufsize, filter ); 
 }
 
 
@@ -433,9 +433,9 @@ inline ResponseRules::IResponseSystem *CAI_ExpresserHost<BASE_NPC>::GetResponseS
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 template <class BASE_NPC>
-inline void CAI_ExpresserHost<BASE_NPC>::GatherCriteria( AI_CriteriaSet *outputCriteria, const AIConcept_t &concept, const char *modifiers )
+inline void CAI_ExpresserHost<BASE_NPC>::GatherCriteria( AI_CriteriaSet *outputCriteria, const AIConcept_t &conc, const char *modifiers )
 {
-	return this->GetExpresser()->GatherCriteria( outputCriteria, concept, modifiers );
+	return this->GetExpresser()->GatherCriteria( outputCriteria, conc, modifiers );
 }
 
 //-----------------------------------------------------------------------------
@@ -644,15 +644,15 @@ public:
 	CAI_ExpresserWithFollowup( CBaseFlex *pOuter = NULL ) : CAI_Expresser(pOuter),
 		m_pPostponedFollowup(NULL) 
 		{};
-	virtual bool Speak( AIConcept_t &concept, const char *modifiers = NULL, char *pszOutResponseChosen = NULL, size_t bufsize = 0, IRecipientFilter *filter = NULL );
-	virtual bool SpeakDispatchResponse( AIConcept_t &concept, AI_Response *response,  AI_CriteriaSet *criteria, IRecipientFilter *filter = NULL );
+	virtual bool Speak( AIConcept_t &conc, const char *modifiers = NULL, char *pszOutResponseChosen = NULL, size_t bufsize = 0, IRecipientFilter *filter = NULL );
+	virtual bool SpeakDispatchResponse( AIConcept_t &conc, AI_Response *response,  AI_CriteriaSet *criteria, IRecipientFilter *filter = NULL );
 	virtual void SpeakDispatchFollowup( AI_ResponseFollowup &followup );
 
 	virtual void OnSpeechFinished();
 
 	typedef CAI_Expresser BaseClass;
 protected:
-	static void DispatchFollowupThroughQueue( const AIConcept_t &concept,
+	static void DispatchFollowupThroughQueue( const AIConcept_t &conc,
 		const char *criteriaStr,
 		const CResponseQueue::CFollowupTargetSpec_t &target,
 		float delay,
@@ -663,3 +663,4 @@ protected:
 };
 
 #endif // AI_SPEECH_H
+

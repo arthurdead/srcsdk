@@ -599,6 +599,7 @@ typedef struct tagRGBQUAD RGBQUAD;
 
 // Used for standard calling conventions
 #if defined( _WIN32 ) && !defined GNUC
+	#undef CDECL
 	#define  CDECL				__cdecl
 	#define  STDCALL				__stdcall
 	#define  FASTCALL				__fastcall

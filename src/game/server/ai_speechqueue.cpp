@@ -30,7 +30,7 @@ CResponseQueue::CResponseQueue( int queueSize ) : m_Queue(queueSize), m_Expresse
 {};
 
 /// Add a deferred response. 
-void CResponseQueue::Add( const AIConcept_t &concept,  ///< concept to dispatch
+void CResponseQueue::Add( const AIConcept_t &conc,  ///< concept to dispatch
 		 const AI_CriteriaSet * RESTRICT contexts, 
 		 float time,					 ///< when to dispatch it. You can specify a time of zero to mean "immediately."
 		 const CFollowupTargetSpec_t &targetspec,
@@ -40,12 +40,12 @@ void CResponseQueue::Add( const AIConcept_t &concept,  ///< concept to dispatch
 	// Add a response.
 	AssertMsg( m_Queue.Count() < AI_RESPONSE_QUEUE_SIZE, "AI Response queue overfilled." );
 	QueueType_t::IndexLocalType_t idx = m_Queue.AddToTail();
-	m_Queue[idx].Init( concept, contexts, time, targetspec, pIssuer );
+	m_Queue[idx].Init( conc, contexts, time, targetspec, pIssuer );
 }
 
 
 /// Remove a deferred response matching the concept and issuer. 
-void CResponseQueue::Remove( const AIConcept_t &concept,  ///< concept to dispatch
+void CResponseQueue::Remove( const AIConcept_t &conc,  ///< concept to dispatch
 			CBaseEntity * const RESTRICT pIssuer		  ///< the entity issuing the response, if one exists.
 			) RESTRICT
 {
@@ -56,7 +56,7 @@ void CResponseQueue::Remove( const AIConcept_t &concept,  ///< concept to dispat
 		CDeferredResponse &response = m_Queue[idx];
 		QueueType_t::IndexLocalType_t previdx = idx; // advance the index immediately because we may be deleting the "current" element
 		idx = m_Queue.Next(idx); // is now the next index
-		if ( CompareConcepts( response.m_concept, concept ) && // if concepts match and 
+		if ( CompareConcepts( response.m_concept, conc ) && // if concepts match and 
 			( !pIssuer || ( response.m_hIssuer.Get() == pIssuer ) ) // issuer is null, or matches the one in the response
 			)
 		{
@@ -193,11 +193,11 @@ void CResponseQueue::CDeferredResponse::Quash()
 	m_fDispatchTime = 0;
 }
 
-void CResponseQueue::AppendFollowupCriteria( AIConcept_t concept, AI_CriteriaSet &set, CAI_Expresser *pEx,
+void CResponseQueue::AppendFollowupCriteria( AIConcept_t conc, AI_CriteriaSet &set, CAI_Expresser *pEx,
 		CAI_ExpresserSink *pSink, CBaseEntity *pTarget, CBaseEntity *pIssuer, DeferredResponseTarget_t nTargetType )
 {
 	// Allows control over which followups interrupt speech routines
-	set.AppendCriteria( "followup_allowed_to_speak", (pSink->IsAllowedToSpeakFollowup( concept, pIssuer, nTargetType == kDRT_SPECIFIC )) ? "1" : "0" );
+	set.AppendCriteria( "followup_allowed_to_speak", (pSink->IsAllowedToSpeakFollowup( conc, pIssuer, nTargetType == kDRT_SPECIFIC )) ? "1" : "0" );
 
 	set.AppendCriteria( "followup_target_type", UTIL_VarArgs( "%i", (int)nTargetType ) );
 	
@@ -496,4 +496,5 @@ void CResponseQueueManager::FrameUpdatePostEntityThink()
 }
 
 CResponseQueueManager g_ResponseQueueManager( "CResponseQueueManager" );
+
 

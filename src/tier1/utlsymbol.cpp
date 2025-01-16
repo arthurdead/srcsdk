@@ -120,7 +120,12 @@ bool CUtlSymbol::operator==( const char* pStr ) const
 	return strcmp( String(), pStr ) == 0;
 }
 
-
+bool CUtlSymbol::operator!=(const char* pStr) const
+{
+	if (m_Id == UTL_INVAL_SYMBOL)
+		return true;
+	return strcmp(String(), pStr) != 0;
+}
 
 //-----------------------------------------------------------------------------
 // symbol table stuff

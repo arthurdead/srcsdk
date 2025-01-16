@@ -62,6 +62,7 @@ $Configuration
 		// improve linker speed, and improve conformance. Requires VS 2013 Update 3
 		$AdditionalOptions	"$BASE /Zc:inline"
 
+		$AdditionalOptions	"$BASE /Zc:preprocessor"
 		$AdditionalOptions	"$BASE /std:c++20"
 	}
 }

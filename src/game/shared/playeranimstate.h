@@ -17,12 +17,12 @@
 #ifdef GAME_DLL
 class CBaseCombatWeapon;
 typedef CBaseCombatWeapon CSharedBaseCombatWeapon;
-struct CAnimationLayer;
+class CAnimationLayer;
 typedef CAnimationLayer CSharedAnimationLayer;
 #else
 class C_BaseCombatWeapon;
 typedef C_BaseCombatWeapon CSharedBaseCombatWeapon;
-struct C_AnimationLayer;
+class C_AnimationLayer;
 typedef C_AnimationLayer CSharedAnimationLayer;
 #endif
 

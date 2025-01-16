@@ -56,7 +56,7 @@ CFogVolume *CFogVolume::FindFogVolumeForPosition( const Vector &position )
 			char fogVolumeName[256];
 			fogVolume->GetKeyValue( "targetname", fogVolumeName, 256 );
 			engine->Con_NPrintf( 0, "Fog Volume ""%s"" found at position (%f %f %f)", fogVolumeName, position.x, position.y, position.z );
-			engine->Con_NPrintf( 1, "Fog: %s, post process: %s, color correct: %s", fogVolume->m_fogName, fogVolume->m_postProcessName, fogVolume->m_colorCorrectionName );
+			engine->Con_NPrintf( 1, "Fog: %s, post process: %s, color correct: %s", STRING(fogVolume->m_fogName), STRING(fogVolume->m_postProcessName), STRING(fogVolume->m_colorCorrectionName) );
 		}
 		else
 		{
@@ -153,3 +153,4 @@ void CFogVolume::Activate()
 		AddToGlobalList();
 	}
 }
+
