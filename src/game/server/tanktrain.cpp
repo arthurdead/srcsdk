@@ -122,7 +122,7 @@ LINK_ENTITY_TO_CLASS( tanktrain_aitarget, CTankTargetChange );
 
 BEGIN_MAPENTITY( CTankTargetChange )
 
-	DEFINE_KEYFIELD( m_newTargetName, FIELD_STRING, "newtarget" ),
+	DEFINE_KEYFIELD_AUTO( m_newTargetName, "newtarget" ),
 
 END_MAPENTITY()
 
@@ -172,7 +172,7 @@ public:
 	DECLARE_MAPENTITY();
 
 	// INPUTS
-	void InputTargetEntity( inputdata_t &inputdata );
+	void InputTargetEntity( inputdata_t &&inputdata );
 
 private:
 	CHandle<CFuncTrackTrain>	m_hTrain;
@@ -192,9 +192,9 @@ LINK_ENTITY_TO_CLASS( tanktrain_ai, CTankTrainAI );
 
 BEGIN_MAPENTITY( CTankTrainAI )
 
-	DEFINE_KEYFIELD( m_startSoundName, FIELD_STRING, "startsound" ),
-	DEFINE_KEYFIELD( m_engineSoundName, FIELD_STRING, "enginesound" ),
-	DEFINE_KEYFIELD( m_movementSoundName, FIELD_STRING, "movementsound" ),
+	DEFINE_KEYFIELD_AUTO( m_startSoundName, "startsound" ),
+	DEFINE_KEYFIELD_AUTO( m_engineSoundName, "enginesound" ),
+	DEFINE_KEYFIELD_AUTO( m_movementSoundName, "movementsound" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "TargetEntity", InputTargetEntity ),
@@ -206,7 +206,7 @@ END_MAPENTITY()
 //-----------------------------------------------------------------------------
 // Purpose: Input handler for setting the target entity by name.
 //-----------------------------------------------------------------------------
-void CTankTrainAI::InputTargetEntity( inputdata_t &inputdata )
+void CTankTrainAI::InputTargetEntity( inputdata_t &&inputdata )
 {
 	m_targetEntityName = inputdata.value.StringID();
 	m_hTargetEntity = FindTarget( m_targetEntityName, inputdata.pActivator );

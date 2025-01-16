@@ -287,7 +287,7 @@ bool PassServerEntityFilter( const IHandleEntity *pTouch, const IHandleEntity *p
 //-----------------------------------------------------------------------------
 // A standard filter to be applied to just about everything.
 //-----------------------------------------------------------------------------
-bool StandardFilterRules( IHandleEntity *pHandleEntity, int fContentsMask )
+bool StandardFilterRules( IHandleEntity *pHandleEntity, ContentsFlags_t fContentsMask )
 {
 	CSharedBaseEntity *pCollide = EntityFromEntityHandle( pHandleEntity );
 
@@ -332,7 +332,7 @@ bool StandardFilterRules( IHandleEntity *pHandleEntity, int fContentsMask )
 //-----------------------------------------------------------------------------
 // Simple trace filter
 //-----------------------------------------------------------------------------
-CTraceFilterSimple::CTraceFilterSimple( const IHandleEntity *passedict, int collisionGroup,
+CTraceFilterSimple::CTraceFilterSimple( const IHandleEntity *passedict, Collision_Group_t collisionGroup,
 									   ShouldHitFunc_t pExtraShouldHitFunc )
 {
 	m_pPassEnt = passedict;
@@ -343,7 +343,7 @@ CTraceFilterSimple::CTraceFilterSimple( const IHandleEntity *passedict, int coll
 //-----------------------------------------------------------------------------
 // The trace filter!
 //-----------------------------------------------------------------------------
-bool CTraceFilterSimple::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterSimple::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	if ( !StandardFilterRules( pHandleEntity, contentsMask ) )
 		return false;
@@ -374,7 +374,7 @@ bool CTraceFilterSimple::ShouldHitEntity( IHandleEntity *pHandleEntity, int cont
 //-----------------------------------------------------------------------------
 // Purpose: Trace filter that only hits NPCs and the player
 //-----------------------------------------------------------------------------
-bool CTraceFilterOnlyNPCsAndPlayer::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterOnlyNPCsAndPlayer::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	if ( CTraceFilterSimple::ShouldHitEntity( pHandleEntity, contentsMask ) )
 	{
@@ -389,7 +389,7 @@ bool CTraceFilterOnlyNPCsAndPlayer::ShouldHitEntity( IHandleEntity *pHandleEntit
 //-----------------------------------------------------------------------------
 // Purpose: Trace filter that only hits anything but NPCs and the player
 //-----------------------------------------------------------------------------
-bool CTraceFilterNoNPCsOrPlayer::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterNoNPCsOrPlayer::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	if ( CTraceFilterSimple::ShouldHitEntity( pHandleEntity, contentsMask ) )
 	{
@@ -408,12 +408,12 @@ bool CTraceFilterNoNPCsOrPlayer::ShouldHitEntity( IHandleEntity *pHandleEntity, 
 //-----------------------------------------------------------------------------
 // Trace filter that skips two entities
 //-----------------------------------------------------------------------------
-CTraceFilterSkipTwoEntities::CTraceFilterSkipTwoEntities( const IHandleEntity *passentity, const IHandleEntity *passentity2, int collisionGroup ) :
+CTraceFilterSkipTwoEntities::CTraceFilterSkipTwoEntities( const IHandleEntity *passentity, const IHandleEntity *passentity2, Collision_Group_t collisionGroup ) :
 	BaseClass( passentity, collisionGroup ), m_pPassEnt2(passentity2)
 {
 }
 
-bool CTraceFilterSkipTwoEntities::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterSkipTwoEntities::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	Assert( pHandleEntity );
 	if ( !PassServerEntityFilter( pHandleEntity, m_pPassEnt2 ) )
@@ -445,7 +445,7 @@ CTraceFilterOnlyHitThis::CTraceFilterOnlyHitThis( const IHandleEntity *hitentity
 	m_pHitEnt = hitentity;
 }
 
-bool CTraceFilterOnlyHitThis::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterOnlyHitThis::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	return m_pHitEnt == pHandleEntity;
 }
@@ -453,7 +453,7 @@ bool CTraceFilterOnlyHitThis::ShouldHitEntity( IHandleEntity *pHandleEntity, int
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CTraceFilterSimpleList::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterSimpleList::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	if ( m_PassEntities.Find(pHandleEntity) != m_PassEntities.InvalidIndex() )
 		return false;
@@ -474,7 +474,7 @@ void CTraceFilterSimpleList::AddEntityToIgnore( IHandleEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Purpose: Custom trace filter used for NPC LOS traces
 //-----------------------------------------------------------------------------
-CTraceFilterLOS::CTraceFilterLOS( IHandleEntity *pHandleEntity, int collisionGroup, IHandleEntity *pHandleEntity2 ) :
+CTraceFilterLOS::CTraceFilterLOS( IHandleEntity *pHandleEntity, Collision_Group_t collisionGroup, IHandleEntity *pHandleEntity2 ) :
 		CTraceFilterSkipTwoEntities( pHandleEntity, pHandleEntity2, collisionGroup )
 {
 }
@@ -482,7 +482,7 @@ CTraceFilterLOS::CTraceFilterLOS( IHandleEntity *pHandleEntity, int collisionGro
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CTraceFilterLOS::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterLOS::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 
@@ -495,7 +495,7 @@ bool CTraceFilterLOS::ShouldHitEntity( IHandleEntity *pHandleEntity, int content
 //-----------------------------------------------------------------------------
 // Trace filter that can take a classname to ignore
 //-----------------------------------------------------------------------------
-CTraceFilterSkipClassname::CTraceFilterSkipClassname( const IHandleEntity *passentity, const char *pchClassname, int collisionGroup ) :
+CTraceFilterSkipClassname::CTraceFilterSkipClassname( const IHandleEntity *passentity, const char *pchClassname, Collision_Group_t collisionGroup ) :
 CTraceFilterSimple( passentity, collisionGroup ), m_pchClassname( pchClassname )
 {
 }
@@ -503,7 +503,7 @@ CTraceFilterSimple( passentity, collisionGroup ), m_pchClassname( pchClassname )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CTraceFilterSkipClassname::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterSkipClassname::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 	if ( !pEntity || FClassnameIs( pEntity, m_pchClassname ) )
@@ -515,12 +515,12 @@ bool CTraceFilterSkipClassname::ShouldHitEntity( IHandleEntity *pHandleEntity, i
 //-----------------------------------------------------------------------------
 // Trace filter that skips two classnames
 //-----------------------------------------------------------------------------
-CTraceFilterSkipTwoClassnames::CTraceFilterSkipTwoClassnames( const IHandleEntity *passentity, const char *pchClassname, const char *pchClassname2, int collisionGroup ) :
+CTraceFilterSkipTwoClassnames::CTraceFilterSkipTwoClassnames( const IHandleEntity *passentity, const char *pchClassname, const char *pchClassname2, Collision_Group_t collisionGroup ) :
 BaseClass( passentity, pchClassname, collisionGroup ), m_pchClassname2(pchClassname2)
 {
 }
 
-bool CTraceFilterSkipTwoClassnames::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterSkipTwoClassnames::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 	if ( !pEntity || FClassnameIs( pEntity, m_pchClassname2 ) )
@@ -532,7 +532,7 @@ bool CTraceFilterSkipTwoClassnames::ShouldHitEntity( IHandleEntity *pHandleEntit
 //-----------------------------------------------------------------------------
 // Trace filter that can take a list of entities to ignore
 //-----------------------------------------------------------------------------
-CTraceFilterSimpleClassnameList::CTraceFilterSimpleClassnameList( const IHandleEntity *passentity, int collisionGroup ) :
+CTraceFilterSimpleClassnameList::CTraceFilterSimpleClassnameList( const IHandleEntity *passentity, Collision_Group_t collisionGroup ) :
 CTraceFilterSimple( passentity, collisionGroup )
 {
 }
@@ -541,7 +541,7 @@ CTraceFilterSimple( passentity, collisionGroup )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CTraceFilterSimpleClassnameList::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterSimpleClassnameList::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 	if ( !pEntity )
@@ -571,7 +571,7 @@ CTraceFilterChain::CTraceFilterChain( ITraceFilter *pTraceFilter1, ITraceFilter 
 	m_pTraceFilter2 = pTraceFilter2;
 }
 
-bool CTraceFilterChain::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterChain::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	bool bResult1 = true;
 	bool bResult2 = true;
@@ -589,7 +589,7 @@ bool CTraceFilterChain::ShouldHitEntity( IHandleEntity *pHandleEntity, int conte
 // Sweeps against a particular model, using collision rules 
 //-----------------------------------------------------------------------------
 void UTIL_TraceModel( const Vector &vecStart, const Vector &vecEnd, const Vector &hullMin, 
-					  const Vector &hullMax, CSharedBaseEntity *pentModel, int collisionGroup, trace_t *ptr )
+					  const Vector &hullMax, CSharedBaseEntity *pentModel, Collision_Group_t collisionGroup, trace_t *ptr )
 {
 	// Cull it....
 	if ( pentModel && pentModel->ShouldCollide( collisionGroup, MASK_ALL ) )
@@ -625,7 +625,7 @@ class CTraceFilterEntity : public CTraceFilterSimple
 {
 public:
 	DECLARE_CLASS( CTraceFilterEntity, CTraceFilterSimple );
-	CTraceFilterEntity( CSharedBaseEntity *pEntity, int nCollisionGroup ) 
+	CTraceFilterEntity( CSharedBaseEntity *pEntity, Collision_Group_t nCollisionGroup ) 
 		: CTraceFilterSimple( pEntity, nCollisionGroup )
 	{
 		m_pRootParent = pEntity->GetRootMoveParent();
@@ -633,7 +633,7 @@ public:
 		m_checkHash = g_EntityCollisionHash->IsObjectInHash(pEntity);
 	}
 
-	bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 	{
 		CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 		if ( !pEntity )
@@ -673,12 +673,12 @@ class CTraceFilterEntityIgnoreOther : public CTraceFilterEntity
 {
 public:
 	DECLARE_CLASS( CTraceFilterEntityIgnoreOther, CTraceFilterEntity );
-	CTraceFilterEntityIgnoreOther( CSharedBaseEntity *pEntity, const IHandleEntity *pIgnore, int nCollisionGroup ) : 
+	CTraceFilterEntityIgnoreOther( CSharedBaseEntity *pEntity, const IHandleEntity *pIgnore, Collision_Group_t nCollisionGroup ) : 
 		CTraceFilterEntity( pEntity, nCollisionGroup ), m_pIgnoreOther( pIgnore )
 	{
 	}
 
-	bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 	{
 		if ( pHandleEntity == m_pIgnoreOther )
 			return false;
@@ -690,7 +690,7 @@ private:
 	const IHandleEntity *m_pIgnoreOther;
 };
 
-unsigned int UTIL_MaskForEntity( CSharedBaseEntity *pEntity, bool brush_only )
+ContentsFlags_t UTIL_MaskForEntity( CSharedBaseEntity *pEntity, bool brush_only )
 {
 	if(pEntity->IsPlayer()) {
 	#ifdef GAME_DLL
@@ -713,7 +713,7 @@ unsigned int UTIL_MaskForEntity( CSharedBaseEntity *pEntity, bool brush_only )
 	return brush_only ? MASK_SOLID_BRUSHONLY : MASK_SOLID;
 }
 
-unsigned int UTIL_CollisionGroupForEntity( CSharedBaseEntity *pEntity )
+Collision_Group_t UTIL_CollisionGroupForEntity( CSharedBaseEntity *pEntity )
 {
 	if(pEntity->IsPlayer()) {
 		return COLLISION_GROUP_PLAYER_MOVEMENT;
@@ -1003,7 +1003,7 @@ bool UTIL_IsSpaceEmpty( CSharedBaseEntity *pMainEnt, const Vector &vMin, const V
 	return bClear;
 }
 
-void UTIL_StringToFloatArray( float *pVector, int count, const char *pString )
+void UTIL_StringToFloatArray( float *pVector, int count, const char *pString, bool angle )
 {
 	char *pstr, *pfront, tempString[128];
 	int	j;
@@ -1013,7 +1013,13 @@ void UTIL_StringToFloatArray( float *pVector, int count, const char *pString )
 
 	for ( j = 0; j < count; j++ )			// lifted from pr_edict.c
 	{
-		pVector[j] = atof( pfront );
+		float flval = atof( pfront );
+
+		if(angle) {
+			flval = anglemod(flval);
+		}
+
+		pVector[j] = flval;
 
 		// skip any leading whitespace
 		while ( *pstr && *pstr <= ' ' )
@@ -1035,9 +1041,29 @@ void UTIL_StringToFloatArray( float *pVector, int count, const char *pString )
 	}
 }
 
+void UTIL_StringToFloatArray( float *pVector, int count, const char *pString )
+{
+	UTIL_StringToFloatArray( pVector, count, pString, false );
+}
+
+void UTIL_StringToQAngle( QAngle &pVector, const char *pString )
+{
+	UTIL_StringToFloatArray( pVector.Base(), 3, pString, true );
+}
+
 void UTIL_StringToVector( float *pVector, const char *pString )
 {
 	UTIL_StringToFloatArray( pVector, 3, pString );
+}
+
+void UTIL_StringToVector( Vector &pVector, const char *pString )
+{
+	UTIL_StringToFloatArray( pVector.Base(), 3, pString );
+}
+
+void UTIL_StringToVector( QAngle &pVector, const char *pString )
+{
+	UTIL_StringToQAngle( pVector, pString );
 }
 
 void UTIL_StringToIntArray( int *pVector, int count, const char *pString )
@@ -1071,6 +1097,25 @@ void UTIL_StringToColor32( color32 *color, const char *pString )
 	int tmp[4];
 	UTIL_StringToIntArray( tmp, 4, pString );
 	color->SetColor( tmp[0], tmp[1], tmp[2], tmp[3] );
+}
+
+void UTIL_StringToColor32( color32 &color, const char *pString )
+{
+	UTIL_StringToColor32( &color, pString );
+}
+
+void UTIL_StringToColor32( ColorRGBExp32 &color, const char *pString )
+{
+	int tmp[4];
+	UTIL_StringToIntArray( tmp, 4, pString );
+	color.SetColor( tmp[0], tmp[1], tmp[2], tmp[3] );
+}
+
+void UTIL_StringToColor24( color24 &color, const char *pString )
+{
+	int tmp[3];
+	UTIL_StringToIntArray( tmp, 3, pString );
+	color.SetColor( tmp[0], tmp[1], tmp[2] );
 }
 
 void UTIL_StringToFloatArray_PreserveArray( float *pVector, int count, const char *pString )
@@ -1294,10 +1339,7 @@ float CountdownTimer::Now( void ) const
 	return gpGlobals->curtime;
 }
 
-BEGIN_DATADESC_NO_BASE( IntervalTimer )
-END_DATADESC()
-
-BEGIN_NETWORK_TABLE_NOBASE( IntervalTimer, DT_IntervalTimer )
+BEGIN_NETWORK_TABLE_NOBASE( NetworkedIntervalTimer, DT_IntervalTimer )
 #ifdef CLIENT_DLL
 	RecvPropFloat(RECVINFO(m_timestamp)),
 #else
@@ -1306,40 +1348,29 @@ BEGIN_NETWORK_TABLE_NOBASE( IntervalTimer, DT_IntervalTimer )
 END_NETWORK_TABLE()
 
 #ifdef CLIENT_DLL
-BEGIN_PREDICTION_DATA_NO_BASE( IntervalTimer )
+BEGIN_PREDICTION_DATA_NO_BASE( NetworkedIntervalTimer )
 	DEFINE_FIELD_FLAGS( m_timestamp, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 END_PREDICTION_DATA()	
 #endif
 
 
 #ifdef CLIENT_DLL
-BEGIN_RECV_TABLE_NOBASE( CountdownTimer, DT_CountdownTimer )
+BEGIN_RECV_TABLE_NOBASE( NetworkedCountdownTimer, DT_CountdownTimer )
 	RecvPropFloat(RECVINFO(m_duration)),
 	RecvPropFloat(RECVINFO(m_timestamp)),
 END_RECV_TABLE()
-BEGIN_PREDICTION_DATA_NO_BASE( CountdownTimer )
+BEGIN_PREDICTION_DATA_NO_BASE( NetworkedCountdownTimer )
 	DEFINE_FIELD_FLAGS( m_duration, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD_FLAGS( m_timestamp, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 END_PREDICTION_DATA()	
 #else
-BEGIN_SEND_TABLE_NOBASE( CountdownTimer, DT_CountdownTimer )
+BEGIN_SEND_TABLE_NOBASE( NetworkedCountdownTimer, DT_CountdownTimer )
 	SendPropFloat	(SENDINFO(m_duration), 0, SPROP_NOSCALE ),
 	SendPropFloat	(SENDINFO(m_timestamp), 0, SPROP_NOSCALE ),
 END_SEND_TABLE()
 #endif
 
-
-BEGIN_DATADESC( CTimeline )
-	DEFINE_ARRAY( m_flValues, FIELD_FLOAT, TIMELINE_ARRAY_SIZE ),
-	DEFINE_ARRAY( m_nValueCounts, FIELD_FLOAT, TIMELINE_ARRAY_SIZE ),
-	DEFINE_FIELD( m_nBucketCount, FIELD_INTEGER ),
-	DEFINE_FIELD( m_flInterval, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flFinalValue, FIELD_FLOAT ),
-	DEFINE_FIELD( m_nCompressionType, FIELD_INTEGER ),
-	DEFINE_FIELD( m_bStopped, FIELD_BOOLEAN ),
-END_DATADESC()
-
-BEGIN_NETWORK_TABLE_NOBASE( CTimeline, DT_Timeline )
+BEGIN_NETWORK_TABLE_NOBASE( CNetworkedTimeline, DT_Timeline )
 #ifdef CLIENT_DLL
 	RecvPropArray3( RECVINFO_ARRAY( m_flValues ), RecvPropFloat( RECVINFO_ARRAYELEM( m_flValues, 0 ) ) ),
 	RecvPropArray3( RECVINFO_ARRAY( m_nValueCounts ), RecvPropFloat( RECVINFO_ARRAYELEM( m_nValueCounts, 0 ) ) ),
@@ -1359,7 +1390,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CTimeline, DT_Timeline )
 #endif
 END_NETWORK_TABLE()
 
-void CTimeline::ClearValues( void )
+void CNetworkedTimeline::ClearValues( void )
 {
 	Invalidate();
 
@@ -1371,7 +1402,7 @@ void CTimeline::ClearValues( void )
 	m_bStopped = false;
 }
 
-void CTimeline::RecordValue( float flValue )
+void CNetworkedTimeline::RecordValue( float flValue )
 {
 	if ( !HasStarted() || m_bStopped )
 		return;
@@ -1462,7 +1493,7 @@ void CTimeline::RecordValue( float flValue )
 	m_flFinalValue = flValue;
 }
 
-float CTimeline::GetValue( int i ) const
+float CNetworkedTimeline::GetValue( int i ) const
 {
 	Assert( i >= 0 && i < m_nBucketCount );
 
@@ -1496,7 +1527,7 @@ float CTimeline::GetValue( int i ) const
 	}
 }
 
-float CTimeline::GetValueAtInterp( float fInterp ) const
+float CNetworkedTimeline::GetValueAtInterp( float fInterp ) const
 {
 	if ( fInterp <= 0.0f )
 	{
@@ -1526,7 +1557,7 @@ float CTimeline::GetValueAtInterp( float fInterp ) const
 	return fValue * ( 1.0f - fBucket ) + fNextValue * fBucket;
 }
 
-void CTimeline::Compress( void )
+void CNetworkedTimeline::Compress( void )
 {
 	int i, j;
 
@@ -1599,7 +1630,7 @@ CSharedBaseEntity *FindEntityForward( CSharedBasePlayer *pMe, bool fHull )
 	{
 		trace_t tr;
 		Vector forward;
-		int mask;
+		ContentsFlags_t mask;
 
 		if( fHull )
 		{
@@ -1768,58 +1799,6 @@ int find_day_of_week( struct tm& found_day, int day_of_week, int step )
 	return 0;
 }
 
-static char s_NumBitsInNibble[ 16 ] = 
-{
-	0, // 0000 = 0
-	1, // 0001 = 1
-	1, // 0010 = 2
-	2, // 0011 = 3
-	1, // 0100 = 4
-	2, // 0101 = 5
-	2, // 0110 = 6
-	3, // 0111 = 7
-	1, // 1000 = 8
-	2, // 1001 = 9
-	2, // 1010 = 10
-	3, // 1011 = 11
-	2, // 1100 = 12
-	3, // 1101 = 13
-	3, // 1110 = 14
-	4, // 1111 = 15
-};
-
-int UTIL_CountNumBitsSet( unsigned int nVar )
-{
-	int nNumBits = 0;
-
-	while ( nVar > 0 )
-	{
-		// Look up and add in bits in the bottom nibble
-		nNumBits += s_NumBitsInNibble[ nVar & 0x0f ];
-
-		// Shift one nibble to the right
-		nVar >>= 4;
-	}
-
-	return nNumBits;
-}
-
-int UTIL_CountNumBitsSet( uint64 nVar )
-{
-	int nNumBits = 0;
-
-	while ( nVar > 0 )
-	{
-		// Look up and add in bits in the bottom nibble
-		nNumBits += s_NumBitsInNibble[ nVar & 0x0f ];
-
-		// Shift one nibble to the right
-		nVar >>= 4;
-	}
-
-	return nNumBits;
-}
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -1828,7 +1807,7 @@ static bool					  s_HolidaysCalculated = false;
 static int s_NumGameHolidays = 0;
 static int s_NumTotalHolidays = NUM_SHARED_HOLIDAYS;
 
-static EHolidayFlags s_HolidaysActive = 0;
+static EHolidayFlags s_HolidaysActive = HOLIDAY_FLAG_NONE;
 
 static char *s_TempHolidaysStrings = NULL;
 static char *s_ActiveHolidaysString = NULL;
@@ -1837,7 +1816,7 @@ static char **s_GameHolidaysStrings = NULL;
 static int s_AllHolidaysStringLen = (MAX_HOLIDAY_STRING * NUM_SHARED_HOLIDAYS);
 
 #ifdef CLIENT_DLL
-static unsigned int s_HolidaysVisionFilter = VISION_FILTER_NONE;
+static vision_filter_t s_HolidaysVisionFilter = VISION_FILTER_NONE;
 #endif
 
 static char s_SharedHolidaysStrings[NUM_SHARED_HOLIDAYS][MAX_HOLIDAY_STRING];
@@ -1847,38 +1826,60 @@ static char s_SharedHolidaysStrings[NUM_SHARED_HOLIDAYS][MAX_HOLIDAY_STRING];
 //-----------------------------------------------------------------------------
 EHolidayIndex				UTIL_GetHolidayIndex( EHolidayFlag eHoliday )
 {
-	if(eHoliday == 0) {
-		return 0;
+	if(eHoliday == HOLIDAY_FLAG_NONE) {
+		return HOLIDAY_ID_NONE;
 	}
 
 #ifdef __GNUC__
 	if(__builtin_popcount(eHoliday) != 1) {
-		return (EHolidayIndex)-1;
+		return HOLIDAY_ID_INVALID;
 	}
 
 	int i = __builtin_ctz(eHoliday);
-	return (1 << i);
+	return (EHolidayIndex)(1 << i);
 #else
 	if(__popcnt(eHoliday) != 1) {
-		return (EHolidayIndex)-1;
+		return HOLIDAY_ID_INVALID;
 	}
 
 	int i = _tzcnt_u32(eHoliday);
-	return (1 << i);
+	return (EHolidayIndex)(1 << i);
 #endif
 }
 
 EHolidayFlag				UTIL_GetHolidayFlag( EHolidayIndex eHoliday )
 {
-	if(eHoliday == 0) {
-		return 0;
+	if(eHoliday == HOLIDAY_ID_NONE || eHoliday == HOLIDAY_ID_INVALID) {
+		return HOLIDAY_FLAG_NONE;
 	}
 
-	return (1 << eHoliday);
+	return (EHolidayFlag)(1 << eHoliday);
 }
 
 void UTIL_CalculateHolidays()
 {
+	if(s_HolidaysCalculated) {
+		if(s_ActiveHolidaysString) {
+			free(s_ActiveHolidaysString);
+			s_ActiveHolidaysString = NULL;
+		}
+
+		if(s_TempHolidaysStrings) {
+			free(s_TempHolidaysStrings);
+			s_TempHolidaysStrings = NULL;
+		}
+
+		if(s_GameHolidaysStrings) {
+			for ( int i = 0; i < s_NumGameHolidays; i++ ) {
+				if(s_GameHolidaysStrings[i]) {
+					free(s_GameHolidaysStrings[i]);
+				}
+			}
+			free(s_GameHolidaysStrings);
+			s_GameHolidaysStrings = NULL;
+		}
+	}
+
 	int nNumTotalHolidays = NUM_SHARED_HOLIDAYS;
 	if(GameRules()) {
 		nNumTotalHolidays = GameRules()->GetNumHolidays();
@@ -1972,8 +1973,8 @@ void UTIL_CalculateHolidays()
 
 	for ( int i = 0; i < NUM_SHARED_HOLIDAYS; ++i )
 	{
-		EHolidayIndex iHolidayIndex = (i+1);
-		EHolidayFlag iHolidayFlag = (1 << iHolidayIndex);
+		EHolidayIndex iHolidayIndex = (EHolidayIndex)(i+1);
+		EHolidayFlag iHolidayFlag = (EHolidayFlag)(1 << iHolidayIndex);
 
 		if(GameRules())
 		{
@@ -1982,7 +1983,7 @@ void UTIL_CalculateHolidays()
 			if ( GameRules()->IsHolidayActive(iHolidayFlag) )
 			{
 			#ifdef CLIENT_DLL
-				s_HolidaysVisionFilter |= (iHolidayFlag << 1);
+				s_HolidaysVisionFilter |= (vision_filter_t)(iHolidayFlag << 1);
 			#endif
 
 				s_HolidaysActive |= iHolidayFlag;
@@ -1995,8 +1996,8 @@ void UTIL_CalculateHolidays()
 	if(s_NumGameHolidays > 0) {
 		for ( int i = 0; i < s_NumGameHolidays; i++ )
 		{
-			EHolidayIndex iHolidayIndex = (NUM_SHARED_HOLIDAYS+i);
-			EHolidayFlag iHolidayFlag = (1 << iHolidayIndex);
+			EHolidayIndex iHolidayIndex = (EHolidayIndex)(NUM_SHARED_HOLIDAYS+i);
+			EHolidayFlag iHolidayFlag = (EHolidayFlag)(1 << iHolidayIndex);
 
 			if(!s_GameHolidaysStrings[i]) {
 				s_GameHolidaysStrings[i] = (char *)malloc(MAX_HOLIDAY_STRING);
@@ -2043,7 +2044,7 @@ bool UTIL_IsHolidayActive( EHolidayFlags eHoliday )
 
 const char		   *UTIL_GetHolidayString( EHolidayFlags eHoliday )
 {
-	if(eHoliday == 0)
+	if(eHoliday == HOLIDAY_FLAG_NONE)
 		return "";
 
 	s_TempHolidaysStrings[0] = 0;
@@ -2057,8 +2058,8 @@ const char		   *UTIL_GetHolidayString( EHolidayFlags eHoliday )
 
 	for ( int i = 0; i < NUM_SHARED_HOLIDAYS; i++ )
 	{
-		EHolidayIndex iHolidayIndex = (i+1);
-		EHolidayFlag iHolidayFlag = (1 << iHolidayIndex);
+		EHolidayIndex iHolidayIndex = (EHolidayIndex)(i+1);
+		EHolidayFlag iHolidayFlag = (EHolidayFlag)(1 << iHolidayIndex);
 
 		if(s_SharedHolidaysStrings[i][0] == '\0') {
 			continue;
@@ -2073,8 +2074,8 @@ const char		   *UTIL_GetHolidayString( EHolidayFlags eHoliday )
 	if(s_NumGameHolidays > 0 && s_GameHolidaysStrings) {
 		for ( int i = 0; i < s_NumGameHolidays; i++ )
 		{
-			EHolidayIndex iHolidayIndex = (NUM_SHARED_HOLIDAYS+i);
-			EHolidayFlag iHolidayFlag = (1 << iHolidayIndex);
+			EHolidayIndex iHolidayIndex = (EHolidayIndex)(NUM_SHARED_HOLIDAYS+i);
+			EHolidayFlag iHolidayFlag = (EHolidayFlag)(1 << iHolidayIndex);
 
 			if(!s_GameHolidaysStrings[i] || s_GameHolidaysStrings[i][0] == '\0') {
 				continue;
@@ -2098,14 +2099,14 @@ const char		   *UTIL_GetHolidayString( EHolidayFlags eHoliday )
 EHolidayFlags	UTIL_GetHolidaysForString( const char* pszHolidayName )
 {
 	if ( !pszHolidayName || *pszHolidayName == '\0' )
-		return HOLIDAY_NONE;
+		return HOLIDAY_FLAG_NONE;
 
 	if ( !s_HolidaysCalculated )
 	{
 		UTIL_CalculateHolidays();
 	}
 
-	EHolidayFlags nHolidays = HOLIDAY_NONE;
+	EHolidayFlags nHolidays = HOLIDAY_FLAG_NONE;
 
 	DebuggerBreak();
 
@@ -2117,8 +2118,8 @@ EHolidayFlags	UTIL_GetHolidaysForString( const char* pszHolidayName )
 
 			for ( int i = 0; i < NUM_SHARED_HOLIDAYS; i++ )
 			{
-				EHolidayIndex iHolidayIndex = (i+1);
-				EHolidayFlag iHolidayFlag = (1 << iHolidayIndex);
+				EHolidayIndex iHolidayIndex = (EHolidayIndex)(i+1);
+				EHolidayFlag iHolidayFlag = (EHolidayFlag)(1 << iHolidayIndex);
 
 				if(s_SharedHolidaysStrings[i][0] == '\0') {
 					continue;
@@ -2132,8 +2133,8 @@ EHolidayFlags	UTIL_GetHolidaysForString( const char* pszHolidayName )
 			if(s_NumGameHolidays > 0 && s_GameHolidaysStrings) {
 				for ( int i = 0; i < s_NumGameHolidays; i++ )
 				{
-					EHolidayIndex iHolidayIndex = (NUM_SHARED_HOLIDAYS+i);
-					EHolidayFlag iHolidayFlag = (1 << iHolidayIndex);
+					EHolidayIndex iHolidayIndex = (EHolidayIndex)(NUM_SHARED_HOLIDAYS+i);
+					EHolidayFlag iHolidayFlag = (EHolidayFlag)(1 << iHolidayIndex);
 
 					if(!s_GameHolidaysStrings[i] || s_GameHolidaysStrings[i][0] == '\0') {
 						continue;
@@ -2180,7 +2181,7 @@ const char* UTIL_GetActiveHolidaysString()
 }
 
 #ifdef CLIENT_DLL
-unsigned int UTIL_GetActiveHolidaysVisionFilter()
+vision_filter_t UTIL_GetActiveHolidaysVisionFilter()
 {
 	if ( !s_HolidaysCalculated )
 	{
@@ -2190,13 +2191,13 @@ unsigned int UTIL_GetActiveHolidaysVisionFilter()
 	return s_HolidaysVisionFilter;
 }
 
-unsigned int UTIL_HolidayToVisionFilter( EHolidayFlag eHoliday)
+vision_filter_t UTIL_HolidayToVisionFilter( EHolidayFlag eHoliday)
 {
-	if(eHoliday >= NUM_SHARED_HOLIDAYS) {
-		return 0;
+	if(eHoliday >= LAST_SHARED_HOLIDAY_FLAG) {
+		return VISION_FILTER_NONE;
 	}
 
-	return (eHoliday << 1);
+	return (vision_filter_t)(eHoliday << 1);
 }
 #endif
 
@@ -2473,7 +2474,7 @@ bool UTIL_GetModDir( char *lpszTextOut, unsigned int nSize )
 {
 	// Must pass in a buffer at least large enough to hold the desired string
 	const char *pGameDir = CommandLine()->ParmValue( "-game", CommandLine()->ParmValue( "-defaultgamedir", "hl2" ) );
-	unsigned int nGameDirLen = Q_strlen( pGameDir );
+	int nGameDirLen = Q_strlen( pGameDir );
 	Assert( nGameDirLen <= nSize );
 	if ( nGameDirLen > nSize )
 		return false;
