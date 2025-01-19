@@ -184,7 +184,7 @@ void CAI_BaseFlyingBot::MoveToTarget(float flInterval, const Vector &MoveTarget)
 AI_NavPathProgress_t CAI_BaseFlyingBot::ProgressFlyPath( 
 	float flInterval,
 	const CBaseEntity *pNewTarget, 
-	unsigned collisionMask, 
+	ContentsFlags_t collisionMask, 
 	bool bNewTrySimplify, 
 	float strictPointTolerance)
 {

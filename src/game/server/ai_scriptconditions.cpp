@@ -16,8 +16,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define SF_ACTOR_AS_ACTIVATOR	( 1 << 0 )
-
 ConVar debugscriptconditions( "ai_debugscriptconditions", "0" );
 
 #define ScrCondDbgMsg( msg ) \
@@ -118,6 +116,31 @@ CAI_ScriptConditions::EvaluatorInfo_t CAI_ScriptConditions::gm_Evaluators[] =
 		EVALUATOR( PlayerInVehicle ),
 		EVALUATOR( ActorInVehicle ),
 };
+
+CAI_ScriptConditions::CAI_ScriptConditions()
+	:	m_fDisabled( true ),
+	m_flRequiredTime( 0 ),
+	m_fMinState( NPC_STATE_IDLE ),
+	m_fMaxState( NPC_STATE_IDLE ),
+	m_fScriptStatus( TRS_NONE ),
+	m_fActorSeePlayer( TRS_NONE ),
+	m_flPlayerActorProximity( 0 ),
+	m_flPlayerActorFOV( -1 ),
+	m_fPlayerActorLOS( TRS_NONE ),
+	m_fActorSeeTarget( TRS_NONE ),
+	m_flActorTargetProximity( 0 ),
+	m_flPlayerTargetProximity( 0 ),
+	m_flPlayerTargetFOV( 0 ),
+	m_fPlayerTargetLOS( TRS_NONE ),
+	m_fPlayerBlockingActor( TRS_NONE ),
+	m_flMinTimeout( 0 ),
+	m_flMaxTimeout( 0 ),
+	m_fActorInPVS( TRS_NONE ),
+	m_fActorInVehicle( TRS_NONE ),
+	m_fPlayerInVehicle( TRS_NONE )
+{
+	m_hActor = NULL;
+}
 
 //-----------------------------------------------------------------------------
 

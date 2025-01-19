@@ -320,7 +320,7 @@ public:
 	//---------------------------------
 	void		TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	int			OnTakeDamage_Alive( const CTakeDamageInfo &info );
-	int			TakeHealth( float flHealth, int bitsDamageType );
+	int			TakeHealth( float flHealth, DamageTypes_t bitsDamageType );
 	void		Event_Killed( const CTakeDamageInfo &info );
 	bool		CreateVPhysics();
 

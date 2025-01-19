@@ -273,7 +273,7 @@ void CBaseAnimatingOverlay::StudioFrameAdvance ()
 					{
 						Msg("removing %d (%d): %s : %5.3f (%.3f)\n", i, pLayer->m_nOrder.Get(), GetSequenceName( pLayer->m_nSequence ), pLayer->m_flCycle.Get(), pLayer->m_flWeight.Get() );
 					}
-					FastRemoveLayer( i );
+					FastRemoveLayer( (animlayerindex_t)i );
 					// needs at least one thing cycle dead to trigger sequence change
 					pLayer->Dying();
 					continue;
@@ -355,7 +355,7 @@ void CAnimationLayer::DispatchAnimEvents( CBaseAnimating *eventHandler, CBaseAni
 		return;
 	}
 
-	if ( m_nSequence >= pstudiohdr->GetNumSeq() )
+	if ( (unsigned short)m_nSequence.Get() >= pstudiohdr->GetNumSeq() )
 		return;
 	
 	// don't fire if here are no events
@@ -473,9 +473,9 @@ void CBaseAnimatingOverlay::GetSkeleton( CStudioHdr *pStudioHdr, Vector pos[], Q
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int CBaseAnimatingOverlay::AddGestureSequence( int sequence, bool autokill /*= true*/ )
+animlayerindex_t CBaseAnimatingOverlay::AddGestureSequence( sequence_t sequence, bool autokill /*= true*/ )
 {
-	int i = AddLayeredSequence( sequence, 0 );
+	animlayerindex_t i = AddLayeredSequence( sequence, 0 );
 	// No room?
 	if ( IsValidLayer( i ) )
 	{
@@ -489,12 +489,12 @@ int CBaseAnimatingOverlay::AddGestureSequence( int sequence, bool autokill /*= t
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int CBaseAnimatingOverlay::AddGestureSequence( int nSequence, float flDuration, bool autokill /*= true*/ )
+animlayerindex_t CBaseAnimatingOverlay::AddGestureSequence( sequence_t nSequence, float flDuration, bool autokill /*= true*/ )
 {
-	int iLayer = AddGestureSequence( nSequence, autokill );
-	Assert( iLayer != -1 );
+	animlayerindex_t iLayer = AddGestureSequence( nSequence, autokill );
+	Assert( iLayer != INVALID_ANIMLAYER );
 
-	if (iLayer >= 0 && flDuration > 0)
+	if (iLayer != INVALID_ANIMLAYER && flDuration > 0)
 	{
 		m_AnimOverlay.GetForModify(iLayer).m_flPlaybackRate = SequenceDuration( nSequence ) / flDuration;
 	}
@@ -506,7 +506,7 @@ int CBaseAnimatingOverlay::AddGestureSequence( int nSequence, float flDuration, 
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
-int CBaseAnimatingOverlay::AddGesture( Activity activity, bool autokill /*= true*/ )
+animlayerindex_t CBaseAnimatingOverlay::AddGesture( Activity activity, bool autokill /*= true*/ )
 {
 	if ( IsPlayingGesture( activity ) )
 	{
@@ -514,17 +514,17 @@ int CBaseAnimatingOverlay::AddGesture( Activity activity, bool autokill /*= true
 	}
 
 	MDLCACHE_CRITICAL_SECTION();
-	int seq = SelectWeightedSequence( activity );
-	if ( seq <= 0 )
+	sequence_t seq = SelectWeightedSequence( activity );
+	if ( seq == INVALID_SEQUENCE )
 	{
 		const char *actname = CAI_BaseNPC::GetActivityName( activity );
 		DevMsg( "CBaseAnimatingOverlay::AddGesture:  model %s missing activity %s\n", STRING(GetModelName()), actname );
-		return -1;
+		return INVALID_ANIMLAYER;
 	}
 
-	int i = AddGestureSequence( seq, autokill );
-	Assert( i != -1 );
-	if ( i != -1 )
+	animlayerindex_t i = AddGestureSequence( seq, autokill );
+	Assert( i != INVALID_ANIMLAYER );
+	if ( i != INVALID_ANIMLAYER )
 	{
 		m_AnimOverlay.GetForModify( i ).m_nActivity = activity;
 	}
@@ -533,9 +533,9 @@ int CBaseAnimatingOverlay::AddGesture( Activity activity, bool autokill /*= true
 }
 
 
-int CBaseAnimatingOverlay::AddGesture( Activity activity, float flDuration, bool autokill /*= true*/ )
+animlayerindex_t CBaseAnimatingOverlay::AddGesture( Activity activity, float flDuration, bool autokill /*= true*/ )
 {
-	int iLayer = AddGesture( activity, autokill );
+	animlayerindex_t iLayer = AddGesture( activity, autokill );
 	SetLayerDuration( iLayer, flDuration );
 
 	return iLayer;
@@ -547,7 +547,7 @@ int CBaseAnimatingOverlay::AddGesture( Activity activity, float flDuration, bool
 // Output : int
 //-----------------------------------------------------------------------------
 
-void CBaseAnimatingOverlay::SetLayerDuration( int iLayer, float flDuration )
+void CBaseAnimatingOverlay::SetLayerDuration( animlayerindex_t iLayer, float flDuration )
 {
 	if (IsValidLayer( iLayer ) && flDuration > 0)
 	{
@@ -562,7 +562,7 @@ void CBaseAnimatingOverlay::SetLayerDuration( int iLayer, float flDuration )
 // Output : int
 //-----------------------------------------------------------------------------
 
-float CBaseAnimatingOverlay::GetLayerDuration( int iLayer )
+float CBaseAnimatingOverlay::GetLayerDuration( animlayerindex_t iLayer )
 {
 	if (IsValidLayer( iLayer ))
 	{
@@ -578,7 +578,7 @@ float CBaseAnimatingOverlay::GetLayerDuration( int iLayer )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CBaseAnimatingOverlay::IsLayerFinished( int iLayer )
+bool CBaseAnimatingOverlay::IsLayerFinished( animlayerindex_t iLayer )
 {
 	if (!IsValidLayer( iLayer ))
 		return true;
@@ -590,9 +590,9 @@ bool CBaseAnimatingOverlay::IsLayerFinished( int iLayer )
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int	CBaseAnimatingOverlay::AddLayeredSequence( int sequence, int iPriority )
+animlayerindex_t	CBaseAnimatingOverlay::AddLayeredSequence( sequence_t sequence, int iPriority )
 {
-	int i = AllocateLayer( iPriority );
+	animlayerindex_t i = AllocateLayer( iPriority );
 	// No room?
 	if ( IsValidLayer( i ) )
 	{
@@ -607,7 +607,7 @@ int	CBaseAnimatingOverlay::AddLayeredSequence( int sequence, int iPriority )
 		layer.m_flBlendOut = 0.0f;
 		layer.m_bSequenceFinished = false;
 		layer.m_flLastEventCheck = 0;
-		layer.m_bLooping = ((GetSequenceFlags( GetModelPtr(), sequence ) & STUDIO_LOOPING) != 0);
+		layer.m_bLooping = ((GetSequenceFlags( GetModelPtr(), sequence ) & STUDIO_LOOPING) != STUDIO_NO_SEQUENCE_FLAGS);
 		if (ai_sequence_debug.GetBool() == true && m_debugOverlays & OVERLAY_NPC_SELECTED_BIT)
 		{
 			Msg("%5.3f : adding %d (%d): %s : %5.3f (%.3f)\n", gpGlobals->curtime, i, m_AnimOverlay[ i ].m_nOrder.Get(), GetSequenceName( m_AnimOverlay[ i ].m_nSequence ), m_AnimOverlay[ i ].m_flCycle.Get(), m_AnimOverlay[ i ].m_flWeight.Get() );
@@ -622,9 +622,9 @@ int	CBaseAnimatingOverlay::AddLayeredSequence( int sequence, int iPriority )
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-bool CBaseAnimatingOverlay::IsValidLayer( int iLayer )
+bool CBaseAnimatingOverlay::IsValidLayer( animlayerindex_t iLayer )
 {
-	return (iLayer >= 0 && iLayer < m_AnimOverlay.Count() && m_AnimOverlay[iLayer].IsActive());
+	return (iLayer != INVALID_ANIMLAYER && (unsigned char)iLayer < m_AnimOverlay.Count() && m_AnimOverlay[iLayer].IsActive());
 }
 
 
@@ -632,7 +632,7 @@ bool CBaseAnimatingOverlay::IsValidLayer( int iLayer )
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int CBaseAnimatingOverlay::AllocateLayer( int iPriority )
+animlayerindex_t CBaseAnimatingOverlay::AllocateLayer( int iPriority )
 {
 	int i;
 
@@ -669,7 +669,7 @@ int CBaseAnimatingOverlay::AllocateLayer( int iPriority )
 	{
 		if (vecAnimOverlay.Count() >= MAX_OVERLAYS)
 		{
-			return -1;
+			return INVALID_ANIMLAYER;
 		}
 
 		iOpenLayer = vecAnimOverlay.AddToTail();
@@ -706,7 +706,7 @@ int CBaseAnimatingOverlay::AllocateLayer( int iPriority )
 	layer.MarkActive();
 	VerifyOrder();
 
-	return iOpenLayer;
+	return (animlayerindex_t)iOpenLayer;
 }
 
 
@@ -715,7 +715,7 @@ int CBaseAnimatingOverlay::AllocateLayer( int iPriority )
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-void CBaseAnimatingOverlay::SetLayerPriority( int iLayer, int iPriority )
+void CBaseAnimatingOverlay::SetLayerPriority( animlayerindex_t iLayer, int iPriority )
 {
 	if (!IsValidLayer( iLayer ))
 	{
@@ -746,7 +746,7 @@ void CBaseAnimatingOverlay::SetLayerPriority( int iLayer, int iPriority )
 	int iNewOrder = 0;
 	for (i = 0; i < vecAnimOverlay.Count(); i++)
 	{
-		if ( i != iLayer && vecAnimOverlay[i].IsActive() )
+		if ( i != (unsigned char)iLayer && vecAnimOverlay[i].IsActive() )
 		{
 			if (vecAnimOverlay[i].m_nPriority <= iPriority)
 			{
@@ -757,7 +757,7 @@ void CBaseAnimatingOverlay::SetLayerPriority( int iLayer, int iPriority )
 
 	for (i = 0; i < vecAnimOverlay.Count(); i++)
 	{
-		if ( i != iLayer && vecAnimOverlay[i].IsActive() )
+		if ( i != (unsigned char)iLayer && vecAnimOverlay[i].IsActive() )
 		{
 			if ( vecAnimOverlay[i].m_nOrder >= iNewOrder)
 			{
@@ -781,7 +781,7 @@ void CBaseAnimatingOverlay::SetLayerPriority( int iLayer, int iPriority )
 // Purpose: 
 // Input  : activity - 
 //-----------------------------------------------------------------------------
-int	CBaseAnimatingOverlay::FindGestureLayer( Activity activity )
+animlayerindex_t	CBaseAnimatingOverlay::FindGestureLayer( Activity activity )
 {
 	for (int i = 0; i < m_AnimOverlay.Count(); i++)
 	{
@@ -795,10 +795,10 @@ int	CBaseAnimatingOverlay::FindGestureLayer( Activity activity )
 			continue;
 
 		if ( m_AnimOverlay[i].m_nActivity == activity )
-			return i;
+			return (animlayerindex_t)i;
 	}
 
-	return -1;
+	return INVALID_ANIMLAYER;
 }
 
 //-----------------------------------------------------------------------------
@@ -808,7 +808,7 @@ int	CBaseAnimatingOverlay::FindGestureLayer( Activity activity )
 //-----------------------------------------------------------------------------
 bool CBaseAnimatingOverlay::IsPlayingGesture( Activity activity )
 {
-	return FindGestureLayer( activity ) != -1 ? true : false;
+	return FindGestureLayer( activity ) != INVALID_ANIMLAYER ? true : false;
 }
 
 //-----------------------------------------------------------------------------
@@ -839,8 +839,8 @@ void CBaseAnimatingOverlay::RestartGesture( Activity activity, bool addifmissing
 //-----------------------------------------------------------------------------
 void CBaseAnimatingOverlay::RemoveGesture( Activity activity )
 {
-	int iLayer = FindGestureLayer( activity );
-	if ( iLayer == -1 )
+	animlayerindex_t iLayer = FindGestureLayer( activity );
+	if ( iLayer == INVALID_ANIMLAYER )
 		return;
 
 	RemoveLayer( iLayer );
@@ -853,14 +853,14 @@ void CBaseAnimatingOverlay::RemoveAllGestures( void )
 {
 	for (int i = 0; i < m_AnimOverlay.Count(); i++)
 	{
-		RemoveLayer( i );
+		RemoveLayer( (animlayerindex_t)i );
 	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseAnimatingOverlay::SetLayerCycle( int iLayer, float flCycle )
+void CBaseAnimatingOverlay::SetLayerCycle( animlayerindex_t iLayer, float flCycle )
 {
 	if (!IsValidLayer( iLayer ))
 		return;
@@ -879,7 +879,7 @@ void CBaseAnimatingOverlay::SetLayerCycle( int iLayer, float flCycle )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseAnimatingOverlay::SetLayerCycle( int iLayer, float flCycle, float flPrevCycle )
+void CBaseAnimatingOverlay::SetLayerCycle( animlayerindex_t iLayer, float flCycle, float flPrevCycle )
 {
 	if (!IsValidLayer( iLayer ))
 		return;
@@ -900,7 +900,7 @@ void CBaseAnimatingOverlay::SetLayerCycle( int iLayer, float flCycle, float flPr
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseAnimatingOverlay::SetLayerCycle( int iLayer, float flCycle, float flPrevCycle, float flLastEventCheck )
+void CBaseAnimatingOverlay::SetLayerCycle( animlayerindex_t iLayer, float flCycle, float flPrevCycle, float flLastEventCheck )
 {
 	if (!IsValidLayer( iLayer ))
 		return;
@@ -921,7 +921,7 @@ void CBaseAnimatingOverlay::SetLayerCycle( int iLayer, float flCycle, float flPr
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-float CBaseAnimatingOverlay::GetLayerCycle( int iLayer )
+float CBaseAnimatingOverlay::GetLayerCycle( animlayerindex_t iLayer )
 {
 	if (!IsValidLayer( iLayer ))
 		return 0.0;
@@ -932,7 +932,7 @@ float CBaseAnimatingOverlay::GetLayerCycle( int iLayer )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseAnimatingOverlay::SetLayerPlaybackRate( int iLayer, float flPlaybackRate )
+void CBaseAnimatingOverlay::SetLayerPlaybackRate( animlayerindex_t iLayer, float flPlaybackRate )
 {
 	if (!IsValidLayer( iLayer ))
 		return;
@@ -946,7 +946,7 @@ void CBaseAnimatingOverlay::SetLayerPlaybackRate( int iLayer, float flPlaybackRa
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseAnimatingOverlay::SetLayerWeight( int iLayer, float flWeight )
+void CBaseAnimatingOverlay::SetLayerWeight( animlayerindex_t iLayer, float flWeight )
 {
 	if (!IsValidLayer( iLayer ))
 		return;
@@ -962,7 +962,7 @@ void CBaseAnimatingOverlay::SetLayerWeight( int iLayer, float flWeight )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-float CBaseAnimatingOverlay::GetLayerWeight( int iLayer )
+float CBaseAnimatingOverlay::GetLayerWeight( animlayerindex_t iLayer )
 {
 	if (!IsValidLayer( iLayer ))
 		return 0.0;
@@ -974,7 +974,7 @@ float CBaseAnimatingOverlay::GetLayerWeight( int iLayer )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseAnimatingOverlay::SetLayerBlendIn( int iLayer, float flBlendIn )
+void CBaseAnimatingOverlay::SetLayerBlendIn( animlayerindex_t iLayer, float flBlendIn )
 {
 	if (!IsValidLayer( iLayer ))
 		return;
@@ -986,7 +986,7 @@ void CBaseAnimatingOverlay::SetLayerBlendIn( int iLayer, float flBlendIn )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseAnimatingOverlay::SetLayerBlendOut( int iLayer, float flBlendOut )
+void CBaseAnimatingOverlay::SetLayerBlendOut( animlayerindex_t iLayer, float flBlendOut )
 {
 	if (!IsValidLayer( iLayer ))
 		return;
@@ -998,7 +998,7 @@ void CBaseAnimatingOverlay::SetLayerBlendOut( int iLayer, float flBlendOut )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseAnimatingOverlay::SetLayerAutokill( int iLayer, bool bAutokill )
+void CBaseAnimatingOverlay::SetLayerAutokill( animlayerindex_t iLayer, bool bAutokill )
 {
 	if (!IsValidLayer( iLayer ))
 		return;
@@ -1019,7 +1019,7 @@ void CBaseAnimatingOverlay::SetLayerAutokill( int iLayer, bool bAutokill )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseAnimatingOverlay::SetLayerLooping( int iLayer, bool bLooping )
+void CBaseAnimatingOverlay::SetLayerLooping( animlayerindex_t iLayer, bool bLooping )
 {
 	if (!IsValidLayer( iLayer ))
 		return;
@@ -1031,7 +1031,7 @@ void CBaseAnimatingOverlay::SetLayerLooping( int iLayer, bool bLooping )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseAnimatingOverlay::SetLayerNoEvents( int iLayer, bool bNoEvents )
+void CBaseAnimatingOverlay::SetLayerNoEvents( animlayerindex_t iLayer, bool bNoEvents )
 {
 	if (!IsValidLayer( iLayer ))
 		return;
@@ -1051,7 +1051,7 @@ void CBaseAnimatingOverlay::SetLayerNoEvents( int iLayer, bool bNoEvents )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-Activity CBaseAnimatingOverlay::GetLayerActivity( int iLayer )
+Activity CBaseAnimatingOverlay::GetLayerActivity( animlayerindex_t iLayer )
 {
 	if (!IsValidLayer( iLayer ))
 	{
@@ -1064,11 +1064,11 @@ Activity CBaseAnimatingOverlay::GetLayerActivity( int iLayer )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CBaseAnimatingOverlay::GetLayerSequence( int iLayer )
+sequence_t CBaseAnimatingOverlay::GetLayerSequence( animlayerindex_t iLayer )
 {
 	if (!IsValidLayer( iLayer ))
 	{
-		return ACT_INVALID;
+		return INVALID_SEQUENCE;
 	}
 		
 	return m_AnimOverlay[iLayer].m_nSequence;
@@ -1077,7 +1077,7 @@ int CBaseAnimatingOverlay::GetLayerSequence( int iLayer )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseAnimatingOverlay::RemoveLayer( int iLayer, float flKillRate, float flKillDelay )
+void CBaseAnimatingOverlay::RemoveLayer( animlayerindex_t iLayer, float flKillRate, float flKillDelay )
 {
 	if (!IsValidLayer( iLayer ))
 		return;
@@ -1098,7 +1098,7 @@ void CBaseAnimatingOverlay::RemoveLayer( int iLayer, float flKillRate, float flK
 	layer.KillMe();
 }
 
-void CBaseAnimatingOverlay::FastRemoveLayer( int iLayer )
+void CBaseAnimatingOverlay::FastRemoveLayer( animlayerindex_t iLayer )
 {
 	if (!IsValidLayer( iLayer ))
 		return;
@@ -1119,16 +1119,16 @@ void CBaseAnimatingOverlay::FastRemoveLayer( int iLayer )
 	VerifyOrder();
 }
 
-const CAnimationLayer *CBaseAnimatingOverlay::GetAnimOverlay( int iIndex ) const
+const CAnimationLayer *CBaseAnimatingOverlay::GetAnimOverlay( animlayerindex_t iIndex ) const
 {
-	iIndex = clamp( iIndex, 0, m_AnimOverlay.Count()-1 );
+	iIndex = (animlayerindex_t)clamp( (unsigned char)iIndex, 0, m_AnimOverlay.Count()-1 );
 
 	return &m_AnimOverlay[iIndex];
 }
 
-CAnimationLayer *CBaseAnimatingOverlay::GetAnimOverlayForModify( int iIndex )
+CAnimationLayer *CBaseAnimatingOverlay::GetAnimOverlayForModify( animlayerindex_t iIndex )
 {
-	iIndex = clamp( iIndex, 0, m_AnimOverlay.Count()-1 );
+	iIndex = (animlayerindex_t)clamp( (unsigned char)iIndex, 0, m_AnimOverlay.Count()-1 );
 
 	return &m_AnimOverlay.GetForModify(iIndex);
 }

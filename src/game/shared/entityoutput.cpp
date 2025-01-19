@@ -19,6 +19,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+//TODO!!!! why does tf2 do this?
 #ifdef TF_DLL
 #define ENTITYIO_CURTIME engine->GetServerTime()
 #else

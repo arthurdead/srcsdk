@@ -16,6 +16,7 @@
 #include "ai_navtype.h"
 #include "ai_motor.h"
 #include "baseentity.h"
+#include "ai_waypoint.h"
 
 class CAI_BaseNPC;
 class CAI_Motor;
@@ -84,7 +85,7 @@ extern const Vector AIN_NO_DEST;
 
 //-------------------------------------
 
-enum AI_NavGoalFlags_t
+enum AI_NavGoalFlags_t : unsigned char
 {
 	// While navigating, try to face the destination point
 	AIN_YAW_TO_DEST			= 0x01,
@@ -106,6 +107,8 @@ enum AI_NavGoalFlags_t
 
 	AIN_DEF_FLAGS			= 0,
 };
+
+FLAGENUM_OPERATORS( AI_NavGoalFlags_t, unsigned char )
 
 //-------------------------------------
 
@@ -154,14 +157,14 @@ struct AI_NavGoal_t
 	AI_NavGoal_t( GoalType_t    type	  = GOALTYPE_INVALID,
 				  Activity		activity  = AIN_DEF_ACTIVITY, 
 				  float			tolerance = AIN_DEF_TOLERANCE,
-				  unsigned 		flags     = AIN_DEF_FLAGS,
+				  AI_NavGoalFlags_t 		flags     = AIN_DEF_FLAGS,
 				  CBaseEntity * pTarget   = AIN_DEF_TARGET);
 	
 	// Goal is a specific location, and GOALTYPE_LOCATION
 	AI_NavGoal_t( const Vector &dest,
 				  Activity		activity  = AIN_DEF_ACTIVITY, 
 				  float			tolerance = AIN_DEF_TOLERANCE,
-				  unsigned 		flags     = AIN_DEF_FLAGS,
+				  AI_NavGoalFlags_t 		flags     = AIN_DEF_FLAGS,
 				  CBaseEntity * pTarget   = AIN_DEF_TARGET);
 
 	// Goal is a specific location and goal type
@@ -169,7 +172,7 @@ struct AI_NavGoal_t
 				  const Vector &dest,
 				  Activity		activity  = AIN_DEF_ACTIVITY, 
 				  float			tolerance = AIN_DEF_TOLERANCE,
-				  unsigned 		flags     = AIN_DEF_FLAGS,
+				  AI_NavGoalFlags_t 		flags     = AIN_DEF_FLAGS,
 				  CBaseEntity * pTarget   = AIN_DEF_TARGET);
 				  
 	//----------------------------------
@@ -185,7 +188,7 @@ struct AI_NavGoal_t
 	
 	// The predicted activity used after arrival
 	Activity		arrivalActivity;
-	int				arrivalSequence;
+	sequence_t				arrivalSequence;
 
 	// The tolerance of success, or none if a previosly set tolerance should be used
 	float			tolerance;
@@ -195,7 +198,7 @@ struct AI_NavGoal_t
 	float			maxInitialSimplificationDist;
 
 	// Optional flags specifying
-	unsigned		flags;
+	AI_NavGoalFlags_t		flags;
 
 	// The target of the navigation, primarily used to ignore the entity in hull and line traces
 	CBaseEntity *	pTarget;
@@ -212,7 +215,7 @@ struct AI_NavGoal_t
 
 struct AI_ProgressFlyPathParams_t
 {
-	AI_ProgressFlyPathParams_t( unsigned _collisionMask, 
+	AI_ProgressFlyPathParams_t( ContentsFlags_t _collisionMask, 
 							   	float _strictPointTolerance = 32.0, float _blockTolerance = 0.0,
 							   	float _waypointTolerance = 100, float _goalTolerance = 12,
 							   	AI_NpcBlockHandling_t _blockHandling = AISF_BLOCK )
@@ -236,7 +239,7 @@ struct AI_ProgressFlyPathParams_t
 	//----------------------------------
 	
 	// Fields that tend to stay constant
-	unsigned 				collisionMask;
+	ContentsFlags_t 				collisionMask;
 	float 					strictPointTolerance;
 	float 					blockTolerance; 		// @TODO (toml 07-03-02): rename "blockTolerance". This is specifically the "simplify" block tolerance. See SimplifyFlyPath()
 	float 					waypointTolerance;
@@ -298,7 +301,7 @@ public:
 	
 	// Path manipulation
 	bool 				PrependLocalAvoidance( float distObstacle, const AIMoveTrace_t &directTrace );
-	void 				PrependWaypoint( const Vector &newPoint, Navigation_t navType, unsigned waypointFlags = 0 );
+	void 				PrependWaypoint( const Vector &newPoint, Navigation_t navType, WaypointFlags_t waypointFlags = bits_WP_NO_FLAGS );
 	
 	// Query or change the movement activity
 	Activity 			GetMovementActivity() const;
@@ -333,10 +336,10 @@ public:
 	GoalType_t			GetGoalType() const;
 	const Vector &		GetGoalPos() const;
 	CBaseEntity *		GetGoalTarget();
-	int					GetGoalFlags() const;
+	AI_NavGoalFlags_t					GetGoalFlags() const;
 	
 	const Vector &		GetCurWaypointPos() const;
-	int 				GetCurWaypointFlags() const;
+	WaypointFlags_t 				GetCurWaypointFlags() const;
 
 	bool				CurWaypointIsGoal() const;
 	bool				CurWaypointRequiresPreciseMovement() const;
@@ -394,14 +397,14 @@ public:
 	void				AdvancePath();
 
 	virtual bool		SimplifyPath( bool bFirstForPath = false, float maxDist = -1 );
-	void				SimplifyFlyPath( unsigned collisionMask, const CBaseEntity *pTarget, 
+	void				SimplifyFlyPath( ContentsFlags_t collisionMask, const CBaseEntity *pTarget, 
 										 float strictPointTolerance = 32.0, float blockTolerance = 0.0,
 										 AI_NpcBlockHandling_t blockHandling = AISF_BLOCK);
 	bool				SimplifyFlyPath(  const AI_ProgressFlyPathParams_t &params );
 
-	float				MovementCost( int moveType, Vector &vecStart, Vector &vecEnd );
+	float				MovementCost( Capability_t moveType, Vector &vecStart, Vector &vecEnd );
 
-	bool				CanFitAtPosition( const Vector &vStartPos, unsigned int collisionMask, bool bIgnoreTransients = false, bool bAllowPlayerAvoid = true );
+	bool				CanFitAtPosition( const Vector &vStartPos, ContentsFlags_t collisionMask, bool bIgnoreTransients = false, bool bAllowPlayerAvoid = true );
 
 	bool				IsOnNavMesh() const			{ return !m_bNotOnNavMesh; }
 
@@ -634,7 +637,7 @@ private:
 inline AI_NavGoal_t::AI_NavGoal_t( GoalType_t   type,
 								   Activity		activity, 
 								   float		tolerance,
-								   unsigned 	flags,
+								   AI_NavGoalFlags_t 	flags,
 								   CBaseEntity *pTarget)
  :	type(type),
 	dest(AIN_NO_DEST),
@@ -644,14 +647,14 @@ inline AI_NavGoal_t::AI_NavGoal_t( GoalType_t   type,
 	flags(flags),
 	pTarget(pTarget),
 	arrivalActivity( AIN_DEF_ACTIVITY ),
-	arrivalSequence( ACT_INVALID )
+	arrivalSequence( INVALID_SEQUENCE )
 {
 }
 
 inline AI_NavGoal_t::AI_NavGoal_t( const Vector &dest,
 								   Activity		activity, 
 								   float		tolerance,
-								   unsigned 	flags,
+								   AI_NavGoalFlags_t 	flags,
 								   CBaseEntity *pTarget)
  :	type(GOALTYPE_LOCATION),
 	dest(dest),
@@ -661,7 +664,7 @@ inline AI_NavGoal_t::AI_NavGoal_t( const Vector &dest,
 	flags(flags),
 	pTarget(pTarget),
 	arrivalActivity( AIN_DEF_ACTIVITY ),
-	arrivalSequence( ACT_INVALID )
+	arrivalSequence( INVALID_SEQUENCE )
 {
 }
 
@@ -669,7 +672,7 @@ inline AI_NavGoal_t::AI_NavGoal_t( GoalType_t 	type,
 								   const Vector &dest,
 								   Activity		activity, 
 								   float		tolerance,
-								   unsigned 	flags,
+								   AI_NavGoalFlags_t 	flags,
 								   CBaseEntity *pTarget)
  :	type(type),
 	dest(dest),
@@ -679,7 +682,7 @@ inline AI_NavGoal_t::AI_NavGoal_t( GoalType_t 	type,
 	flags(flags),
 	pTarget(pTarget),
 	arrivalActivity( AIN_DEF_ACTIVITY ),
-	arrivalSequence( ACT_INVALID )
+	arrivalSequence( INVALID_SEQUENCE )
 {
 }
 

@@ -11,13 +11,20 @@
 
 #include "baseentity.h"
 
-#define SF_RAGDOLLMAGNET_BAR	0x00000002	// this is a bar magnet.
+enum SFRagdollMag_t : unsigned char
+{
+	SF_RAGDOLLMAGNET_BAR = 0x00000002,	// this is a bar magnet.
+};
+
+FLAGENUM_OPERATORS( SFRagdollMag_t, unsigned char )
 
 class CRagdollMagnet : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CRagdollMagnet, CPointEntity );
 	DECLARE_MAPENTITY();
+
+	DECLARE_SPAWNFLAGS( SFRagdollMag_t )
 
 	Vector GetForceVector( CBaseEntity *pNPC, int *pBone = NULL );
 	float GetRadius( void ) { return m_radius; }
@@ -26,7 +33,7 @@ public:
 
 	bool IsEnabled( void ) { return !m_bDisabled; }
 	
-	int IsBarMagnet( void ) { return (m_spawnflags & SF_RAGDOLLMAGNET_BAR); }
+	int IsBarMagnet( void ) { return HasSpawnFlags( SF_RAGDOLLMAGNET_BAR ); }
 
 	static CRagdollMagnet *FindBestMagnet( CBaseEntity *pNPC );
 

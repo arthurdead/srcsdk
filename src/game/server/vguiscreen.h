@@ -53,7 +53,7 @@ public:
 	void SetTransparency( bool bTransparent );
 
 	virtual EdictStateFlags_t UpdateTransmitState( void );
-	virtual int ShouldTransmit( const CCheckTransmitInfo *pInfo );
+	virtual EdictStateFlags_t ShouldTransmit( const CCheckTransmitInfo *pInfo );
 
 	void SetPlayerOwner( CBasePlayer *pPlayer, bool bOwnerOnlyInput = false );
 

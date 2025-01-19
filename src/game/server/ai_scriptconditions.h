@@ -84,41 +84,27 @@ private:
 //			are all satisfied, fires the relevant output
 //-----------------------------------------------------------------------------
 
+enum SFAIScriptConds_t : unsigned char
+{
+	SF_ACTOR_AS_ACTIVATOR = ( 1 << 0 ),
+};
+
+FLAGENUM_OPERATORS( SFAIScriptConds_t, unsigned char )
+
 class CAI_ScriptConditions : public CBaseEntity, public IEntityListener
 {
 	DECLARE_CLASS( CAI_ScriptConditions, CBaseEntity );
 
 public:
-	CAI_ScriptConditions()
-		:	m_fDisabled( true ),
-		m_flRequiredTime( 0 ),
-		m_fMinState( NPC_STATE_IDLE ),
-		m_fMaxState( NPC_STATE_IDLE ),
-		m_fScriptStatus( TRS_NONE ),
-		m_fActorSeePlayer( TRS_NONE ),
-		m_flPlayerActorProximity( 0 ),
-		m_flPlayerActorFOV( -1 ),
-		m_fPlayerActorLOS( TRS_NONE ),
-		m_fActorSeeTarget( TRS_NONE ),
-		m_flActorTargetProximity( 0 ),
-		m_flPlayerTargetProximity( 0 ),
-		m_flPlayerTargetFOV( 0 ),
-		m_fPlayerTargetLOS( TRS_NONE ),
-		m_fPlayerBlockingActor( TRS_NONE ),
-		m_flMinTimeout( 0 ),
-		m_flMaxTimeout( 0 ),
-		m_fActorInPVS( TRS_NONE ),
-		m_fActorInVehicle( TRS_NONE ),
-		m_fPlayerInVehicle( TRS_NONE )
-	{
-		m_hActor = NULL;
-	}
+	CAI_ScriptConditions();
 
 private:
 	void Spawn();
 	void Activate();
 
 	void EvaluationThink();
+
+	DECLARE_SPAWNFLAGS( SFAIScriptConds_t )
 
 	void Enable();
 	void Disable();

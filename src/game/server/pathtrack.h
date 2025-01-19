@@ -16,15 +16,19 @@
 //-----------------------------------------------------------------------------
 // Spawnflag for CPathTrack
 //-----------------------------------------------------------------------------
-#define SF_PATH_DISABLED		0x00000001
-//#define SF_PATH_FIREONCE		0x00000002
-#define SF_PATH_ALTREVERSE		0x00000004
-#define SF_PATH_DISABLE_TRAIN	0x00000008
-#define SF_PATH_TELEPORT		0x00000010
-#define SF_PATH_UPHILL			0x00000020
-#define SF_PATH_DOWNHILL		0x00000040
-#define SF_PATH_ALTERNATE		0x00008000
+enum SFPathTrack_t : unsigned short
+{
+	SF_PATH_DISABLED = 0x00000001,
+	SF_PATH_FIREONCE = 0x00000002,
+	SF_PATH_ALTREVERSE = 0x00000004,
+	SF_PATH_DISABLE_TRAIN = 0x00000008,
+	SF_PATH_TELEPORT = 0x00000010,
+	SF_PATH_UPHILL = 0x00000020,
+	SF_PATH_DOWNHILL = 0x00000040,
+	SF_PATH_ALTERNATE = 0x00008000,
+};
 
+FLAGENUM_OPERATORS( SFPathTrack_t, unsigned short )
 
 enum TrackOrientationType_t
 {
@@ -43,6 +47,8 @@ class CPathTrack : public CPointEntity
 
 public:
 	CPathTrack();
+
+	DECLARE_SPAWNFLAGS( SFPathTrack_t )
 
 	void		Spawn( void );
 	void		Activate( void );

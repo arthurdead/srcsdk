@@ -106,7 +106,7 @@ AIMotorMoveResult_t CAI_Motor::MoveGroundStep( const Vector &newPos, CBaseEntity
 	// But don't actually test for ground geometric validity;
 	// if it isn't valid, there's not much we can do about it
 	AIMoveTrace_t moveTrace;
-	unsigned testFlags = AITGM_IGNORE_FLOOR;
+	AI_TestGroundMoveFlags_t testFlags = AITGM_IGNORE_FLOOR;
 
 	if(iTestZ == 2)
 		testFlags |= AITGM_CRAWL_LARGE_STEPS;
@@ -250,11 +250,11 @@ void CAI_Motor::MoveClimbStart(  const Vector &climbDest, const Vector &climbDir
 	}
 
 	m_nDismountSequence = SelectWeightedSequence( ACT_CLIMB_DISMOUNT );
-	if (m_nDismountSequence != ACT_INVALID)
+	if (m_nDismountSequence != INVALID_SEQUENCE)
 	{
 		if ( !bGoingUp )
 		{
-			int nBottomDismount = SelectWeightedSequence( ACT_CLIMB_DISMOUNT_BOTTOM );
+			sequence_t nBottomDismount = SelectWeightedSequence( ACT_CLIMB_DISMOUNT_BOTTOM );
 			if (nBottomDismount != ACTIVITY_NOT_AVAILABLE)
 				m_nDismountSequence = nBottomDismount;
 		}
@@ -314,7 +314,7 @@ AIMoveResult_t CAI_Motor::MoveClimbExecute( const Vector &climbDest, const Vecto
 			}
 		}
 
-		if (m_nDismountSequence != ACT_INVALID)
+		if (m_nDismountSequence != INVALID_SEQUENCE)
 		{
 			if (climbNodesLeft <= 2 && climbDist < fabs( m_vecDismount.z ))
 			{
@@ -345,7 +345,7 @@ AIMoveResult_t CAI_Motor::MoveClimbExecute( const Vector &climbDest, const Vecto
 
 	float climbSpeed = GetOuter()->GetInstantaneousVelocity();
 
-	if (m_nDismountSequence != ACT_INVALID)
+	if (m_nDismountSequence != INVALID_SEQUENCE)
 	{
 		// catch situations where the climb mount/dismount finished before reaching goal
 		if ((GetActivity() == ACT_CLIMB_DISMOUNT || GetActivity() == ACT_CLIMB_DISMOUNT_BOTTOM))
@@ -413,7 +413,7 @@ AIMoveResult_t CAI_Motor::MoveClimbExecute( const Vector &climbDest, const Vecto
 
 void CAI_Motor::MoveClimbStop()
 {
-	if ( GetNavigator()->GetMovementActivity() > ACT_RESET )
+	if ( GetNavigator()->GetMovementActivity() != ACT_RESET )
 		SetActivity( GetNavigator()->GetMovementActivity() );
 	else
 		SetActivity( ACT_IDLE );
@@ -513,7 +513,7 @@ AIMoveResult_t CAI_Motor::MoveJumpStop()
 		float flTime = GetOuter()->GetGroundChangeTime();
 		GetOuter()->AddStepDiscontinuity( flTime, GetAbsOrigin(), GetAbsAngles() );
 
-		if ( SelectWeightedSequence( ACT_LAND ) == ACT_INVALID )
+		if ( SelectWeightedSequence( ACT_LAND ) == INVALID_SEQUENCE )
 			return AIMR_CHANGE_TYPE;
 
 		SetActivity( ACT_LAND );
@@ -768,7 +768,7 @@ void CAI_Motor::MoveFacing( const AILocalMoveGoal_t &move )
 	// required movement direction
 	float flMoveYaw = UTIL_VecToYaw( move.dir );
 
-	int nSequence = GetSequence();
+	sequence_t nSequence = GetSequence();
 	float fSequenceMoveYaw = GetSequenceMoveYaw( nSequence );
 	if ( fSequenceMoveYaw == NOMOTION )
 	{
@@ -1074,12 +1074,12 @@ CAI_Navigator *CAI_Motor::GetNavigator( void )
 	return GetOuter()->GetNavigator();
 }
 							
-int CAI_Motor::SelectWeightedSequence ( Activity activity )
+sequence_t CAI_Motor::SelectWeightedSequence ( Activity activity )
 {
 	return GetOuter()->SelectWeightedSequence ( activity );
 }
 
-float	CAI_Motor::GetSequenceGroundSpeed( int iSequence )
+float	CAI_Motor::GetSequenceGroundSpeed( sequence_t iSequence )
 {
 	return GetOuter()->GetSequenceGroundSpeed( iSequence );
 }
@@ -1117,7 +1117,7 @@ float CAI_Motor::SetBoneController( int iController, float flValue )
 	return GetOuter()->SetBoneController( iController, flValue );
 }
 
-float CAI_Motor::GetSequenceMoveYaw( int iSequence )
+float CAI_Motor::GetSequenceMoveYaw( sequence_t iSequence )
 {
 	return GetOuter()->GetSequenceMoveYaw( iSequence );
 }
@@ -1142,7 +1142,7 @@ float CAI_Motor::GetPoseParameter( const char *szName )
 	return GetOuter()->GetPoseParameter( szName );
 }
 
-bool CAI_Motor::HasPoseParameter( int iSequence, const char *szName )
+bool CAI_Motor::HasPoseParameter( sequence_t iSequence, const char *szName )
 {
 	return GetOuter()->HasPoseParameter( iSequence, szName );
 }
@@ -1152,7 +1152,7 @@ float CAI_Motor::SetPoseParameter( int iParameter, float flValue )
 	return GetOuter()->SetPoseParameter( iParameter, flValue );  
 }
 
-bool CAI_Motor::HasPoseParameter( int iSequence, int iParameter ) 
+bool CAI_Motor::HasPoseParameter( sequence_t iSequence, int iParameter ) 
 { 
 	return GetOuter()->HasPoseParameter( iSequence, iParameter ); 
 }

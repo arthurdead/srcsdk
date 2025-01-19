@@ -1400,7 +1400,7 @@ void CChoreoEvent::SetParameters( const char *param )
 // Purpose: 
 // Output : const char
 //-----------------------------------------------------------------------------
-const char *CChoreoEvent::GetParameters( void )
+const char *CChoreoEvent::GetParameters( void ) const
 {
 	return m_Parameters.Get();
 }
@@ -1431,7 +1431,7 @@ void CChoreoEvent::SetParameters2( const char *param )
 // Purpose: 
 // Output : const char
 //-----------------------------------------------------------------------------
-const char *CChoreoEvent::GetParameters2( void )
+const char *CChoreoEvent::GetParameters2( void ) const
 {
 	return m_Parameters2.Get();
 }
@@ -1462,7 +1462,7 @@ void CChoreoEvent::SetParameters3( const char *param )
 // Purpose: 
 // Output : const char
 //-----------------------------------------------------------------------------
-const char *CChoreoEvent::GetParameters3( void )
+const char *CChoreoEvent::GetParameters3( void ) const
 {
 	return m_Parameters3.Get();
 }

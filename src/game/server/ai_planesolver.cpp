@@ -90,11 +90,11 @@ inline const Vector &CAI_PlaneSolver::GetLocalOrigin()
 // class CAI_PlaneSolver
 //-----------------------------------------------------------------------------
 
-bool CAI_PlaneSolver::MoveLimit( Navigation_t navType, const Vector &target, bool ignoreTransients, bool fCheckStep, int contents, AIMoveTrace_t *pMoveTrace )
+bool CAI_PlaneSolver::MoveLimit( Navigation_t navType, const Vector &target, bool ignoreTransients, bool fCheckStep, ContentsFlags_t contents, AIMoveTrace_t *pMoveTrace )
 {
 	AI_PROFILE_SCOPE( CAI_PlaneSolver_MoveLimit );
 
-	int flags = ( navType == NAV_GROUND ) ? AIMLF_2D : AIMLF_DEFAULT;
+	AI_MoveLimitFlags_t flags = ( navType == NAV_GROUND ) ? AIMLF_2D : AIMLF_DEFAULT;
 
 	if ( ignoreTransients )
 	{
@@ -541,7 +541,7 @@ AI_SuggestorResult_t CAI_PlaneSolver::GenerateObstacleSuggestions( const AILocal
 void CAI_PlaneSolver::VisualizeRegulations()
 {
 	// Visualization of regulations
-	if ((GetNpc()->m_debugOverlays & OVERLAY_NPC_STEERING_REGULATIONS) != 0)
+	if ((GetNpc()->m_debugOverlays & OVERLAY_NPC_STEERING_REGULATIONS) != OVERLAY_NONE)
 	{
 		m_Solver.VisualizeRegulations( GetNpc()->WorldSpaceCenter() );
 	}
@@ -549,7 +549,7 @@ void CAI_PlaneSolver::VisualizeRegulations()
 
 void CAI_PlaneSolver::VisualizeSolution( const Vector &vecGoal, const Vector& vecActual )
 {
-	if ((GetNpc()->m_debugOverlays & OVERLAY_NPC_STEERING_REGULATIONS) != 0)
+	if ((GetNpc()->m_debugOverlays & OVERLAY_NPC_STEERING_REGULATIONS) != OVERLAY_NONE)
 	{
 		// Compute centroid...
 		Vector centroid = GetNpc()->WorldSpaceCenter();

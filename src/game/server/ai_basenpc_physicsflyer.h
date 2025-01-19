@@ -102,7 +102,7 @@ protected:
 
 	AI_NavPathProgress_t ProgressFlyPath( float flInterval,
 										  const CBaseEntity *pNewTarget, 
-										  unsigned collisionMask, 
+										  ContentsFlags_t collisionMask, 
 										  bool bNewTrySimplify = true, 
 										  float strictPointTolerance = 32.0 );
 

@@ -44,7 +44,7 @@ void CAI_BaseNPC::AddActivityToSR(const char *actName, Activity actID)
 #ifdef _DEBUG
 	if(!g_bRegisteringAliases) {
 		static unsigned short lastActID = (unsigned short)-3;
-		Assert( lastActID == (unsigned short)-3 || (actID < LAST_SHARED_ACTIVITY && actID == (Activity)(lastActID + 1)) );
+		Assert( lastActID == (unsigned short)-3 || ((unsigned short)actID < (unsigned short)LAST_SHARED_ACTIVITY && actID == (Activity)(lastActID + 1)) );
 		lastActID = (unsigned short)actID;
 	}
 #endif

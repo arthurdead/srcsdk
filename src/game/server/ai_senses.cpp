@@ -133,8 +133,9 @@ bool CAI_Senses::ShouldSeeEntity( CBaseEntity *pSightEnt )
 	if ( pSightEnt->IsPlayer() && ( pSightEnt->GetFlags() & FL_NOTARGET ) )
 		return false;
 
+	CAI_BaseNPC *pNPC = pSightEnt->MyNPCPointer();
 	// don't notice anyone waiting to be seen by the player
-	if ( pSightEnt->m_spawnflags & SF_NPC_WAIT_TILL_SEEN )
+	if ( pNPC && pNPC->HasSpawnFlags( SF_NPC_WAIT_TILL_SEEN ) )
 		return false;
 
 	if ( !pSightEnt->CanBeSeenBy( GetOuter() ) )
@@ -190,7 +191,7 @@ void CAI_Senses::NoteSeenEntity( CBaseEntity *pSightEnt )
 
 bool CAI_Senses::WaitingUntilSeen( CBaseEntity *pSightEnt )
 {
-	if ( GetOuter()->m_spawnflags & SF_NPC_WAIT_TILL_SEEN )
+	if ( GetOuter()->HasSpawnFlags( SF_NPC_WAIT_TILL_SEEN ) )
 	{
 		if ( pSightEnt->IsPlayer() )
 		{
@@ -203,7 +204,7 @@ bool CAI_Senses::WaitingUntilSeen( CBaseEntity *pSightEnt )
 				&& FBoxVisible( pSightEnt, static_cast<CBaseEntity*>(GetOuter()), zero ) )
 			{
 				// player sees us, become normal now.
-				GetOuter()->m_spawnflags &= ~SF_NPC_WAIT_TILL_SEEN;
+				GetOuter()->RemoveSpawnFlags( SF_NPC_WAIT_TILL_SEEN );
 				return false;
 			}
 		}
@@ -406,16 +407,16 @@ int CAI_Senses::LookForHighPriorityEntities( int iDistance )
 		}
 	
 		EndGather( nSeen, &m_SeenHighPriority );
-    }
-    else
-    {
-    	for ( int i = m_SeenHighPriority.Count() - 1; i >= 0; --i )
-    	{
-    		if ( m_SeenHighPriority[i].Get() == NULL )
-    			m_SeenHighPriority.FastRemove( i );    			
-    	}
-    	nSeen = m_SeenHighPriority.Count();
-    }
+	}
+	else
+	{
+		for ( int i = m_SeenHighPriority.Count() - 1; i >= 0; --i )
+		{
+			if ( m_SeenHighPriority[i].Get() == NULL )
+				m_SeenHighPriority.FastRemove( i );    			
+		}
+		nSeen = m_SeenHighPriority.Count();
+	}
 	
 	return nSeen;
 }
@@ -487,7 +488,7 @@ int CAI_Senses::LookForNPCs( int iDistance )
 
 int CAI_Senses::LookForObjects( int iDistance )
 {	
-	const int BOX_QUERY_MASK = FL_OBJECT;
+	const EntityBehaviorFlags_t BOX_QUERY_MASK = FL_OBJECT;
 	int	nSeen = 0;
 
 	if ( gpGlobals->curtime - m_TimeLastLookMisc > AI_MISC_SEARCH_TIME )
@@ -515,15 +516,15 @@ int CAI_Senses::LookForObjects( int iDistance )
 		
 		EndGather( nSeen, &m_SeenMisc );
 	}
-    else
-    {
-    	for ( int i = m_SeenMisc.Count() - 1; i >= 0; --i )
-    	{
-    		if ( m_SeenMisc[i].Get() == NULL )
-    			m_SeenMisc.FastRemove( i );    			
-    	}
-    	nSeen = m_SeenMisc.Count();
-    }
+	else
+	{
+		for ( int i = m_SeenMisc.Count() - 1; i >= 0; --i )
+		{
+			if ( m_SeenMisc[i].Get() == NULL )
+				m_SeenMisc.FastRemove( i );    			
+		}
+		nSeen = m_SeenMisc.Count();
+	}
 
 	return nSeen;
 }

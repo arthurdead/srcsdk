@@ -6579,7 +6579,7 @@ void CAI_BaseNPC::SetActivityAndSequence(Activity NewActivity, sequence_t iSeque
 	else
 	{
 		// Not available try to get default anim
-		ResetSequence( 0 );
+		ResetSequence( ROOT_SEQUENCE );
 	}
 
 	// Set the view position based on the current activity
@@ -7397,8 +7397,8 @@ void CAI_BaseNPC::NPCInit ( void )
 
 	m_flIgnoreDangerSoundsUntil = 0;
 	
-	SetDeathPose( ACT_INVALID );
-	SetDeathPoseFrame( 0 );
+	SetDeathPose( INVALID_SEQUENCE );
+	SetDeathPoseFrame( DEATH_FRAME_INVALID );
 
 	m_EnemiesSerialNumber = -1;
 
@@ -11045,7 +11045,7 @@ Activity CAI_BaseNPC::GetStoppedActivity( void )
 	{
 		Activity activity = GetNavigator()->GetArrivalActivity();
 
-		if (activity > ACT_RESET)
+		if (activity != ACT_RESET)
 		{
 			return activity;
 		}
@@ -11776,7 +11776,7 @@ CAI_BaseNPC::CAI_BaseNPC(void)
 #endif
 	m_bDidDeathCleanup = false;
 
-	m_afCapability				= 0;		// Make sure this is cleared in the base class
+	m_afCapability				= bits_CAP_NONE;		// Make sure this is cleared in the base class
 
 	m_nAITraceMask				= MASK_NPCSOLID;
 
@@ -12811,7 +12811,7 @@ void CAI_BaseNPC::OpenPropDoorBegin( CBasePropDoor *pDoor )
 	
 	if (HaveSequenceForActivity( opendata.eActivity ))
 	{
-		int iLayer = AddGesture( opendata.eActivity );
+		animlayerindex_t iLayer = AddGesture( opendata.eActivity );
 		float flDuration = GetLayerDuration( iLayer );
 
 		// Face the door and wait for the activity to finish before trying to move through the doorway.
@@ -12849,7 +12849,7 @@ void CAI_BaseNPC::OpenPropDoorNow( CBasePropDoor *pDoor )
 	m_flMoveWaitFinished = gpGlobals->curtime + pDoor->GetOpenInterval();
 
 	// Remove the door from our waypoint
-	if (GetNavigator()->GetPath() && GetNavigator()->GetCurWaypointFlags() & bits_WP_TO_DOOR)
+	if (GetNavigator()->GetPath() && (GetNavigator()->GetCurWaypointFlags() & bits_WP_TO_DOOR))
 	{
 		GetNavigator()->GetPath()->GetCurWaypoint()->ModifyFlags( bits_WP_TO_DOOR, false );
 		GetNavigator()->GetPath()->GetCurWaypoint()->m_hData = NULL;
@@ -12936,7 +12936,7 @@ bool CAI_BaseNPC::WalkMove( const Vector& vecPosition, ContentsFlags_t mask )
 		return FlyMove( vecPosition, mask );
 	}
 
-	if ( (GetFlags() & FL_ONGROUND) == 0 )
+	if ( (GetFlags() & FL_ONGROUND) == FL_NO_ENTITY_FLAGS )
 	{
 		return false;
 	}
@@ -13057,7 +13057,7 @@ void DevMsg( CAI_BaseNPC *pAI, const char *pszFormat, ... )
 		char szTempMsgBuf[512];
 		V_vsprintf_safe( szTempMsgBuf, pszFormat, ap );
 
-		AIMsgGuts( pAI, 0, szTempMsgBuf );
+		AIMsgGuts( pAI, AIMF_NO_FLAGS, szTempMsgBuf );
 		va_end(ap);
 	}
 }
@@ -13468,7 +13468,7 @@ void CAI_BaseNPC::InputSetSpeedModifierSpeed( inputdata_t &&inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Get movement speed, multipled by modifier
 //-----------------------------------------------------------------------------
-float CAI_BaseNPC::GetSequenceGroundSpeed( CStudioHdr *pStudioHdr, int iSequence )
+float CAI_BaseNPC::GetSequenceGroundSpeed( const CStudioHdr *pStudioHdr, sequence_t iSequence )
 {
 	float t = SequenceDuration( pStudioHdr, iSequence );
 
@@ -13786,7 +13786,7 @@ const char *CAI_BaseNPC::GetScriptedNPCInteractionSequence( ScriptedNPCInteracti
 		// Check unique phases
 		if ( pInteraction->sTheirPhases[iPhase].iActivity != ACT_INVALID )
 		{
-			int iSequence = SelectWeightedSequence( (Activity)pInteraction->sTheirPhases[iPhase].iActivity );
+			sequence_t iSequence = SelectWeightedSequence( (Activity)pInteraction->sTheirPhases[iPhase].iActivity );
 			return GetSequenceName( iSequence );
 		}
 
@@ -13796,7 +13796,7 @@ const char *CAI_BaseNPC::GetScriptedNPCInteractionSequence( ScriptedNPCInteracti
 
 	if ( pInteraction->sPhases[iPhase].iActivity != ACT_INVALID )
 	{
-		int iSequence = SelectWeightedSequence( (Activity)pInteraction->sPhases[iPhase].iActivity );
+		sequence_t iSequence = SelectWeightedSequence( (Activity)pInteraction->sPhases[iPhase].iActivity );
 		return GetSequenceName( iSequence );
 	}
 
@@ -14258,7 +14258,7 @@ void CAI_BaseNPC::CalculateValidEnemyInteractions( void )
 		const char *pszSequence = GetScriptedNPCInteractionSequence( pInteraction, SNPCINT_SEQUENCE, true );
 		if ( !pszSequence )
 			continue;
-		if ( pNPC->LookupSequence( pszSequence ) == -1 )
+		if ( pNPC->LookupSequence( pszSequence ) == INVALID_SEQUENCE )
 			continue;
 
 		pInteraction->bValidOnCurrentEnemy = true;
@@ -14688,8 +14688,8 @@ bool CAI_BaseNPC::InteractionCouldStart( CAI_BaseNPC *pOtherNPC, ScriptedNPCInte
 	{
 		// Instead, make sure we fit into where the sequence movement ends at
 		const char *pszSequence = GetScriptedNPCInteractionSequence( pInteraction, SNPCINT_SEQUENCE );
-		int nSeq = LookupSequence( pszSequence );
-		if ( pszSequence && nSeq != -1 )
+		sequence_t nSeq = LookupSequence( pszSequence );
+		if ( pszSequence && nSeq != INVALID_SEQUENCE )
 		{
 			Vector vecDeltaPos;
 			QAngle angDeltaAngles;

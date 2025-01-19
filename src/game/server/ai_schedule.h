@@ -25,6 +25,7 @@ class	CStringRegistry;
 class   CAI_ClassScheduleIdSpace;
 class	CAI_GlobalScheduleNamespace;
 class	CAI_BaseNPC;
+enum MemoryFlags_t : uint64;
 
 struct	Task_t;
 
@@ -101,7 +102,7 @@ private:
 public:
 	// parsing helpers
 	static NPC_STATE	GetStateID(const char *state_name);
-	static int	GetMemoryID(const char *memory_name);
+	static MemoryFlags_t	GetMemoryID(const char *memory_name);
 	static pathType_t GetPathID( const char *token );
 	static goalType_t GetGoalID( const char *token );
 

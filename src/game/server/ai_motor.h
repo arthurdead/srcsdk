@@ -202,7 +202,7 @@ protected: // made protected while animation transition details worked out, priv
 
 	// --------------------------------
 
-	int					m_nDismountSequence;
+	sequence_t					m_nDismountSequence;
 	Vector				m_vecDismount;
 
 	// --------------------------------

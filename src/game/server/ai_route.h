@@ -35,7 +35,7 @@ public:
 	void			SetWaypoints(AI_Waypoint_t* route, bool fSetGoalFromLast = false) ;
 
 	void 			PrependWaypoints( AI_Waypoint_t *pWaypoints );
-	void 			PrependWaypoint( const Vector &newPoint, Navigation_t navType, unsigned waypointFlags );
+	void 			PrependWaypoint( const Vector &newPoint, Navigation_t navType, WaypointFlags_t waypointFlags );
 
 	bool 			IsEmpty() const				{ return m_Waypoints.IsEmpty(); }
 
@@ -114,8 +114,8 @@ public:
 
 	GoalType_t		GoalType(void) const;						// Get the goal type
 	
-	void			SetGoalFlags( unsigned flags )		{ m_goalFlags = flags;				}
-	unsigned		GoalFlags( void ) const;			// Get the goal flags
+	void			SetGoalFlags( AI_NavGoalFlags_t flags )		{ m_goalFlags = flags;				}
+	AI_NavGoalFlags_t		GoalFlags( void ) const;			// Get the goal flags
 
 	void			Advance( void );					// Advance to next waypoint if possible
 
@@ -156,7 +156,7 @@ private:
 	bool		m_bGoalTypeSet;				// Was goal position set (used to check for errors)
 	GoalType_t	m_goalType;					// Type of goal
 
-	unsigned	m_goalFlags;				// Goal flags
+	AI_NavGoalFlags_t	m_goalFlags;				// Goal flags
 
 	//---------------------------------
 	float		m_routeStartTime;

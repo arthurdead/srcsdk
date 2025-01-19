@@ -16,7 +16,7 @@
 #include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
-AI_Waypoint_t CAI_Path::gm_InvalidWaypoint( Vector(0,0,0), 0, NAV_NONE, 0 );
+AI_Waypoint_t CAI_Path::gm_InvalidWaypoint( Vector(0,0,0), 0, NAV_NONE, bits_WP_NO_FLAGS );
 
 //-----------------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ void CAI_Path::PrependWaypoints( AI_Waypoint_t *pWaypoints )
 
 //-----------------------------------------------------------------------------
 
-void CAI_Path::PrependWaypoint( const Vector &newPoint, Navigation_t navType, unsigned waypointFlags ) 
+void CAI_Path::PrependWaypoint( const Vector &newPoint, Navigation_t navType, WaypointFlags_t waypointFlags ) 
 { 
 	m_Waypoints.PrependWaypoint( newPoint, navType, waypointFlags ); 
 	AI_Waypoint_t *pLast = m_Waypoints.GetLast();
@@ -492,7 +492,7 @@ void CAI_Path::Clear( void )
 	m_goalPos			= vec3_origin;			// Our ultimate goal position
 	m_bGoalPosSet		= false;				// Was goal position set
 	m_bGoalTypeSet		= false;				// Was goal position set
-	m_goalFlags			= 0;
+	m_goalFlags			= AIN_DEF_FLAGS;
 	m_vecTargetOffset	= vec3_origin;
 	m_routeStartTime	= FLT_MAX;
 
@@ -549,7 +549,7 @@ WaypointFlags_t CAI_Path::CurWaypointFlags() const
 // Purpose: Get the goal's flags
 // Output : unsigned
 //-----------------------------------------------------------------------------
-unsigned CAI_Path::GoalFlags( void ) const
+AI_NavGoalFlags_t CAI_Path::GoalFlags( void ) const
 {
 	return m_goalFlags;
 }
@@ -633,7 +633,7 @@ CAI_Path::CAI_Path()
 	m_activity			= ACT_INVALID;			// The activity to use during motion
 	m_sequence			= INVALID_SEQUENCE;
 	m_target			= NULL;
-	m_goalFlags			= 0;
+	m_goalFlags			= AIN_DEF_FLAGS;
 	m_routeStartTime	= FLT_MAX;
 	m_arrivalActivity	= ACT_INVALID;
 	m_arrivalSequence	= INVALID_SEQUENCE;

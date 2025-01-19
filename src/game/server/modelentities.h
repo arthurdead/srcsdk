@@ -13,8 +13,13 @@
 #include "baseentity_shared.h"
 
 //!! replace this with generic start enabled/disabled
-#define SF_WALL_START_OFF		0x0001
-#define SF_IGNORE_PLAYERUSE		0x0002
+enum SFBrush_t : unsigned char
+{
+	SF_WALL_START_OFF = 0x0001,
+	SF_IGNORE_PLAYERUSE = 0x0002
+};
+
+FLAGENUM_OPERATORS( SFBrush_t, unsigned char )
 
 //-----------------------------------------------------------------------------
 // Purpose: basic solid geometry
@@ -28,6 +33,8 @@ public:
 
 	virtual void Spawn( void );
 	bool CreateVPhysics( void );
+
+	DECLARE_SPAWNFLAGS( SFBrush_t )
 
 	virtual EntityCaps_t ObjectCaps( void ) { return HasSpawnFlags(SF_IGNORE_PLAYERUSE) ? BaseClass::ObjectCaps() : BaseClass::ObjectCaps() | FCAP_IMPULSE_USE; }
 
@@ -43,7 +50,8 @@ public:
 	void InputSetExcluded( inputdata_t &&inputdata );
 	void InputSetInvert( inputdata_t &&inputdata );
 
-	enum BrushSolidities_e {
+	enum BrushSolidities_e : unsigned char
+	{
 		BRUSHSOLID_TOGGLE = 0,
 		BRUSHSOLID_NEVER  = 1,
 		BRUSHSOLID_ALWAYS = 2,

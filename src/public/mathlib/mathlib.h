@@ -95,11 +95,9 @@ private:
 	FPExceptionEnabler& operator=(const FPExceptionEnabler&);
 };
 
-
-
-#ifdef DEBUG  // stop crashing edit-and-continue
-FORCEINLINE float clamp( float val, float minVal, float maxVal )
+FORCEINLINE float fpclamp( float val, float minVal, float maxVal )
 {
+#ifdef DEBUG  // stop crashing edit-and-continue
 	if ( maxVal < minVal )
 		return maxVal;
 	else if( val < minVal )
@@ -108,10 +106,7 @@ FORCEINLINE float clamp( float val, float minVal, float maxVal )
 		return maxVal;
 	else
 		return val;
-}
-#else // DEBUG
-FORCEINLINE float clamp( float val, float minVal, float maxVal )
-{
+#else
 #if defined(__i386__) || defined(_M_IX86)
 	_mm_store_ss( &val,
 		_mm_min_ss(
@@ -124,25 +119,33 @@ FORCEINLINE float clamp( float val, float minVal, float maxVal )
 	val = fpmin(maxVal, val);
 #endif
 	return val;
+#endif
 }
-#endif // DEBUG
 
 //
 // Returns a clamped value in the range [min, max].
 //
-template< class T >
-inline T clamp( T const &val, T const &minVal, T const &maxVal )
+template< class T, class U, class Y >
+inline T clamp( T const &val, U const &minVal, Y const &maxVal )
 {
-	if ( maxVal < minVal )
-		return maxVal;
-	else if( val < minVal )
-		return minVal;
-	else if( val > maxVal )
-		return maxVal;
-	else
-		return val;
+	if constexpr(is_floating_point_v<T>) {
+		return (T)fpclamp((float)val, (float)minVal, (float)maxVal);
+	} else {
+		if ( maxVal < minVal )
+			return maxVal;
+		else if( val < minVal )
+			return minVal;
+		else if( val > maxVal )
+			return maxVal;
+		else
+			return val;
+	}
 }
 
+FORCEINLINE float clamp( float val, float minVal, float maxVal )
+{
+	return fpclamp(val, minVal, maxVal);
+}
 
 // plane_t structure
 // !!! if this is changed, it must be changed in asm code too !!!

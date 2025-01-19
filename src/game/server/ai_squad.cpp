@@ -754,7 +754,7 @@ bool CAI_Squad::IsSlotOccupied( CBaseEntity *pEnemy, int i ) const
 #endif
 }
 
-void CAI_Squad::SquadRemember( int iMemory )
+void CAI_Squad::SquadRemember( MemoryFlags_t iMemory )
 {
 	for (int i = 0; i < m_SquadMembers.Count(); i++)
 	{

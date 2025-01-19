@@ -362,11 +362,11 @@ public:
 	const char		*GetName( void );
 
 	void			SetParameters( const char *target );
-	const char		*GetParameters( void );
+	const char		*GetParameters( void ) const;
 	void			SetParameters2( const char *target );
-	const char		*GetParameters2( void );
+	const char		*GetParameters2( void ) const;
 	void			SetParameters3( const char *target );
-	const char		*GetParameters3( void );
+	const char		*GetParameters3( void ) const;
 
 	void			SetStartTime( float starttime );
 	float			GetStartTime( void );

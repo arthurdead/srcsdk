@@ -95,9 +95,6 @@ class CAI_Expresser;
 // for step sounds
 struct surfacedata_t;
 
-// !!!set this bit on guns and stuff that should never respawn.
-#define	SF_NORESPAWN	( 1 << 30 )
-
 //
 // Player PHYSICS FLAGS bits
 //

@@ -279,11 +279,11 @@ bool CAI_Navigator::FindPath( const AI_NavGoal_t &goal, unsigned flags )
 	}
 	else
 	{
-		if ( goal.arrivalActivity != AIN_DEF_ACTIVITY && goal.arrivalActivity > ACT_RESET )
+		if ( goal.arrivalActivity != AIN_DEF_ACTIVITY && goal.arrivalActivity != ACT_RESET )
 		{
 			pPath->SetArrivalActivity( goal.arrivalActivity );
 		}
-		else if ( goal.arrivalSequence != -1 )
+		else if ( goal.arrivalSequence != INVALID_SEQUENCE )
 		{
 			pPath->SetArrivalSequence( goal.arrivalSequence );
 		}
@@ -589,7 +589,7 @@ bool CAI_Navigator::PrependLocalAvoidance( float distObstacle, const AIMoveTrace
 		vTestBackaway *= -GetHullWidth();
 		vTestBackaway += GetLocalOrigin();
 
-		int flags = ( GetNavType() == NAV_GROUND ) ? AIMLF_2D : AIMLF_DEFAULT;
+		AI_MoveLimitFlags_t flags = ( GetNavType() == NAV_GROUND ) ? AIMLF_2D : AIMLF_DEFAULT;
 
 		if ( GetMoveProbe()->MoveLimit( GetNavType(), GetLocalOrigin(), vTestBackaway, 
 													 GetOuter()->GetAITraceMask(), GetNavTargetEntity(), 
@@ -637,7 +637,7 @@ bool CAI_Navigator::PrependLocalAvoidance( float distObstacle, const AIMoveTrace
 		testPos = pAvoidanceRoute->GetPos();
 	}
 
-	int flags = ( GetNavType() == NAV_GROUND ) ? AIMLF_2D : AIMLF_DEFAULT;
+	AI_MoveLimitFlags_t flags = ( GetNavType() == NAV_GROUND ) ? AIMLF_2D : AIMLF_DEFAULT;
 
 	if ( !GetMoveProbe()->MoveLimit( GetNavType(), GetLocalOrigin(), testPos, 
 												 GetOuter()->GetAITraceMask(), GetNavTargetEntity(), 
@@ -656,7 +656,7 @@ bool CAI_Navigator::PrependLocalAvoidance( float distObstacle, const AIMoveTrace
 
 //-----------------------------------------------------------------------------
 
-void CAI_Navigator::PrependWaypoint( const Vector &newPoint, Navigation_t navType, unsigned waypointFlags )
+void CAI_Navigator::PrependWaypoint( const Vector &newPoint, Navigation_t navType, WaypointFlags_t waypointFlags )
 {
 	GetPath()->PrependWaypoint( newPoint, navType, waypointFlags );
 }
@@ -960,7 +960,7 @@ const Vector &CAI_Navigator::GetCurWaypointPos() const
 
 //-----------------------------------------------------------------------------
 
-int CAI_Navigator::GetCurWaypointFlags() const
+WaypointFlags_t CAI_Navigator::GetCurWaypointFlags() const
 {
 	return GetPath()->CurWaypointFlags();
 }
@@ -974,7 +974,7 @@ GoalType_t CAI_Navigator::GetGoalType() const
 
 //-----------------------------------------------------------------------------
 
-int	CAI_Navigator::GetGoalFlags() const
+AI_NavGoalFlags_t	CAI_Navigator::GetGoalFlags() const
 {
 	return GetPath()->GoalFlags();
 }
@@ -988,7 +988,7 @@ bool CAI_Navigator::CurWaypointIsGoal() const
 
 bool CAI_Navigator::CurWaypointRequiresPreciseMovement() const
 {
-	return ( GetPath()->CurWaypointFlags() & bits_WP_PRECISE_MOVEMENT ) != 0;
+	return ( GetPath()->CurWaypointFlags() & bits_WP_PRECISE_MOVEMENT ) != bits_WP_NO_FLAGS;
 }
 
 //-----------------------------------------------------------------------------
@@ -1298,7 +1298,7 @@ AIMoveResult_t CAI_Navigator::MoveCrawl()
 	// Set activity to be the Navigation activity
 	float		preMoveSpeed		= GetIdealSpeed();
 	Activity	preMoveActivity		= GetActivity();
-	int			nPreMoveSequence	= GetOuter()->GetSequence(); // this is an unfortunate necessity to ensure setting back the activity picks the right one if it had been sticky
+	sequence_t			nPreMoveSequence	= GetOuter()->GetSequence(); // this is an unfortunate necessity to ensure setting back the activity picks the right one if it had been sticky
 	Vector		vStart				= GetAbsOrigin();
 
 	// --------------------------------
@@ -2183,7 +2183,7 @@ AIMoveResult_t CAI_Navigator::MoveNormal()
 	// Set activity to be the Navigation activity
 	float		preMoveSpeed		= GetIdealSpeed();
 	Activity	preMoveActivity		= GetActivity();
-	int			nPreMoveSequence	= GetOuter()->GetSequence(); // this is an unfortunate necessity to ensure setting back the activity picks the right one if it had been sticky
+	sequence_t			nPreMoveSequence	= GetOuter()->GetSequence(); // this is an unfortunate necessity to ensure setting back the activity picks the right one if it had been sticky
 	Vector		vStart				= GetAbsOrigin();
 
 	// --------------------------------
@@ -2610,7 +2610,7 @@ void CAI_Navigator::AdvancePath()
 	DbgNavMsg( GetOuter(), "Advancing path\n" );
 
 	AI_Waypoint_t *pCurWaypoint = GetPath()->GetCurWaypoint();
-	bool bPassingPathcorner = ( ( pCurWaypoint->Flags() & bits_WP_TO_PATHCORNER ) != 0 );
+	bool bPassingPathcorner = ( ( pCurWaypoint->Flags() & bits_WP_TO_PATHCORNER ) != bits_WP_NO_FLAGS );
 
 	if ( bPassingPathcorner )
 	{
@@ -2694,7 +2694,7 @@ bool CAI_Navigator::ShouldAttemptSimplifyTo( const Vector &pos )
 
 bool CAI_Navigator::ShouldSimplifyTo( bool passedDetour, const Vector &pos )
 {
-	int flags = AIMLF_QUICK_REJECT;
+	AI_MoveLimitFlags_t flags = AIMLF_QUICK_REJECT;
 
 #ifndef NPCS_BLOCK_SIMPLIFICATION
 	if ( !passedDetour )
@@ -2719,7 +2719,7 @@ void CAI_Navigator::SimplifyPathInsertSimplification( AI_Waypoint_t *pSegmentSta
 		Assert( pNextWaypoint );
 		Assert( pSegmentStart->NavType() == pNextWaypoint->NavType() );
 
-		AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t( point, 0, pSegmentStart->NavType(), 0 );
+		AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t( point, 0, pSegmentStart->NavType(), bits_WP_NO_FLAGS );
 
 		while ( GetPath()->GetCurWaypoint() != pNextWaypoint )
 		{
@@ -2749,7 +2749,7 @@ bool CAI_Navigator::SimplifyPathForwardScan( const CAI_Navigator::SimplifyForwar
 	AI_Waypoint_t *pNextWaypoint = pCurWaypoint->GetNext();
 
 	if ( !passedDetour )
-		passedDetour = ( ( pCurWaypoint->Flags() & bits_WP_TO_DETOUR) != 0 );
+		passedDetour = ( ( pCurWaypoint->Flags() & bits_WP_TO_DETOUR) != bits_WP_NO_FLAGS );
 
 	if ( distRemaining > 0)
 	{
@@ -2849,7 +2849,7 @@ bool CAI_Navigator::SimplifyPathForward( float maxDist )
 
 	if ( ShouldAttemptSimplifyTo( pNextWaypoint->GetPos() ) && 
 		 ComputePathDistance( GetNavType(), GetLocalOrigin(), pNextWaypoint->GetPos() ) < scanParams.scanDist && 
-		 ShouldSimplifyTo( ( ( pCurWaypoint->Flags() & bits_WP_TO_DETOUR ) != 0 ), pNextWaypoint->GetPos() ) ) // @TODO (toml 04-25-03): need to handle this better. this is here because forward scan may look out so far that a close obvious solution is skipped (due to test limiting)
+		 ShouldSimplifyTo( ( ( pCurWaypoint->Flags() & bits_WP_TO_DETOUR ) != bits_WP_NO_FLAGS ), pNextWaypoint->GetPos() ) ) // @TODO (toml 04-25-03): need to handle this better. this is here because forward scan may look out so far that a close obvious solution is skipped (due to test limiting)
 	{
 		delete pCurWaypoint;
 		GetPath()->SetWaypoints(pNextWaypoint);
@@ -2890,7 +2890,7 @@ bool CAI_Navigator::SimplifyPathBacktrack()
 			Vector targetPos = pCurWaypoint->GetPos() + (firstProj * firstToNext);
 
 			// Only use a local or jump move
-			int buildFlags = 0;
+			RouteBuildFlags_e buildFlags = bits_BUILD_NO_FLAGS;
 			if (CapabilitiesGet() & bits_CAP_MOVE_GROUND)
 				buildFlags |= bits_BUILD_GROUND; 
 			if (CapabilitiesGet() & bits_CAP_MOVE_JUMP)
@@ -3059,7 +3059,7 @@ AI_NavPathProgress_t CAI_Navigator::ProgressFlyPath( const AI_ProgressFlyPathPar
 		}
 		else
 		{
-			bool bIsStrictWaypoint = ( (GetPath()->CurWaypointFlags() & (bits_WP_TO_PATHCORNER|bits_WP_DONT_SIMPLIFY) ) != 0 );
+			bool bIsStrictWaypoint = ( (GetPath()->CurWaypointFlags() & (bits_WP_TO_PATHCORNER|bits_WP_DONT_SIMPLIFY) ) != bits_WP_NO_FLAGS );
 			float tolerance = (bIsStrictWaypoint) ? params.strictPointTolerance : params.waypointTolerance;
 			if ( waypointDist <= tolerance )
 			{
@@ -3082,7 +3082,7 @@ AI_NavPathProgress_t CAI_Navigator::ProgressFlyPath( const AI_ProgressFlyPathPar
 
 //-----------------------------------------------------------------------------
 
-void CAI_Navigator::SimplifyFlyPath( unsigned collisionMask, const CBaseEntity *pTarget, 
+void CAI_Navigator::SimplifyFlyPath( ContentsFlags_t collisionMask, const CBaseEntity *pTarget, 
 									 float strictPointTolerance, float blockTolerance,
 									 AI_NpcBlockHandling_t blockHandling)
 {
@@ -3111,7 +3111,7 @@ bool CAI_Navigator::SimplifyFlyPath(  const AI_ProgressFlyPathParams_t &params )
 		return true;
 
 	// don't shorten path_corners
-	bool bIsStrictWaypoint = ( !params.bTrySimplify || ( (GetPath()->CurWaypointFlags() & (bits_WP_TO_PATHCORNER|bits_WP_DONT_SIMPLIFY) ) != 0 ) );
+	bool bIsStrictWaypoint = ( !params.bTrySimplify || ( (GetPath()->CurWaypointFlags() & (bits_WP_TO_PATHCORNER|bits_WP_DONT_SIMPLIFY) ) != bits_WP_NO_FLAGS ) );
 
 	Vector dir = GetCurWaypointPos() - GetLocalOrigin();
 	float length = VectorNormalize( dir );
@@ -3147,7 +3147,7 @@ bool CAI_Navigator::SimplifyFlyPath(  const AI_ProgressFlyPathParams_t &params )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-float CAI_Navigator::MovementCost( int moveType, Vector &vecStart, Vector &vecEnd )
+float CAI_Navigator::MovementCost( Capability_t moveType, Vector &vecStart, Vector &vecEnd )
 {
 	float flCost = vecStart.DistTo( vecEnd );
 	if ( moveType == bits_CAP_MOVE_JUMP || moveType == bits_CAP_MOVE_CLIMB )
@@ -3167,7 +3167,7 @@ float CAI_Navigator::MovementCost( int moveType, Vector &vecStart, Vector &vecEn
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-bool CAI_Navigator::CanFitAtPosition( const Vector &vStartPos, unsigned int collisionMask, bool bIgnoreTransients, bool bAllowPlayerAvoid  )
+bool CAI_Navigator::CanFitAtPosition( const Vector &vStartPos, ContentsFlags_t collisionMask, bool bIgnoreTransients, bool bAllowPlayerAvoid  )
 {
 	CTraceFilterNav traceFilter( const_cast<CAI_BaseNPC *>(GetOuter()), bIgnoreTransients, GetOuter(), COLLISION_GROUP_NONE, bAllowPlayerAvoid );
 
@@ -3413,7 +3413,7 @@ bool CAI_Navigator::DoFindPathToPos(void)
 
 	pPath->ClearWaypoints();
 
-	int nBuildFlags = 0;
+	RouteBuildFlags_e nBuildFlags = bits_BUILD_NO_FLAGS;
 	if ( GetGoalFlags() & AIN_LOCAL_SUCCEEED_ON_WITHIN_TOLERANCE )
 	{
 		nBuildFlags |= bits_BUILD_GET_CLOSE;
@@ -3689,7 +3689,7 @@ void CAI_Navigator::ClearPath( void )
 
 		if( m_pClippedWaypoints && m_pClippedWaypoints->GetFirst() )
 		{
-			Assert( m_PreviousMoveActivity > ACT_RESET );
+			Assert( m_PreviousMoveActivity != ACT_RESET );
 		}
 	}
 
@@ -3855,7 +3855,7 @@ bool CAI_Navigator::SetGoalFromStoppingPath()
 		SaveStoppingPath();
 	if ( m_pClippedWaypoints && !m_pClippedWaypoints->IsEmpty() )
 	{
-		if ( m_PreviousMoveActivity <= ACT_RESET && GetMovementActivity() <= ACT_RESET  )
+		if ( m_PreviousMoveActivity == ACT_RESET && GetMovementActivity() == ACT_RESET  )
 		{
 			m_pClippedWaypoints->RemoveAll();
 			DevWarning( 2, "%s has a stopping path and no valid. Movement activity: %s (prev %s)\n", GetOuter()->GetDebugName(), ActivityList_NameForIndex(GetMovementActivity()), ActivityList_NameForIndex(m_PreviousMoveActivity) );
@@ -3897,7 +3897,7 @@ bool CAI_Navigator::SetGoalFromStoppingPath()
 
 //-----------------------------------------------------------------------------
 
-static Color GetRouteColor(Navigation_t navType, int waypointFlags)
+static Color GetRouteColor(Navigation_t navType, WaypointFlags_t waypointFlags)
 {
 	if (navType == NAV_JUMP)
 	{

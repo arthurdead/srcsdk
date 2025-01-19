@@ -351,7 +351,7 @@ bool CAI_FollowBehavior::SetFollowGoal( CAI_FollowGoal *pGoal, bool fFinishCurSc
 		GetOuter()->SetCondition(COND_PROVOKED);
 
 		SetFollowTarget( pGoal->GetGoalEntity() );
-		Assert( pGoal->m_iFormation < AIF_NUM_FORMATIONS );
+		Assert( (unsigned char)pGoal->m_iFormation < (unsigned char)AIF_NUM_FORMATIONS );
 		SetParameters( AI_FollowParams_t( (AI_Formations_t)pGoal->m_iFormation, pGoal->m_bNormalMemoryDiscard ) );
 		m_hFollowGoalEnt = pGoal;
 		m_flTimeUpdatedFollowPosition = 0;
@@ -2206,9 +2206,9 @@ AI_FollowFormation_t *g_AI_Formations[] =
 
 AI_FollowFormation_t *AIGetFormation( AI_Formations_t formation )
 {
-	if ( formation < 0 )
+	if ( (unsigned char)formation < 0 )
 		formation = (AI_Formations_t)0;
-	else if ( formation >= ARRAYSIZE( g_AI_Formations ) )
+	else if ( (unsigned char)formation >= ARRAYSIZE( g_AI_Formations ) )
 		formation = (AI_Formations_t)(ARRAYSIZE( g_AI_Formations ) - 1 );
 		
 	return g_AI_Formations[formation];

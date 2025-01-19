@@ -163,7 +163,7 @@ FLAGENUM_OPERATORS( DTFlags_t, uint32 )
 
 
 // Use this to extern send and receive datatables, and reference them.
-#define EXTERN_SEND_TABLE(tableName)	namespace tableName {extern SendTable g_SendTable;}
+#define EXTERN_SEND_TABLE(tableName)	namespace tableName {extern SendTableInfo g_SendTable;}
 #define EXTERN_RECV_TABLE(tableName)	namespace tableName {extern RecvTable g_RecvTable;}
 
 #define REFERENCE_SEND_TABLE(tableName)	tableName::g_SendTable

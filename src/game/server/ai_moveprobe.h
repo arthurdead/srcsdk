@@ -19,7 +19,7 @@
 //			No moves actually take place
 //-----------------------------------------------------------------------------
 
-enum AI_TestGroundMoveFlags_t
+enum AI_TestGroundMoveFlags_t : unsigned char
 {
 	AITGM_DEFAULT					= 0,
 	AITGM_IGNORE_FLOOR				= 0x01,
@@ -29,7 +29,9 @@ enum AI_TestGroundMoveFlags_t
 	AITGM_CRAWL_LARGE_STEPS			= 0x10,
 };
 
-enum AI_MoveLimitFlags_t
+FLAGENUM_OPERATORS( AI_TestGroundMoveFlags_t, unsigned char )
+
+enum AI_MoveLimitFlags_t : unsigned char
 {
 	AIMLF_DEFAULT	= 0,
 	AIMLF_2D		= 0x01,
@@ -37,6 +39,8 @@ enum AI_MoveLimitFlags_t
 	AIMLF_IGNORE_TRANSIENTS = 0x04,
 	AIMLF_QUICK_REJECT = 0x08,
 };
+
+FLAGENUM_OPERATORS( AI_MoveLimitFlags_t, unsigned char )
 
 class CAI_MoveProbe : public CAI_Component
 {
@@ -48,34 +52,34 @@ public:
 	// ----------------------------------------------------
 	// Queries & probes
 	// ----------------------------------------------------
-	bool				MoveLimit( Navigation_t navType, const Vector &vecStart, const Vector &vecEnd, unsigned int collisionMask, const CBaseEntity *pTarget, AIMoveTrace_t* pMove = NULL );
-	bool				MoveLimit( Navigation_t navType, const Vector &vecStart, const Vector &vecEnd, unsigned int collisionMask, const CBaseEntity *pTarget, float pctToCheckStandPositions, AIMoveTrace_t* pMove = NULL );
-	bool				MoveLimit( Navigation_t navType, const Vector &vecStart, const Vector &vecEnd, unsigned int collisionMask, const CBaseEntity *pTarget, float pctToCheckStandPositions, unsigned flags, AIMoveTrace_t* pMove = NULL );
+	bool				MoveLimit( Navigation_t navType, const Vector &vecStart, const Vector &vecEnd, ContentsFlags_t collisionMask, const CBaseEntity *pTarget, AIMoveTrace_t* pMove = NULL );
+	bool				MoveLimit( Navigation_t navType, const Vector &vecStart, const Vector &vecEnd, ContentsFlags_t collisionMask, const CBaseEntity *pTarget, float pctToCheckStandPositions, AIMoveTrace_t* pMove = NULL );
+	bool				MoveLimit( Navigation_t navType, const Vector &vecStart, const Vector &vecEnd, ContentsFlags_t collisionMask, const CBaseEntity *pTarget, float pctToCheckStandPositions, AI_MoveLimitFlags_t flags, AIMoveTrace_t* pMove = NULL );
 	
-	bool				CheckStandPosition( const Vector &vecStart, unsigned int collisionMask ) const;
-	bool				FloorPoint( const Vector &vecStart, unsigned int collisionMask, float flStartZ, float flEndZ, Vector *pVecResult ) const;
+	bool				CheckStandPosition( const Vector &vecStart, ContentsFlags_t collisionMask ) const;
+	bool				FloorPoint( const Vector &vecStart, ContentsFlags_t collisionMask, float flStartZ, float flEndZ, Vector *pVecResult ) const;
 
 	// --------------------------------
 	// Tracing tools
 	// --------------------------------
-	void				TraceLine( const Vector &vecStart, const Vector &vecEnd, unsigned int mask, 
+	void				TraceLine( const Vector &vecStart, const Vector &vecEnd, ContentsFlags_t mask, 
 								   bool bUseCollisionGroup, trace_t *pResult ) const;
 
 	void 				TraceHull( const Vector &vecStart, const Vector &vecEnd, const Vector &hullMin, 
-								   const Vector &hullMax, unsigned int mask, 
+								   const Vector &hullMax, ContentsFlags_t mask, 
 								   trace_t *ptr ) const;
 	
-	void 				TraceHull( const Vector &vecStart, const Vector &vecEnd, unsigned int mask, 
+	void 				TraceHull( const Vector &vecStart, const Vector &vecEnd, ContentsFlags_t mask, 
 								   trace_t *ptr ) const;
 
 	// --------------------------------
 	// Checks a ground-based movement
 	// --------------------------------
 	bool				TestGroundMove( const Vector &vecActualStart, const Vector &vecDesiredEnd, 
-										unsigned int collisionMask, unsigned flags, AIMoveTrace_t *pMoveTrace ) const;
+										ContentsFlags_t collisionMask, AI_TestGroundMoveFlags_t flags, AIMoveTrace_t *pMoveTrace ) const;
 
 	bool				TestGroundMove( const Vector &vecActualStart, const Vector &vecDesiredEnd, 
-										unsigned int collisionMask, float pctToCheckStandPositions, unsigned flags, AIMoveTrace_t *pMoveTrace ) const;
+										ContentsFlags_t collisionMask, float pctToCheckStandPositions, AI_TestGroundMoveFlags_t flags, AIMoveTrace_t *pMoveTrace ) const;
 
 	bool				ShouldBrushBeIgnored( CBaseEntity *pEntity );
 
@@ -91,9 +95,9 @@ private:
 		float				stepHeight;
 		float				stepDownMultiplier;
 		float				minStepLanding;
-		unsigned			collisionMask;
+		ContentsFlags_t			collisionMask;
 		StepGroundTest_t	groundTest;
-		unsigned			flags;
+		AI_TestGroundMoveFlags_t			flags;
 	};
 
 	struct CheckStepResult_t
@@ -109,17 +113,17 @@ private:
 	bool				CheckStep( const CheckStepArgs_t &args, CheckStepResult_t *pResult ) const;
 	void				SetupCheckStepTraceListData( const CheckStepArgs_t &args ) const;
 	void				ResetTraceListData() const	{ if ( m_pTraceListData ) const_cast<CAI_MoveProbe *>(this)->m_pTraceListData->Reset(); }
-	bool				OldCheckStandPosition( const Vector &vecStart, unsigned int collisionMask ) const;
+	bool				OldCheckStandPosition( const Vector &vecStart, ContentsFlags_t collisionMask ) const;
 
 	// these check connections between positions in space, regardless of routes
-	void				GroundMoveLimit( const Vector &vecStart, const Vector &vecEnd, unsigned int collisionMask, const CBaseEntity *pTarget, unsigned testGroundMoveFlags, float pctToCheckStandPositions, AIMoveTrace_t* pMoveTrace ) const;
-	void				FlyMoveLimit( const Vector &vecStart, const Vector &vecEnd, unsigned int collisionMask, const CBaseEntity *pTarget, AIMoveTrace_t* pMoveTrace) const;
-	void				JumpMoveLimit( const Vector &vecStart, const Vector &vecEnd, unsigned int collisionMask, const CBaseEntity *pTarget, AIMoveTrace_t* pMoveTrace) const;
+	void				GroundMoveLimit( const Vector &vecStart, const Vector &vecEnd, ContentsFlags_t collisionMask, const CBaseEntity *pTarget, AI_TestGroundMoveFlags_t testGroundMoveFlags, float pctToCheckStandPositions, AIMoveTrace_t* pMoveTrace ) const;
+	void				FlyMoveLimit( const Vector &vecStart, const Vector &vecEnd, ContentsFlags_t collisionMask, const CBaseEntity *pTarget, AIMoveTrace_t* pMoveTrace) const;
+	void				JumpMoveLimit( const Vector &vecStart, const Vector &vecEnd, ContentsFlags_t collisionMask, const CBaseEntity *pTarget, AIMoveTrace_t* pMoveTrace) const;
 	void				ClimbMoveLimit( const Vector &vecStart, const Vector &vecEnd, const CBaseEntity *pTarget, AIMoveTrace_t* pMoveTrace) const;
 
 	// A floorPoint that is useful only in the contect of iterative movement
-	bool				IterativeFloorPoint( const Vector &vecStart, unsigned int collisionMask, Vector *pVecResult ) const;
-	bool				IterativeFloorPoint( const Vector &vecStart, unsigned int collisionMask, float flAddedStep, Vector *pVecResult ) const;
+	bool				IterativeFloorPoint( const Vector &vecStart, ContentsFlags_t collisionMask, Vector *pVecResult ) const;
+	bool				IterativeFloorPoint( const Vector &vecStart, ContentsFlags_t collisionMask, float flAddedStep, Vector *pVecResult ) const;
 	bool 				IsJumpLegal( const Vector &startPos, const Vector &apex, const Vector &endPos ) const;
 
 public:
@@ -127,7 +131,7 @@ public:
 private:
 	void				CheckStepOverLargeCrawl( CheckStepResult_t *pResult, const CheckStepArgs_t &args, const Vector &vecStart, const Vector &vecEnd, const trace_t &blockedTrace ) const;
 	// Confirm 3D connectivity between 2 nodes
-	bool				Confirm3DConnectivity( AIMoveTrace_t *pMoveTrace, unsigned flags, const Vector &vecDesiredEnd ) const;
+	bool				Confirm3DConnectivity( AIMoveTrace_t *pMoveTrace, AI_TestGroundMoveFlags_t flags, const Vector &vecDesiredEnd ) const;
 
 	// Common services provided by CAI_BaseNPC, Convenience methods to simplify code
 	float				StepHeight() const;
@@ -142,21 +146,21 @@ private:
 
 // ----------------------------------------------------------------------------
 
-inline bool CAI_MoveProbe::MoveLimit( Navigation_t navType, const Vector &vecStart, const Vector &vecEnd, unsigned int collisionMask, const CBaseEntity *pTarget, float pctToCheckStandPositions, AIMoveTrace_t* pMove)
+inline bool CAI_MoveProbe::MoveLimit( Navigation_t navType, const Vector &vecStart, const Vector &vecEnd, ContentsFlags_t collisionMask, const CBaseEntity *pTarget, float pctToCheckStandPositions, AIMoveTrace_t* pMove)
 {
 	return MoveLimit( navType, vecStart, vecEnd, collisionMask, pTarget, pctToCheckStandPositions, AIMLF_DEFAULT, pMove);
 }
 
 // ------------------------------------
 
-inline bool CAI_MoveProbe::MoveLimit( Navigation_t navType, const Vector &vecStart, const Vector &vecEnd, unsigned int collisionMask, const CBaseEntity *pTarget, AIMoveTrace_t* pMove)
+inline bool CAI_MoveProbe::MoveLimit( Navigation_t navType, const Vector &vecStart, const Vector &vecEnd, ContentsFlags_t collisionMask, const CBaseEntity *pTarget, AIMoveTrace_t* pMove)
 {
 	return MoveLimit( navType, vecStart, vecEnd, collisionMask, pTarget, 100.0f, AIMLF_DEFAULT, pMove);
 }
 
 // ------------------------------------
 
-inline bool CAI_MoveProbe::TestGroundMove( const Vector &vecActualStart, const Vector &vecDesiredEnd, unsigned int collisionMask, unsigned flags, AIMoveTrace_t *pMoveTrace ) const
+inline bool CAI_MoveProbe::TestGroundMove( const Vector &vecActualStart, const Vector &vecDesiredEnd, ContentsFlags_t collisionMask, AI_TestGroundMoveFlags_t flags, AIMoveTrace_t *pMoveTrace ) const
 {
 	return TestGroundMove( vecActualStart, vecDesiredEnd, collisionMask, 100, flags, pMoveTrace ); // floor ignore flag will override 100%
 }

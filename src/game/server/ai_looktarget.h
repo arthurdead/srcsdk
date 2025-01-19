@@ -9,7 +9,12 @@
 
 #include "baseentity.h"
 
-#define SF_LOOKTARGET_ONLYONCE	0x00000001
+enum SFLookTarget_t : unsigned char
+{
+	SF_LOOKTARGET_ONLYONCE = 0x00000001,
+};
+
+FLAGENUM_OPERATORS( SFLookTarget_t, unsigned char )
 
 //=============================================================================
 //=============================================================================
@@ -18,6 +23,8 @@ class CAI_LookTarget : public CPointEntity
 public:
 	DECLARE_CLASS( CAI_LookTarget, CPointEntity );
 	DECLARE_MAPENTITY();
+
+	DECLARE_SPAWNFLAGS( SFLookTarget_t )
 
 	CAI_LookTarget() { m_flTimeNextAvailable = -1; }
 

@@ -1255,7 +1255,7 @@ void CAI_LeadGoal::InputSetFailure( inputdata_t &&inputdata )
 
 void CAI_LeadGoal::InputActivate( inputdata_t &&inputdata )
 {
-	BaseClass::InputActivate( inputdata );
+	BaseClass::InputActivate( Move(inputdata) );
 	
 	CAI_LeadBehavior *pBehavior = GetLeadBehavior();
 	if ( !pBehavior )
@@ -1303,7 +1303,7 @@ void CAI_LeadGoal::InputActivate( inputdata_t &&inputdata )
 
 void CAI_LeadGoal::InputDeactivate( inputdata_t &&inputdata )
 {
-	BaseClass::InputDeactivate( inputdata );
+	BaseClass::InputDeactivate( Move(inputdata) );
 
 	CAI_LeadBehavior *pBehavior = GetLeadBehavior();
 	if ( !pBehavior )
@@ -1421,7 +1421,7 @@ const char *CAI_LeadGoal_Weapon::GetConceptModifiers( const char *pszConcept )
 
 void CAI_LeadGoal_Weapon::InputActivate( inputdata_t &&inputdata )
 {
-	BaseClass::InputActivate( inputdata );
+	BaseClass::InputActivate( Move(inputdata) );
 
 	CAI_LeadBehavior *pBehavior = GetLeadBehavior();
 	if ( pBehavior )

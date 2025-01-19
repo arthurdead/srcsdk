@@ -107,7 +107,7 @@ enum gestureslotindex_t : unsigned char
 	GESTURE_SLOT_FIRST = GESTURE_SLOT_ATTACK_AND_RELOAD,
 };
 
-UNORDEREDENUM_OPERATORS( gestureslotindex_t, unsigned char )
+ORDEREDENUM_OPERATORS( gestureslotindex_t, unsigned char )
 
 struct GestureSlot_t
 {

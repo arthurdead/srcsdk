@@ -1083,7 +1083,7 @@ inline uint64 Plat_Rdtsc()
 			return *this;								\
 		}
 
-#define UNORDEREDENUM_OPERATORS_BASE( Enum, Type ) \
+#define ENUM_OPERATORS_BASE( Enum, Type ) \
 	inline bool operator==( Enum lhs, Enum rhs ) \
 	{ return (Type)lhs != (Type)rhs; } \
 	inline bool operator!=( Enum lhs, Enum rhs ) \
@@ -1100,10 +1100,6 @@ inline uint64 Plat_Rdtsc()
 	bool operator>=( Type, Enum ) = delete; \
 	bool operator<( Type, Enum ) = delete; \
 	bool operator<=( Type, Enum ) = delete; \
-	bool operator>( Enum, Enum ) = delete; \
-	bool operator>=( Enum, Enum ) = delete; \
-	bool operator<( Enum, Enum ) = delete; \
-	bool operator<=( Enum, Enum ) = delete; \
 	Enum operator+( Type, Enum ) = delete; \
 	Enum operator-( Type, Enum ) = delete; \
 	Enum operator*( Type, Enum ) = delete; \
@@ -1143,6 +1139,13 @@ inline uint64 Plat_Rdtsc()
 	Enum operator^( Type, Enum ) = delete; \
 	Enum operator^=( Type &, Enum ) = delete;
 
+#define UNORDEREDENUM_OPERATORS_BASE( Enum, Type ) \
+	ENUM_OPERATORS_BASE( Enum, Type ) \
+	bool operator>( Enum, Enum ) = delete; \
+	bool operator>=( Enum, Enum ) = delete; \
+	bool operator<( Enum, Enum ) = delete; \
+	bool operator<=( Enum, Enum ) = delete;
+
 #define UNORDEREDENUM_OPERATORS( Enum, Type ) \
 	UNORDEREDENUM_OPERATORS_BASE( Enum, Type ) \
 	Enum operator&( Enum, Enum ) = delete; \
@@ -1156,6 +1159,9 @@ inline uint64 Plat_Rdtsc()
 	Enum operator<<=( Enum &, Enum ) = delete; \
 	Enum operator>>( Enum, Enum ) = delete; \
 	Enum operator>>=( Enum &, Enum ) = delete;
+
+#define ORDEREDENUM_OPERATORS( Enum, Type ) \
+	ENUM_OPERATORS_BASE( Enum, Type )
 
 #define FLAGENUM_OPERATORS( Enum, Type ) \
 	UNORDEREDENUM_OPERATORS_BASE( Enum, Type ) \

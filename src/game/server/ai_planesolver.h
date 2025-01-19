@@ -99,7 +99,7 @@ private:
 
 	// --------------------------------
 	bool MoveLimit( Navigation_t navType, const Vector &target, bool ignoreTransients, bool fCheckStep, AIMoveTrace_t *pMoveTrace );
-	bool MoveLimit( Navigation_t navType, const Vector &target, bool ignoreTransients, bool fCheckStep, int contents, AIMoveTrace_t *pMoveTrace );
+	bool MoveLimit( Navigation_t navType, const Vector &target, bool ignoreTransients, bool fCheckStep, ContentsFlags_t contents, AIMoveTrace_t *pMoveTrace );
 
 	//-----------------------------------------------------------------------------
 	// Adjust the solution for fliers

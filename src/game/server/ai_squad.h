@@ -21,6 +21,7 @@ class CAI_BaseNPC;
 class CAI_Squad;
 class CBaseCombatCharacter;
 typedef CHandle<CAI_BaseNPC> AIHANDLE;
+enum MemoryFlags_t : uint64;
 
 #define PER_ENEMY_SQUADSLOTS 1
 
@@ -127,7 +128,7 @@ public:
 	void					JustMadeSound( int soundPriority, float time );
 	float					GetSquadSoundWaitTime() const		{ return m_flSquadSoundWaitTime; }
 	void					SetSquadSoundWaitTime( float time ) { m_flSquadSoundWaitTime = time; }
-	void					SquadRemember( int iMemory );
+	void					SquadRemember( MemoryFlags_t iMemory );
 
 	void					SetSquadInflictor( CBaseEntity *pInflictor );
 	bool					IsSquadInflictor( CBaseEntity *pInflictor );

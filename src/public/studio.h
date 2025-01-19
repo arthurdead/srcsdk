@@ -1621,7 +1621,7 @@ struct mstudiomodel_t
 
 	int					numeyeballs;
 	int					eyeballindex;
-	inline  mstudioeyeball_t *pEyeball( int i ) { return (mstudioeyeball_t *)(((byte *)this) + eyeballindex) + i; };
+	inline  const mstudioeyeball_t *pEyeball( int i ) const { return (mstudioeyeball_t *)(((byte *)this) + eyeballindex) + i; };
 
 	mstudio_modelvertexdata_t vertexdata;
 
@@ -2688,7 +2688,7 @@ public:
 	int					GetTransition( int iFrom, int iTo ) const;
 
 	int					GetNumPoseParameters( void ) const;
-	const mstudioposeparamdesc_t &pPoseParameter( int i );
+	const mstudioposeparamdesc_t &pPoseParameter( int i ) const;
 	int					GetSharedPoseParameter( sequence_t iSequence, int iLocalPose ) const;
 
 	int					GetNumIKAutoplayLocks( void ) const;

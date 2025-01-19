@@ -1173,13 +1173,13 @@ public:
 	void InputActivate( inputdata_t &&inputdata )
 	{
 		ValidateAggression();
-		BaseClass::InputActivate( inputdata );
+		BaseClass::InputActivate( Move(inputdata) );
 	}
 	
 	void InputDeactivate( inputdata_t &&inputdata ) 	
 	{
 		ValidateAggression();
-		BaseClass::InputDeactivate( inputdata );
+		BaseClass::InputDeactivate( Move(inputdata) );
 	}
 	
 	void InputSetAggressiveness( inputdata_t &&inputdata )

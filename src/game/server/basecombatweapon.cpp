@@ -188,7 +188,7 @@ class CWeaponLOSFilter : public CTraceFilterSkipTwoEntities
 {
 	DECLARE_CLASS( CWeaponLOSFilter, CTraceFilterSkipTwoEntities );
 public:
-	CWeaponLOSFilter( IHandleEntity *pHandleEntity, IHandleEntity *pHandleEntity2, int collisionGroup ) :
+	CWeaponLOSFilter( IHandleEntity *pHandleEntity, IHandleEntity *pHandleEntity2, Collision_Group_t collisionGroup ) :
 	  CTraceFilterSkipTwoEntities( pHandleEntity, pHandleEntity2, collisionGroup ), m_pVehicle( NULL )
 	{
 		// If the tracing entity is in a vehicle, then ignore it
@@ -442,7 +442,7 @@ void CBaseCombatWeapon::FallInit( void )
 	SetModel( (GetDroppedModel() && GetDroppedModel()[0]) ? GetDroppedModel() : GetWorldModel() );
 	VPhysicsDestroyObject();
 
-	if(HasSpawnFlags(SF_NORESPAWN) == false)
+	if(HasSpawnFlags(SF_WEAPON_NORESPAWN) == false)
 	{
 		SetMoveType(MOVETYPE_NONE);
 		SetSolid(SOLID_BBOX);
@@ -548,7 +548,7 @@ void CBaseCombatWeapon::Materialize( void )
 	SetSolid( SOLID_BBOX );
 	AddSolidFlags( FSOLID_TRIGGER );
 
-	if ( HasSpawnFlags( SF_NORESPAWN ) == false )
+	if ( HasSpawnFlags( SF_WEAPON_NORESPAWN ) == false )
 	{
 		VPhysicsInitNormal( SOLID_BBOX, GetSolidFlags() | FSOLID_TRIGGER, false );
 		SetMoveType( MOVETYPE_VPHYSICS );
@@ -665,9 +665,9 @@ int CBaseCombatWeapon::GetAvailableWeaponsInBox( CBaseCombatWeapon **pList, int 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int	CBaseCombatWeapon::ObjectCaps( void )
+EntityCaps_t	CBaseCombatWeapon::ObjectCaps( void )
 { 
-	int caps = BaseClass::ObjectCaps();
+	EntityCaps_t caps = BaseClass::ObjectCaps();
 	if ( !IsFollowingEntity() && !HasSpawnFlags(SF_WEAPON_NO_PLAYER_PICKUP) )
 	{
 		caps |= FCAP_IMPULSE_USE;

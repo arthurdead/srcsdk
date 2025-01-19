@@ -94,15 +94,15 @@ public:
 	virtual bool IsActivityFinished( void ) { return m_bSequenceFinished; }
 	inline bool IsSequenceFinished( void ) { return m_bSequenceFinished; }
 	inline bool SequenceLoops( void ) { return m_bSequenceLoops; }
-	bool		 IsSequenceLooping( CStudioHdr *pStudioHdr, sequence_t iSequence );
+	bool		 IsSequenceLooping( const CStudioHdr *pStudioHdr, sequence_t iSequence );
 	inline bool	 IsSequenceLooping( sequence_t iSequence ) { return IsSequenceLooping(GetModelPtr(),iSequence); }
 	inline float SequenceDuration( void ) { return SequenceDuration( m_nSequence ); }
-	float	SequenceDuration( CStudioHdr *pStudioHdr, sequence_t iSequence );
+	float	SequenceDuration( const CStudioHdr *pStudioHdr, sequence_t iSequence );
 	inline float SequenceDuration( sequence_t iSequence ) { return SequenceDuration(GetModelPtr(), iSequence); }
-	float	GetSequenceCycleRate( CStudioHdr *pStudioHdr, sequence_t iSequence );
+	float	GetSequenceCycleRate( const CStudioHdr *pStudioHdr, sequence_t iSequence );
 	inline float	GetSequenceCycleRate( sequence_t iSequence ) { return GetSequenceCycleRate(GetModelPtr(),iSequence); }
-	float	GetLastVisibleCycle( CStudioHdr *pStudioHdr, sequence_t iSequence );
-	virtual float	GetSequenceGroundSpeed( CStudioHdr *pStudioHdr, sequence_t iSequence );
+	float	GetLastVisibleCycle( const CStudioHdr *pStudioHdr, sequence_t iSequence );
+	virtual float	GetSequenceGroundSpeed( const CStudioHdr *pStudioHdr, sequence_t iSequence );
 	inline float GetSequenceGroundSpeed( sequence_t iSequence ) { return GetSequenceGroundSpeed(GetModelPtr(), iSequence); }
 	void	ResetActivityIndexes ( void );
 	void    ResetEventIndexes ( void );
@@ -115,7 +115,7 @@ public:
 	KeyValues *GetSequenceKeyValues( sequence_t iSequence );
 
 	float GetSequenceMoveYaw( sequence_t iSequence );
-	float GetSequenceMoveDist( CStudioHdr *pStudioHdr, sequence_t iSequence );
+	float GetSequenceMoveDist( const CStudioHdr *pStudioHdr, sequence_t iSequence );
 	inline float GetSequenceMoveDist( sequence_t iSequence ) { return GetSequenceMoveDist(GetModelPtr(),iSequence);}
 	void  GetSequenceLinearMotion( sequence_t iSequence, Vector *pVec );
 	const char *GetSequenceName( sequence_t iSequence );
@@ -133,7 +133,7 @@ public:
 
 	virtual const char *OverrideRagdollClassname() const { return "prop_ragdoll"; }
 
-	virtual	void GetSkeleton( CStudioHdr *pStudioHdr, Vector pos[], Quaternion q[], int boneMask );
+	virtual	void GetSkeleton( const CStudioHdr *pStudioHdr, Vector pos[], Quaternion q[], int boneMask );
 
 	virtual void GetBoneTransform( int iBone, matrix3x4_t &pBoneToWorld );
 	virtual void SetupBones( matrix3x4_t *pBoneToWorld, int boneMask );
@@ -146,7 +146,7 @@ public:
 	virtual void HandleAnimEvent( animevent_t *pEvent );
 	virtual bool HandleBehaviorAnimEvent( animevent_t *pEvent ) { return false; }
 
-	int		LookupPoseParameter( CStudioHdr *pStudioHdr, const char *szName );
+	int		LookupPoseParameter( const CStudioHdr *pStudioHdr, const char *szName );
 	inline int	LookupPoseParameter( const char *szName ) { return LookupPoseParameter(GetModelPtr(), szName); }
 
 	float	SetPoseParameter( CStudioHdr *pStudioHdr, const char *szName, float flValue );
@@ -178,7 +178,7 @@ public:
 	int GetNumBones ( void );
 
 	sequence_t  FindTransitionSequence( sequence_t iCurrentSequence, sequence_t iGoalSequence, int *piDir );
-	bool GotoSequence( int iCurrentSequence, float flCurrentCycle, float flCurrentRate,  sequence_t iGoalSequence, sequence_t &iNextSequence, float &flCycle, int &iDir );
+	bool GotoSequence( sequence_t iCurrentSequence, float flCurrentCycle, float flCurrentRate,  sequence_t iGoalSequence, sequence_t &iNextSequence, float &flCycle, int &iDir );
 	int  GetEntryNode( sequence_t iSequence );
 	int  GetExitNode( sequence_t iSequence );
 	
@@ -238,7 +238,7 @@ public:
 	// Clone a CBaseAnimating from another (copies model & sequence data)
 	void CopyAnimationDataFrom( CBaseAnimating *pSource );
 
-	bool ExtractBbox( int sequence, Vector& mins, Vector& maxs );
+	bool ExtractBbox( sequence_t sequence, Vector& mins, Vector& maxs );
 	void SetSequenceBox( void );
 	Activity RegisterPrivateActivity( const char *pszActivityName );
 
@@ -264,16 +264,16 @@ public:
 	virtual	Vector GetGroundSpeedVelocity( void );
 
 	bool GetIntervalMovement( float flIntervalUsed, bool &bMoveSeqFinished, Vector &newPosition, QAngle &newAngles );
-	bool GetSequenceMovement( int nSequence, float fromCycle, float toCycle, Vector &deltaPosition, QAngle &deltaAngles );
+	bool GetSequenceMovement( sequence_t nSequence, float fromCycle, float toCycle, Vector &deltaPosition, QAngle &deltaAngles );
 	float GetInstantaneousVelocity( float flInterval = 0.0 );
-	float GetEntryVelocity( int iSequence );
-	float GetExitVelocity( int iSequence );
+	float GetEntryVelocity( sequence_t iSequence );
+	float GetExitVelocity( sequence_t iSequence );
 	float GetMovementFrame( float flDist );
-	bool HasMovement( int iSequence );
+	bool HasMovement( sequence_t iSequence );
 
 	void ReportMissingActivity( Activity iActivity );
-	virtual bool TestCollision( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr );
-	virtual bool TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr );
+	virtual bool TestCollision( const Ray_t &ray, ContentsFlags_t fContentsMask, trace_t& tr );
+	virtual bool TestHitboxes( const Ray_t &ray, ContentsFlags_t fContentsMask, trace_t& tr );
 	class CBoneCache *GetBoneCache( void );
 	virtual void InvalidateBoneCache();
 	void InvalidateBoneCacheIfOlderThan( float deltaTime );

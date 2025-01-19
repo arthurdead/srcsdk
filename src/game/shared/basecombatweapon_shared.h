@@ -78,6 +78,9 @@ enum BaseWeaponSF_t : uint64
 	// ----------------------------------------------
 	SF_WEAPON_NO_AUTO_SWITCH_WHEN_EMPTY = (1<<7), // So weapons with ammo preserved at 0 don't switch.
 	SF_WEAPON_USED = (1<<8), // Weapon is being +USE'd, not bumped
+
+	// !!!set this bit on guns and stuff that should never respawn.
+	SF_WEAPON_NORESPAWN = (1<<9),
 };
 
 FLAGENUM_OPERATORS( BaseWeaponSF_t, uint64 )

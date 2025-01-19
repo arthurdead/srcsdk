@@ -1247,7 +1247,7 @@ int CAI_PlayerAlly::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-int CAI_PlayerAlly::TakeHealth( float flHealth, int bitsDamageType )
+int CAI_PlayerAlly::TakeHealth( float flHealth, DamageTypes_t bitsDamageType )
 {
 	int intPortion;
 	float floatPortion;
@@ -1516,7 +1516,7 @@ bool CAI_PlayerAlly::IsOkToSpeak( ConceptCategory_t category, bool fRespondingTo
 	if ( !IsAlive() )
 		return false;
 
-	if ( m_spawnflags & SF_NPC_GAG )
+	if ( HasSpawnFlags( SF_NPC_GAG ) )
 		return false;
 
 	// Don't speak if playing a script.

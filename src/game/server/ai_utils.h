@@ -276,8 +276,8 @@ private:
 class CTraceFilterNav : public CTraceFilterSimple
 {
 public:
-	CTraceFilterNav( CAI_BaseNPC *pProber, bool bIgnoreTransientEntities, const IServerEntity *passedict, int collisionGroup, bool m_bAllowPlayerAvoid = true );
-	bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask );
+	CTraceFilterNav( CAI_BaseNPC *pProber, bool bIgnoreTransientEntities, const IServerEntity *passedict, Collision_Group_t collisionGroup, bool m_bAllowPlayerAvoid = true );
+	bool ShouldHitEntity( IHandleEntity *pServerEntity, ContentsFlags_t contentsMask );
 
 private:
 	CAI_BaseNPC *m_pProber;

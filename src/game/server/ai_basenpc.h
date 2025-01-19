@@ -2134,7 +2134,7 @@ protected:
 	virtual float GetReasonableFacingDist( void );
 
 public:
-	inline int UsableNPCObjectCaps( int baseCaps )
+	inline EntityCaps_t UsableNPCObjectCaps( EntityCaps_t baseCaps )
 	{
 		if ( IsAlive() )
 			baseCaps |= FCAP_IMPULSE_USE;
@@ -2332,8 +2332,8 @@ public:
 
 	// Hammer input to change the speed of the NPC (based on 1upD's npc_shadow_walker code)
 	// Not to be confused with the inputs above
-	virtual float		GetSequenceGroundSpeed( CStudioHdr *pStudioHdr, int iSequence );
-	inline float		GetSequenceGroundSpeed( int iSequence ) { return GetSequenceGroundSpeed( GetModelPtr(), iSequence ); }
+	virtual float		GetSequenceGroundSpeed( const CStudioHdr *pStudioHdr, sequence_t iSequence );
+	inline float		GetSequenceGroundSpeed( sequence_t iSequence ) { return GetSequenceGroundSpeed( GetModelPtr(), iSequence ); }
 	void				InputSetSpeedModifier( inputdata_t &&inputdata );
 	float				m_flSpeedModifier;
 
@@ -2975,7 +2975,7 @@ inline const Vector &CAI_Component::GetHullMaxs() const
 
 //-----------------------------------------------------------------------------
 
-inline int CAI_Component::GetCollisionGroup() const
+inline Collision_Group_t CAI_Component::GetCollisionGroup() const
 {
 	return GetOuter()->GetCollisionGroup();
 }

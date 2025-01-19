@@ -973,7 +973,7 @@ int	CStudioHdr::GetNumPoseParameters( void ) const
 // Purpose:
 //-----------------------------------------------------------------------------
 
-const mstudioposeparamdesc_t &CStudioHdr::pPoseParameter( int i )
+const mstudioposeparamdesc_t &CStudioHdr::pPoseParameter( int i ) const
 {
 	if (m_pVModel == NULL)
 	{

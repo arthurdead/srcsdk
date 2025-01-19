@@ -27,6 +27,7 @@ struct studiohwdata_t;
 struct vcollide_t;
 struct virtualmodel_t;
 struct vertexFileHeader_t;
+enum sequence_t : unsigned short;
 
 namespace OptimizedModel
 {
@@ -117,13 +118,13 @@ public:
 	virtual int GetRef( MDLHandle_t handle ) = 0;
 
 	// Gets at the various data associated with a MDL
-	virtual studiohdr_t *GetStudioHdr( MDLHandle_t handle ) = 0;
-	virtual studiohwdata_t *GetHardwareData( MDLHandle_t handle ) = 0;
-	virtual vcollide_t *GetVCollide( MDLHandle_t handle ) = 0;
-	virtual unsigned char *GetAnimBlock( MDLHandle_t handle, int nBlock ) = 0;
-	virtual virtualmodel_t *GetVirtualModel( MDLHandle_t handle ) = 0;
-	virtual int GetAutoplayList( MDLHandle_t handle, unsigned short **pOut ) = 0;
-	virtual vertexFileHeader_t *GetVertexData( MDLHandle_t handle ) = 0;
+	virtual const studiohdr_t *GetStudioHdr( MDLHandle_t handle ) = 0;
+	virtual const studiohwdata_t *GetHardwareData( MDLHandle_t handle ) = 0;
+	virtual const vcollide_t *GetVCollide( MDLHandle_t handle ) = 0;
+	virtual const unsigned char *GetAnimBlock( MDLHandle_t handle, int nBlock ) = 0;
+	virtual const virtualmodel_t *GetVirtualModel( MDLHandle_t handle ) = 0;
+	virtual int GetAutoplayList( MDLHandle_t handle, sequence_t **pOut ) = 0;
+	virtual const vertexFileHeader_t *GetVertexData( MDLHandle_t handle ) = 0;
 
 	// Brings all data associated with an MDL into memory
 	virtual void TouchAllData( MDLHandle_t handle ) = 0;
@@ -145,7 +146,7 @@ public:
 	virtual const char *GetModelName( MDLHandle_t handle ) = 0;
 
 	// faster access when you already have the studiohdr
-	virtual virtualmodel_t *GetVirtualModelFast( const studiohdr_t *pStudioHdr, MDLHandle_t handle ) = 0;
+	virtual const virtualmodel_t *GetVirtualModelFast( const studiohdr_t *pStudioHdr, MDLHandle_t handle ) = 0;
 
 	// all cache entries that subsequently allocated or successfully checked 
 	// are considered "locked" and will not be freed when additional memory is needed

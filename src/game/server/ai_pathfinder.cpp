@@ -37,7 +37,7 @@ const float MAX_LOCAL_NAV_DIST_FLY[2] = { (750*12), (750*12) };
 //-----------------------------------------------------------------------------
 // Compute move type bits to nav type
 //-----------------------------------------------------------------------------
-Navigation_t MoveBitsToNavType( int fBits )
+Navigation_t MoveBitsToNavType( Capability_t fBits )
 {
 	if (fBits & bits_CAP_MOVE_FLY)
 		return NAV_FLY;
@@ -142,7 +142,7 @@ AI_Waypoint_t* CAI_Pathfinder::FindShortRandomPath(const Vector &vStart, float m
 
 //-----------------------------------------------------------------------------
 
-static int NPCBuildFlags( CAI_BaseNPC *pNPC, const Vector &vecOrigin )
+static RouteBuildFlags_e NPCBuildFlags( CAI_BaseNPC *pNPC, const Vector &vecOrigin )
 {
 	// If vecOrigin the the npc's position and npc is climbing only climb nodes allowed
 	if (pNPC->GetLocalOrigin() == vecOrigin && pNPC->GetNavType() == NAV_CLIMB) 
@@ -155,7 +155,7 @@ static int NPCBuildFlags( CAI_BaseNPC *pNPC, const Vector &vecOrigin )
 	}
 	else if (pNPC->CapabilitiesGet() & bits_CAP_MOVE_GROUND)
 	{
-		int buildFlags = bits_BUILD_GROUND | bits_BUILD_GIVEWAY;
+		RouteBuildFlags_e buildFlags = bits_BUILD_GROUND | bits_BUILD_GIVEWAY;
 		if (pNPC->CapabilitiesGet() & bits_CAP_MOVE_JUMP)
 		{
 			buildFlags |= bits_BUILD_JUMP;
@@ -167,14 +167,14 @@ static int NPCBuildFlags( CAI_BaseNPC *pNPC, const Vector &vecOrigin )
 
 		return buildFlags;
 	}
-	return 0;
+	return bits_BUILD_NO_FLAGS;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns a route to a node for the given npc with the given 
 //			build flags
 //-----------------------------------------------------------------------------
-AI_Waypoint_t* CAI_Pathfinder::RouteTo(const Vector &vecOrigin, int buildFlags, const Vector &vEnd, float goalTolerance)
+AI_Waypoint_t* CAI_Pathfinder::RouteTo(const Vector &vecOrigin, RouteBuildFlags_e buildFlags, const Vector &vEnd, float goalTolerance)
 {
 	AI_PROFILE_SCOPE( CAI_Pathfinder_RouteToNode );
 	
@@ -190,7 +190,7 @@ AI_Waypoint_t* CAI_Pathfinder::RouteTo(const Vector &vecOrigin, int buildFlags, 
 	}
 
 	// Otherwise try to build a local route to the node
-	AI_Waypoint_t *pResult = BuildLocalRoute(vecOrigin, vEnd, NULL, 0, buildFlags, goalTolerance);
+	AI_Waypoint_t *pResult = BuildLocalRoute(vecOrigin, vEnd, NULL, bits_WP_NO_FLAGS, buildFlags, goalTolerance);
 	return pResult;
 }
 
@@ -200,7 +200,7 @@ AI_Waypoint_t* CAI_Pathfinder::RouteTo(const Vector &vecOrigin, int buildFlags, 
 //			build flags
 //-----------------------------------------------------------------------------
 
-AI_Waypoint_t* CAI_Pathfinder::RouteFrom(const Vector &vecOrigin, int buildFlags, const Vector &vEnd, float goalTolerance)
+AI_Waypoint_t* CAI_Pathfinder::RouteFrom(const Vector &vecOrigin, RouteBuildFlags_e buildFlags, const Vector &vEnd, float goalTolerance)
 {
 	AI_PROFILE_SCOPE( CAI_Pathfinder_RouteFromNode );
 	
@@ -235,7 +235,7 @@ AI_Waypoint_t* CAI_Pathfinder::RouteFrom(const Vector &vecOrigin, int buildFlags
 // Builds a simple route (no triangulation, no making way)
 //-----------------------------------------------------------------------------
 AI_Waypoint_t *CAI_Pathfinder::BuildSimpleRoute( Navigation_t navType, const Vector &vStart, 
-	const Vector &vEnd, const CBaseEntity *pTarget, int endFlags, AreaType_e areaTargetType, float flYaw )
+	const Vector &vEnd, const CBaseEntity *pTarget, WaypointFlags_t endFlags, AreaType_e areaTargetType, float flYaw )
 {
 	Assert( navType == NAV_JUMP || navType == NAV_CLIMB || navType == NAV_CRAWL); // this is what this here function is for
 	// Only allowed to jump to ground nodes
@@ -258,8 +258,8 @@ AI_Waypoint_t *CAI_Pathfinder::BuildSimpleRoute( Navigation_t navType, const Vec
 // Builds a complex route (triangulation, making way)
 //-----------------------------------------------------------------------------
 AI_Waypoint_t *CAI_Pathfinder::BuildComplexRoute( Navigation_t navType, const Vector &vStart, 
-	const Vector &vEnd, const CBaseEntity *pTarget, int endFlags,
-	int buildFlags, float flYaw, float goalTolerance, float maxLocalNavDistance )
+	const Vector &vEnd, const CBaseEntity *pTarget, WaypointFlags_t endFlags,
+	RouteBuildFlags_e buildFlags, float flYaw, float goalTolerance, float maxLocalNavDistance )
 {
 	AI_PROFILE_SCOPE( CAI_Pathfinder_BuildComplexRoute );
 	
@@ -269,7 +269,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildComplexRoute( Navigation_t navType, const Ve
 		return new AI_Waypoint_t( vEnd, flYaw, navType, endFlags );
 	}
 	
-	unsigned int collideFlags = (buildFlags & bits_BUILD_IGNORE_NPCS) ? GetOuter()->GetAITraceMask_BrushOnly() : GetOuter()->GetAITraceMask();
+	ContentsFlags_t collideFlags = (buildFlags & bits_BUILD_IGNORE_NPCS) ? GetOuter()->GetAITraceMask_BrushOnly() : GetOuter()->GetAITraceMask();
 
 	bool bCheckGround = (GetOuter()->CapabilitiesGet() & bits_CAP_SKIP_NAV_GROUND_CHECK) ? false : true;
 
@@ -358,7 +358,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildComplexRoute( Navigation_t navType, const Ve
 // Output : Returns a route if successful or NULL if no local route was possible
 //-----------------------------------------------------------------------------
 AI_Waypoint_t *CAI_Pathfinder::BuildCrawlRoute(const Vector &vStart, const Vector &vEnd, 
-											   const CBaseEntity *pTarget, int endFlags, int buildFlags, float flYaw, float goalTolerance)
+											   const CBaseEntity *pTarget, WaypointFlags_t endFlags, RouteBuildFlags_e buildFlags, float flYaw, float goalTolerance)
 {
 	// Only allowed to jump to ground nodes
 	//return BuildSimpleRoute( NAV_CRAWL, vStart, vEnd, pTarget, 
@@ -368,7 +368,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildCrawlRoute(const Vector &vStart, const Vecto
 }
 
 AI_Waypoint_t *CAI_Pathfinder::BuildJumpRoute(const Vector &vStart, const Vector &vEnd, 
-	const CBaseEntity *pTarget, int endFlags, int buildFlags, float flYaw)
+	const CBaseEntity *pTarget, WaypointFlags_t endFlags, RouteBuildFlags_e buildFlags, float flYaw)
 {
 	Vector vecDiff = vStart - vEnd;
 
@@ -386,7 +386,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildJumpRoute(const Vector &vStart, const Vector
 // Input  :
 // Output : Returns a route if sucessful or NULL if no climb route was possible
 //-----------------------------------------------------------------------------
-AI_Waypoint_t *CAI_Pathfinder::BuildClimbRoute(const Vector &vStart, const Vector &vEnd, const CBaseEntity *pTarget, int endFlags, int buildFlags, float flYaw)
+AI_Waypoint_t *CAI_Pathfinder::BuildClimbRoute(const Vector &vStart, const Vector &vEnd, const CBaseEntity *pTarget, WaypointFlags_t endFlags, RouteBuildFlags_e buildFlags, float flYaw)
 {
 	// Only allowed to climb to climb nodes
 	return BuildSimpleRoute( NAV_CLIMB, vStart, vEnd, pTarget, 
@@ -401,7 +401,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildClimbRoute(const Vector &vStart, const Vecto
 // Output : Returns a route if sucessful or NULL if no ground route was possible
 //-----------------------------------------------------------------------------
 AI_Waypoint_t *CAI_Pathfinder::BuildGroundRoute(const Vector &vStart, const Vector &vEnd, 
-	const CBaseEntity *pTarget, int endFlags, int buildFlags, float flYaw, float goalTolerance)
+	const CBaseEntity *pTarget, WaypointFlags_t endFlags, RouteBuildFlags_e buildFlags, float flYaw, float goalTolerance)
 {
 	return BuildComplexRoute( NAV_GROUND, vStart, vEnd, pTarget, 
 		endFlags, buildFlags, flYaw, goalTolerance, MAX_LOCAL_NAV_DIST_GROUND[UseStrongOptimizations()] );
@@ -415,7 +415,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildGroundRoute(const Vector &vStart, const Vect
 // Output : Returns a route if sucessful or NULL if no ground route was possible
 //-----------------------------------------------------------------------------
 AI_Waypoint_t *CAI_Pathfinder::BuildFlyRoute(const Vector &vStart, const Vector &vEnd, 
-	const CBaseEntity *pTarget, int endFlags, int buildFlags, float flYaw, float goalTolerance)
+	const CBaseEntity *pTarget, WaypointFlags_t endFlags, RouteBuildFlags_e buildFlags, float flYaw, float goalTolerance)
 {
 	return BuildComplexRoute( NAV_FLY, vStart, vEnd, pTarget, 
 		endFlags, buildFlags, flYaw, goalTolerance, MAX_LOCAL_NAV_DIST_FLY[UseStrongOptimizations()] );
@@ -475,7 +475,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildTriangulationRoute(
 	  const Vector &vStart, // from where
 	  const Vector &vEnd,	// to where
 	  const CBaseEntity *pTarget,	// an entity I can ignore
-	  int endFlags,			// add these WP flags to the last waypoint
+	  WaypointFlags_t endFlags,			// add these WP flags to the last waypoint
 	  float flYaw,			// ideal yaw for the last waypoint
 	  float flDistToBlocker,// how far away is the obstruction from the start?
 	  Navigation_t navType)
@@ -748,7 +748,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildOBBAvoidanceRoute(	const Vector &vStart, con
 // Input  :
 // Output : Returns a route if successful or NULL if no local route was possible
 //-----------------------------------------------------------------------------
-AI_Waypoint_t *CAI_Pathfinder::BuildLocalRoute(const Vector &vStart, const Vector &vEnd, const CBaseEntity *pTarget, int endFlags, int buildFlags, float goalTolerance)
+AI_Waypoint_t *CAI_Pathfinder::BuildLocalRoute(const Vector &vStart, const Vector &vEnd, const CBaseEntity *pTarget, WaypointFlags_t endFlags, RouteBuildFlags_e buildFlags, float goalTolerance)
 {
 	AI_PROFILE_SCOPE( CAI_Pathfinder_BuildLocalRoute );
 
@@ -821,14 +821,14 @@ AI_Waypoint_t *CAI_Pathfinder::BuildLocalRoute(const Vector &vStart, const Vecto
 
 ConVar ai_no_local_paths( "ai_no_local_paths", "0" );
 
-AI_Waypoint_t *CAI_Pathfinder::BuildRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity *pTarget, float goalTolerance, Navigation_t curNavType, bool bLocalSucceedOnWithinTolerance, int nBuildFlags )
+AI_Waypoint_t *CAI_Pathfinder::BuildRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity *pTarget, float goalTolerance, Navigation_t curNavType, bool bLocalSucceedOnWithinTolerance, RouteBuildFlags_e nBuildFlags )
 {
 	Assert( ( nBuildFlags & ( bits_BUILD_GROUND | bits_BUILD_JUMP | bits_BUILD_FLY | bits_BUILD_CLIMB |
-		bits_BUILD_CRAWL | bits_BUILD_GIVEWAY | bits_BUILD_TRIANG | bits_BUILD_IGNORE_NPCS | bits_BUILD_COLLIDE_NPCS ) ) == 0 );
+		bits_BUILD_CRAWL | bits_BUILD_GIVEWAY | bits_BUILD_TRIANG | bits_BUILD_IGNORE_NPCS | bits_BUILD_COLLIDE_NPCS ) ) == bits_BUILD_NO_FLAGS );
 	nBuildFlags &= ~( bits_BUILD_GROUND | bits_BUILD_JUMP | bits_BUILD_FLY | bits_BUILD_CLIMB |
 		bits_BUILD_CRAWL | bits_BUILD_GIVEWAY | bits_BUILD_TRIANG | bits_BUILD_IGNORE_NPCS | bits_BUILD_COLLIDE_NPCS );
 
-	bool bTryLocal = !ai_no_local_paths.GetBool() && ( ( nBuildFlags & bits_BUILD_NO_LOCAL_NAV ) == 0 );
+	bool bTryLocal = !ai_no_local_paths.GetBool() && ( ( nBuildFlags & bits_BUILD_NO_LOCAL_NAV ) == bits_BUILD_NO_FLAGS );
 
 	// Set up build flags
 	if (curNavType == NAV_CLIMB)
@@ -865,7 +865,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildRoute( const Vector &vStart, const Vector &v
 	//  First try a local route 
 	if ( bTryLocal && CanUseLocalNavigation() )
 	{
-		int nLocalBuildFlags = nBuildFlags;
+		RouteBuildFlags_e nLocalBuildFlags = nBuildFlags;
 		if ( CapabilitiesGet() & bits_CAP_NO_LOCAL_NAV_CRAWL )
 		{
 			nLocalBuildFlags &= ~bits_BUILD_CRAWL;
@@ -930,7 +930,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildRadialRoute( const Vector &vStartPos, const 
 	AI_Waypoint_t*	pNextRoute	= NULL; // Next leg of the route
 	AI_Waypoint_t*  pLastRoute	= NULL; // The last route chain added to the head
 	Vector			vLastPos	= vStartPos; // Last position along the arc in worldspace
-	int				fRouteBits = ( bAirRoute ) ? bits_BUILD_FLY : bits_BUILD_GROUND; // Whether this is an air route or not
+	RouteBuildFlags_e				fRouteBits = ( bAirRoute ) ? bits_BUILD_FLY : bits_BUILD_GROUND; // Whether this is an air route or not
 	float			flCurAngle = flStartAngle; // Starting angle
 	Vector			vNextPos;
 	
@@ -950,7 +950,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildRadialRoute( const Vector &vStartPos, const 
 		vNextPos.y	+= flRadius * sin( flCurAngle );
 
 		// Build a route from the last position to the current one
-		pNextRoute = BuildLocalRoute( vLastPos, vNextPos, NULL, 0, fRouteBits, goalTolerance);
+		pNextRoute = BuildLocalRoute( vLastPos, vNextPos, NULL, bits_WP_NO_FLAGS, fRouteBits, goalTolerance);
 
 		// If we can't find a route, we failed
 		if ( pNextRoute == NULL )
@@ -983,7 +983,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildRadialRoute( const Vector &vStartPos, const 
 		return NULL;
 
 	// Append a path to the final position
-	pLastRoute = BuildLocalRoute( vLastPos, vGoalPos, NULL, 0, bAirRoute ? bits_BUILD_FLY : bits_BUILD_GROUND, goalTolerance );	
+	pLastRoute = BuildLocalRoute( vLastPos, vGoalPos, NULL, bits_WP_NO_FLAGS, bAirRoute ? bits_BUILD_FLY : bits_BUILD_GROUND, goalTolerance );	
 	if ( pLastRoute == NULL )
 		return NULL;
 
@@ -1004,7 +1004,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildRadialRoute( const Vector &vStartPos, const 
 // Output : Returns a route if sucessful or NULL if no node route was possible
 //-----------------------------------------------------------------------------
 
-AI_Waypoint_t *CAI_Pathfinder::BuildNavMeshRoute(const Vector &vStart, const Vector &vEnd, int buildFlags, float goalTolerance)
+AI_Waypoint_t *CAI_Pathfinder::BuildNavMeshRoute(const Vector &vStart, const Vector &vEnd, RouteBuildFlags_e buildFlags, float goalTolerance)
 {
 	AI_PROFILE_SCOPE( CAI_Pathfinder_BuildNodeRoute );
 
@@ -1221,7 +1221,7 @@ bool CAI_Pathfinder::Triangulate( Navigation_t navType, const Vector &vecStart, 
 //-----------------------------------------------------------------------------
 
 #if !defined SWDS || 1
-void CAI_Pathfinder::DrawDebugGeometryOverlays(int npcDebugOverlays) 
+void CAI_Pathfinder::DrawDebugGeometryOverlays(DebugOverlayBits_t npcDebugOverlays) 
 {
 #ifndef SWDS
 	if(!NDebugOverlay::IsEnabled())
@@ -1233,7 +1233,7 @@ void CAI_Pathfinder::DrawDebugGeometryOverlays(int npcDebugOverlays)
 #endif
 
 #ifndef SWDS
-void CAI_Pathfinder::CTriDebugOverlay::Draw(int npcDebugOverlays) 
+void CAI_Pathfinder::CTriDebugOverlay::Draw(DebugOverlayBits_t npcDebugOverlays) 
 {
 	if (m_debugTriOverlayLine) 
 	{

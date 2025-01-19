@@ -100,10 +100,10 @@ bool CAI_MoveProbe::ShouldBrushBeIgnored( CBaseEntity *pEntity )
 
 //-----------------------------------------------------------------------------
 
-void CAI_MoveProbe::TraceLine( const Vector &vecStart, const Vector &vecEnd, unsigned int mask, 
+void CAI_MoveProbe::TraceLine( const Vector &vecStart, const Vector &vecEnd, ContentsFlags_t mask, 
 							   bool bUseCollisionGroup, trace_t *pResult ) const
 {
-	int collisionGroup 	= (bUseCollisionGroup) ? 
+	Collision_Group_t collisionGroup 	= (bUseCollisionGroup) ? 
 							GetCollisionGroup() : 
 							COLLISION_GROUP_NONE;
 
@@ -140,7 +140,7 @@ CAI_MoveProbe::~CAI_MoveProbe()
 
 void CAI_MoveProbe::TraceHull( 
 	const Vector &vecStart, const Vector &vecEnd, const Vector &hullMin, 
-	const Vector &hullMax, unsigned int mask, trace_t *pResult ) const
+	const Vector &hullMax, ContentsFlags_t mask, trace_t *pResult ) const
 {
 	AI_PROFILE_SCOPE( CAI_MoveProbe_TraceHull );
 
@@ -177,7 +177,7 @@ void CAI_MoveProbe::TraceHull(
 //-----------------------------------------------------------------------------
 
 void CAI_MoveProbe::TraceHull( const Vector &vecStart, const Vector &vecEnd, 
-	unsigned int mask, trace_t *pResult ) const
+	ContentsFlags_t mask, trace_t *pResult ) const
 {
 	TraceHull( vecStart, vecEnd, WorldAlignMins(), WorldAlignMaxs(), mask, pResult);
 }
@@ -279,7 +279,7 @@ bool CAI_MoveProbe::CheckStep( const CheckStepArgs_t &args, CheckStepResult_t *p
 	AI_PROFILE_SCOPE( CAI_MoveProbe_CheckStep );
 
 	Vector vecEnd;
-	unsigned collisionMask = args.collisionMask;
+	ContentsFlags_t collisionMask = args.collisionMask;
 	VectorMA( args.vecStart, args.stepSize, args.vecStepDir, vecEnd );
 	
 	pResult->endPoint = args.vecStart;
@@ -534,7 +534,7 @@ bool CAI_MoveProbe::CheckStep( const CheckStepArgs_t &args, CheckStepResult_t *p
 //-----------------------------------------------------------------------------
 // Confirm 3D connectivity between 2 nodes
 //-----------------------------------------------------------------------------
-bool CAI_MoveProbe::Confirm3DConnectivity( AIMoveTrace_t *pMoveTrace, unsigned flags, const Vector &vecDesiredEnd )	const
+bool CAI_MoveProbe::Confirm3DConnectivity( AIMoveTrace_t *pMoveTrace, AI_TestGroundMoveFlags_t flags, const Vector &vecDesiredEnd )	const
 {
 	// FIXME: If you started on a ledge and ended on a ledge, 
 	// should it return an error condition (that you hit the world)?
@@ -572,7 +572,7 @@ bool CAI_MoveProbe::Confirm3DConnectivity( AIMoveTrace_t *pMoveTrace, unsigned f
 // is 2 1/2D, and we may end up on a ledge above or below the actual desired endpoint.
 //-----------------------------------------------------------------------------
 bool CAI_MoveProbe::TestGroundMove( const Vector &vecActualStart, const Vector &vecDesiredEnd, 
-	unsigned int collisionMask, float pctToCheckStandPositions, unsigned flags, AIMoveTrace_t *pMoveTrace ) const
+	ContentsFlags_t collisionMask, float pctToCheckStandPositions, AI_TestGroundMoveFlags_t flags, AIMoveTrace_t *pMoveTrace ) const
 {
 	AIMoveTrace_t ignored;
 	if ( !pMoveTrace )
@@ -767,7 +767,7 @@ bool CAI_MoveProbe::TestGroundMove( const Vector &vecActualStart, const Vector &
 // Will return the results of the attempt in the AIMoveTrace_t structure
 //-----------------------------------------------------------------------------
 void CAI_MoveProbe::GroundMoveLimit( const Vector &vecStart, const Vector &vecEnd, 
-	unsigned int collisionMask, const CBaseEntity *pTarget, unsigned testGroundMoveFlags, float pctToCheckStandPositions, AIMoveTrace_t* pTrace ) const
+	ContentsFlags_t collisionMask, const CBaseEntity *pTarget, AI_TestGroundMoveFlags_t testGroundMoveFlags, float pctToCheckStandPositions, AIMoveTrace_t* pTrace ) const
 {
 	// NOTE: Never call this directly!!! Always use MoveLimit!!
 	// This assertion should ensure this happens
@@ -834,7 +834,7 @@ void CAI_MoveProbe::GroundMoveLimit( const Vector &vecStart, const Vector &vecEn
 //			if the move fails, returns the distance remaining to vecEnd
 //-----------------------------------------------------------------------------
 void CAI_MoveProbe::FlyMoveLimit( const Vector &vecStart, const Vector &vecEnd, 
-	unsigned int collisionMask, const CBaseEntity *pTarget, AIMoveTrace_t *pMoveTrace ) const
+	ContentsFlags_t collisionMask, const CBaseEntity *pTarget, AIMoveTrace_t *pMoveTrace ) const
 {
 	// NOTE: Never call this directly!!! Always use MoveLimit!!
 	// This assertion should ensure this happens
@@ -878,7 +878,7 @@ void CAI_MoveProbe::FlyMoveLimit( const Vector &vecStart, const Vector &vecEnd,
 //			that can be travelled before an obstacle is hit
 //-----------------------------------------------------------------------------
 void CAI_MoveProbe::JumpMoveLimit( const Vector &vecStart, const Vector &vecEnd, 
-	unsigned int collisionMask, const CBaseEntity *pTarget, AIMoveTrace_t *pMoveTrace ) const
+	ContentsFlags_t collisionMask, const CBaseEntity *pTarget, AIMoveTrace_t *pMoveTrace ) const
 {
 	pMoveTrace->vJumpVelocity.Init( 0, 0, 0 );
 
@@ -1104,8 +1104,8 @@ void CAI_MoveProbe::ClimbMoveLimit( const Vector &vecStart, const Vector &vecEnd
 // Purpose: 
 //-----------------------------------------------------------------------------
 bool CAI_MoveProbe::MoveLimit( Navigation_t navType, const Vector &vecStart, 
-	const Vector &vecEnd, unsigned int collisionMask, const CBaseEntity *pTarget, 
-	float pctToCheckStandPositions, unsigned flags, AIMoveTrace_t* pTrace)
+	const Vector &vecEnd, ContentsFlags_t collisionMask, const CBaseEntity *pTarget, 
+	float pctToCheckStandPositions, AI_MoveLimitFlags_t flags, AIMoveTrace_t* pTrace)
 {
 	AIMoveTrace_t ignoredTrace;
 	if ( !pTrace )
@@ -1124,7 +1124,7 @@ bool CAI_MoveProbe::MoveLimit( Navigation_t navType, const Vector &vecStart,
 	case NAV_CRAWL:
 	case NAV_GROUND:	
 	{
-		unsigned testGroundMoveFlags = AITGM_DEFAULT;
+		AI_TestGroundMoveFlags_t testGroundMoveFlags = AITGM_DEFAULT;
 		if (flags & AIMLF_2D )
 			testGroundMoveFlags |= AITGM_2D;
 		if ( flags & AIMLF_DRAW_RESULTS )
@@ -1241,7 +1241,7 @@ Vector CAI_MoveProbe::CalcJumpLaunchVelocity(const Vector &startPos, const Vecto
 
 //-----------------------------------------------------------------------------
 
-bool CAI_MoveProbe::CheckStandPosition( const Vector &vecStart, unsigned int collisionMask ) const
+bool CAI_MoveProbe::CheckStandPosition( const Vector &vecStart, ContentsFlags_t collisionMask ) const
 {
 	// If we're not supposed to do ground checks, always say we can stand there
 	if ( (GetOuter()->CapabilitiesGet() & bits_CAP_SKIP_NAV_GROUND_CHECK) )
@@ -1331,7 +1331,7 @@ bool CAI_MoveProbe::CheckStandPosition( const Vector &vecStart, unsigned int col
 
 //-----------------------------------------------------------------------------
 
-bool CAI_MoveProbe::OldCheckStandPosition( const Vector &vecStart, unsigned int collisionMask ) const
+bool CAI_MoveProbe::OldCheckStandPosition( const Vector &vecStart, ContentsFlags_t collisionMask ) const
 {
 	AI_PROFILE_SCOPE( CAI_Motor_CheckStandPosition );
 
@@ -1410,7 +1410,7 @@ bool CAI_MoveProbe::OldCheckStandPosition( const Vector &vecStart, unsigned int 
 // Computes a point on the floor below the start point, somewhere
 // between vecStart.z + flStartZ and vecStart.z + flEndZ
 //-----------------------------------------------------------------------------
-bool CAI_MoveProbe::FloorPoint( const Vector &vecStart, unsigned int collisionMask, 
+bool CAI_MoveProbe::FloorPoint( const Vector &vecStart, ContentsFlags_t collisionMask, 
 						   float flStartZ, float flEndZ, Vector *pVecResult ) const
 {
 	AI_PROFILE_SCOPE( CAI_Motor_FloorPoint );
@@ -1459,13 +1459,13 @@ bool CAI_MoveProbe::FloorPoint( const Vector &vecStart, unsigned int collisionMa
 //-----------------------------------------------------------------------------
 // A floorPoint that is useful only in the context of iterative movement
 //-----------------------------------------------------------------------------
-bool CAI_MoveProbe::IterativeFloorPoint( const Vector &vecStart, unsigned int collisionMask, Vector *pVecResult ) const
+bool CAI_MoveProbe::IterativeFloorPoint( const Vector &vecStart, ContentsFlags_t collisionMask, Vector *pVecResult ) const
 {
 	return IterativeFloorPoint( vecStart, collisionMask, 0, pVecResult );
 }
 
 //-----------------------------------------------------------------------------
-bool CAI_MoveProbe::IterativeFloorPoint( const Vector &vecStart, unsigned int collisionMask, float flAddedStep, Vector *pVecResult ) const
+bool CAI_MoveProbe::IterativeFloorPoint( const Vector &vecStart, ContentsFlags_t collisionMask, float flAddedStep, Vector *pVecResult ) const
 {
 	// Used by the movement code, it guarantees we don't move outside a step
 	// height from our current position

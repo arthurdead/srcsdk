@@ -52,12 +52,13 @@ class ITraceFilter;
 
 enum AIMsgFlags : unsigned char
 {
+	AIMF_NO_FLAGS = 0,
 	AIMF_IGNORE_SELECTED = 0x01
 };
 
 FLAGENUM_OPERATORS( AIMsgFlags, unsigned char )
 
-void DevMsg( CAI_BaseNPC *pAI, unsigned flags, PRINTF_FORMAT_STRING const char *pszFormat, ... ) FMTFUNCTION( 3, 4 );
+void DevMsg( CAI_BaseNPC *pAI, AIMsgFlags flags, PRINTF_FORMAT_STRING const char *pszFormat, ... ) FMTFUNCTION( 3, 4 );
 void DevMsg( CAI_BaseNPC *pAI, PRINTF_FORMAT_STRING const char *pszFormat, ... ) FMTFUNCTION( 2, 3 );
 
 

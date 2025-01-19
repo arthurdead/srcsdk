@@ -478,7 +478,7 @@ bool CAI_FreePass::ShouldAllowFVisible(bool bBaseResult )
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-CTraceFilterNav::CTraceFilterNav( CAI_BaseNPC *pProber, bool bIgnoreTransientEntities, const IServerEntity *passedict, int collisionGroup, bool bAllowPlayerAvoid ) : 
+CTraceFilterNav::CTraceFilterNav( CAI_BaseNPC *pProber, bool bIgnoreTransientEntities, const IServerEntity *passedict, Collision_Group_t collisionGroup, bool bAllowPlayerAvoid ) : 
 	CTraceFilterSimple( passedict, collisionGroup ),
 	m_pProber(pProber),
 	m_bIgnoreTransientEntities(bIgnoreTransientEntities),
@@ -488,7 +488,7 @@ CTraceFilterNav::CTraceFilterNav( CAI_BaseNPC *pProber, bool bIgnoreTransientEnt
 }
 
 //-----------------------------------------------------------------------------
-bool CTraceFilterNav::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterNav::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	IServerEntity *pServerEntity = (IServerEntity*)pHandleEntity;
 	CBaseEntity *pEntity = (CBaseEntity *)pServerEntity;

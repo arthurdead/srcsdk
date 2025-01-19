@@ -158,7 +158,7 @@ NPC_STATE CAI_SchedulesManager::GetStateID(const char *state_name)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-int CAI_SchedulesManager::GetMemoryID(const char *state_name)
+MemoryFlags_t CAI_SchedulesManager::GetMemoryID(const char *state_name)
 {
 	if		(!stricmp(state_name,"PROVOKED"))		{	return bits_MEMORY_PROVOKED;		}
 	else if (!stricmp(state_name,"INCOVER"))		{	return bits_MEMORY_INCOVER;			}
@@ -693,7 +693,7 @@ static int sched_parse_task_value(
 	} else if(paramCheck->nTypes[dataNum] == TASK_DATA_CHECK_MEMORY_ID) {
 		return schedule_parse_enum(pfile, pclassname, pfilename,
 			"Memory", "MEMORY_", false,
-			&CAI_SchedulesManager::GetMemoryID, 0,
+			&CAI_SchedulesManager::GetMemoryID, MEMORY_CLEAR,
 			dataNum, TASK_DATA_MEMORY_ID, &TaskData_t::nMemoryId
 		);
 	} else if(paramCheck->nTypes[dataNum] == TASK_DATA_CHECK_PATH_TYPE) {

@@ -26,7 +26,7 @@
 //-----------------------------------------------------------------------------
 // forward declarations
 //-----------------------------------------------------------------------------
-class	SendTable;
+class	SendTableInfo;
 class	ServerClass;
 class	IMoveHelper;
 struct  Ray_t;
@@ -34,7 +34,7 @@ class	CGameTrace;
 typedef	CGameTrace trace_t;
 struct	typedescription_t;
 struct	datamap_t;
-class	SendTable;
+class	SendTableInfo;
 class	ServerClass;
 class	IMoveHelper;
 struct  Ray_t;
@@ -247,7 +247,7 @@ public:
 	virtual void		SetAreaPortalState( int portalNumber, int isOpen ) = 0;
 	
 	// Queue a temp entity for transmission
-	virtual void		PlaybackTempEntity( IRecipientFilter& filter, float delay, const void *pSender, const SendTable *pST, int classID  ) = 0;
+	virtual void		PlaybackTempEntity( IRecipientFilter& filter, float delay, const void *pSender, const SendTableInfo *pST, int classID  ) = 0;
 	// Given a node number and the specified PVS, return with the node is in the PVS
 	virtual int			CheckHeadnodeVisible( int nodenum, const byte *pvs, int vissize ) = 0;
 	// Using area bits, cheeck whether area1 flows into area2 and vice versa (depends on area portal state)

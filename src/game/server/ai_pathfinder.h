@@ -21,11 +21,13 @@ struct OverlayLine_t;
 struct AI_Waypoint_t;
 class CAI_Pathfinder;
 class CAI_Navigator;
+enum DebugOverlayBits_t : uint64;
 
 //-----------------------------------------------------------------------------
 // The type of route to build
-enum RouteBuildFlags_e 
+enum RouteBuildFlags_e : unsigned short
 {
+	bits_BUILD_NO_FLAGS = 0,
 	bits_BUILD_GROUND		=			0x00000001, // 
 	bits_BUILD_JUMP			=			0x00000002, //
 	bits_BUILD_FLY			=			0x00000004, // 
@@ -39,6 +41,8 @@ enum RouteBuildFlags_e
 	bits_BUILD_NO_LOCAL_NAV	=			0x00000400, // No local navigation
 	bits_BUILD_UNLIMITED_DISTANCE =		0x00000800, // Path can be an unlimited distance away
 };
+
+FLAGENUM_OPERATORS( RouteBuildFlags_e, unsigned short )
 
 enum AreaType_e
 {
@@ -75,18 +79,18 @@ public:
 
 	// --------------------------------
 	
-	AI_Waypoint_t *BuildRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity *pTarget, float goalTolerance, Navigation_t curNavType = NAV_NONE, bool bLocalSucceedOnWithinTolerance = false, int nBuildFlags = 0 );
+	AI_Waypoint_t *BuildRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity *pTarget, float goalTolerance, Navigation_t curNavType = NAV_NONE, bool bLocalSucceedOnWithinTolerance = false, RouteBuildFlags_e nBuildFlags = bits_BUILD_NO_FLAGS );
 
 	// --------------------------------
 	
-	virtual AI_Waypoint_t *BuildNavMeshRoute( const Vector &vStart, const Vector &vEnd, int buildFlags, float goalTolerance );
+	virtual AI_Waypoint_t *BuildNavMeshRoute( const Vector &vStart, const Vector &vEnd, RouteBuildFlags_e buildFlags, float goalTolerance );
 
-	virtual AI_Waypoint_t *BuildLocalRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, int endFlags, int buildFlags, float goalTolerance);
+	virtual AI_Waypoint_t *BuildLocalRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, WaypointFlags_t endFlags, RouteBuildFlags_e buildFlags, float goalTolerance);
 
 	virtual AI_Waypoint_t *BuildRadialRoute( const Vector &vStartPos, const Vector &vCenterPos, const Vector &vGoalPos, float flRadius, float flArc, float flStepDist, bool bClockwise, float goalTolerance, bool bAirRoute );	
 
 	virtual AI_Waypoint_t *BuildTriangulationRoute( const Vector &vStart, 
-													const Vector &vEnd, CBaseEntity const *pTarget, int endFlags,
+													const Vector &vEnd, CBaseEntity const *pTarget, WaypointFlags_t endFlags,
 													float flYaw, float flDistToBlocker, Navigation_t navType);
 
 	virtual AI_Waypoint_t *BuildOBBAvoidanceRoute(  const Vector &vStart, const Vector &vEnd, 
@@ -101,7 +105,7 @@ public:
 	// --------------------------------
 
 #if !defined SWDS || 1
-	void DrawDebugGeometryOverlays( int m_debugOverlays );
+	void DrawDebugGeometryOverlays( DebugOverlayBits_t m_debugOverlays );
 #endif
 
 protected:
@@ -113,8 +117,8 @@ private:
 	//---------------------------------
 	friend class CPathfindNearestAreaFilter;
 
-	AI_Waypoint_t*	RouteTo(const Vector &vecOrigin, int buildFlags, const Vector &vEnd, float goalTolerance);
-	AI_Waypoint_t*	RouteFrom(const Vector &vecOrigin, int buildFlags, const Vector &vEnd, float goalTolerance);
+	AI_Waypoint_t*	RouteTo(const Vector &vecOrigin, RouteBuildFlags_e buildFlags, const Vector &vEnd, float goalTolerance);
+	AI_Waypoint_t*	RouteFrom(const Vector &vecOrigin, RouteBuildFlags_e buildFlags, const Vector &vEnd, float goalTolerance);
 
 	//---------------------------------
 	
@@ -123,18 +127,18 @@ private:
 	// --------------------------------
 	// Builds a simple route (no triangulation, no making way)
 	AI_Waypoint_t	*BuildSimpleRoute( Navigation_t navType, const Vector &vStart, const Vector &vEnd, 
-		const CBaseEntity *pTarget, int endFlags, AreaType_e areaTargetType, float flYaw);
+		const CBaseEntity *pTarget, WaypointFlags_t endFlags, AreaType_e areaTargetType, float flYaw);
 
 	// Builds a complex route (triangulation, making way)
 	AI_Waypoint_t	*BuildComplexRoute( Navigation_t navType, const Vector &vStart, 
-		const Vector &vEnd, const CBaseEntity *pTarget, int endFlags,
-		int buildFlags, float flYaw, float goalTolerance, float maxLocalNavDistance );
+		const Vector &vEnd, const CBaseEntity *pTarget, WaypointFlags_t endFlags,
+		RouteBuildFlags_e buildFlags, float flYaw, float goalTolerance, float maxLocalNavDistance );
 
-	AI_Waypoint_t	*BuildGroundRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, int endFlags, int buildFlags, float flYaw, float goalTolerance );
-	AI_Waypoint_t	*BuildFlyRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, int endFlags, int buildFlags, float flYaw, float goalTolerance );
-	AI_Waypoint_t	*BuildCrawlRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, int endFlags, int buildFlags, float flYaw, float goalTolerance );
-	AI_Waypoint_t	*BuildJumpRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, int endFlags, int buildFlags, float flYaw );
-	AI_Waypoint_t	*BuildClimbRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, int endFlags, int buildFlags, float flYaw );
+	AI_Waypoint_t	*BuildGroundRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, WaypointFlags_t endFlags, RouteBuildFlags_e buildFlags, float flYaw, float goalTolerance );
+	AI_Waypoint_t	*BuildFlyRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, WaypointFlags_t endFlags, RouteBuildFlags_e buildFlags, float flYaw, float goalTolerance );
+	AI_Waypoint_t	*BuildCrawlRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, WaypointFlags_t endFlags, RouteBuildFlags_e buildFlags, float flYaw, float goalTolerance );
+	AI_Waypoint_t	*BuildJumpRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, WaypointFlags_t endFlags, RouteBuildFlags_e buildFlags, float flYaw );
+	AI_Waypoint_t	*BuildClimbRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, WaypointFlags_t endFlags, RouteBuildFlags_e buildFlags, float flYaw );
 
 	// --------------------------------
 	
@@ -164,7 +168,7 @@ private:
 		void ClearTriOverlayLines(void);
 		void FadeTriOverlayLines(void);
 
-		void Draw(int npcDebugOverlays);
+		void Draw(DebugOverlayBits_t npcDebugOverlays);
 	private:
 		void AddTriOverlayLine(const Vector &origin, const Vector &dest, int r, int g, int b, bool noDepthTest);
 

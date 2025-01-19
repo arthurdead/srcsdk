@@ -675,7 +675,7 @@ void CPlayerAnimState::AddVCDSequenceToGestureSlot( gestureslotindex_t iGestureS
 	m_aGestureSlots[iGestureSlot].m_bAutoKill = bAutoKill;
 	m_aGestureSlots[iGestureSlot].m_bActive = true;
 	m_aGestureSlots[iGestureSlot].m_pAnimLayer->m_nActivity = iGestureActivity;
-	m_aGestureSlots[iGestureSlot].m_pAnimLayer->m_nOrder = iGestureSlot;
+	m_aGestureSlots[iGestureSlot].m_pAnimLayer->m_nOrder = (unsigned int)iGestureSlot;
 	m_aGestureSlots[iGestureSlot].m_pAnimLayer->m_nPriority = 0;
 	m_aGestureSlots[iGestureSlot].m_pAnimLayer->m_flCycle = flCycle;
 	m_aGestureSlots[iGestureSlot].m_pAnimLayer->m_flPrevCycle = 0.0f;

@@ -81,7 +81,7 @@ protected:
 	const Vector&		WorldAlignMaxs() const;
 	Vector 				WorldSpaceCenter() const;
 	
-	int 				GetCollisionGroup() const;
+	Collision_Group_t 				GetCollisionGroup() const;
 	
 	void				SetSolid( SolidType_t val );
 	SolidType_t			GetSolid() const;
