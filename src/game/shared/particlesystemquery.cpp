@@ -63,9 +63,9 @@ public:
 	// Inherited from IParticleSystemQuery
 	virtual void GetLightingAtPoint( const Vector& vecOrigin, Color &cTint );
 	virtual void TraceLine( const Vector& vecAbsStart,
-							const Vector& vecAbsEnd, unsigned int mask, 
+							const Vector& vecAbsEnd, ContentsFlags_t mask, 
 							const IHandleEntity *ignore,
-							int collisionGroup, CBaseTrace *ptr );
+							Collision_Group_t collisionGroup, CBaseTrace *ptr );
 
 	virtual bool MovePointInsideControllingObject( CParticleCollection *pParticles,
 												   void *pObject,
@@ -95,7 +95,7 @@ public:
 		int *pHitBoxIndexOut
 		);
 
-	virtual int GetCollisionGroupFromName( const char *pszCollisionGroupName );
+	virtual Collision_Group_t GetCollisionGroupFromName( const char *pszCollisionGroupName );
 
 	virtual int GetRayTraceEnvironmentFromName( const char *pszRtEnvName );
 
@@ -123,7 +123,7 @@ public:
 	virtual Vector GetCurrentViewOrigin();
 
 	virtual int GetActivityCount();
-	virtual const char *GetActivityNameFromIndex( int nActivityIndex );
+	virtual const char *GetActivityNameFromIndex( Activity nActivityIndex );
 
 	virtual float GetPixelVisibility( int *pQueryHandle, const Vector &vecOrigin, float flScale );
 	virtual void SetUpLightingEnvironment( const Vector& pos );
@@ -139,7 +139,7 @@ public:
 	}
 
 	virtual void DrawModel( const model_t *pModel, const matrix3x4_t &DrawMatrix, CParticleCollection *pParticles, int nParticleNumber, int nBodyPart, int nSubModel,
-							int nAnimationSequence = 0, float flAnimationRate = 30.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f );
+							sequence_t nAnimationSequence = INVALID_SEQUENCE, float flAnimationRate = 30.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f );
 
 
 	virtual void FinishDrawModels( CParticleCollection *pParticles )
@@ -217,9 +217,9 @@ void CParticleSystemQuery::SetUpLightingEnvironment( const Vector& pos )
 }
 
 void CParticleSystemQuery::TraceLine( const Vector& vecAbsStart,
-									  const Vector& vecAbsEnd, unsigned int mask, 
+									  const Vector& vecAbsEnd, ContentsFlags_t mask, 
 									  const IHandleEntity *ignore,
-									  int collisionGroup, CBaseTrace *ptr )
+									  Collision_Group_t collisionGroup, CBaseTrace *ptr )
 {
 	bool bDoTrace = false;
 #ifndef GAME_DLL
@@ -742,7 +742,7 @@ int CParticleSystemQuery::GetRayTraceEnvironmentFromName( const char *pszRtEnvNa
 struct CollisionGroupNameRecord_t
 {
 	const char *m_pszGroupName;
-	int m_nGroupID;
+	Collision_Group_t m_nGroupID;
 };
 
 
@@ -759,7 +759,7 @@ static CollisionGroupNameRecord_t s_NameMap[]={
 };
 
 
-int CParticleSystemQuery::GetCollisionGroupFromName( const char *pszCollisionGroupName )
+Collision_Group_t CParticleSystemQuery::GetCollisionGroupFromName( const char *pszCollisionGroupName )
 {
 	for(int i = 0; i < ARRAYSIZE( s_NameMap ); i++ )
 	{
@@ -861,7 +861,7 @@ static void SetBodygroup( studiohdr_t *pstudiohdr, int &body, int iGroup, int iV
 
 // callback to draw models given abstract ptr
 void CParticleSystemQuery::DrawModel( const model_t *pModel, const matrix3x4_t &DrawMatrix, CParticleCollection *pParticles, int nParticleNumber, int nBodyPart, int nSubModel,
-									  int nAnimationSequence, float flAnimationRate, float r, float g, float b, float a )
+									  sequence_t nAnimationSequence, float flAnimationRate, float r, float g, float b, float a )
 {
 #ifdef CLIENT_DLL
 	if ( pModel )
@@ -875,7 +875,7 @@ void CParticleSystemQuery::DrawModel( const model_t *pModel, const matrix3x4_t &
 		SetBodygroup( pStudioHdr, MDL.m_nBody, nBodyPart, nSubModel );
 		MDL.m_Color = Color( r * 255, g * 255, b * 255, a * 255 );
 
-		MDL.m_nSequence = nAnimationSequence;
+		MDL.m_nSequence = (nAnimationSequence != INVALID_SEQUENCE) ? nAnimationSequence : ROOT_SEQUENCE;
 		MDL.m_flPlaybackRate = flAnimationRate;
 		MDL.m_flTime = pParticles->m_flCurTime;
 
@@ -997,7 +997,7 @@ int CParticleSystemQuery::GetActivityCount()
 {
 	return ActivityList_HighestIndex();
 }
-const char* CParticleSystemQuery::GetActivityNameFromIndex( int nActivityIndex )
+const char* CParticleSystemQuery::GetActivityNameFromIndex( Activity nActivityIndex )
 {
 	return ActivityList_NameForIndex( (Activity)nActivityIndex );
 }

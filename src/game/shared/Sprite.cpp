@@ -145,7 +145,7 @@ END_NETWORK_TABLE()
 	#define CSprite C_Sprite
 #endif
 
-CSharedSprite::CSprite( uint64 iEFlags )
+CSharedSprite::CSprite( EntityFlags_t iEFlags )
 	: CSharedBaseEntity(iEFlags)
 #if defined( CLIENT_DLL )
 	, C_SpriteRenderer()
@@ -324,7 +324,7 @@ EdictStateFlags_t CSharedSprite::UpdateTransmitState( void )
 	}
 }
 
-int CSharedSprite::ShouldTransmit( const CCheckTransmitInfo *pInfo )
+EdictStateFlags_t CSharedSprite::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 {
 	// Certain entities like sprites and ropes are strewn throughout the level and they rarely change.
 	// For these entities, it's more efficient to transmit them once and then always leave them on

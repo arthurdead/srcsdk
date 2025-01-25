@@ -75,15 +75,15 @@ public:
 	// NOTE: setting iEntIndex to -1 will cause the sound to be emitted from the local
 	// player (client-side only)
 	virtual void EmitSound( IRecipientFilter& filter, int iEntIndex, int iChannel, const char *pSample, 
-		float flVolume, float flAttenuation, int iFlags = 0, int iPitch = PITCH_NORM, int iSpecialDSP = 0, 
+		float flVolume, float flAttenuation, SoundFlags_t iFlags = SND_NOFLAGS, int iPitch = PITCH_NORM, int iSpecialDSP = 0, 
 		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, CUtlVector< Vector >* pUtlVecOrigins = NULL, bool bUpdatePositions = true, float soundtime = 0.0f, int speakerentity = -1 ) = 0;
 
 	virtual void EmitSound( IRecipientFilter& filter, int iEntIndex, int iChannel, const char *pSample, 
-		float flVolume, soundlevel_t iSoundlevel, int iFlags = 0, int iPitch = PITCH_NORM, int iSpecialDSP = 0, 
+		float flVolume, soundlevel_t iSoundlevel, SoundFlags_t iFlags = SND_NOFLAGS, int iPitch = PITCH_NORM, int iSpecialDSP = 0, 
 		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, CUtlVector< Vector >* pUtlVecOrigins = NULL, bool bUpdatePositions = true, float soundtime = 0.0f, int speakerentity = -1 ) = 0;
 
 	virtual void EmitSentenceByIndex( IRecipientFilter& filter, int iEntIndex, int iChannel, int iSentenceIndex, 
-		float flVolume, soundlevel_t iSoundlevel, int iFlags = 0, int iPitch = PITCH_NORM,int iSpecialDSP = 0, 
+		float flVolume, soundlevel_t iSoundlevel, SoundFlags_t iFlags = SND_NOFLAGS, int iPitch = PITCH_NORM,int iSpecialDSP = 0, 
 		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, CUtlVector< Vector >* pUtlVecOrigins = NULL, bool bUpdatePositions = true, float soundtime = 0.0f, int speakerentity = -1 ) = 0;
 
 	virtual void StopSound( int iEntIndex, int iChannel, const char *pSample ) = 0;
@@ -99,7 +99,7 @@ public:
 	
 	// emit an "ambient" sound that isn't spatialized
 	// only available on the client, assert on server
-	virtual void EmitAmbientSound( const char *pSample, float flVolume, int iPitch = PITCH_NORM, int flags = 0, float soundtime = 0.0f ) = 0;
+	virtual void EmitAmbientSound( const char *pSample, float flVolume, int iPitch = PITCH_NORM, SoundFlags_t flags = SND_NOFLAGS, float soundtime = 0.0f ) = 0;
 
 
 //	virtual EntChannel_t	CreateEntChannel() = 0;

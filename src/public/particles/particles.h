@@ -219,9 +219,9 @@ class IParticleSystemQuery : public IAppSystem
 public:
 	virtual void GetLightingAtPoint( const Vector& vecOrigin, Color &tint ) = 0;
 	virtual void TraceLine( const Vector& vecAbsStart,
-							const Vector& vecAbsEnd, unsigned int mask, 
+							const Vector& vecAbsEnd, ContentsFlags_t mask, 
 							const class IHandleEntity *ignore,
-							int collisionGroup,
+							Collision_Group_t collisionGroup,
 							CBaseTrace *ptr ) = 0;
 
 	// given a possible spawn point, tries to movie it to be on or in the source object. returns
@@ -240,9 +240,9 @@ public:
 		return true;
 	}
 
-	virtual int GetCollisionGroupFromName( const char *pszCollisionGroupName )
+	virtual Collision_Group_t GetCollisionGroupFromName( const char *pszCollisionGroupName )
 	{
-		return 0;											// == COLLISION_GROUP_NONE
+		return COLLISION_GROUP_NONE;											// == COLLISION_GROUP_NONE
 	}
 	
 	virtual void GetRandomPointsOnControllingObjectHitBox( 
@@ -316,7 +316,7 @@ public:
 
 	virtual int GetActivityCount() = 0;
 
-	virtual const char *GetActivityNameFromIndex( int nActivityIndex ) { return 0; }
+	virtual const char *GetActivityNameFromIndex( Activity nActivityIndex ) { return NULL; }
 
 	virtual void PreSimulate( ) = 0;
 
@@ -327,7 +327,7 @@ public:
 	virtual const model_t *GetModel( char const *pMdlName ) { return NULL; }
 
 	virtual void DrawModel( const model_t *pModel, const matrix3x4_t &DrawMatrix, CParticleCollection *pParticles, int nParticleNumber, int nBodyPart, int nSubModel,
-							int nAnimationSequence = 0, float flAnimationRate = 30.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f ) = 0;
+							sequence_t nAnimationSequence = INVALID_SEQUENCE, float flAnimationRate = 30.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f ) = 0;
 
 	virtual void BeginDrawModels( int nNumModels, Vector const &vecCenter, CParticleCollection *pParticles ) {}
 

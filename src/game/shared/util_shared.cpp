@@ -300,7 +300,7 @@ bool StandardFilterRules( IHandleEntity *pHandleEntity, ContentsFlags_t fContent
 
 	if ( ( modelinfo->GetModelType( pModel ) != mod_brush ) || (solid != SOLID_BSP && solid != SOLID_VPHYSICS) )
 	{
-		if ( (fContentsMask & CONTENTS_MONSTER) == 0 )
+		if ( (fContentsMask & CONTENTS_MONSTER) == CONTENTS_EMPTY )
 			return false;
 	}
 
@@ -426,7 +426,7 @@ bool CTraceFilterSkipTwoEntities::ShouldHitEntity( IHandleEntity *pHandleEntity,
 //-----------------------------------------------------------------------------
 // Trace filter that can take a list of entities to ignore
 //-----------------------------------------------------------------------------
-CTraceFilterSimpleList::CTraceFilterSimpleList( int collisionGroup ) :
+CTraceFilterSimpleList::CTraceFilterSimpleList( Collision_Group_t collisionGroup ) :
 	CTraceFilterSimple( NULL, collisionGroup )
 {
 }
@@ -729,7 +729,7 @@ Collision_Group_t UTIL_CollisionGroupForEntity( CSharedBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Sweeps a particular entity through the world 
 //-----------------------------------------------------------------------------
-void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, unsigned int mask, trace_t *ptr )
+void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, ContentsFlags_t mask, trace_t *ptr )
 {
 	ICollideable *pCollision = pEntity->GetCollideable();
 
@@ -747,7 +747,7 @@ void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, co
 }
 
 void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
-					  unsigned int mask, const IHandleEntity *pIgnore, int nCollisionGroup, trace_t *ptr )
+					  ContentsFlags_t mask, const IHandleEntity *pIgnore, Collision_Group_t nCollisionGroup, trace_t *ptr )
 {
 	ICollideable *pCollision;
 	pCollision = pEntity->GetCollideable();
@@ -766,7 +766,7 @@ void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, co
 }
 
 void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
-					  unsigned int mask, ITraceFilter *pFilter, trace_t *ptr )
+					  ContentsFlags_t mask, ITraceFilter *pFilter, trace_t *ptr )
 {
 	ICollideable *pCollision;
 	pCollision = pEntity->GetCollideable();
@@ -785,13 +785,13 @@ void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, co
 // ----
 // This is basically a regular TraceLine that uses the FilterEntity filter.
 void UTIL_TraceLineFilterEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
-					   unsigned int mask, int nCollisionGroup, trace_t *ptr )
+					   ContentsFlags_t mask, Collision_Group_t nCollisionGroup, trace_t *ptr )
 {
 	CTraceFilterEntity traceFilter( pEntity, nCollisionGroup );
 	UTIL_TraceLine( vecAbsStart, vecAbsEnd, mask, &traceFilter, ptr );
 }
 
-void UTIL_ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, unsigned int mask, ITraceFilter *filter, trace_t *tr )
+void UTIL_ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, ContentsFlags_t mask, ITraceFilter *filter, trace_t *tr )
 {
 	trace_t playerTrace;
 	Ray_t ray;
@@ -880,7 +880,7 @@ void UTIL_Tracer( const Vector &vecStart, const Vector &vecEnd, int iEntIndex,
 }
 
 
-void UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color, int amount )
+void UTIL_BloodDrips( const Vector &origin, const Vector &direction, BloodColor_t color, int amount )
 {
 	IPredictionSystem::SuppressHostEvents( NULL );
 
@@ -908,7 +908,7 @@ void UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color, 
 	}
 }	
 
-bool UTIL_ShouldShowBlood( int color )
+bool UTIL_ShouldShowBlood( BloodColor_t color )
 {
 	return ( color != DONT_BLEED );
 }
@@ -931,7 +931,7 @@ void UTIL_DecalTrace( trace_t *pTrace, char const *decalName )
 }
 
 
-void UTIL_BloodDecalTrace( trace_t *pTrace, int bloodColor )
+void UTIL_BloodDecalTrace( trace_t *pTrace, BloodColor_t bloodColor )
 {
 	if ( UTIL_ShouldShowBlood( bloodColor ) )
 	{
@@ -966,7 +966,7 @@ void UTIL_BloodDecalTrace( trace_t *pTrace, int bloodColor )
 //			color - 
 //			amount - 
 //-----------------------------------------------------------------------------
-void UTIL_BloodImpact( const Vector &pos, const Vector &dir, int color, int amount )
+void UTIL_BloodImpact( const Vector &pos, const Vector &dir, BloodColor_t color, int amount )
 {
 	CEffectData	data;
 
@@ -984,14 +984,14 @@ bool UTIL_IsSpaceEmpty( CSharedBaseEntity *pMainEnt, const Vector &vMin, const V
 	Vector vCenter = vMin + vHalfDims;
 
 	trace_t trace;
-	int mask = (pMainEnt) ? pMainEnt->PhysicsSolidMaskForEntity() : MASK_SOLID;
+	ContentsFlags_t mask = (pMainEnt) ? pMainEnt->PhysicsSolidMaskForEntity() : MASK_SOLID;
 	UTIL_TraceHull( vCenter, vCenter, -vHalfDims, vHalfDims, mask, pMainEnt, COLLISION_GROUP_NONE, &trace );
 
 	bool bClear = ( trace.fraction == 1 && trace.allsolid != 1 && (trace.startsolid != 1) );
 	return bClear;
 }
 
-bool UTIL_IsSpaceEmpty( CSharedBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax, unsigned int mask, ITraceFilter *pFilter )
+bool UTIL_IsSpaceEmpty( CSharedBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax, ContentsFlags_t mask, ITraceFilter *pFilter )
 {
 	Vector vHalfDims = ( vMax - vMin ) * 0.5f;
 	Vector vCenter = vMin + vHalfDims;
@@ -1958,7 +1958,7 @@ void UTIL_CalculateHolidays()
 	s_NumTotalHolidays = nNumTotalHolidays;
 	s_NumGameHolidays = nNumGameHolidays;
 
-	s_HolidaysActive = 0;
+	s_HolidaysActive = HOLIDAY_FLAG_NONE;
 	s_ActiveHolidaysString[0] = '\0';
 	s_TempHolidaysStrings[0] = '\0';
 
@@ -2039,7 +2039,7 @@ bool UTIL_IsHolidayActive( EHolidayFlags eHoliday )
 		UTIL_CalculateHolidays();
 	}
 
-	return (s_HolidaysActive & eHoliday) != 0;
+	return (s_HolidaysActive & eHoliday) != HOLIDAY_FLAG_NONE;
 }
 
 const char		   *UTIL_GetHolidayString( EHolidayFlags eHoliday )
@@ -2065,7 +2065,7 @@ const char		   *UTIL_GetHolidayString( EHolidayFlags eHoliday )
 			continue;
 		}
 
-		if((eHoliday & iHolidayFlag) != 0) {
+		if((eHoliday & iHolidayFlag) != HOLIDAY_FLAG_NONE) {
 			p = V_strncat(s_TempHolidaysStrings, s_SharedHolidaysStrings[i], s_AllHolidaysStringLen);
 			p = V_strncat(s_TempHolidaysStrings, "_or_", s_AllHolidaysStringLen);
 		}
@@ -2081,7 +2081,7 @@ const char		   *UTIL_GetHolidayString( EHolidayFlags eHoliday )
 				continue;
 			}
 
-			if((eHoliday & iHolidayFlag) != 0) {
+			if((eHoliday & iHolidayFlag) != HOLIDAY_FLAG_NONE) {
 				p = V_strncat(s_TempHolidaysStrings, s_GameHolidaysStrings[i], s_AllHolidaysStringLen);
 				p = V_strncat(s_TempHolidaysStrings, "_or_", s_AllHolidaysStringLen);
 			}
@@ -2201,7 +2201,7 @@ vision_filter_t UTIL_HolidayToVisionFilter( EHolidayFlag eHoliday)
 }
 #endif
 
-bool UTIL_FindClosestPassableSpace( const Vector &vOriginalCenter, const Vector &vExtents, const Vector &vIndecisivePush, ITraceFilter *pTraceFilter, unsigned int fMask, unsigned int iIterations, Vector &vCenterOut, int nAxisRestrictionFlags )
+bool UTIL_FindClosestPassableSpace( const Vector &vOriginalCenter, const Vector &vExtents, const Vector &vIndecisivePush, ITraceFilter *pTraceFilter, ContentsFlags_t fMask, unsigned int iIterations, Vector &vCenterOut, FlAxisDirections_t nAxisRestrictionFlags )
 {
 	Assert( vExtents != vec3_origin );
 
@@ -2277,12 +2277,12 @@ bool UTIL_FindClosestPassableSpace( const Vector &vOriginalCenter, const Vector 
 
 		//hey look, they can overlap
 		float fExtentDistribution[6];
-		fExtentDistribution[ 0 ] = vCenter.z + ( ( ( nAxisRestrictionFlags & FL_AXIS_DIRECTION_NZ ) == 0 ) ? ( -vCurrentExtents.z ) : ( 0.0f ) );	// Z-
-		fExtentDistribution[ 1 ] = vCenter.x + ( ( ( nAxisRestrictionFlags & FL_AXIS_DIRECTION_NX ) == 0 ) ? ( -vCurrentExtents.x ) : ( 0.0f ) );	// X-
-		fExtentDistribution[ 2 ] = vCenter.x + ( ( ( nAxisRestrictionFlags & FL_AXIS_DIRECTION_X ) == 0 ) ? ( vCurrentExtents.x ) : ( 0.0f ) );		// X+
-		fExtentDistribution[ 3 ] = vCenter.y + ( ( ( nAxisRestrictionFlags & FL_AXIS_DIRECTION_NY ) == 0 ) ? ( -vCurrentExtents.y ) : ( 0.0f ) );	// Y-
-		fExtentDistribution[ 4 ] = vCenter.z + ( ( ( nAxisRestrictionFlags & FL_AXIS_DIRECTION_Z ) == 0 ) ? ( vCurrentExtents.z ) : ( 0.0f ) );		// Z+
-		fExtentDistribution[ 5 ] = vCenter.y + ( ( ( nAxisRestrictionFlags & FL_AXIS_DIRECTION_Y ) == 0 ) ? ( vCurrentExtents.y ) : ( 0.0f ) );		// Y+
+		fExtentDistribution[ 0 ] = vCenter.z + ( ( ( nAxisRestrictionFlags & FL_AXIS_DIRECTION_NZ ) == FL_AXIS_DIRECTION_NONE ) ? ( -vCurrentExtents.z ) : ( 0.0f ) );	// Z-
+		fExtentDistribution[ 1 ] = vCenter.x + ( ( ( nAxisRestrictionFlags & FL_AXIS_DIRECTION_NX ) == FL_AXIS_DIRECTION_NONE ) ? ( -vCurrentExtents.x ) : ( 0.0f ) );	// X-
+		fExtentDistribution[ 2 ] = vCenter.x + ( ( ( nAxisRestrictionFlags & FL_AXIS_DIRECTION_X ) == FL_AXIS_DIRECTION_NONE ) ? ( vCurrentExtents.x ) : ( 0.0f ) );		// X+
+		fExtentDistribution[ 3 ] = vCenter.y + ( ( ( nAxisRestrictionFlags & FL_AXIS_DIRECTION_NY ) == FL_AXIS_DIRECTION_NONE ) ? ( -vCurrentExtents.y ) : ( 0.0f ) );	// Y-
+		fExtentDistribution[ 4 ] = vCenter.z + ( ( ( nAxisRestrictionFlags & FL_AXIS_DIRECTION_Z ) == FL_AXIS_DIRECTION_NONE ) ? ( vCurrentExtents.z ) : ( 0.0f ) );		// Z+
+		fExtentDistribution[ 5 ] = vCenter.y + ( ( ( nAxisRestrictionFlags & FL_AXIS_DIRECTION_Y ) == FL_AXIS_DIRECTION_NONE ) ? ( vCurrentExtents.y ) : ( 0.0f ) );		// Y+
 
 		float *pXDistribution = &fExtentDistribution[1];
 		float *pYDistribution = &fExtentDistribution[3];
@@ -2410,7 +2410,7 @@ bool UTIL_FindClosestPassableSpace( const Vector &vOriginalCenter, const Vector 
 	return false;
 }
 
-bool UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, unsigned int fMask, unsigned int iIterations, Vector &vOriginOut, Vector *pStartingPosition, int nAxisRestrictionFlags ) //assumes the object is already in a mostly passable space
+bool UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, ContentsFlags_t fMask, unsigned int iIterations, Vector &vOriginOut, Vector *pStartingPosition, FlAxisDirections_t nAxisRestrictionFlags ) //assumes the object is already in a mostly passable space
 {
 	// Don't ever do this to entities with a move parent
 	if ( pEntity->GetMoveParent() )
@@ -2443,7 +2443,7 @@ bool UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vI
 }
 
 
-bool UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, unsigned int fMask, Vector *pStartingPosition, int nAxisRestrictionFlags )
+bool UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, ContentsFlags_t fMask, Vector *pStartingPosition, FlAxisDirections_t nAxisRestrictionFlags )
 {
 	Vector vNewPos;
 	bool bWorked = UTIL_FindClosestPassableSpace( pEntity, vIndecisivePush, fMask, 100, vNewPos, pStartingPosition, nAxisRestrictionFlags );
@@ -2704,7 +2704,7 @@ int UTIL_CalcFrustumThroughConvexPolygon( const Vector *pPolyVertices, int iPoly
 // class CFlaggedEntitiesEnum
 //-----------------------------------------------------------------------------
 
-CFlaggedEntitiesEnum::CFlaggedEntitiesEnum( CSharedBaseEntity **pList, int listMax, int flagMask )
+CFlaggedEntitiesEnum::CFlaggedEntitiesEnum( CSharedBaseEntity **pList, int listMax, EntityBehaviorFlags_t flagMask )
 {
 	m_pList = pList;
 	m_listMax = listMax;

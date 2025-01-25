@@ -226,7 +226,7 @@ public:
 		g_SoundPatchCount--;
 	}
 
-	void	Init( IRecipientFilter *pFilter, CSharedBaseEntity *pEnt, int channel, const char *pSoundName, 
+	void	Init( IRecipientFilter *pFilter, CSharedBaseEntity *pEnt, SoundChannel_t channel, const char *pSoundName, 
 				soundlevel_t iSoundLevel, const Vector *pSoundOrigin, float scriptVolume = 1.0f );
 	void	ChangePitch( float pitchTarget, float deltaTime );
 	void	ChangeVolume( float volumeTarget, float deltaTime );
@@ -250,7 +250,7 @@ public:
 	void	AddPlayerPost( CSharedBasePlayer *pPlayer );
 	void	SetCloseCaptionDuration( float flDuration ) { m_flCloseCaptionDuration = flDuration; }
 
-	void	SetBaseFlags( int iFlags ) { m_baseFlags = iFlags; }
+	void	SetBaseFlags( SoundFlags_t iFlags ) { m_baseFlags = iFlags; }
 	
 	// Returns the ent index
 	int		EntIndex() const;
@@ -275,9 +275,9 @@ private:
 	EHANDLE			m_hEnt;
 	int				m_soundEntityIndex;
 	Vector			m_soundOrigin;
-	int				m_entityChannel;
-	int				m_flags;
-	int				m_baseFlags;
+	SoundChannel_t				m_entityChannel;
+	SoundFlags_t				m_flags;
+	SoundFlags_t				m_baseFlags;
 	int				m_isPlaying;
 	float			m_flScriptVolume;	// Volume for this sound in sounds.txt
 	CCopyRecipientFilter m_Filter;
@@ -324,7 +324,7 @@ DEFINE_FIXEDSIZE_ALLOCATOR( CSoundPatch, 64, CUtlMemoryPool::GROW_FAST );
 //			*pSoundName - sound script string name
 //			attenuation - attenuation of this sound (not animated)
 //-----------------------------------------------------------------------------
-void CSoundPatch::Init( IRecipientFilter *pFilter, CSharedBaseEntity *pEnt, int channel, const char *pSoundName, 
+void CSoundPatch::Init( IRecipientFilter *pFilter, CSharedBaseEntity *pEnt, SoundChannel_t channel, const char *pSoundName, 
 			soundlevel_t soundlevel, const Vector *pSoundOrigin , float scriptVolume )
 {
 	m_hEnt = pEnt;
@@ -348,7 +348,7 @@ void CSoundPatch::Init( IRecipientFilter *pFilter, CSharedBaseEntity *pEnt, int 
 		m_soundlevel = params.soundlevel;
 
 		// TERROR: if we say we want CHAN_USER_BASE + N, we mean it!
-		if ( m_entityChannel < CHAN_USER_BASE )
+		if ( (int)m_entityChannel < (int)CHAN_USER_BASE )
 		{
 			m_entityChannel = params.channel;
 		}
@@ -369,7 +369,7 @@ void CSoundPatch::Init( IRecipientFilter *pFilter, CSharedBaseEntity *pEnt, int 
 	m_shutdownTime = 0;
 	m_flLastTime = 0;
 	m_Filter.Init( pFilter );
-	m_baseFlags = 0;
+	m_baseFlags = SND_NOFLAGS;
 	if( pSoundOrigin )
 	{
 		m_soundOrigin.x = pSoundOrigin->x;
@@ -568,7 +568,7 @@ bool CSoundPatch::Update( float time, float deltaTime )
 
 		CSharedBaseEntity::EmitSound( m_Filter, EntIndex(), ep );
 
-		m_flags = 0;
+		m_flags = SND_NOFLAGS;
 	}
 
 	return true;
@@ -588,7 +588,7 @@ void CSoundPatch::Reset( void )
 void CSoundPatch::StartSound( float flStartTime )
 {
 //	Msg( "Start sound %s\n", m_pszSoundName );
-	m_flags = 0;
+	m_flags = SND_NOFLAGS;
 	if ( m_Filter.IsActive() )
 	{
 		EmitSound_t ep;
@@ -778,12 +778,12 @@ public:
 	void			Shutdown( CSoundPatch *pSound );
 
 	CSoundPatch		*SoundCreate( IRecipientFilter& filter, int nEntIndex, const char *pSoundName );
-	CSoundPatch		*SoundCreate( IRecipientFilter& filter, int nEntIndex, int channel, const char *pSoundName, 
+	CSoundPatch		*SoundCreate( IRecipientFilter& filter, int nEntIndex, SoundChannel_t channel, const char *pSoundName, 
 						float attenuation, float scriptVolume = 1.0f );
-	CSoundPatch		*SoundCreate( IRecipientFilter& filter, int nEntIndex, int channel, const char *pSoundName, 
+	CSoundPatch		*SoundCreate( IRecipientFilter& filter, int nEntIndex, SoundChannel_t channel, const char *pSoundName, 
 						soundlevel_t soundlevel );
 	CSoundPatch		*SoundCreate( IRecipientFilter& filter, int nEntIndex, const EmitSound_t &es );
-	CSoundPatch		*SoundCreate( IRecipientFilter& filter, int nEntIndex, int channel, const char *pSoundName, 
+	CSoundPatch		*SoundCreate( IRecipientFilter& filter, int nEntIndex, SoundChannel_t channel, const char *pSoundName, 
 						float attenuation, const Vector *pSoundOrigin, float scriptVolume = 1.0f );
 
 	void			SoundDestroy( CSoundPatch *pSound );
@@ -1035,7 +1035,7 @@ CSoundPatch *CSoundControllerImp::SoundCreate( IRecipientFilter& filter, int nEn
 	return pSound;
 }
 
-CSoundPatch *CSoundControllerImp::SoundCreate( IRecipientFilter& filter, int nEntIndex, int channel, 
+CSoundPatch *CSoundControllerImp::SoundCreate( IRecipientFilter& filter, int nEntIndex, SoundChannel_t channel, 
 			const char *pSoundName, float attenuation, float scriptVolume )
 {
 #ifdef CLIENT_DLL
@@ -1052,7 +1052,7 @@ CSoundPatch *CSoundControllerImp::SoundCreate( IRecipientFilter& filter, int nEn
 	return pSound;
 }
 
-CSoundPatch *CSoundControllerImp::SoundCreate( IRecipientFilter& filter, int nEntIndex, int channel, 
+CSoundPatch *CSoundControllerImp::SoundCreate( IRecipientFilter& filter, int nEntIndex, SoundChannel_t channel, 
 			const char *pSoundName, soundlevel_t soundlevel )
 {
 #ifdef CLIENT_DLL
@@ -1069,7 +1069,7 @@ CSoundPatch *CSoundControllerImp::SoundCreate( IRecipientFilter& filter, int nEn
 	return pSound;
 }
 
-CSoundPatch *CSoundControllerImp::SoundCreate( IRecipientFilter& filter, int nEntIndex, int channel, 
+CSoundPatch *CSoundControllerImp::SoundCreate( IRecipientFilter& filter, int nEntIndex, SoundChannel_t channel, 
 			const char *pSoundName, float attenuation, const Vector *pSoundOrigin, float scriptVolume )
 {
 #ifdef CLIENT_DLL

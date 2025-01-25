@@ -80,21 +80,21 @@ public:
 	virtual void		UnblockPusher( CSharedBasePlayer *pPlayer, CSharedBaseEntity *pPusher );
 
 // For sanity checking getting stuck on CMoveData::SetAbsOrigin
-	virtual void	TracePlayerBBox( const Vector& start, const Vector& end, unsigned int fMask, int collisionGroup, trace_t& pm );
+	virtual void	TracePlayerBBox( const Vector& start, const Vector& end, ContentsFlags_t fMask, Collision_Group_t collisionGroup, trace_t& pm );
 	
 	// allows derived classes to exclude entities from trace
-	virtual void	TryTouchGround( const Vector& start, const Vector& end, const Vector& mins, const Vector& maxs, unsigned int fMask, int collisionGroup, trace_t& pm );
+	virtual void	TryTouchGround( const Vector& start, const Vector& end, const Vector& mins, const Vector& maxs, ContentsFlags_t fMask, Collision_Group_t collisionGroup, trace_t& pm );
 
 
 #define BRUSH_ONLY true
-	virtual unsigned int PlayerSolidMask( bool brushOnly = false, CSharedBasePlayer *testPlayer = NULL ) const;	///< returns the solid mask for the given player, so bots can have a more-restrictive set
+	virtual ContentsFlags_t PlayerSolidMask( bool brushOnly = false, CSharedBasePlayer *testPlayer = NULL ) const;	///< returns the solid mask for the given player, so bots can have a more-restrictive set
 	CSharedBasePlayer		*player;
 	CMoveData *GetMoveData() { return mv; }
 protected:
 	// Input/Output for this movement
 	CMoveData		*mv;
 	
-	int				m_nOldWaterLevel;
+	WaterLevel_t				m_nOldWaterLevel;
 	float			m_flWaterEntryTime;
 	int				m_nOnLadder;
 
@@ -195,7 +195,7 @@ protected:
 	virtual bool	LadderMove( void );
 	virtual bool	OnLadder( trace_t &trace );
 	virtual float	LadderDistance( void ) const { return 2.0f; }	///< Returns the distance a player can be from a ladder and still attach to it
-	virtual unsigned int LadderMask( void ) const { return MASK_PLAYERSOLID; }
+	virtual ContentsFlags_t LadderMask( void ) const { return MASK_PLAYERSOLID; }
 	virtual float	ClimbSpeed( void ) const { return MAX_CLIMB_SPEED; }
 	virtual float	LadderLateralMultiplier( void ) const { return 1.0f; }
 
@@ -263,7 +263,7 @@ protected:
 	void			IsometricMove( void );
 
 	// Traces the player bbox as it is swept from start to end
-	virtual EHANDLE		TestPlayerPosition( const Vector& pos, int collisionGroup, trace_t& pm );
+	virtual EHANDLE		TestPlayerPosition( const Vector& pos, Collision_Group_t collisionGroup, trace_t& pm );
 
 	// Checks to see if we should actually jump 
 	void			PlaySwimSound();
@@ -278,11 +278,11 @@ protected:
 	virtual void	StepMove( Vector &vecDestination, trace_t &trace );
 
 	// when we step on ground that's too steep, search to see if there's any ground nearby that isn't too steep
-	void			TryTouchGroundInQuadrants( const Vector& start, const Vector& end, unsigned int fMask, int collisionGroup, trace_t& pm );
+	void			TryTouchGroundInQuadrants( const Vector& start, const Vector& end, ContentsFlags_t fMask, Collision_Group_t collisionGroup, trace_t& pm );
 
 
 protected:
-	virtual ITraceFilter *LockTraceFilter( int collisionGroup );
+	virtual ITraceFilter *LockTraceFilter( Collision_Group_t collisionGroup );
 	virtual void UnlockTraceFilter( ITraceFilter *&pFilter );
 
 	// Performs the collision resolution for fliers.
@@ -297,7 +297,7 @@ protected:
 	};
 
 	// Cache used to remove redundant calls to GetPointContents().
-	int m_CachedGetPointContents[ MAX_PLAYERS ][ MAX_PC_CACHE_SLOTS ];
+	ContentsFlags_t m_CachedGetPointContents[ MAX_PLAYERS ][ MAX_PC_CACHE_SLOTS ];
 	Vector m_CachedGetPointContentsPoint[ MAX_PLAYERS ][ MAX_PC_CACHE_SLOTS ];	
 
 	Vector			m_vecProximityMins;		// Used to be globals in sv_user.cpp.

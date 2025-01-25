@@ -566,7 +566,7 @@ CSpriteTrail *CSharedSpriteTrail::SpriteTrailCreate( const char *pSpriteName, co
 // 
 //-----------------------------------------------------------------------------
 
-int CSharedSpriteTrail::ShouldTransmit( const CCheckTransmitInfo *pInfo )
+EdictStateFlags_t CSharedSpriteTrail::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 {
 	CBaseEntity *pRecipientEntity = CBaseEntity::Instance( pInfo->m_pClientEnt );
 

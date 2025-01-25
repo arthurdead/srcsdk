@@ -7849,7 +7849,7 @@ void CBasePlayer::VPhysicsUpdate( IPhysicsObject *pPhysics )
 //-----------------------------------------------------------------------------
 // Purpose: Allow bots etc to use slightly different solid masks
 //-----------------------------------------------------------------------------
-unsigned int CBasePlayer::PlayerSolidMask( bool brushOnly ) const
+ContentsFlags_t CBasePlayer::PlayerSolidMask( bool brushOnly ) const
 {
 	if ( brushOnly )
 	{

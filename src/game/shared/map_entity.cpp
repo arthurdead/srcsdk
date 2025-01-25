@@ -52,77 +52,39 @@ bool ParseKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields, c
 		{
 			switch( pField->baseType() )
 			{
-			case FIELD_POOLED_STRING:
-				*GetField<string_t>(pObject, *pField) = AllocPooledString( szValue );
-				return true;
-
 			case FIELD_FLOAT:
 				*GetField<float>(pObject, *pField) = atof( szValue );
 				return true;
 
-			case FIELD_BOOLEAN:
-				*GetField<bool>(pObject, *pField) = (bool)(atoi( szValue ) != 0);
+			case FIELD_UINTEGER:
+				*GetField<unsigned int>(pObject, *pField) = atoi( szValue );
 				return true;
-
-			case FIELD_CHARACTER:
-				*GetField<char>(pObject, *pField) = (char)atoi( szValue );
+			case FIELD_INTEGER:
+				*GetField<int>(pObject, *pField) = atoi( szValue );
 				return true;
-			case FIELD_SCHARACTER:
-				*GetField<signed char>(pObject, *pField) = (signed char)atoi( szValue );
-				return true;
-			case FIELD_UCHARACTER:
-				*GetField<unsigned char>(pObject, *pField) = (unsigned char)atoi( szValue );
-				return true;
-
-			case FIELD_SHORT:
-				*GetField<short>(pObject, *pField) = (short)atoi( szValue );
-				return true;
-			case FIELD_USHORT:
-				*GetField<unsigned short>(pObject, *pField) = (unsigned short)atoi( szValue );
-				return true;
-
 			case FIELD_INTEGER64:
 				*GetField<int64>(pObject, *pField) = strtoll( szValue, NULL, 10 );
 				return true;
 			case FIELD_UINTEGER64:
 				*GetField<uint64>(pObject, *pField) = strtoull( szValue, NULL, 10 );
 				return true;
-
-			case FIELD_INTEGER:
-				*GetField<int>(pObject, *pField) = atoi( szValue );
+			case FIELD_USHORT:
+				*GetField<unsigned short>(pObject, *pField) = (unsigned short)atoi( szValue );
 				return true;
-			case FIELD_UINTEGER:
-				*GetField<unsigned int>(pObject, *pField) = atoi( szValue );
+			case FIELD_SHORT:
+				*GetField<short>(pObject, *pField) = (short)atoi( szValue );
 				return true;
-
-			case FIELD_VECTOR:
-				UTIL_StringToVector( *GetField<Vector>(pObject, *pField), szValue );
+			case FIELD_BOOLEAN:
+				*GetField<bool>(pObject, *pField) = (bool)(atoi( szValue ) != 0);
 				return true;
-
-			case FIELD_QANGLE:
-				UTIL_StringToQAngle( *GetField<QAngle>(pObject, *pField), szValue );
+			case FIELD_CHARACTER:
+				*GetField<char>(pObject, *pField) = (char)atoi( szValue );
 				return true;
-
-			case FIELD_VMATRIX: {
-				VMatrix &mat = *GetField<VMatrix>(pObject, *pField);
-				UTIL_StringToFloatArray( mat.Base(), 16, szValue );
-			} return true;
-
-			case FIELD_MATRIX3X4: {
-				matrix3x4_t &mat = *GetField<matrix3x4_t>(pObject, *pField);
-				UTIL_StringToFloatArray( mat.Base(), 12, szValue );
-			} return true;
-
-			case FIELD_COLOR32:
-				UTIL_StringToColor32( *GetField<color32>(pObject, *pField), szValue );
+			case FIELD_UCHARACTER:
+				*GetField<unsigned char>(pObject, *pField) = (unsigned char)atoi( szValue );
 				return true;
-
-			case FIELD_COLOR32E:
-				UTIL_StringToColor32( *GetField<ColorRGBExp32>(pObject, *pField), szValue );
-				return true;
-
-			case FIELD_COLOR24:
-				UTIL_StringToColor24( *GetField<color24>(pObject, *pField), szValue );
+			case FIELD_SCHARACTER:
+				*GetField<signed char>(pObject, *pField) = (signed char)atoi( szValue );
 				return true;
 
 			case FIELD_MODELINDEX:
@@ -133,14 +95,41 @@ bool ParseKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields, c
 			#endif
 				return true;
 
-			case FIELD_CUSTOM:
-			{
-				FieldInfo_t fieldInfo =
-				{
+			case FIELD_COLOR32:
+				UTIL_StringToColor32( *GetField<color32>(pObject, *pField), szValue );
+				return true;
+			case FIELD_COLOR32E:
+				UTIL_StringToColor32( *GetField<ColorRGBExp32>(pObject, *pField), szValue );
+				return true;
+			case FIELD_COLOR24:
+				UTIL_StringToColor24( *GetField<color24>(pObject, *pField), szValue );
+				return true;
+
+			case FIELD_POOLED_STRING:
+				*GetField<string_t>(pObject, *pField) = AllocPooledString( szValue );
+				return true;
+
+			case FIELD_VECTOR:
+				UTIL_StringToVector( *GetField<Vector>(pObject, *pField), szValue );
+				return true;
+			case FIELD_VMATRIX: {
+				VMatrix &mat = *GetField<VMatrix>(pObject, *pField);
+				UTIL_StringToFloatArray( mat.Base(), 16, szValue );
+			} return true;
+			case FIELD_MATRIX3X4: {
+				matrix3x4_t &mat = *GetField<matrix3x4_t>(pObject, *pField);
+				UTIL_StringToFloatArray( mat.Base(), 12, szValue );
+			} return true;
+			case FIELD_QANGLE:
+				UTIL_StringToQAngle( *GetField<QAngle>(pObject, *pField), szValue );
+				return true;
+
+			case FIELD_CUSTOM: {
+				FieldInfo_t fieldInfo(
 					GetField<void>(pObject, *pField),
 					pObject,
-					pField
-				};
+					*pField
+				);
 				pField->pFieldOps->Parse( fieldInfo, szValue );
 				return false;
 			}
@@ -190,78 +179,44 @@ bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields,
 		{
 			switch( pField->baseType() )
 			{
-			case FIELD_POOLED_STRING:
-				Q_strncpy( szValue, STRING( *GetField<string_t>(pObject, *pField) ), iMaxLen );
-				return true;
-
 			case FIELD_FLOAT:
 				Q_snprintf( szValue, iMaxLen, "%f", *GetField<float>(pObject, *pField) );
 				return true;
 
-			case FIELD_BOOLEAN:
-				Q_snprintf( szValue, iMaxLen, "%hhu", *GetField<bool>(pObject, *pField) );
+			case FIELD_UINTEGER:
+				Q_snprintf( szValue, iMaxLen, "%u", *GetField<unsigned int>(pObject, *pField) );
 				return true;
-
-			case FIELD_CHARACTER:
-				Q_snprintf( szValue, iMaxLen, "%c", *GetField<char>(pObject, *pField) );
+			case FIELD_INTEGER:
+				Q_snprintf( szValue, iMaxLen, "%i", *GetField<int>(pObject, *pField) );
 				return true;
-			case FIELD_SCHARACTER:
-				Q_snprintf( szValue, iMaxLen, "%hhi", *GetField<signed char>(pObject, *pField) );
-				return true;
-			case FIELD_UCHARACTER:
-				Q_snprintf( szValue, iMaxLen, "%hhu", *GetField<unsigned char>(pObject, *pField) );
-				return true;
-
-			case FIELD_SHORT:
-				Q_snprintf( szValue, iMaxLen, "%hi", *GetField<short>(pObject, *pField) );
-				return true;
-			case FIELD_USHORT:
-				Q_snprintf( szValue, iMaxLen, "%hu", *GetField<unsigned short>(pObject, *pField) );
-				return true;
-
 			case FIELD_INTEGER64:
 				Q_snprintf( szValue, iMaxLen, "%lli", *GetField<int64>(pObject, *pField) );
 				return true;
 			case FIELD_UINTEGER64:
 				Q_snprintf( szValue, iMaxLen, "%llu", *GetField<uint64>(pObject, *pField) );
 				return true;
-
-			case FIELD_INTEGER:
-				Q_snprintf( szValue, iMaxLen, "%i", *GetField<int>(pObject, *pField) );
+			case FIELD_USHORT:
+				Q_snprintf( szValue, iMaxLen, "%hu", *GetField<unsigned short>(pObject, *pField) );
 				return true;
-			case FIELD_UINTEGER:
-				Q_snprintf( szValue, iMaxLen, "%u", *GetField<unsigned int>(pObject, *pField) );
+			case FIELD_SHORT:
+				Q_snprintf( szValue, iMaxLen, "%hi", *GetField<short>(pObject, *pField) );
+				return true;
+			case FIELD_BOOLEAN:
+				Q_snprintf( szValue, iMaxLen, "%hhu", *GetField<bool>(pObject, *pField) );
+				return true;
+			case FIELD_CHARACTER:
+				Q_snprintf( szValue, iMaxLen, "%c", *GetField<char>(pObject, *pField) );
+				return true;
+			case FIELD_UCHARACTER:
+				Q_snprintf( szValue, iMaxLen, "%hhu", *GetField<unsigned char>(pObject, *pField) );
+				return true;
+			case FIELD_SCHARACTER:
+				Q_snprintf( szValue, iMaxLen, "%hhi", *GetField<signed char>(pObject, *pField) );
 				return true;
 
 			case FIELD_MODELINDEX:
 				Q_strncpy( szValue, modelinfo->GetModelName( modelinfo->GetModel( *GetField<modelindex_t>(pObject, *pField) ) ), iMaxLen);
 				return true;
-
-			case FIELD_VECTOR: {
-				const Vector &vec = *GetField<Vector>(pObject, *pField);
-				Q_snprintf( szValue, iMaxLen, "%f %f %f", 
-					vec.x,
-					vec.y,
-					vec.z );
-			} return true;
-
-			case FIELD_QANGLE: {
-				const QAngle &vec = *GetField<QAngle>(pObject, *pField);
-				Q_snprintf( szValue, iMaxLen, "%f %f %f", 
-					vec.x,
-					vec.y,
-					vec.z );
-			} return true;
-
-			case FIELD_VMATRIX:
-				Assert(0);
-				//UTIL_StringToFloatArray( (float *)((char *)pObject + fieldOffset), 16, szValue );
-				return false;
-
-			case FIELD_MATRIX3X4:
-				Assert(0);
-				//UTIL_StringToFloatArray( (float *)((char *)pObject + fieldOffset), 12, szValue );
-				return false;
 
 			case FIELD_COLOR32: {
 				const color32 &clr = *GetField<color32>(pObject, *pField);
@@ -271,7 +226,6 @@ bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields,
 					clr.b(),
 					clr.a() );
 			} return true;
-
 			case FIELD_COLOR32E: {
 				const ColorRGBExp32 &clr = *GetField<ColorRGBExp32>(pObject, *pField);
 				Q_snprintf( szValue, iMaxLen, "%hhu %hhu %hhu %hhi", 
@@ -280,7 +234,6 @@ bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields,
 					clr.b(),
 					clr.e() );
 			} return true;
-
 			case FIELD_COLOR24: {
 				const color24 &clr = *GetField<color24>(pObject, *pField);
 				Q_snprintf( szValue, iMaxLen, "%hhu %hhu %hhu", 
@@ -289,8 +242,34 @@ bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields,
 					clr.b() );
 			} return true;
 
-			case FIELD_CUSTOM:
-			{
+			case FIELD_POOLED_STRING:
+				Q_strncpy( szValue, STRING( *GetField<string_t>(pObject, *pField) ), iMaxLen );
+				return true;
+
+			case FIELD_VECTOR: {
+				const Vector &vec = *GetField<Vector>(pObject, *pField);
+				Q_snprintf( szValue, iMaxLen, "%f %f %f", 
+					vec.x,
+					vec.y,
+					vec.z );
+			} return true;
+			case FIELD_VMATRIX:
+				Assert(0);
+				//UTIL_StringToFloatArray( (float *)((char *)pObject + fieldOffset), 16, szValue );
+				return false;
+			case FIELD_MATRIX3X4:
+				Assert(0);
+				//UTIL_StringToFloatArray( (float *)((char *)pObject + fieldOffset), 12, szValue );
+				return false;
+			case FIELD_QANGLE: {
+				const QAngle &vec = *GetField<QAngle>(pObject, *pField);
+				Q_snprintf( szValue, iMaxLen, "%f %f %f", 
+					vec.x,
+					vec.y,
+					vec.z );
+			} return true;
+
+			case FIELD_CUSTOM: {
 				Assert(0);
 				/*
 				SaveRestoreFieldInfo_t fieldInfo =
@@ -301,8 +280,7 @@ bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields,
 				};
 				pField->pSaveRestoreOps->Parse( fieldInfo, szValue );
 				*/
-				return false;
-			}
+			} return false;
 
 			default:
 				Warning( "Bad field in entity!!\n" );
@@ -441,13 +419,7 @@ static void write_fgd_embedded(datamap_t *pMap, CUtlBuffer &fileBuffer, bool roo
 
 	for(int i = 0; i < pMap->dataNumFields; ++i) {
 		const typedescription_t &td = pMap->dataDesc[i];
-		if(i == 0 &&
-			td.rawType() == FIELD_VOID &&
-			td.rawOffset() == 0 &&
-			td.fieldSize == 0 &&
-			td.fieldSizeInBytes == 0 &&
-			td.flags == 0 &&
-			td.fieldName == NULL) {
+		if(td == INVALID_TYPEDESC) {
 			continue;
 		}
 
@@ -469,106 +441,99 @@ static void write_fgd_embedded(datamap_t *pMap, CUtlBuffer &fileBuffer, bool roo
 		} else if(td.fieldName) {
 			fileBuffer.PutString(td.fieldName);
 		} else {
-			fileBuffer.PutString("ERRORNAME");
+			Assert(0);
 		}
 
-		switch(td.rawType()) {
-		case FIELD_VOID:
-			fileBuffer.PutString("(void)");
-			break;
-		case FIELD_FLOAT:
-			fileBuffer.PutString("(float)");
-			break;
-		case FIELD_STRING:
-			fileBuffer.PutString("(string)");
-			break;
-		case FIELD_VECTOR:
-			fileBuffer.PutString("(vector)");
-			break;
-		case FIELD_QUATERNION:
-			fileBuffer.PutString("(vector)");
-			break;
-		case FIELD_INTEGER:
-			fileBuffer.PutString("(integer)");
-			break;
-		case FIELD_BOOLEAN:
+		if(td.m_nChoicesLen > 0 && (td.flags & (FTYPEDESC_OUTPUT|FTYPEDESC_INPUT)) == FTYPEDESC_NONE) {
 			fileBuffer.PutString("(choices)");
-			break;
-		case FIELD_SHORT:
-			fileBuffer.PutString("(integer)");
-			break;
-		case FIELD_CHARACTER:
-			fileBuffer.PutString("(integer)");
-			break;
-		case FIELD_COLOR32:
-			fileBuffer.PutString("(color255)");
-			break;
-		case FIELD_COLOR24:
-			fileBuffer.PutString("(color255)");
-			break;
-		case FIELD_CUSTOM:
-			fileBuffer.PutString("(void)");
-			break;
-		case FIELD_CLASSPTR:
-			fileBuffer.PutString("(void)");
-			break;
-		case FIELD_EHANDLE:
-			fileBuffer.PutString("(void)");
-			break;
-		case FIELD_EDICT:
-			fileBuffer.PutString("(void)");
-			break;
-		case FIELD_POSITION_VECTOR:
-			fileBuffer.PutString("(vector)");
-			break;
-		case FIELD_TIME:
-			fileBuffer.PutString("(float)");
-			break;
-		case FIELD_TICK:
-			fileBuffer.PutString("(integer)");
-			break;
-		case FIELD_MODELNAME:
-			fileBuffer.PutString("(studio)");
-			break;
-		case FIELD_SOUNDNAME:
-			fileBuffer.PutString("(sound)");
-			break;
-		case FIELD_INPUT:
-			fileBuffer.PutString("(void)");
-			break;
-		case FIELD_FUNCTION:
-			fileBuffer.PutString("(void)");
-			break;
-		case FIELD_VMATRIX:
-			fileBuffer.PutString("(vector)");
-			break;
-		case FIELD_VMATRIX_WORLDSPACE:
-			fileBuffer.PutString("(vector)");
-			break;
-		case FIELD_MATRIX3X4_WORLDSPACE:
-			fileBuffer.PutString("(vector)");
-			break;
-		case FIELD_INTERVAL:
-			fileBuffer.PutString("(integer)");
-			break;
-		case FIELD_MODELINDEX:
-			fileBuffer.PutString("(integer)");
-			break;
-		case FIELD_MATERIALINDEX:
-			fileBuffer.PutString("(integer)");
-			break;
-		case FIELD_VECTOR2D:
-			fileBuffer.PutString("(vector)");
-			break;
-		case FIELD_INTEGER64:
-			fileBuffer.PutString("(integer)");
-			break;
-		case FIELD_VECTOR4D:
-			fileBuffer.PutString("(vector)");
-			break;
+		} else {
+			switch(td.rawType()) {
+			case FIELD_EXACT_CLASSNAME:
+			case FIELD_PARTIAL_CLASSNAME:
+			case FIELD_EXACT_TARGETNAME:
+			case FIELD_PARTIAL_TARGETNAME:
+			case FIELD_EXACT_TARGETNAME_OR_CLASSNAME:
+			case FIELD_PARTIAL_TARGETNAME_OR_CLASSNAME:
+				fileBuffer.PutString("(target_name_or_class)");
+				break;
+			case FIELD_MATERIALINDEX:
+				fileBuffer.PutString("(material)");
+				break;
+			case FIELD_STUDIO_MODELIDNEX:
+			case FIELD_POOLED_MODELNAME:
+				fileBuffer.PutString("(studio)");
+				break;
+			case FIELD_SPRITE_MODELINDEX:
+			case FIELD_POOLED_SPRITENAME:
+				fileBuffer.PutString("(sprite)");
+				break;
+			case FIELD_POOLED_SOUNDNAME:
+				fileBuffer.PutString("(sound)");
+				break;
+			case FIELD_POOLED_SCENENAME:
+				fileBuffer.PutString("(scene)");
+				break;
+			default:
+				switch(td.baseType()) {
+				case FIELD_VOID:
+					fileBuffer.PutString("(void)");
+					break;
+				case FIELD_FLOAT:
+					fileBuffer.PutString("(float)");
+					break;
+				case FIELD_UINTEGER:
+				case FIELD_INTEGER:
+				case FIELD_INTEGER64:
+				case FIELD_UINTEGER64:
+				case FIELD_USHORT:
+				case FIELD_SHORT:
+				case FIELD_CHARACTER:
+				case FIELD_UCHARACTER:
+				case FIELD_SCHARACTER:
+				case FIELD_MODELINDEX:
+					fileBuffer.PutString("(integer)");
+					break;
+				case FIELD_BOOLEAN:
+					if((td.flags & (FTYPEDESC_OUTPUT|FTYPEDESC_INPUT)) == FTYPEDESC_NONE) {
+						fileBuffer.PutString("(boolean)");
+					} else {
+						fileBuffer.PutString("(bool)");
+					}
+					break;
+				case FIELD_COLOR32:
+				case FIELD_COLOR32E:
+				case FIELD_COLOR24:
+					fileBuffer.PutString("(color255)");
+					break;
+				case FIELD_POOLED_STRING:
+				case FIELD_CSTRING:
+					fileBuffer.PutString("(string)");
+					break;
+				case FIELD_VECTOR:
+				case FIELD_QUATERNION:
+				case FIELD_VMATRIX:
+				case FIELD_MATRIX3X4:
+				case FIELD_QANGLE:
+				case FIELD_VECTOR2D:
+				case FIELD_VECTOR4D:
+					fileBuffer.PutString("(vector)");
+					break;
+				case FIELD_PREDICTABLEID:
+					fileBuffer.PutString("(integer)");
+					break;
+				case FIELD_ENTITYPTR:
+				case FIELD_EHANDLE:
+				case FIELD_EDICTPTR:
+					fileBuffer.PutString("(target_name_or_class)");
+					break;
+				default:
+					Assert(0);
+					break;
+				}
+			}
 		}
 
-		if((td.flags & (FTYPEDESC_OUTPUT|FTYPEDESC_INPUT)) == 0) {
+		if((td.flags & (FTYPEDESC_OUTPUT|FTYPEDESC_INPUT)) == FTYPEDESC_NONE) {
 			fileBuffer.PutString(" : ");
 			if(td.m_pGuiName) {
 				fileBuffer.PutDelimitedString(GetCStringCharConversion(), td.m_pGuiName);
@@ -577,16 +542,28 @@ static void write_fgd_embedded(datamap_t *pMap, CUtlBuffer &fileBuffer, bool roo
 			} else if(td.fieldName) {
 				fileBuffer.PutDelimitedString(GetCStringCharConversion(), td.fieldName);
 			} else {
-				fileBuffer.PutDelimitedString(GetCStringCharConversion(), "ERRORNAME");
+				Assert(0);
 			}
 			fileBuffer.PutString(" : ");
-			if(td.m_pDefValue) {
+			if(td.m_pDefValue[0] != '\0') {
 				fileBuffer.PutDelimitedString(GetCStringCharConversion(), td.m_pDefValue);
 			}
 		}
 
 		fileBuffer.PutString(" : ");
-		fileBuffer.PutDelimitedString(GetCStringCharConversion(), "");
+		fileBuffer.PutDelimitedString(GetCStringCharConversion(), td.m_pDescription);
+
+		if(((td.flags & (FTYPEDESC_OUTPUT|FTYPEDESC_INPUT)) == FTYPEDESC_NONE) && (td.m_nChoicesLen > 0)) {
+			fileBuffer.PutString(" = [");
+			for(int i = 0; i < td.m_nChoicesLen; ++i) {
+				fileBuffer.PutString("\t\t");
+				fileBuffer.PutString(td.m_pChoices[i].value);
+				fileBuffer.PutString(" : ");
+				fileBuffer.PutString(td.m_pChoices[i].name);
+				fileBuffer.PutChar('\n');
+			}
+			fileBuffer.PutChar(']');
+		}
 
 		fileBuffer.PutChar('\n');
 	}

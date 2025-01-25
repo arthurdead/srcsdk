@@ -118,7 +118,7 @@ inline soundlevel_t ATTN_TO_SNDLVL(float a)
 
 inline float SNDLVL_TO_ATTN(soundlevel_t s)
 {
-	return ((unsigned int)s > (unsigned int)soundlevel_t::SNDLVL_50dB) ? (soundlevel_t)(20.0f / float((unsigned int)s - (unsigned int)soundlevel_t::SNDLVL_50dB)) : 4.0f;
+	return ((unsigned int)s > (unsigned int)soundlevel_t::SNDLVL_50dB) ? (20.0f / float((unsigned int)s - (unsigned int)soundlevel_t::SNDLVL_50dB)) : 4.0f;
 }
 
 // This is a limit due to network encoding.

@@ -14,7 +14,7 @@
 
 ConVar phys_pushscale( "phys_pushscale", "1", FCVAR_REPLICATED );
 
-void CSharedTakeDamageInfo::Init( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, uint64 bitsDamageType, int iCustomDamage )
+void CSharedTakeDamageInfo::Init( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, DamageTypes_t bitsDamageType, int iCustomDamage )
 {
 	m_hInflictor = pInflictor;
 	if ( pAttacker )
@@ -39,7 +39,7 @@ void CSharedTakeDamageInfo::Init( CSharedBaseEntity *pInflictor, CSharedBaseEnti
 	m_vecDamageForce = damageForce;
 	m_vecDamagePosition = damagePosition;
 	m_vecReportedPosition = reportedPosition;
-	m_iAmmoType = -1;
+	m_iAmmoType = AMMO_INVALID_INDEX;
 	m_iDamagedOtherPlayers = 0;
 	m_iPlayerPenetrationCount = 0;
 	m_flDamageBonus = 0.f;
@@ -54,25 +54,25 @@ void CSharedTakeDamageInfo::Init( CSharedBaseEntity *pInflictor, CSharedBaseEnti
 
 CSharedTakeDamageInfo::CTakeDamageInfo()
 {
-	Init( NULL, NULL, NULL, vec3_origin, vec3_origin, vec3_origin, 0, 0, 0 );
+	Init( NULL, NULL, NULL, vec3_origin, vec3_origin, vec3_origin, 0, DMG_GENERIC, 0 );
 }
 
-CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, float flDamage, uint64 bitsDamageType, int iKillType )
+CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, float flDamage, DamageTypes_t bitsDamageType, int iKillType )
 {
 	Set( pInflictor, pAttacker, flDamage, bitsDamageType, iKillType );
 }
 
-CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, float flDamage, uint64 bitsDamageType, int iKillType )
+CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, float flDamage, DamageTypes_t bitsDamageType, int iKillType )
 {
 	Set( pInflictor, pAttacker, pWeapon, flDamage, bitsDamageType, iKillType );
 }
 
-CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, uint64 bitsDamageType, int iKillType, Vector *reportedPosition )
+CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, DamageTypes_t bitsDamageType, int iKillType, Vector *reportedPosition )
 {
 	Set( pInflictor, pAttacker, damageForce, damagePosition, flDamage, bitsDamageType, iKillType, reportedPosition );
 }
 
-CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, uint64 bitsDamageType, int iKillType, Vector *reportedPosition )
+CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, DamageTypes_t bitsDamageType, int iKillType, Vector *reportedPosition )
 {
 	Set( pInflictor, pAttacker, pWeapon, damageForce, damagePosition, flDamage, bitsDamageType, iKillType, reportedPosition );
 }
@@ -81,22 +81,22 @@ CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBa
 	#undef CTakeDamageInfo
 #endif
 
-void CSharedTakeDamageInfo::Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, float flDamage, uint64 bitsDamageType, int iKillType )
+void CSharedTakeDamageInfo::Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, float flDamage, DamageTypes_t bitsDamageType, int iKillType )
 {
 	Init( pInflictor, pAttacker, NULL, vec3_origin, vec3_origin, vec3_origin, flDamage, bitsDamageType, iKillType );
 }
 
-void CSharedTakeDamageInfo::Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, float flDamage, uint64 bitsDamageType, int iKillType )
+void CSharedTakeDamageInfo::Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, float flDamage, DamageTypes_t bitsDamageType, int iKillType )
 {
 	Init( pInflictor, pAttacker, pWeapon, vec3_origin, vec3_origin, vec3_origin, flDamage, bitsDamageType, iKillType );
 }
 
-void CSharedTakeDamageInfo::Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, uint64 bitsDamageType, int iKillType, Vector *reportedPosition )
+void CSharedTakeDamageInfo::Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, DamageTypes_t bitsDamageType, int iKillType, Vector *reportedPosition )
 {
 	Set( pInflictor, pAttacker, NULL, damageForce, damagePosition, flDamage, bitsDamageType, iKillType, reportedPosition );
 }
 
-void CSharedTakeDamageInfo::Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, uint64 bitsDamageType, int iKillType, Vector *reportedPosition )
+void CSharedTakeDamageInfo::Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, DamageTypes_t bitsDamageType, int iKillType, Vector *reportedPosition )
 {
 	Vector vecReported = vec3_origin;
 	if ( reportedPosition )
@@ -136,7 +136,7 @@ const char *CSharedTakeDamageInfo::GetAmmoName() const
 {
 	const char *pszAmmoType;
 
-	if ( m_iAmmoType >= 0 )
+	if ( m_iAmmoType != AMMO_INVALID_INDEX )
 	{
 		pszAmmoType = GetAmmoDef()->GetAmmoOfIndex( m_iAmmoType )->pName;
 	}
@@ -181,7 +181,7 @@ CSharedMultiDamage::CMultiDamage()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSharedMultiDamage::Init( CSharedBaseEntity *pTarget, CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, uint64 bitsDamageType, int iKillType )
+void CSharedMultiDamage::Init( CSharedBaseEntity *pTarget, CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, DamageTypes_t bitsDamageType, int iKillType )
 {
 	m_hTarget = pTarget;
 	BaseClass::Init( pInflictor, pAttacker, pWeapon, damageForce, damagePosition, reportedPosition, flDamage, bitsDamageType, iKillType );
@@ -192,7 +192,7 @@ void CSharedMultiDamage::Init( CSharedBaseEntity *pTarget, CSharedBaseEntity *pI
 //-----------------------------------------------------------------------------
 void ClearMultiDamage( void )
 {
-	g_MultiDamage.Init( NULL, NULL, NULL, NULL, vec3_origin, vec3_origin, vec3_origin, 0, 0, 0 );
+	g_MultiDamage.Init( NULL, NULL, NULL, NULL, vec3_origin, vec3_origin, vec3_origin, 0, DMG_GENERIC, 0 );
 }
 
 //-----------------------------------------------------------------------------
@@ -325,7 +325,7 @@ void CalculateExplosiveDamageForce( CSharedTakeDamageInfo *info, const Vector &v
 //-----------------------------------------------------------------------------
 // Purpose: Fill out a takedamageinfo with a damage force for a bullet impact
 //-----------------------------------------------------------------------------
-void CalculateBulletDamageForce( CSharedTakeDamageInfo *info, int iBulletType, const Vector &vecBulletDir, const Vector &vecForceOrigin, float flScale )
+void CalculateBulletDamageForce( CSharedTakeDamageInfo *info, AmmoIndex_t iBulletType, const Vector &vecBulletDir, const Vector &vecForceOrigin, float flScale )
 {
 	info->SetDamagePosition( vecForceOrigin );
 	Vector vecForce = vecBulletDir;
@@ -417,13 +417,13 @@ static const char * const s_DamageTypeToStrTable[] =
 };
 #define DAMAGE_TYPE_STR_TABLE_ENTRIES 31 // number of entries in table above
 
-void CSharedTakeDamageInfo::DebugGetDamageTypeString(uint64 damageType, char *outbuf, int outbuflength )
+void CSharedTakeDamageInfo::DebugGetDamageTypeString(DamageTypes_t damageType, char *outbuf, int outbuflength )
 {
 	Assert(outbuflength > 0);
 
 	// we need to use snprintf to actually copy out the strings here because that's the only function that returns
 	// how much text was output
-	if ( damageType == 0 )
+	if ( damageType == DMG_GENERIC )
 	{
 		int charsWrit = Q_snprintf(outbuf, outbuflength, "%s", s_DamageTypeToStrTable[0]);
 		
@@ -436,7 +436,7 @@ void CSharedTakeDamageInfo::DebugGetDamageTypeString(uint64 damageType, char *ou
 		 outbuflength > 0 && i < (DAMAGE_TYPE_STR_TABLE_ENTRIES - 1);
 		 ++i )
 	{
-		if ( damageType & (1ull << i) )
+		if ( damageType & (DamageTypes_t)(1ull << i) )
 		{
 			// this bit was set. Print the corresponding entry from the table
 			// (the index is +1 because entry 1 in the table corresponds to 1 << 0)

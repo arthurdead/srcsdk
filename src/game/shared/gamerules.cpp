@@ -61,7 +61,7 @@ IMPLEMENT_SERVERCLASS( CGameRules, DT_GameRules );
 #endif
 
 #ifdef GAME_DLL
-void *NetProxy_GameRules( const SendProp *pProp, const void *pStructBase, const void *pData, CSendProxyRecipients *pRecipients, int objectID )
+void *NetProxy_GameRules( const SendPropInfo *pProp, const void *pStructBase, const void *pData, CSendProxyRecipients *pRecipients, int objectID )
 {
 	CGameRules *pRules = GameRules();
 	Assert(pRules);
@@ -78,7 +78,7 @@ void NetProxy_GameRules(const RecvProp *pProp, void **pOut, void *pData, int obj
 
 // Don't send any of the CBaseEntity stuff..
 BEGIN_NETWORK_TABLE_NOBASE( CSharedGameRulesProxy, DT_GameRulesProxy )
-	PropDataTable("gamerules_data", 0, 0, &REFERENCE_DATATABLE(DT_GameRules), NetProxy_GameRules)
+	PropDataTable("gamerules_data", 0, SPROP_NONE, &REFERENCE_DATATABLE(DT_GameRules), NetProxy_GameRules)
 END_NETWORK_TABLE()
 
 IMPLEMENT_NETWORKCLASS_ALIASED( GameRulesProxy, DT_GameRulesProxy )
@@ -295,46 +295,46 @@ void CSharedGameRulesProxy::NotifyNetworkStateChanged( unsigned short offset )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-uint64 CSharedGameRules::Damage_GetTimeBased( void )
+DamageTypes_t CSharedGameRules::Damage_GetTimeBased( void )
 {
-	uint64 iDamage = ( DMG_PARALYZE | DMG_NERVEGAS | DMG_POISON | DMG_RADIATION | DMG_DROWNRECOVER | DMG_ACID | DMG_SLOWBURN );
+	DamageTypes_t iDamage = ( DMG_PARALYZE | DMG_NERVEGAS | DMG_POISON | DMG_RADIATION | DMG_DROWNRECOVER | DMG_ACID | DMG_SLOWBURN );
 	return iDamage;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-uint64	CSharedGameRules::Damage_GetShouldGibCorpse( void )
+DamageTypes_t	CSharedGameRules::Damage_GetShouldGibCorpse( void )
 {
-	uint64 iDamage = ( DMG_CRUSH | DMG_FALL | DMG_BLAST | DMG_SONIC | DMG_CLUB );
+	DamageTypes_t iDamage = ( DMG_CRUSH | DMG_FALL | DMG_BLAST | DMG_SONIC | DMG_CLUB );
 	return iDamage;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-uint64 CSharedGameRules::Damage_GetShowOnHud( void )
+DamageTypes_t CSharedGameRules::Damage_GetShowOnHud( void )
 {
-	uint64 iDamage = ( DMG_POISON | DMG_ACID | DMG_DROWN | DMG_BURN | DMG_SLOWBURN | DMG_NERVEGAS | DMG_RADIATION | DMG_SHOCK );
+	DamageTypes_t iDamage = ( DMG_POISON | DMG_ACID | DMG_DROWN | DMG_BURN | DMG_SLOWBURN | DMG_NERVEGAS | DMG_RADIATION | DMG_SHOCK );
 	return iDamage;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-uint64	CSharedGameRules::Damage_GetNoPhysicsForce( void )
+DamageTypes_t	CSharedGameRules::Damage_GetNoPhysicsForce( void )
 {
-	uint64 iTimeBasedDamage = Damage_GetTimeBased();
-	uint64 iDamage = ( DMG_FALL | DMG_BURN | DMG_PLASMA | DMG_DROWN | iTimeBasedDamage | DMG_CRUSH | DMG_PHYSGUN | DMG_PREVENT_PHYSICS_FORCE );
+	DamageTypes_t iTimeBasedDamage = Damage_GetTimeBased();
+	DamageTypes_t iDamage = ( DMG_FALL | DMG_BURN | DMG_PLASMA | DMG_DROWN | iTimeBasedDamage | DMG_CRUSH | DMG_PHYSGUN | DMG_PREVENT_PHYSICS_FORCE );
 	return iDamage;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-uint64	CSharedGameRules::Damage_GetShouldNotBleed( void )
+DamageTypes_t	CSharedGameRules::Damage_GetShouldNotBleed( void )
 {
-	uint64 iDamage = ( DMG_POISON | DMG_ACID );
+	DamageTypes_t iDamage = ( DMG_POISON | DMG_ACID );
 	return iDamage;
 }
 
@@ -343,10 +343,10 @@ uint64	CSharedGameRules::Damage_GetShouldNotBleed( void )
 // Input  : iDmgType - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CSharedGameRules::Damage_IsTimeBased( uint64 iDmgType )
+bool CSharedGameRules::Damage_IsTimeBased( DamageTypes_t iDmgType )
 {
 	// Damage types that are time-based.
-	return ( ( iDmgType & ( DMG_PARALYZE | DMG_NERVEGAS | DMG_POISON | DMG_RADIATION | DMG_DROWNRECOVER | DMG_ACID | DMG_SLOWBURN ) ) != 0 );
+	return ( ( iDmgType & ( DMG_PARALYZE | DMG_NERVEGAS | DMG_POISON | DMG_RADIATION | DMG_DROWNRECOVER | DMG_ACID | DMG_SLOWBURN ) ) != DMG_GENERIC );
 }
 
 //-----------------------------------------------------------------------------
@@ -354,10 +354,10 @@ bool CSharedGameRules::Damage_IsTimeBased( uint64 iDmgType )
 // Input  : iDmgType - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CSharedGameRules::Damage_ShouldGibCorpse( uint64 iDmgType )
+bool CSharedGameRules::Damage_ShouldGibCorpse( DamageTypes_t iDmgType )
 {
 	// Damage types that gib the corpse.
-	return ( ( iDmgType & ( DMG_CRUSH | DMG_FALL | DMG_BLAST | DMG_SONIC | DMG_CLUB ) ) != 0 );
+	return ( ( iDmgType & ( DMG_CRUSH | DMG_FALL | DMG_BLAST | DMG_SONIC | DMG_CLUB ) ) != DMG_GENERIC );
 }
 
 //-----------------------------------------------------------------------------
@@ -365,10 +365,10 @@ bool CSharedGameRules::Damage_ShouldGibCorpse( uint64 iDmgType )
 // Input  : iDmgType - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CSharedGameRules::Damage_ShowOnHUD( uint64 iDmgType )
+bool CSharedGameRules::Damage_ShowOnHUD( DamageTypes_t iDmgType )
 {
 	// Damage types that have client HUD art.
-	return ( ( iDmgType & ( DMG_POISON | DMG_ACID | DMG_DROWN | DMG_BURN | DMG_SLOWBURN | DMG_NERVEGAS | DMG_RADIATION | DMG_SHOCK ) ) != 0 );
+	return ( ( iDmgType & ( DMG_POISON | DMG_ACID | DMG_DROWN | DMG_BURN | DMG_SLOWBURN | DMG_NERVEGAS | DMG_RADIATION | DMG_SHOCK ) ) != DMG_GENERIC );
 }
 
 //-----------------------------------------------------------------------------
@@ -376,11 +376,11 @@ bool CSharedGameRules::Damage_ShowOnHUD( uint64 iDmgType )
 // Input  : iDmgType - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CSharedGameRules::Damage_NoPhysicsForce( uint64 iDmgType )
+bool CSharedGameRules::Damage_NoPhysicsForce( DamageTypes_t iDmgType )
 {
 	// Damage types that don't have to supply a physics force & position.
-	uint64 iTimeBasedDamage = Damage_GetTimeBased();
-	return ( ( iDmgType & ( DMG_FALL | DMG_BURN | DMG_PLASMA | DMG_DROWN | iTimeBasedDamage | DMG_CRUSH | DMG_PHYSGUN | DMG_PREVENT_PHYSICS_FORCE ) ) != 0 );
+	DamageTypes_t iTimeBasedDamage = Damage_GetTimeBased();
+	return ( ( iDmgType & ( DMG_FALL | DMG_BURN | DMG_PLASMA | DMG_DROWN | iTimeBasedDamage | DMG_CRUSH | DMG_PHYSGUN | DMG_PREVENT_PHYSICS_FORCE ) ) != DMG_GENERIC );
 }
 
 //-----------------------------------------------------------------------------
@@ -388,10 +388,10 @@ bool CSharedGameRules::Damage_NoPhysicsForce( uint64 iDmgType )
 // Input  : iDmgType - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CSharedGameRules::Damage_ShouldNotBleed( uint64 iDmgType )
+bool CSharedGameRules::Damage_ShouldNotBleed( DamageTypes_t iDmgType )
 {
 	// Damage types that don't make the player bleed.
-	return ( ( iDmgType & ( DMG_POISON | DMG_ACID ) ) != 0 );
+	return ( ( iDmgType & ( DMG_POISON | DMG_ACID ) ) != DMG_GENERIC );
 }
 
 void CSharedGameRules::SafeRemoveIfDesired()
@@ -598,9 +598,9 @@ void CSharedGameRules::Precache( void )
 //-----------------------------------------------------------------------------
 // Purpose: Return true if the specified player can carry any more of the ammo type
 //-----------------------------------------------------------------------------
-bool CSharedGameRules::CanHaveAmmo( CBaseCombatCharacter *pPlayer, int iAmmoIndex )
+bool CSharedGameRules::CanHaveAmmo( CBaseCombatCharacter *pPlayer, AmmoIndex_t iAmmoIndex )
 {
-	if ( iAmmoIndex > -1 )
+	if ( iAmmoIndex != AMMO_INVALID_INDEX )
 	{
 		// Get the max carrying capacity for this ammo
 		int iMaxCarry = GetAmmoDef()->MaxCarry( iAmmoIndex, pPlayer );
@@ -867,9 +867,9 @@ bool IsExplosionTraceBlocked( trace_t *ptr )
 // Default implementation of radius damage
 //-----------------------------------------------------------------------------
 #define ROBUST_RADIUS_PROBE_DIST 16.0f // If a solid surface blocks the explosion, this is how far to creep along the surface looking for another way to the target
-void CSharedGameRules::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrcIn, float flRadius, int iClassIgnore, CBaseEntity *pEntityIgnore )
+void CSharedGameRules::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrcIn, float flRadius, Class_T iClassIgnore, CBaseEntity *pEntityIgnore )
 {
-	const int MASK_RADIUS_DAMAGE = MASK_SHOT&(~CONTENTS_HITBOX);
+	const ContentsFlags_t MASK_RADIUS_DAMAGE = MASK_SHOT & (~CONTENTS_HITBOX);
 	CBaseEntity *pEntity = NULL;
 	trace_t		tr;
 	float		flAdjustedDamage, falloff;
@@ -1534,7 +1534,7 @@ void CSharedGameRules::OnSkillLevelChanged( int iNewLevel )
 // trace line rules
 //-----------------------------------------------------------------------------
 float CSharedGameRules::WeaponTraceEntity( CBaseEntity *pEntity, const Vector &vecStart, const Vector &vecEnd,
-					 unsigned int mask, trace_t *ptr )
+					 ContentsFlags_t mask, trace_t *ptr )
 {
 	UTIL_TraceEntity( pEntity, vecStart, vecEnd, mask, ptr );
 	return 1.0f;
@@ -1560,7 +1560,7 @@ void CSharedGameRules::CreateStandardEntities()
 		const char *pTeamName = GetIndexedTeamName((Team_t)i);
 
 		CTeam *pTeam = static_cast<CTeam *>(CBaseEntity::Create("team_manager", vec3_origin, vec3_angle));
-		pTeam->Init(pTeamName, i);
+		pTeam->Init(pTeamName, (Team_t)i);
 	}
 }
 
@@ -2016,9 +2016,9 @@ void CSharedGameRules::PlayerThink( CBasePlayer *pPlayer )
 	if ( g_fGameOver )
 	{
 		// clear attack/use commands from player
-		pPlayer->m_afButtonPressed = 0;
-		pPlayer->m_nButtons = 0;
-		pPlayer->m_afButtonReleased = 0;
+		pPlayer->m_afButtonPressed = IN_NONE;
+		pPlayer->m_nButtons = IN_NONE;
+		pPlayer->m_afButtonReleased = IN_NONE;
 	}
 }
 
@@ -2696,7 +2696,7 @@ Team_t CSharedGameRules::GetTeamIndex( const char *pTeamName )
 		CTeam *pTeam = GetGlobalTeamByIndex( i );
 		if(pTeam) {
 			if(FStrEq(pTeamName, pTeam->GetName())) {
-				return i;
+				return (Team_t)i;
 			}
 		}
 	}
@@ -3218,7 +3218,7 @@ const CViewVectors* CSharedGameRules::GetViewVectors() const
 //			nAmmoType - What been shot out.
 // Output : How much hurt to put on dude what done got shot (pVictim).
 //-----------------------------------------------------------------------------
-float CSharedGameRules::GetAmmoDamage( CSharedBaseEntity *pAttacker, CSharedBaseEntity *pVictim, int nAmmoType )
+float CSharedGameRules::GetAmmoDamage( CSharedBaseEntity *pAttacker, CSharedBaseEntity *pVictim, AmmoIndex_t nAmmoType )
 {
 	float flDamage = 0;
 	CAmmoDef *pAmmoDef = GetAmmoDef();

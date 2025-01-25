@@ -8,6 +8,10 @@
 #define SOLIDSETDEFAULTS_H
 #pragma once
 
+#include "vcollide_parse.h"
+
+enum ContentsFlags_t : unsigned int;
+
 // solid_t parsing
 class CSolidSetDefaults : public IVPhysicsKeyHandler
 {
@@ -15,10 +19,10 @@ public:
 	virtual void ParseKeyValue( void *pData, const char *pKey, const char *pValue );
 	virtual void SetDefaults( void *pData );
 
-	unsigned int GetContentsMask() { return m_contentsMask; }
+	ContentsFlags_t GetContentsMask() { return m_contentsMask; }
 
 private:
-	unsigned int m_contentsMask;
+	ContentsFlags_t m_contentsMask;
 };
 
 extern CSolidSetDefaults g_SolidSetup;

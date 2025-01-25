@@ -14,18 +14,22 @@
 class CBaseFilter;
 
 
-const int SF_MICROPHONE_SOUND_COMBAT			= 0x01;
-const int SF_MICROPHONE_SOUND_WORLD				= 0x02;
-const int SF_MICROPHONE_SOUND_PLAYER			= 0x04;
-const int SF_MICROPHONE_SOUND_BULLET_IMPACT		= 0x08;
-const int SF_MICROPHONE_SWALLOW_ROUTED_SOUNDS	= 0x10;
-const int SF_MICROPHONE_SOUND_EXPLOSION			= 0x20;
-const int SF_MICROPHONE_IGNORE_NONATTENUATED	= 0x40;
-const int SF_MICROPHONE_SOUND_SENTENCE			= 0x80;
+enum SFMicrophone_t : unsigned char
+{
+	SF_MICROPHONE_SOUND_COMBAT			= 0x01,
+	SF_MICROPHONE_SOUND_WORLD				= 0x02,
+	SF_MICROPHONE_SOUND_PLAYER			= 0x04,
+	SF_MICROPHONE_SOUND_BULLET_IMPACT		= 0x08,
+	SF_MICROPHONE_SWALLOW_ROUTED_SOUNDS	= 0x10,
+	SF_MICROPHONE_SOUND_EXPLOSION			= 0x20,
+	SF_MICROPHONE_IGNORE_NONATTENUATED	= 0x40,
+	SF_MICROPHONE_SOUND_SENTENCE			= 0x80,
+};
 
+FLAGENUM_OPERATORS( SFMicrophone_t, unsigned char )
 
 // Return codes from SoundPlayed
-enum MicrophoneResult_t
+enum MicrophoneResult_t : unsigned char
 {
     MicrophoneResult_Ok = 0,
     MicrophoneResult_Swallow,       // The microphone swallowed the sound. Don't play it.
@@ -41,6 +45,8 @@ class CEnvMicrophone : public CPointEntity
 
 public:
 	~CEnvMicrophone();
+
+	DECLARE_SPAWNFLAGS( SFMicrophone_t )
 
 	void Spawn(void);
 	void Activate(void);
@@ -68,11 +74,11 @@ public:
 
 	// Hook for the sound system to tell us when a sound's been played. Returns true if it's to swallow the passed in sound.
 	static bool OnSoundPlayed( int entindex, const char *soundname, soundlevel_t soundlevel, 
-		float flVolume, int iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins );
+		float flVolume, SoundFlags_t iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins );
 
 	// Same as above, except for sentences.
 	static bool OnSentencePlayed( int entindex, int sentenceIndex, soundlevel_t soundlevel, 
-		float flVolume, int iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins );
+		float flVolume, SoundFlags_t iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins );
 
 	static void OnSoundStopped( const char *soundname );
 
@@ -80,7 +86,7 @@ private:
 
 	// Per-microphone notification that a sound has played.
 	MicrophoneResult_t SoundPlayed( int entindex, const char *soundname, soundlevel_t soundlevel, 
-		float flVolume, int iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins );
+		float flVolume, SoundFlags_t iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins );
 
 	void SoundStopped( const char *soundname );
 
@@ -107,7 +113,7 @@ private:
 	EHANDLE		m_hLandmark;
 	float		m_flPitchScale = 1.0f;
 	float		m_flVolumeScale = 1.0f;
-	int			m_nChannel = CHAN_STATIC;
+	SoundChannel_t			m_nChannel = CHAN_STATIC;
 
 	bool		m_bHearingSentence; // HACKHACK: Allows SoundPlayed() to know when to play a sentence instead
 };

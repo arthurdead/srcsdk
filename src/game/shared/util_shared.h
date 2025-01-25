@@ -149,7 +149,7 @@ public:
 	DECLARE_CLASS( CTraceFilterSkipTwoEntities, CTraceFilterSimple );
 	
 	CTraceFilterSkipTwoEntities( const IHandleEntity *passentity = NULL, const IHandleEntity *passentity2 = NULL, Collision_Group_t collisionGroup = COLLISION_GROUP_NONE );
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 	virtual void SetPassEntity2( const IHandleEntity *pPassEntity2 ) { m_pPassEnt2 = pPassEntity2; }
 
 private:
@@ -245,7 +245,7 @@ private:
 class CTraceFilterSimpleClassnameList : public CTraceFilterSimple
 {
 public:
-	CTraceFilterSimpleClassnameList( const IHandleEntity *passentity, int collisionGroup );
+	CTraceFilterSimpleClassnameList( const IHandleEntity *passentity, Collision_Group_t collisionGroup );
 	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 
 	void	AddClassnameToIgnore( const char *pchClassname );
@@ -447,17 +447,22 @@ void		UTIL_DecodeICE( unsigned char * buffer, int size, const unsigned char *key
 void		UTIL_EncodeICE( unsigned char * buffer, unsigned int size, const unsigned char *key );
 unsigned short UTIL_GetAchievementEventMask( void );	
 
-#define FL_AXIS_DIRECTION_NONE	( 0 )
-#define FL_AXIS_DIRECTION_X		( 1 << 0 )
-#define FL_AXIS_DIRECTION_NX	( 1 << 1 )
-#define FL_AXIS_DIRECTION_Y		( 1 << 2 )
-#define FL_AXIS_DIRECTION_NY	( 1 << 3 )
-#define FL_AXIS_DIRECTION_Z		( 1 << 4 )
-#define FL_AXIS_DIRECTION_NZ	( 1 << 5 )
+enum FlAxisDirections_t : unsigned char
+{
+	FL_AXIS_DIRECTION_NONE =	( 0 ),
+	FL_AXIS_DIRECTION_X =		( 1 << 0 ),
+	FL_AXIS_DIRECTION_NX =	( 1 << 1 ),
+	FL_AXIS_DIRECTION_Y =		( 1 << 2 ),
+	FL_AXIS_DIRECTION_NY =	( 1 << 3 ),
+	FL_AXIS_DIRECTION_Z =		( 1 << 4 ),
+	FL_AXIS_DIRECTION_NZ =	( 1 << 5 ),
+};
 
-bool		UTIL_FindClosestPassableSpace( const Vector &vCenter, const Vector &vExtents, const Vector &vIndecisivePush, ITraceFilter *pTraceFilter, ContentsFlags_t fMask, unsigned int iIterations, Vector &vCenterOut, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
-bool		UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, ContentsFlags_t fMask, unsigned int iIterations, Vector &vOriginOut, Vector *pStartingPosition = NULL, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
-bool		UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, ContentsFlags_t fMask, Vector *pStartingPosition = NULL, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
+FLAGENUM_OPERATORS( FlAxisDirections_t, unsigned char )
+
+bool		UTIL_FindClosestPassableSpace( const Vector &vCenter, const Vector &vExtents, const Vector &vIndecisivePush, ITraceFilter *pTraceFilter, ContentsFlags_t fMask, unsigned int iIterations, Vector &vCenterOut, FlAxisDirections_t nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
+bool		UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, ContentsFlags_t fMask, unsigned int iIterations, Vector &vOriginOut, Vector *pStartingPosition = NULL, FlAxisDirections_t nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
+bool		UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, ContentsFlags_t fMask, Vector *pStartingPosition = NULL, FlAxisDirections_t nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
 
 void		UTIL_StringToVector( float *pVector, const char *pString );
 void		UTIL_StringToVector( Vector &pVector, const char *pString );
@@ -918,7 +923,7 @@ int UTIL_StringFieldToInt( const char *szValue, const char **pValueStrings, int 
 class CFlaggedEntitiesEnum : public IPartitionEnumerator
 {
 public:
-	CFlaggedEntitiesEnum( CSharedBaseEntity **pList, int listMax, ContentsFlags_t flagMask );
+	CFlaggedEntitiesEnum( CSharedBaseEntity **pList, int listMax, EntityBehaviorFlags_t flagMask );
 
 	// This gets called	by the enumeration methods with each element
 	// that passes the test.
@@ -930,7 +935,7 @@ public:
 private:
 	CSharedBaseEntity		**m_pList;
 	int				m_listMax;
-	int				m_flagMask;
+	EntityBehaviorFlags_t				m_flagMask;
 	int				m_count;
 };
 
@@ -954,7 +959,7 @@ private:
 
 int			UTIL_EntitiesAlongRay( const Ray_t &ray, CFlaggedEntitiesEnum *pEnum  );
 
-inline int UTIL_EntitiesAlongRay( CSharedBaseEntity **pList, int listMax, const Ray_t &ray, ContentsFlags_t flagMask )
+inline int UTIL_EntitiesAlongRay( CSharedBaseEntity **pList, int listMax, const Ray_t &ray, EntityBehaviorFlags_t flagMask )
 {
 	CFlaggedEntitiesEnum rayEnum( pList, listMax, flagMask );
 	return UTIL_EntitiesAlongRay( ray, &rayEnum );

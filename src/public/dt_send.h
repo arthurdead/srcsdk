@@ -776,10 +776,24 @@ void* SendProxy_SendLocalDataTable( const SendPropInfo *pProp, const void *pStru
 
 float AssignRangeMultiplier( int nBits, double range );
 
-#define SendPropAuto( varName, ... ) \
-	SendPropAuto_impl<typename NetworkVarType<currentSendDTClass::NetworkVar_##varName##_BaseClass>::type>( DT_VARNAME(varName), CNativeFieldInfo<currentSendDTClass::NetworkVar_##varName##_BaseClass>::FIELDTYPE, currentSendDTClass::GetOffset_##varName##_memory() __VA_OPT__(, __VA_ARGS__) )
-#define SendPropAuto_NoCheck( varName, ... ) \
-	SendPropAuto_impl<decltype(currentSendDTClass::varName)>( DT_VARNAME(varName), CNativeFieldInfo<decltype(currentSendDTClass::varName)>::FIELDTYPE, offsetof(currentSendDTClass, varName) __VA_OPT__(, __VA_ARGS__) )
+#if defined GAME_DLL || defined CLIENT_DLL
+#ifndef __cpp_concepts
+	#error
+#endif
+
+template <typename T>
+unsigned short offset_choose(unsigned short base_off)
+{
+	if constexpr(is_a_networkvar<T>) {
+		return T::GetOffset_memory();
+	} else {
+		return base_off;
+	}
+}
+#endif
+
+#define DEFINE_SEND_FIELD( varName, ... ) \
+	SendPropAuto_impl<typename NetworkVarType<decltype(currentSendDTClass::varName)>::type>( DT_VARNAME(varName), CNativeFieldInfo<decltype(currentSendDTClass::varName)>::FIELDTYPE, offset_choose<decltype(currentSendDTClass::varName)>(offsetof(currentSendDTClass, varName)) __VA_OPT__(, __VA_ARGS__) )
 
 void SendPropAuto_impl(
 	SendPropInfoEx &ret,

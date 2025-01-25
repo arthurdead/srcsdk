@@ -201,7 +201,7 @@ public:
 			}
 		}
 	}
-	virtual bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
+	virtual bool ShouldHitEntity( IHandleEntity *pServerEntity, ContentsFlags_t contentsMask )
 	{
 		CBaseEntity *pEntity = (CBaseEntity *)pServerEntity;
 

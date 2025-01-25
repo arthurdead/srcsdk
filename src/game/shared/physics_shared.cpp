@@ -65,7 +65,7 @@ void CSolidSetDefaults::ParseKeyValue( void *pData, const char *pKey, const char
 {
 	if ( !Q_stricmp( pKey, "contents" ) )
 	{
-		m_contentsMask = atoi( pValue );
+		m_contentsMask = (ContentsFlags_t)atoi( pValue );
 	}
 }
 
@@ -220,7 +220,7 @@ IPhysicsObject *PhysModelCreateOBB( CSharedBaseEntity *pEntity, const Vector &mi
 //-----------------------------------------------------------------------------
 bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, modelindex_t modelIndex, int solidIndex )
 {
-	vcollide_t *pCollide = modelinfo->GetVCollide( modelIndex );
+	const vcollide_t *pCollide = modelinfo->GetVCollide( modelIndex );
 	if ( !pCollide )
 		return false;
 
@@ -285,7 +285,7 @@ bool PhysModelParseSolid( solid_t &solid, CSharedBaseEntity *pEntity, modelindex
 //			solidIndex - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, vcollide_t *pCollide, int solidIndex )
+bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, const vcollide_t *pCollide, int solidIndex )
 {
 	bool parsed = false;
 
@@ -342,7 +342,7 @@ IPhysicsObject *PhysModelCreate( CSharedBaseEntity *pEntity, modelindex_t modelI
 	if ( !physenv )
 		return NULL;
 
-	vcollide_t *pCollide = modelinfo->GetVCollide( modelIndex );
+	const vcollide_t *pCollide = modelinfo->GetVCollide( modelIndex );
 	if ( !pCollide || !pCollide->solidCount )
 		return NULL;
 	
@@ -366,15 +366,15 @@ IPhysicsObject *PhysModelCreate( CSharedBaseEntity *pEntity, modelindex_t modelI
 	{
 		if ( modelinfo->GetModelType(modelinfo->GetModel(modelIndex)) == mod_brush )
 		{
-			unsigned int contents = modelinfo->GetModelContents( modelIndex );
-			Assert(contents!=0);
+			ContentsFlags_t contents = modelinfo->GetModelContents( modelIndex );
+			Assert(contents!=CONTENTS_EMPTY);
 			// HACKHACK: contents is used to filter collisions
 			// HACKHACK: So keep solid on for water brushes since they should pass collision rules (as triggers)
 			if ( contents & MASK_WATER )
 			{
 				contents |= CONTENTS_SOLID;
 			}
-			if ( contents != pObject->GetContents() && contents != 0 )
+			if ( contents != pObject->GetContents() && contents != CONTENTS_EMPTY )
 			{
 				pObject->SetContents( contents );
 				pObject->RecheckCollisionFilter();
@@ -398,7 +398,7 @@ IPhysicsObject *PhysModelCreateUnmoveable( CSharedBaseEntity *pEntity, modelinde
 	if ( !physenv )
 		return NULL;
 
-	vcollide_t *pCollide = modelinfo->GetVCollide( modelIndex );
+	const vcollide_t *pCollide = modelinfo->GetVCollide( modelIndex );
 	if ( !pCollide || !pCollide->solidCount )
 		return NULL;
 
@@ -424,9 +424,9 @@ IPhysicsObject *PhysModelCreateUnmoveable( CSharedBaseEntity *pEntity, modelinde
 	{
 		if ( modelinfo->GetModelType(modelinfo->GetModel(modelIndex)) == mod_brush )
 		{
-			unsigned int contents = modelinfo->GetModelContents( modelIndex );
-			Assert(contents!=0);
-			if ( contents != pObject->GetContents() && contents != 0 )
+			ContentsFlags_t contents = modelinfo->GetModelContents( modelIndex );
+			Assert(contents!=CONTENTS_EMPTY);
+			if ( contents != pObject->GetContents() && contents != CONTENTS_EMPTY )
 			{
 				pObject->SetContents( contents );
 				pObject->RecheckCollisionFilter();
@@ -614,7 +614,7 @@ void PhysCreateVirtualTerrain( CSharedBaseEntity *pWorld, const objectparams_t &
 	char nameBuf[1024];
 	for ( int i = 0; i < MAX_MAP_DISPINFO; i++ )
 	{
-		CPhysCollide *pCollide = modelinfo->GetCollideForVirtualTerrain( i );
+		const CPhysCollide *pCollide = modelinfo->GetCollideForVirtualTerrain( i );
 		if ( pCollide )
 		{
 			solid_t solid;
@@ -688,7 +688,7 @@ IPhysicsObject *PhysCreateWorld_Shared( CSharedBaseEntity *pWorld, vcollide_t *p
 				continue;
 
 			pObject->SetCallbackFlags( pObject->GetCallbackFlags() | CALLBACK_NEVER_DELETED );
-			Assert( g_SolidSetup.GetContentsMask() != 0 );
+			Assert( g_SolidSetup.GetContentsMask() != CONTENTS_EMPTY );
 			pObject->SetContents( g_SolidSetup.GetContentsMask() );
 
 			if ( !pWorldPhysics )
@@ -785,7 +785,7 @@ void CPhysicsGameTrace::VehicleTraceRayWithWater( const Ray_t &ray, void *pVehic
 //-----------------------------------------------------------------------------
 bool CPhysicsGameTrace::VehiclePointInWater( const Vector &vecPoint )
 {
-	return ( ( UTIL_PointContents( vecPoint, MASK_WATER ) & MASK_WATER ) != 0 );
+	return ( ( UTIL_PointContents( vecPoint, MASK_WATER ) & MASK_WATER ) != CONTENTS_EMPTY );
 }
 
 void PhysRecheckObjectPair( IPhysicsObject *pObject0, IPhysicsObject *pObject1 )
@@ -1058,7 +1058,7 @@ void PhysFrictionSound( CSharedBaseEntity *pEntity, IPhysicsObject *pObject, flo
 	float volume = energy * energy;
 		
 	unsigned short soundName = psurf->sounds.scrapeRough;
-	short *soundHandle = &psurf->soundhandles.scrapeRough;
+	HSOUNDSCRIPTHANDLE *soundHandle = &psurf->soundhandles.scrapeRough;
 
 	if ( psurf->sounds.scrapeSmooth && phit->audio.roughnessFactor < psurf->audio.roughThreshold )
 	{

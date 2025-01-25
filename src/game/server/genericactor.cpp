@@ -201,7 +201,7 @@ public:
 
 	bool KeyValue( const char *szKeyName, const char *szValue );
 
-	void SpeakIfAllowed( const char *concept, AI_CriteriaSet *modifiers = NULL );
+	void SpeakIfAllowed( const char *conc, AI_CriteriaSet *modifiers = NULL );
 	void ModifyOrAppendCriteria( AI_CriteriaSet& set );
 
 	void PainSound( const CTakeDamageInfo &info );
@@ -260,10 +260,10 @@ bool CGenericActorCustom::KeyValue( const char *szKeyName, const char *szValue )
 //-----------------------------------------------------------------------------
 // Purpose: Speak concept
 //-----------------------------------------------------------------------------
-void CGenericActorCustom::SpeakIfAllowed( const char *concept, AI_CriteriaSet *modifiers )
+void CGenericActorCustom::SpeakIfAllowed( const char *conc, AI_CriteriaSet *modifiers )
 {
 	AI_CriteriaSet empty;
-	Speak( concept, modifiers ? *modifiers : empty );
+	Speak( conc, modifiers ? *modifiers : empty );
 }
 
 //-----------------------------------------------------------------------------

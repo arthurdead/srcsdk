@@ -480,8 +480,8 @@ BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_FullTable )
 END_SEND_TABLE()
 
 BEGIN_SEND_TABLE_NOBASE( VisionModelIndex_t, DT_VisionModelIndex )
-	SendPropAuto_NoCheck( flags, MAX_SUPPORTED_VISION_FILTERS, VISION_FILTER_NONE ),
-	SendPropAuto_NoCheck( modelindex ),
+	DEFINE_SEND_FIELD( flags, MAX_SUPPORTED_VISION_FILTERS, VISION_FILTER_NONE ),
+	DEFINE_SEND_FIELD( modelindex ),
 END_SEND_TABLE()
 
 BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_AnimTimeMustBeFirst )
@@ -489,90 +489,90 @@ BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_AnimTimeMustBeFirst )
 	//  proxy on the client that stores off the old values before writing in the new values and
 	//  if it is sent after the new values, then it will only have the new origin and studio model, etc.
 	//  interpolation will be busted
-	SendPropAuto( m_flAnimTime, 8, SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_AnimTime, SENDPROP_CHANGES_OFTEN_PRIORITY ),
+	DEFINE_SEND_FIELD( m_flAnimTime, 8, SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_AnimTime, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 END_SEND_TABLE()
 
 BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_PredictableId )
-	SendPropAuto( m_PredictableID ),
-	SendPropAuto( m_bIsPlayerSimulated ),
+	DEFINE_SEND_FIELD( m_PredictableID ),
+	DEFINE_SEND_FIELD( m_bIsPlayerSimulated ),
 END_SEND_TABLE()
 
 // This table encodes the CBaseEntity data.
 IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropDataTable( "AnimTimeMustBeFirst", 0, &REFERENCE_SEND_TABLE(DT_AnimTimeMustBeFirst), SendProxy_ClientSideAnimation ),
 
-	SendPropAuto( m_flSimulationTime, SIMULATION_TIME_WINDOW_BITS, SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_SimulationTime, SENDPROP_SIMULATION_TIME_PRIORITY ),
-	SendPropAuto( m_flCreateTime ),
+	DEFINE_SEND_FIELD( m_flSimulationTime, SIMULATION_TIME_WINDOW_BITS, SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_SimulationTime, SENDPROP_SIMULATION_TIME_PRIORITY ),
+	DEFINE_SEND_FIELD( m_flCreateTime ),
 
-	SendPropAuto( m_cellbits, MINIMUM_BITS_NEEDED( 32 ), SENDPROP_CELL_INFO_PRIORITY ),
-	SendPropAuto( m_cellX, CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellX, SENDPROP_CELL_INFO_PRIORITY ), // 32 priority in the send table
-	SendPropAuto( m_cellY, CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellY, SENDPROP_CELL_INFO_PRIORITY ),
-	SendPropAuto( m_cellZ, CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellZ, SENDPROP_CELL_INFO_PRIORITY ),
+	DEFINE_SEND_FIELD( m_cellbits, MINIMUM_BITS_NEEDED( 32 ), SENDPROP_CELL_INFO_PRIORITY ),
+	DEFINE_SEND_FIELD( m_cellX, CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellX, SENDPROP_CELL_INFO_PRIORITY ), // 32 priority in the send table
+	DEFINE_SEND_FIELD( m_cellY, CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellY, SENDPROP_CELL_INFO_PRIORITY ),
+	DEFINE_SEND_FIELD( m_cellZ, CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellZ, SENDPROP_CELL_INFO_PRIORITY ),
 
-	SendPropAuto( m_vecOrigin, 
+	DEFINE_SEND_FIELD( m_vecOrigin, 
 	#if PREDICTION_ERROR_CHECK_LEVEL > 1
 		SPROP_NOSCALE|
 	#endif
 		SPROP_CHANGES_OFTEN|SENDPROP_VECORIGIN_FLAGS, SENDPROP_VECORIGIN_PROXY, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 
-	SendPropAuto( m_ubInterpolationFrame, 0, NOINTERP_PARITY_MAX ),
-	SendPropAuto( m_nModelIndex ),
+	DEFINE_SEND_FIELD( m_ubInterpolationFrame, 0, NOINTERP_PARITY_MAX ),
+	DEFINE_SEND_FIELD( m_nModelIndex ),
 
 	SendPropDataTable( SENDINFO_DT( m_pCollision ), &REFERENCE_SEND_TABLE(DT_CollisionProperty), SendProxy_DataTablePtrToDataTable ),
 
-	SendPropAuto( m_nRenderFX, kRenderFxNone, kRenderFxMax ),
-	SendPropAuto( m_nRenderMode, kRenderNormal, kRenderModeCount ),
-	SendPropAuto( m_fEffects, EF_NONE, EF_LAST_FLAG ),
-	SendPropAuto( m_clrRender ),
+	DEFINE_SEND_FIELD( m_nRenderFX, kRenderFxNone, kRenderFxMax ),
+	DEFINE_SEND_FIELD( m_nRenderMode, kRenderNormal, kRenderModeCount ),
+	DEFINE_SEND_FIELD( m_fEffects, EF_NONE, EF_LAST_FLAG ),
+	DEFINE_SEND_FIELD( m_clrRender ),
 
 	// Keep consistent with VIEW_ID_COUNT in viewrender.h
-	SendPropAuto( m_iViewHideFlags, VIEW_FLAG_NONE, VIEW_LAST_FLAG ),
+	DEFINE_SEND_FIELD( m_iViewHideFlags, VIEW_FLAG_NONE, VIEW_LAST_FLAG ),
 
-	SendPropAuto( m_bDisableFlashlight ),
-	SendPropAuto( m_iTeamNum, TEAMNUM_NUM_BITS, TEAM_UNASSIGNED ),
-	SendPropAuto( m_CollisionGroup, COLLISION_GROUP_BITS, COLLISION_GROUP_NONE ),
-	SendPropAuto( m_flElasticity ),
-	SendPropAuto( m_flShadowCastDistance ),
-	SendPropAuto( m_hOwnerEntity ),
-	SendPropAuto( m_hEffectEntity ),
-	SendPropAuto( m_hMoveParent ),
-	SendPropAuto( m_iParentAttachment, NUM_PARENTATTACHMENT_BITS ),
+	DEFINE_SEND_FIELD( m_bDisableFlashlight ),
+	DEFINE_SEND_FIELD( m_iTeamNum, TEAMNUM_NUM_BITS, TEAM_UNASSIGNED ),
+	DEFINE_SEND_FIELD( m_CollisionGroup, COLLISION_GROUP_BITS, COLLISION_GROUP_NONE ),
+	DEFINE_SEND_FIELD( m_flElasticity ),
+	DEFINE_SEND_FIELD( m_flShadowCastDistance ),
+	DEFINE_SEND_FIELD( m_hOwnerEntity ),
+	DEFINE_SEND_FIELD( m_hEffectEntity ),
+	DEFINE_SEND_FIELD( m_hMoveParent ),
+	DEFINE_SEND_FIELD( m_iParentAttachment, NUM_PARENTATTACHMENT_BITS ),
 
-	SendPropAuto( m_iName ),
+	DEFINE_SEND_FIELD( m_iName ),
 
-	SendPropAuto( m_MoveType, MOVETYPE_NONE, MOVETYPE_LAST ),
-	SendPropAuto( m_MoveCollide, MOVECOLLIDE_DEFAULT, MOVECOLLIDE_COUNT ),
+	DEFINE_SEND_FIELD( m_MoveType, MOVETYPE_NONE, MOVETYPE_LAST ),
+	DEFINE_SEND_FIELD( m_MoveCollide, MOVECOLLIDE_DEFAULT, MOVECOLLIDE_COUNT ),
 
-	SendPropAuto( m_angRotation, 
+	DEFINE_SEND_FIELD( m_angRotation, 
 	#if PREDICTION_ERROR_CHECK_LEVEL > 1
 		SPROP_NOSCALE|
 	#endif
 		SPROP_CHANGES_OFTEN, SendProxy_Angles, SENDPROP_CHANGES_OFTEN_PRIORITY ),
 
-	SendPropAuto( m_iTextureFrameIndex, 8 ),
+	DEFINE_SEND_FIELD( m_iTextureFrameIndex, 8 ),
 
-	SendPropAuto( m_hPlayerSimulationOwner ),
+	DEFINE_SEND_FIELD( m_hPlayerSimulationOwner ),
 	SendPropDataTable( "predictable_id", 0, &REFERENCE_SEND_TABLE( DT_PredictableId ), SendProxy_SendPredictableIdTable ),
 
 	// FIXME: Collapse into another flag field?
-	SendPropAuto( m_bSimulatedEveryTick ),
-	SendPropAuto( m_bAnimatedEveryTick ),
-	SendPropAuto( m_bAlternateSorting ),
+	DEFINE_SEND_FIELD( m_bSimulatedEveryTick ),
+	DEFINE_SEND_FIELD( m_bAnimatedEveryTick ),
+	DEFINE_SEND_FIELD( m_bAlternateSorting ),
 
 	SendPropUtlVectorDataTable( m_VisionModelIndexOverrides, MAX_SUPPORTED_VISION_FILTERS, DT_VisionModelIndex ),
 
-	SendPropAuto( m_fViewDistance ),
+	DEFINE_SEND_FIELD( m_fViewDistance ),
 
 	// Fading
-	SendPropAuto( m_fadeMinDist ),
-	SendPropAuto( m_fadeMaxDist ),
-	SendPropAuto( m_flFadeScale ),
+	DEFINE_SEND_FIELD( m_fadeMinDist ),
+	DEFINE_SEND_FIELD( m_fadeMaxDist ),
+	DEFINE_SEND_FIELD( m_flFadeScale ),
 
-	SendPropAuto( m_nMinCPULevel, CPU_LEVEL_LOW, CPU_LEVEL_COUNT ),
-	SendPropAuto( m_nMaxCPULevel, CPU_LEVEL_LOW, CPU_LEVEL_COUNT ),
+	DEFINE_SEND_FIELD( m_nMinCPULevel, CPU_LEVEL_LOW, CPU_LEVEL_COUNT ),
+	DEFINE_SEND_FIELD( m_nMaxCPULevel, CPU_LEVEL_LOW, CPU_LEVEL_COUNT ),
 
-	SendPropAuto( m_nMinGPULevel, GPU_LEVEL_LOW, GPU_LEVEL_COUNT ),
-	SendPropAuto( m_nMaxGPULevel, GPU_LEVEL_LOW, GPU_LEVEL_COUNT ),
+	DEFINE_SEND_FIELD( m_nMinGPULevel, GPU_LEVEL_LOW, GPU_LEVEL_COUNT ),
+	DEFINE_SEND_FIELD( m_nMaxGPULevel, GPU_LEVEL_LOW, GPU_LEVEL_COUNT ),
 
 	// Data that gets sent when unit is outside the pvs (and no other table is send)
 	SendPropDataTable( "minimaldata", 0, &REFERENCE_SEND_TABLE(DT_MinimalTable), SendProxy_SendMinimalDataTable ),
@@ -650,7 +650,7 @@ void CBaseEntityModelLoadProxy::Handler::OnModelLoadComplete( const model_t *pMo
 
 CBaseEntity::CBaseEntity( EntityFlags_t iEFlags )
 {
-	if( iEFlags != 0 )
+	if( iEFlags != EFL_NONE )
 		AddEFlags( iEFlags );
 
 	m_Network = NULL;

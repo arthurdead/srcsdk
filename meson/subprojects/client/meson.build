@@ -1,4 +1,6 @@
-project('client', 'cpp', 'c')
+project('client', 'cpp', 'c', default_options: [
+	'cpp_std=gnu++20'
+])
 
 assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 assert(meson.get_compiler('c').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')

@@ -1,4 +1,6 @@
-project('game_shared_base','cpp','c')
+project('game_shared_base','cpp','c', default_options: [
+	'cpp_std=gnu++20'
+])
 
 assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 assert(meson.get_compiler('c').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
@@ -36,7 +38,7 @@ endif
 
 game_shared_base_dep = declare_dependency(
 	compile_args: [
-		
+		'-fconcepts',
 	],
 	sources: files(
 		join_paths(shared_src_dir,'default','weapon_parse_default.cpp'),

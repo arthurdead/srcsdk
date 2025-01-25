@@ -1439,7 +1439,7 @@ public:
 
 	// Same as above, but for sentences
 	// (which don't actually have EmitSound_t params)
-	virtual void ModifySentenceParams( int &iSentenceIndex, int &iChannel, float &flVolume, soundlevel_t &iSoundlevel, int &iFlags, int &iPitch,
+	virtual void ModifySentenceParams( int &iSentenceIndex, SoundChannel_t &iChannel, float &flVolume, soundlevel_t &iSoundlevel, SoundFlags_t &iFlags, int &iPitch,
 		const Vector **pOrigin, const Vector **pDirection, bool &bUpdatePositions, float &soundtime, int &iSpecialDSP, int &iSpeakerIndex );
 
 	static float GetSoundDuration( const char *soundname, char const *actormodel );
@@ -1458,7 +1458,7 @@ public:
 
 	static void StopSound( int iEntIndex, int iChannel, const char *pSample, bool bIsStoppingSpeakerSound = false );
 
-	static void EmitAmbientSound( int entindex, const Vector& origin, const char *soundname, int flags = 0, float soundtime = 0.0f, float *duration = NULL );
+	static void EmitAmbientSound( int entindex, const Vector& origin, const char *soundname, SoundFlags_t flags = SND_NOFLAGS, float soundtime = 0.0f, float *duration = NULL );
 
 	// These files need to be listed in scripts/game_sounds_manifest.txt
 	static HSOUNDSCRIPTHANDLE PrecacheScriptSound( const char *soundname );
@@ -1468,8 +1468,8 @@ public:
 	//  the recipient list.
 	static void RemoveRecipientsIfNotCloseCaptioning( CRecipientFilter& filter );
 	static void EmitCloseCaption( IRecipientFilter& filter, int entindex, char const *token, CUtlVector< Vector >& soundorigins, float duration, bool warnifmissing = false );
-	static void	EmitSentenceByIndex( IRecipientFilter& filter, int iEntIndex, int iChannel, int iSentenceIndex, 
-		float flVolume, soundlevel_t iSoundlevel, int iFlags = 0, int iPitch = PITCH_NORM,
+	static void	EmitSentenceByIndex( IRecipientFilter& filter, int iEntIndex, SoundChannel_t iChannel, int iSentenceIndex, 
+		float flVolume, soundlevel_t iSoundlevel, SoundFlags_t iFlags = SND_NOFLAGS, int iPitch = PITCH_NORM,
 		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, bool bUpdatePositions = true, float soundtime = 0.0f
 		, int iSpecialDSP = 0, int iSpeakerIndex = -1 // Needed for env_microphone
 		 );
@@ -1875,7 +1875,7 @@ public:
 	// Player who is driving my simulation
 	CNetworkHandle( CBasePlayer, m_hPlayerSimulationOwner );
 
-	int								m_fDataObjectTypes;
+	unsigned int								m_fDataObjectTypes;
 
 	UtlHashHandle_t		m_ListByClass;
 	CBaseEntity	*		m_pPrevByClass;

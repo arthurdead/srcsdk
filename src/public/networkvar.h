@@ -31,6 +31,17 @@ namespace std
 	using nullptr_t = decltype(nullptr);
 }
 
+#if defined GAME_DLL || defined CLIENT_DLL
+#ifndef __cpp_concepts
+	#error
+#endif
+
+template <typename T>
+concept is_a_networkvar = (requires {
+	&T::GetOffset_memory;
+});
+#endif
+
 #pragma warning( disable : 4284 ) // warning C4284: return type for 'CNetworkVarT<int>::operator ->' is 'int *' (ie; not a UDT or reference to a UDT.  Will produce errors if applied using infix notation)
 
 #define MyOffsetOf( type, var ) offsetof(type, var)
@@ -1906,6 +1917,19 @@ struct NetworkVarType<CNetworkVarEmbeddedPtrBase<T, C>>
 	using type = T *;
 };
 
+#if defined GAME_DLL || defined CLIENT_DLL
+#ifndef __cpp_concepts
+	#error
+#endif
+
+template <typename T>
+	requires is_a_networkvar<T>
+struct NetworkVarType<T>
+{
+	using type = typename NetworkVarType<typename T::BaseClass>::type;
+};
+#endif
+
 // Use this macro when you have a base class with a variable, and it doesn't have that variable in a SendTable,
 // but a derived class does. Then, the entity is only flagged as changed when the variable is changed in
 // an entity that wants to transmit the variable.
@@ -1984,6 +2008,7 @@ struct NetworkVarType<CNetworkVarEmbeddedPtrBase<T, C>>
 	{ \
 	public: \
 		template <typename T> friend void ServerClassInit(); \
+		typedef NetworkVar_##name##_OuterClass::NetworkVar_##name##_BaseClass BaseClass; \
 		using base< __VA_OPT__(__VA_ARGS__,) NetworkVar_##name##_OuterClass::NetworkVar_##name >::base; \
 		using NetworkVar_##name##_BaseClass::operator=; \
 		NetworkVar_##name() = default;
@@ -2013,6 +2038,12 @@ struct NetworkVarType<CNetworkVarEmbeddedPtrBase<T, C>>
 	accessor \
 	NetworkVar_##name name;
 #define NETWORK_VAR_END_LOCATED( name, accessor, otherClass, otherName ) \
+	public: \
+		static unsigned short GetOffset_memory() \
+		{ \
+			static unsigned short offset = MyOffsetOf(otherClass, otherName); \
+			return offset; \
+		} \
 		static typename NetworkVarType< NetworkVar_##name##_BaseClass >::type &GetValue_location_impl( void *ptr ) \
 		{ \
 			return (( ( NetworkVar_##name##_OuterClass * ) ( ((uint8 *)ptr) - NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() ) )->*( &otherClass::otherName )); \

@@ -50,9 +50,9 @@ struct QueryCacheKey_t
 	Vector m_Points[QCACHE_MAXPNTS];
 	EHANDLE m_pEntities[QCACHE_MAXPNTS];
 	EEntityOffsetMode_t m_nOffsetMode[QCACHE_MAXPNTS];
-	unsigned int m_nTraceMask;
+	ContentsFlags_t m_nTraceMask;
 	unsigned int m_nHashIdx;
-	int m_nCollisionGroup;
+	Collision_Group_t m_nCollisionGroup;
 	ShouldHitFunc_t m_pTraceFilterFunction;
 
 	float m_flMinimumUpdateInterval;
@@ -83,8 +83,8 @@ bool IsLineOfSightBetweenTwoEntitiesClear( CSharedBaseEntity *pSrcEntity,
 										   CSharedBaseEntity *pDestEntity,
 										   EEntityOffsetMode_t nDestOffsetMode,
 										   CSharedBaseEntity *pSkipEntity,
-										   int nCollisionGroup,
-										   unsigned int nTraceMask,
+										   Collision_Group_t nCollisionGroup,
+										   ContentsFlags_t nTraceMask,
 										   ShouldHitFunc_t pTraceFilterCallback,
 										   float flMinimumUpdateInterval = 0.2
 	);

@@ -408,19 +408,19 @@ int			UTIL_EntitiesAlongRay( const Ray_t &ray, CFlaggedEntitiesEnum *pEnum  );
 int			UTIL_EntitiesInSphere( const Vector &center, float radius, CFlaggedEntitiesEnum *pEnum  );
 int			UTIL_EntitiesAtPoint( const Vector &point, CFlaggedEntitiesEnum *pEnum );
 
-inline int UTIL_EntitiesInBox( CBaseEntity **pList, int listMax, const Vector &mins, const Vector &maxs, ContentsFlags_t flagMask )
+inline int UTIL_EntitiesInBox( CBaseEntity **pList, int listMax, const Vector &mins, const Vector &maxs, EntityBehaviorFlags_t flagMask )
 {
 	CFlaggedEntitiesEnum boxEnum( pList, listMax, flagMask );
 	return UTIL_EntitiesInBox( mins, maxs, &boxEnum );
 }
 
-inline int UTIL_EntitiesInSphere( CBaseEntity **pList, int listMax, const Vector &center, float radius, ContentsFlags_t flagMask )
+inline int UTIL_EntitiesInSphere( CBaseEntity **pList, int listMax, const Vector &center, float radius, EntityBehaviorFlags_t flagMask )
 {
 	CFlaggedEntitiesEnum sphereEnum( pList, listMax, flagMask );
 	return UTIL_EntitiesInSphere( center, radius, &sphereEnum );
 }
 
-inline int UTIL_EntitiesAtPoint( CBaseEntity **pList, int listMax, const Vector &point, ContentsFlags_t flagMask )
+inline int UTIL_EntitiesAtPoint( CBaseEntity **pList, int listMax, const Vector &point, EntityBehaviorFlags_t flagMask )
 {
 	CFlaggedEntitiesEnum pointEnum( pList, listMax, flagMask );
 	return UTIL_EntitiesAtPoint( point, &pointEnum );
@@ -664,10 +664,10 @@ enum soundlevel_t : unsigned int;
 
 void SENTENCEG_Init();
 void SENTENCEG_Stop(edict_t *entity, int isentenceg, int ipick);
-int SENTENCEG_PlayRndI(edict_t *entity, int isentenceg, float volume, soundlevel_t soundlevel, int flags, int pitch);
-int SENTENCEG_PlayRndSz(edict_t *entity, const char *szrootname, float volume, soundlevel_t soundlevel, int flags, int pitch);
-int SENTENCEG_PlaySequentialSz(edict_t *entity, const char *szrootname, float volume, soundlevel_t soundlevel, int flags, int pitch, int ipick, int freset);
-void SENTENCEG_PlaySentenceIndex( edict_t *entity, int iSentenceIndex, float volume, soundlevel_t soundlevel, int flags, int pitch );
+int SENTENCEG_PlayRndI(edict_t *entity, int isentenceg, float volume, soundlevel_t soundlevel, SoundFlags_t flags, int pitch);
+int SENTENCEG_PlayRndSz(edict_t *entity, const char *szrootname, float volume, soundlevel_t soundlevel, SoundFlags_t flags, int pitch);
+int SENTENCEG_PlaySequentialSz(edict_t *entity, const char *szrootname, float volume, soundlevel_t soundlevel, SoundFlags_t flags, int pitch, int ipick, int freset);
+void SENTENCEG_PlaySentenceIndex( edict_t *entity, int iSentenceIndex, float volume, soundlevel_t soundlevel, SoundFlags_t flags, int pitch );
 int SENTENCEG_PickRndSz(const char *szrootname);
 int SENTENCEG_GetIndex(const char *szrootname);
 int SENTENCEG_Lookup(const char *sample);

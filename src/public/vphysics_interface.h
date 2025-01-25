@@ -84,6 +84,8 @@ typedef CGameTrace trace_t;
 struct physics_stats_t;
 struct physics_performanceparams_t;
 struct virtualmeshparams_t;
+enum ContentsFlags_t : unsigned int;
+enum HSOUNDSCRIPTHANDLE : unsigned short;
 
 //enum PhysInterfaceId_t;
 struct physsaveparams_t;
@@ -767,8 +769,8 @@ public:
 	virtual void			SetMaterialIndex( int materialIndex ) = 0;
 
 	// contents bits
-	virtual unsigned int	GetContents() const = 0;
-	virtual void			SetContents( unsigned int contents ) = 0;
+	virtual ContentsFlags_t	GetContents() const = 0;
+	virtual void			SetContents( ContentsFlags_t contents ) = 0;
 
 	// Get the radius if this is a sphere object (zero if this is a polygonal mesh)
 	virtual float			GetSphereRadius() const = 0;
@@ -934,20 +936,20 @@ struct surfacesoundnames_t
 
 struct surfacesoundhandles_t
 {
-	short	stepleft;
-	short	stepright;
+	HSOUNDSCRIPTHANDLE	stepleft;
+	HSOUNDSCRIPTHANDLE	stepright;
 
-	short	impactSoft;
-	short	impactHard;
+	HSOUNDSCRIPTHANDLE	impactSoft;
+	HSOUNDSCRIPTHANDLE	impactHard;
 
-	short	scrapeSmooth;
-	short	scrapeRough;
+	HSOUNDSCRIPTHANDLE	scrapeSmooth;
+	HSOUNDSCRIPTHANDLE	scrapeRough;
 
-	short	bulletImpact;
-	short	rolling;
+	HSOUNDSCRIPTHANDLE	bulletImpact;
+	HSOUNDSCRIPTHANDLE	rolling;
 
-	short	breakSound;
-	short	strainSound;
+	HSOUNDSCRIPTHANDLE	breakSound;
+	HSOUNDSCRIPTHANDLE	strainSound;
 };
 
 struct surfacegameprops_t

@@ -195,7 +195,7 @@ private:
 
 	bool IsValidType( DataObject_t type ) const
 	{
-		if ( type < 0 || type >= MAX_ACCESSORS )
+		if ( (unsigned char)type >= MAX_ACCESSORS )
 			return false;
 
 		if ( m_Accessors[ type ] == NULL )
@@ -205,7 +205,7 @@ private:
 
 	void AddDataAccessor( DataObject_t type, IEntityDataInstantiator *instantiator )
 	{
-		if ( type < 0 || type >= MAX_ACCESSORS )
+		if ( (unsigned char)type >= MAX_ACCESSORS )
 		{
 			Assert( !"AddDataAccessor with out of range type!!!\n" );
 			return;
@@ -229,25 +229,25 @@ static CDataObjectAccessSystem g_DataObjectAccessSystem;
 
 bool CSharedBaseEntity::HasDataObjectType( DataObject_t type ) const
 {
-	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
+	Assert( (unsigned char)type < NUM_DATAOBJECT_TYPES );
 	return ( m_fDataObjectTypes	& (1<<type) ) ? true : false;
 }
 
 void CSharedBaseEntity::AddDataObjectType( DataObject_t type )
 {
-	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
+	Assert( (unsigned char)type < NUM_DATAOBJECT_TYPES );
 	m_fDataObjectTypes |= (1<<type);
 }
 
 void CSharedBaseEntity::RemoveDataObjectType( DataObject_t type )
 {
-	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
+	Assert( (unsigned char)type < NUM_DATAOBJECT_TYPES );
 	m_fDataObjectTypes &= ~(1<<type);
 }
 
 void *CSharedBaseEntity::GetDataObject( DataObject_t type )
 {
-	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
+	Assert( (unsigned char)type < NUM_DATAOBJECT_TYPES );
 	if ( !HasDataObjectType( type ) )
 		return NULL;
 	return g_DataObjectAccessSystem.GetDataObject( type, this );
@@ -255,14 +255,14 @@ void *CSharedBaseEntity::GetDataObject( DataObject_t type )
 
 void *CSharedBaseEntity::CreateDataObject( DataObject_t type )
 {
-	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
+	Assert( (unsigned char)type < NUM_DATAOBJECT_TYPES );
 	AddDataObjectType( type );
 	return g_DataObjectAccessSystem.CreateDataObject( type, this );
 }
 
 void CSharedBaseEntity::DestroyDataObject( DataObject_t type )
 {
-	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
+	Assert( (unsigned char)type < NUM_DATAOBJECT_TYPES );
 	if ( !HasDataObjectType( type ) )
 		return;
 	g_DataObjectAccessSystem.DestroyDataObject( type, this );
@@ -1144,7 +1144,7 @@ void CSharedBaseEntity::PhysicsImpact( CSharedBaseEntity *other, trace_t &trace 
 // Purpose: Returns the mask of what is solid for the given entity
 // Output : unsigned int
 //-----------------------------------------------------------------------------
-unsigned int CSharedBaseEntity::PhysicsSolidMaskForEntity( void ) const
+ContentsFlags_t CSharedBaseEntity::PhysicsSolidMaskForEntity( void ) const
 {
 	return MASK_SOLID;
 }
@@ -1171,7 +1171,7 @@ void CSharedBaseEntity::UpdateWaterState()
 	SetWaterType( WT_None );
 	ContentsFlags_t cont = GetWaterContents (point);
 
-	if (( cont & MASK_WATER ) == 0)
+	if (( cont & MASK_WATER ) == CONTENTS_EMPTY)
 		return;
 
 	SetWaterType( WaterTypeFromContents( cont ) );
@@ -1187,14 +1187,14 @@ void CSharedBaseEntity::UpdateWaterState()
 		// Check the exact center of the box
 		point[2] = WorldSpaceCenter().z;
 
-		int midcont = GetWaterContents (point);
+		ContentsFlags_t midcont = GetWaterContents (point);
 		if ( midcont & MASK_WATER )
 		{
 			// Now check where the eyes are...
 			SetWaterLevel( WL_Waist );
 			point[2] = EyePosition().z;
 
-			int eyecont = GetWaterContents (point);
+			ContentsFlags_t eyecont = GetWaterContents (point);
 			if ( eyecont & MASK_WATER )
 			{
 				SetWaterLevel( WL_Eyes );
@@ -1846,7 +1846,7 @@ void CSharedBaseEntity::PhysicsSimulate( void )
 
 		UpdateBaseVelocity();
 
-		if ( ((GetFlags() & FL_BASEVELOCITY) == 0) && (GetBaseVelocity() != vec3_origin) )
+		if ( ((GetFlags() & FL_BASEVELOCITY) == FL_NO_ENTITY_FLAGS) && (GetBaseVelocity() != vec3_origin) )
 		{
 			// Apply momentum (add in half of the previous frame of velocity first)
 			// BUGBUG: This will break with PhysicsStep() because of the timestep difference

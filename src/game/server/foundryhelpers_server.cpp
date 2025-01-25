@@ -32,7 +32,7 @@ public:
 };
 
 IMPLEMENT_SERVERCLASS_ST( CTEFoundryHelpers_AddHighlight, DT_TEFoundryHelpers_AddHighlight )
-	SendPropAuto( m_hEntity ),
+	DEFINE_SEND_FIELD( m_hEntity ),
 END_SEND_TABLE()
 
 // Singleton to fire TEMuzzleFlash objects

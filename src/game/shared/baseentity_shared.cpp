@@ -2916,7 +2916,7 @@ void CSharedBaseEntity::ModifyEmitSoundParams( EmitSound_t &params )
 }
 
 #if defined(GAME_DLL)
-void CSharedBaseEntity::ModifySentenceParams( int &iSentenceIndex, int &iChannel, float &flVolume, soundlevel_t &iSoundlevel, int &iFlags, int &iPitch,
+void CSharedBaseEntity::ModifySentenceParams( int &iSentenceIndex, int &iChannel, float &flVolume, soundlevel_t &iSoundlevel, SoundFlags_t &iFlags, int &iPitch,
 	const Vector **pOrigin, const Vector **pDirection, bool &bUpdatePositions, float &soundtime, int &iSpecialDSP, int &iSpeakerIndex )
 {
 

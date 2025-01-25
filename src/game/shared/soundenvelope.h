@@ -61,12 +61,12 @@ public:
 	virtual void		Shutdown( CSoundPatch *pSound ) = 0;
 
 	virtual CSoundPatch	*SoundCreate( IRecipientFilter& filter, int nEntIndex, const char *pSoundName ) = 0;
-	virtual CSoundPatch	*SoundCreate( IRecipientFilter& filter, int nEntIndex, int channel, const char *pSoundName, 
+	virtual CSoundPatch	*SoundCreate( IRecipientFilter& filter, int nEntIndex, SoundChannel_t channel, const char *pSoundName, 
 							float attenuation, float scriptVolume = 1.0f ) = 0;
-	virtual CSoundPatch	*SoundCreate( IRecipientFilter& filter, int nEntIndex, int channel, const char *pSoundName, 
+	virtual CSoundPatch	*SoundCreate( IRecipientFilter& filter, int nEntIndex, SoundChannel_t channel, const char *pSoundName, 
 							soundlevel_t soundlevel ) = 0;
 	virtual CSoundPatch	*SoundCreate( IRecipientFilter& filter, int nEntIndex, const EmitSound_t &es ) = 0;
-	virtual CSoundPatch	*SoundCreate( IRecipientFilter& filter, int nEntIndex, int channel, const char *pSoundName, 
+	virtual CSoundPatch	*SoundCreate( IRecipientFilter& filter, int nEntIndex, SoundChannel_t channel, const char *pSoundName, 
 						float attenuation, const Vector *pSoundOrigin, float scriptVolume = 1.0f ) = 0;
 
 	virtual void		SoundDestroy( CSoundPatch	* ) = 0;
@@ -92,17 +92,6 @@ public:
 
 	virtual void		SoundSetCloseCaptionDuration( CSoundPatch *pSound, float flDuration ) = 0;
 };
-
-
-//-----------------------------------------------------------------------------
-// Save/restore
-//-----------------------------------------------------------------------------
-class ISaveRestoreOps;
-
-ISaveRestoreOps *GetSoundSaveRestoreOps( );
-
-#define DEFINE_SOUNDPATCH(name) \
-	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef,name), 0 }, 1, FTYPEDESC_SAVE, NULL, GetSoundSaveRestoreOps( ), NULL }
 
 
 #endif // SOUNDENVELOPE_H

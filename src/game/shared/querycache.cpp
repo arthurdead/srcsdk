@@ -48,7 +48,7 @@ void QueryCacheKey_t::ComputeHashIndex( void )
 		ret += ( unsigned int ) m_nOffsetMode;
 	}
 	ret += *( ( uint32 *) &m_flMinimumUpdateInterval );
-	ret += m_nTraceMask;
+	ret += (unsigned int)m_nTraceMask;
 	m_nHashIdx = ret % QUERYCACHE_HASH_SIZE;
 }
 
@@ -109,7 +109,7 @@ static QueryCacheEntry_t *FindOrAllocateCacheEntry( QueryCacheKey_t const &entry
 static QueryCacheEntry_t *FindOrAllocateCacheEntry( EQueryType_t nType,
 													CSharedBaseEntity *pEntity1, CSharedBaseEntity *pEntity2,
 													EEntityOffsetMode_t nMode1, EEntityOffsetMode_t nMode2,
-													unsigned int nTraceMask )
+													ContentsFlags_t nTraceMask )
 {
 	QueryCacheKey_t entry;
 	entry.m_Type = nType;
@@ -300,8 +300,8 @@ bool IsLineOfSightBetweenTwoEntitiesClear( CSharedBaseEntity *pSrcEntity,
 										   CSharedBaseEntity *pDestEntity,
 										   EEntityOffsetMode_t nDestOffsetMode,
 										   CSharedBaseEntity *pSkipEntity,
-										   int nCollisionGroup,
-										   unsigned int nTraceMask,
+										   Collision_Group_t nCollisionGroup,
+										   ContentsFlags_t nTraceMask,
 										   ShouldHitFunc_t pTraceFilterCallback,
 										   float flMinimumUpdateInterval )
 {

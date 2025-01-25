@@ -20,6 +20,8 @@
 //
 //-----------------------------------------------------------------------------
 
+inline const float NO_MARK = -1.0f;
+
 class CAI_MoveMonitor
 {
 public:
@@ -97,11 +99,6 @@ public:
 	Vector GetMarkPos() { return m_vMark; }
 	
 private:
-	enum
-	{
-		NO_MARK = -1
-	};
-	
 	Vector			   m_vMark;
 	float			   m_flMarkTolerance;
 };

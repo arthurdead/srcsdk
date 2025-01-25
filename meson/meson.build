@@ -1,4 +1,6 @@
-project('theheist','cpp')
+project('theheist','cpp', default_options: [
+	'cpp_std=gnu++20'
+])
 
 assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 

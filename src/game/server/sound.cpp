@@ -49,7 +49,7 @@ int fSentencesInit = false;
 // sentenceIndex can be used to find the name/length of the sentence
 
 int SENTENCEG_PlayRndI(edict_t *entity, int isentenceg, 
-					  float volume, soundlevel_t soundlevel, int flags, int pitch)
+					  float volume, soundlevel_t soundlevel, SoundFlags_t flags, int pitch)
 {
 	char name[64];
 	int ipick;
@@ -104,7 +104,7 @@ int SENTENCEG_PickRndSz(const char *szgroupname)
 //-----------------------------------------------------------------------------
 // Plays a sentence by sentence index
 //-----------------------------------------------------------------------------
-void SENTENCEG_PlaySentenceIndex( edict_t *entity, int iSentenceIndex, float volume, soundlevel_t soundlevel, int flags, int pitch )
+void SENTENCEG_PlaySentenceIndex( edict_t *entity, int iSentenceIndex, float volume, soundlevel_t soundlevel, SoundFlags_t flags, int pitch )
 {
 	if ( iSentenceIndex >= 0 )
 	{
@@ -115,7 +115,7 @@ void SENTENCEG_PlaySentenceIndex( edict_t *entity, int iSentenceIndex, float vol
 
 
 int SENTENCEG_PlayRndSz(edict_t *entity, const char *szgroupname, 
-					  float volume, soundlevel_t soundlevel, int flags, int pitch)
+					  float volume, soundlevel_t soundlevel, SoundFlags_t flags, int pitch)
 {
 	char name[64];
 	int ipick;
@@ -148,7 +148,7 @@ int SENTENCEG_PlayRndSz(edict_t *entity, const char *szgroupname,
 // play sentences in sequential order from sentence group.  Reset after last sentence.
 
 int SENTENCEG_PlaySequentialSz(edict_t *entity, const char *szgroupname, 
-					  float volume, soundlevel_t soundlevel, int flags, int pitch, int ipick, int freset)
+					  float volume, soundlevel_t soundlevel, SoundFlags_t flags, int pitch, int ipick, int freset)
 {
 	char name[64];
 	int ipicknext;

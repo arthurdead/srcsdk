@@ -386,6 +386,23 @@ public:
 	static inline auto NATIVESIZE = sizeof(native_type);
 };
 
+#if defined GAME_DLL || defined CLIENT_DLL
+#ifndef __cpp_concepts
+	#error
+#endif
+
+template <typename T>
+	requires is_a_networkvar<T>
+class CNativeFieldInfo<T>
+{
+public:
+	using native_type = typename CNativeFieldInfo<typename T::BaseClass>::native_type;
+	using info_type = typename CNativeFieldInfo<typename T::BaseClass>::info_type;
+	static inline auto FIELDTYPE = CNativeFieldInfo<typename T::BaseClass>::FIELDTYPE;
+	static inline auto NATIVESIZE = sizeof(native_type);
+};
+#endif
+
 template< class Type, fieldtype_t fieldType >
 class CEntityOutputTemplate;
 
@@ -578,6 +595,13 @@ public:
 
 	const typedescription_t *pTypeDesc;
 
+	FieldInfo_t( void *field, void *owner, const typedescription_t &desc )
+		: pField(field),
+			pOwner(owner),
+			pTypeDesc(&desc)
+	{
+	}
+
 	template <typename T>
 	T *GetField() const;
 };
@@ -644,6 +668,9 @@ struct [[nodiscard]] typedescription_t
 
 	~typedescription_t();
 
+	bool operator==(const typedescription_t &other) const;
+	bool operator!=(const typedescription_t &other) const;
+
 private:
 	friend void MapField_impl( typedescription_t &ret, const char *name, int offset, int size, fieldtype_t type, fieldflags_t flags_ );
 
@@ -703,6 +730,8 @@ public:
 	FGdChoice *m_pChoices;
 	int m_nChoicesLen;
 };
+
+inline const typedescription_t INVALID_TYPEDESC;
 
 template <typename T>
 T *GetField(void *pObject, const typedescription_t &desc)

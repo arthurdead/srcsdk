@@ -527,6 +527,38 @@ typedescription_t::typedescription_t(datamap_t *embed, const char *name, int byt
 	m_nChoicesLen = 0;
 }
 
+bool typedescription_t::operator==(const typedescription_t &other) const
+{
+	return (fieldType_ == other.fieldType_ &&
+			fieldName == other.fieldName &&
+			fieldOffset_[TD_OFFSET_NORMAL] == other.fieldOffset_[TD_OFFSET_NORMAL] &&
+			fieldSize == other.fieldSize &&
+			flags == other.flags &&
+			externalName == other.externalName &&
+			pFieldOps == other.pFieldOps &&
+			inputFunc == other.inputFunc &&
+			td == other.td &&
+			fieldSizeInBytes == other.fieldSizeInBytes &&
+			override_field == other.override_field &&
+			override_count == other.override_count);
+}
+
+bool typedescription_t::operator!=(const typedescription_t &other) const
+{
+	return (fieldType_ != other.fieldType_ ||
+			fieldName != other.fieldName ||
+			fieldOffset_[TD_OFFSET_NORMAL] != other.fieldOffset_[TD_OFFSET_NORMAL] ||
+			fieldSize != other.fieldSize ||
+			flags != other.flags ||
+			externalName != other.externalName ||
+			pFieldOps != other.pFieldOps ||
+			inputFunc != other.inputFunc ||
+			td != other.td ||
+			fieldSizeInBytes != other.fieldSizeInBytes ||
+			override_field != other.override_field ||
+			override_count != other.override_count);
+}
+
 void MapField_impl( typedescription_t &ret, const char *name, int offset, int size, fieldtype_t type, fieldflags_t flags_ )
 {
 	if(GetBaseFieldType(type) == FIELD_MODELINDEX) {

@@ -458,7 +458,7 @@ void CPredictionCopy::WatchFloat( difftype_t dt, float *outvalue, const float *i
 	WatchMsg( "float (%f)", outvalue[ 0 ] );
 }
 
-void CPredictionCopy::DescribeString( difftype_t dt, char *outstring, const char *instring )
+void CPredictionCopy::DescribeCString( difftype_t dt, char *outstring, const char *instring )
 {
 	if ( !m_bErrorCheck )
 		return;
@@ -471,31 +471,12 @@ void CPredictionCopy::DescribeString( difftype_t dt, char *outstring, const char
 	DescribeFields( dt, "string (%s)\n", outstring );
 }
 
-void CPredictionCopy::WatchString( difftype_t dt, char *outstring, const char *instring )
+void CPredictionCopy::WatchCString( difftype_t dt, char *outstring, const char *instring )
 {
 	if ( m_pWatchField != m_pCurrentField )
 		return;
 
 	WatchMsg( "string (%s)", outstring );
-}
-
-void CPredictionCopy::DescribeVector( difftype_t dt, Vector& outValue, const Vector &inValue )
-{
-	if ( !m_bErrorCheck )
-		return;
-
-	if ( dt == DIFFERS )
-	{
-		Vector delta = outValue - inValue;
-
-		ReportFieldsDiffer( "vec differs (net %f %f %f - pred %f %f %f) delta(%f %f %f)\n", 
-			inValue.x, inValue.y, inValue.z,
-			outValue.x, outValue.y, outValue.z,
-			delta.x, delta.y, delta.z );
-	}
-
-	DescribeFields( dt, "vector (%f %f %f)\n", 
-				outValue.x, outValue.y, outValue.z );
 }
 
 void CPredictionCopy::DescribeVector( difftype_t dt, Vector* outValue, const Vector *inValue, int count )
@@ -518,46 +499,12 @@ void CPredictionCopy::DescribeVector( difftype_t dt, Vector* outValue, const Vec
 					outValue[0].x, outValue[0].y, outValue[0].z );
 }
 
-void CPredictionCopy::WatchVector( difftype_t dt, Vector& outValue, const Vector &inValue )
-{
-	if ( m_pWatchField != m_pCurrentField )
-		return;
-
-	WatchMsg( "vector (%f %f %f)", outValue.x, outValue.y, outValue.z );
-}
-
 void CPredictionCopy::WatchVector( difftype_t dt, Vector* outValue, const Vector *inValue, int count )
 {
 	if ( m_pWatchField != m_pCurrentField )
 		return;
 
 	WatchMsg( "vector (%f %f %f)", outValue[0].x, outValue[0].y, outValue[0].z );
-}
-
-
-
-void CPredictionCopy::DescribeQuaternion( difftype_t dt, Quaternion& outValue, const Quaternion &inValue )
-{
-	if ( !m_bErrorCheck )
-		return;
-
-	if ( dt == DIFFERS )
-	{
-		Quaternion delta;
-		
-		for ( int i = 0; i < 4; i++ )
-		{
-			delta[i] = outValue[i] - inValue[i];
-		}
-
-		ReportFieldsDiffer( "quaternion differs (net %f %f %f %f - pred %f %f %f %f) delta(%f %f %f %f)\n", 
-			inValue[0], inValue[1], inValue[2], inValue[3],
-			outValue[0], outValue[1], outValue[2], outValue[3],
-			delta[0], delta[1], delta[2], delta[3] );
-	}
-
-	DescribeFields( dt, "quaternion (%f %f %f %f)\n", 
-				outValue[0], outValue[1], outValue[2], outValue[3] );
 }
 
 void CPredictionCopy::DescribeQuaternion( difftype_t dt, Quaternion* outValue, const Quaternion *inValue, int count )
@@ -583,14 +530,6 @@ void CPredictionCopy::DescribeQuaternion( difftype_t dt, Quaternion* outValue, c
 
 	DescribeFields( dt, "quaternion (%f %f %f %f)\n", 
 					(float)outValue[0][0], (float)outValue[0][1], (float)outValue[0][2], (float)outValue[0][3] );
-}
-
-void CPredictionCopy::WatchQuaternion( difftype_t dt, Quaternion& outValue, const Quaternion &inValue )
-{
-	if ( m_pWatchField != m_pCurrentField )
-		return;
-
-	WatchMsg( "quaternion (%f %f %f %f)", (float)outValue[0], (float)outValue[1], (float)outValue[2], (float)outValue[3] );
 }
 
 void CPredictionCopy::WatchQuaternion( difftype_t dt, Quaternion* outValue, const Quaternion *inValue, int count )
@@ -931,7 +870,7 @@ CPredictionCopy::difftype_t CPredictionCopy::CompareFloat( float *outvalue, cons
 	return retval;
 }
 
-void CPredictionCopy::CopyString( difftype_t dt, char *outstring, const char *instring )
+void CPredictionCopy::CopyCString( difftype_t dt, char *outstring, const char *instring )
 {
 	if ( !m_bPerformCopy )
 		return;
@@ -942,7 +881,7 @@ void CPredictionCopy::CopyString( difftype_t dt, char *outstring, const char *in
 	CopyData( dt, Q_strlen( instring ) + 1, (char *)outstring, (const char *)instring );
 }
 
-CPredictionCopy::difftype_t CPredictionCopy::CompareString( char *outstring, const char *instring )
+CPredictionCopy::difftype_t CPredictionCopy::CompareCString( char *outstring, const char *instring )
 {
 	if ( !m_bErrorCheck )
 		return DIFFERS;
@@ -958,44 +897,6 @@ CPredictionCopy::difftype_t CPredictionCopy::CompareString( char *outstring, con
 	return IDENTICAL;
 }
 
-void CPredictionCopy::CopyVector( difftype_t dt, Vector& outValue, const Vector &inValue )
-{
-	CopyVector( dt, &outValue, &inValue, 1 );
-}
-
-void CPredictionCopy::CopyQuaternion( difftype_t dt, Quaternion& outValue, const Quaternion &inValue )
-{
-	CopyQuaternion( dt, &outValue, &inValue, 1 );
-}
-
-CPredictionCopy::difftype_t CPredictionCopy::CompareVector( Vector& outValue, const Vector &inValue )
-{
-	if ( !m_bErrorCheck )
-		return DIFFERS;
-
-	if ( CanCheck() )
-	{
-		float tolerance = m_pCurrentField->fieldTolerance;
-		Assert( tolerance >= 0.0f );
-
-		if ( outValue != inValue && ( tolerance > 0.0f ) )
-		{
-			Vector delta = outValue - inValue;
-
-			if ( fabs( delta.x ) <= tolerance &&
-				 fabs( delta.y ) <= tolerance &&
-				 fabs( delta.z ) <= tolerance )
-			{
-				return WITHINTOLERANCE;
-			}
-		}
-
-		return DIFFERS;
-	}
-
-	return IDENTICAL;
-}
-
 static int QuaternionCompare (const Quaternion& q1, const Quaternion& q2 )
 {
 	for ( int i = 0; i < 4; i++ )
@@ -1005,41 +906,6 @@ static int QuaternionCompare (const Quaternion& q1, const Quaternion& q2 )
 	}
 
 	return 1;
-}
-
-CPredictionCopy::difftype_t CPredictionCopy::CompareQuaternion( Quaternion& outValue, const Quaternion &inValue )
-{
-	if ( !m_bErrorCheck )
-		return DIFFERS;
-
-	if ( CanCheck() )
-	{
-		float tolerance = m_pCurrentField->fieldTolerance;
-		Assert( tolerance >= 0.0f );
-
-		if ( QuaternionCompare( outValue, inValue ) == 0
-			&& ( tolerance > 0.0f ) )
-		{
-			Quaternion delta;
-
-			for ( int j = 0; j < 4; j++ )
-			{
-				delta[j] = outValue[j] - inValue[j];
-			}
-
-			if ( fabs( delta[0] ) <= tolerance &&
-				 fabs( delta[1] ) <= tolerance &&
-				 fabs( delta[2] ) <= tolerance &&
-				 fabs( delta[3] ) <= tolerance )
-			{
-				return WITHINTOLERANCE;
-			}
-		}
-
-		return DIFFERS;
-	}
-
-	return IDENTICAL;
 }
 
 void CPredictionCopy::CopyVector( difftype_t dt, Vector* outValue, const Vector *inValue, int count )
@@ -1286,10 +1152,10 @@ void CPredictionCopy::CopyFields( int chain_count, datamap_t *pRootMap, typedesc
 
 		case FIELD_CSTRING:
 			{
-				difftype = CompareString( (char *)pOutputData, (char const*)pInputData );
-				CopyString( difftype, (char *)pOutputData, (char const*)pInputData );
-				if ( m_bErrorCheck && m_bShouldDescribe ) DescribeString( difftype,(char *)pOutputData, (char const*)pInputData );
-				if ( bShouldWatch ) WatchString( difftype,(char *)pOutputData, (char const*)pInputData );
+				difftype = CompareCString( (char *)pOutputData, (char const*)pInputData );
+				CopyCString( difftype, (char *)pOutputData, (char const*)pInputData );
+				if ( m_bErrorCheck && m_bShouldDescribe ) DescribeCString( difftype,(char *)pOutputData, (char const*)pInputData );
+				if ( bShouldWatch ) WatchCString( difftype,(char *)pOutputData, (char const*)pInputData );
 			}
 			break;
 
@@ -1770,15 +1636,9 @@ void CPredictionDescribeData::DescribeFloat( const float *invalue, int count )
 	Describe( "float (%f)\n", invalue[ 0 ] );
 }
 
-void CPredictionDescribeData::DescribeString( const char *instring )
+void CPredictionDescribeData::DescribeCString( const char *instring )
 {
 	Describe( "string (%s)\n", instring );
-}
-
-void CPredictionDescribeData::DescribeVector( const Vector &inValue )
-{
-	Describe( "vector (%f %f %f)\n", 
-				inValue.x, inValue.y, inValue.z );
 }
 
 
@@ -1786,12 +1646,6 @@ void CPredictionDescribeData::DescribeVector( const Vector *inValue, int count )
 {
 	Describe( "vector (%f %f %f)\n", 
 					inValue[0].x, inValue[0].y, inValue[0].z );
-}
-
-void CPredictionDescribeData::DescribeQuaternion( const Quaternion &inValue )
-{
-	Describe( "quaternion (%f %f %f %f)\n", 
-				inValue[0], inValue[1], inValue[2], inValue[3] );
 }
 
 
@@ -1873,7 +1727,7 @@ void CPredictionDescribeData::DescribeFields_R( int chain_count, datamap_t *pRoo
 			DescribeFloat( (float const *)pInputData, fieldSize );
 			break;
 		case FIELD_CSTRING:
-			DescribeString( (char const*)pInputData );
+			DescribeCString( (char const*)pInputData );
 			break;
 		case FIELD_VECTOR:
 			DescribeVector( (const Vector *)pInputData, fieldSize );

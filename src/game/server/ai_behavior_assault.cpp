@@ -829,7 +829,7 @@ CRallyPoint *CAI_AssaultBehavior::FindBestRallyPointInRadius( const Vector &vecC
 
 	const int RALLY_SEARCH_ENTS	= 30;
 	CBaseEntity *pEntities[RALLY_SEARCH_ENTS];
-	int iNumEntities = UTIL_EntitiesInSphere( pEntities, RALLY_SEARCH_ENTS, vecCenter, flRadius, CONTENTS_EMPTY );
+	int iNumEntities = UTIL_EntitiesInSphere( pEntities, RALLY_SEARCH_ENTS, vecCenter, flRadius, FL_NO_ENTITY_FLAGS );
 
 	CRallyPoint *pBest = NULL;
 	int iBestPriority = -1;

@@ -15,8 +15,8 @@
 // -----------------------------------------------------------------------------
 
 void CSequenceTransitioner::CheckForSequenceChange( 
-	CStudioHdr *hdr,
-	int nCurSequence, 
+	const CStudioHdr *hdr,
+	sequence_t nCurSequence, 
 	bool bForceNewSequence,
 	bool bInterpolate )
 {
@@ -41,14 +41,14 @@ void CSequenceTransitioner::CheckForSequenceChange(
 	if (currentblend->m_flLayerAnimtime && 
 		(currentblend->GetSequence() != nCurSequence || bForceNewSequence ))
 	{
-		if ( nCurSequence < 0 || nCurSequence >= hdr->GetNumSeq() )
+		if ( (unsigned short)nCurSequence >= hdr->GetNumSeq() )
 		{
 			// remove all entries
 			m_animationQueue.RemoveAll();
 		}
 		else
 		{
-			mstudioseqdesc_t &seqdesc = hdr->pSeqdesc( nCurSequence );
+			const mstudioseqdesc_t &seqdesc = hdr->pSeqdesc( nCurSequence );
 			// sequence changed
 			if ((seqdesc.flags & STUDIO_SNAP) || !bInterpolate )
 			{
@@ -57,7 +57,7 @@ void CSequenceTransitioner::CheckForSequenceChange(
 			}
 			else
 			{
-				mstudioseqdesc_t &prevseqdesc = hdr->pSeqdesc( currentblend->GetSequence() );
+				const mstudioseqdesc_t &prevseqdesc = hdr->pSeqdesc( currentblend->GetSequence() );
 				currentblend->m_flLayerFadeOuttime = MIN( prevseqdesc.fadeouttime, seqdesc.fadeintime );
 				/*
 				// clip blends to time remaining
@@ -79,15 +79,15 @@ void CSequenceTransitioner::CheckForSequenceChange(
 #endif
 	}
 
-	currentblend->SetSequence( -1 );
+	currentblend->SetSequence( INVALID_SEQUENCE );
 	currentblend->m_flLayerAnimtime = 0.0;
 	currentblend->m_flLayerFadeOuttime = 0.0;
 }
 
 
 void CSequenceTransitioner::UpdateCurrent( 
-	CStudioHdr *hdr,
-	int nCurSequence, 
+	const CStudioHdr *hdr,
+	sequence_t nCurSequence, 
 	float flCurCycle,
 	float flCurPlaybackRate,
 	float flCurTime )

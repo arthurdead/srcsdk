@@ -326,8 +326,8 @@ ParsePropRes_t CPropData::ParsePropFromKV( CSharedBaseEntity *pProp, IBreakableW
 	}
 
 	// Get multiplayer physics mode if not set by map
-	pBreakableInterface->SetPhysicsMode( pSection->GetInt( "physicsmode", 
-		pBreakableInterface->GetPhysicsMode() ) );
+	pBreakableInterface->SetPhysicsMode( (PhysPropMode_t)pSection->GetInt( "physicsmode", 
+		(int)pBreakableInterface->GetPhysicsMode() ) );
 
 	const char *break_mode = pSection->GetString( "breakmode", NULL );
 	if(!break_mode)
@@ -366,9 +366,10 @@ ParsePropRes_t CPropData::ParsePropFromKV( CSharedBaseEntity *pProp, IBreakableW
 
 #ifdef GAME_DLL
 		// If we now have health, we're not allowed to ignore physics damage
-		if ( pProp->GetHealth() )
+		if ( pProp->GetHealth() && FClassnameIs( pProp, gm_isz_class_PropPhysics ) )
 		{
-			pProp->RemoveSpawnFlags( SF_PHYSPROP_DONT_TAKE_PHYSICS_DAMAGE );
+			CPhysicsProp *pPhysPop = assert_cast<CPhysicsProp *>(pProp);
+			pPhysPop->RemoveSpawnFlags( SF_PHYSPROP_DONT_TAKE_PHYSICS_DAMAGE );
 		}
 #endif
 	}
@@ -666,7 +667,7 @@ private:
 
 void BuildPropList( const char *pszBlockName, CUtlVector<breakmodel_t> &list, modelindex_t modelindex, float defBurstScale, int defCollisionGroup )
 {
-	vcollide_t *pCollide = modelinfo->GetVCollide( modelindex );
+	const vcollide_t *pCollide = modelinfo->GetVCollide( modelindex );
 	if ( !pCollide )
 		return;
 
@@ -977,7 +978,7 @@ void PropBreakableCreateAll( modelindex_t modelindex, IPhysicsObject *pPhysics, 
 		}
 	}
 
-	vcollide_t *pCollide = modelinfo->GetVCollide( modelindex );
+	const vcollide_t *pCollide = modelinfo->GetVCollide( modelindex );
 	if ( !pCollide )
 		return;
 
@@ -1314,7 +1315,7 @@ void PropBreakableCreateAll( modelindex_t modelindex, IPhysicsObject *pPhysics, 
 //-----------------------------------------------------------------------------
 void PrecachePropsForModel( modelindex_t iModel, const char *pszBlockName )
 {
-	vcollide_t *pCollide = modelinfo->GetVCollide( iModel );
+	const vcollide_t *pCollide = modelinfo->GetVCollide( iModel );
 	if ( !pCollide )
 		return;
 
@@ -1410,7 +1411,7 @@ CSharedBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, modelinde
 	}
 #endif
 	
-	vcollide_t *pCollide = modelinfo->GetVCollide( modelindex );
+	const vcollide_t *pCollide = modelinfo->GetVCollide( modelindex );
 	if ( !pCollide )
 		return NULL;
 

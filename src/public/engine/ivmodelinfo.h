@@ -37,6 +37,8 @@ enum MDLHandle_t : unsigned short;
 class CUtlBuffer;
 class IClientRenderable;
 enum sequence_t : unsigned short;
+enum ContentsFlags_t : unsigned int;
+enum modtype_t : unsigned int;
 
 //-----------------------------------------------------------------------------
 // Indicates the type of translucency of an unmodulated renderable
@@ -137,7 +139,7 @@ public:
 	virtual void					GetModelBounds( const model_t *model, Vector& mins, Vector& maxs ) const = 0;
 	virtual	void					GetModelRenderBounds( const model_t *model, Vector& mins, Vector& maxs ) const = 0;
 	virtual int						GetModelFrameCount( const model_t *model ) const = 0;
-	virtual int						GetModelType( const model_t *model ) const = 0;
+	virtual modtype_t						GetModelType( const model_t *model ) const = 0;
 	virtual void					*GetModelExtraData( const model_t *model ) = 0;
 	virtual bool					ModelHasMaterialProxy( const model_t *model ) const = 0;
 	virtual bool					IsTranslucent( model_t const* model ) const = 0;
@@ -165,8 +167,8 @@ public:
 	virtual void					GetIlluminationPoint( const model_t *model, IClientRenderable *pRenderable, Vector const& origin, 
 										QAngle const& angles, Vector* pLightingCenter ) = 0;
 
-	virtual int						GetModelContents( modelindex_t modelIndex ) = 0;
-	virtual studiohdr_t				*GetStudiomodel( const model_t *mod ) = 0;
+	virtual ContentsFlags_t						GetModelContents( modelindex_t modelIndex ) = 0;
+	virtual const studiohdr_t				*GetStudiomodel( const model_t *mod ) = 0;
 	virtual int						GetModelSpriteWidth( const model_t *model ) const = 0;
 	virtual int						GetModelSpriteHeight( const model_t *model ) const = 0;
 
@@ -186,7 +188,7 @@ public:
 
 	// Gets a virtual terrain collision model (creates if necessary)
 	// NOTE: This may return NULL if the terrain model cannot be virtualized
-	virtual CPhysCollide			*GetCollideForVirtualTerrain( int index ) = 0;
+	virtual const CPhysCollide			*GetCollideForVirtualTerrain( int index ) = 0;
 
 	virtual bool					IsUsingFBTexture( const model_t *model, int nSkin, int nBody, void /*IClientRenderable*/ *pClientRenderable ) const = 0;
 
@@ -214,6 +216,14 @@ public:
 	// Returns index of model by name, dynamically registered if not already known.
 	virtual modelindex_t						RegisterDynamicModel( const char *name, bool bClientSide ) = 0;
 
+#if defined GAME_DLL
+	modelindex_t RegisterDynamicModel( const char *name )
+	{ return RegisterDynamicModel( name, false ); }
+#elif defined CLIENT_DLL
+	modelindex_t RegisterDynamicModel( const char *name )
+	{ return RegisterDynamicModel( name, true ); }
+#endif
+
 	virtual bool					IsDynamicModelLoading( modelindex_t modelIndex ) = 0;
 
 	virtual void					AddRefDynamicModel( modelindex_t modelIndex ) = 0;
@@ -240,13 +250,13 @@ struct virtualterrainparams_t
 	int index;
 };
 
-#if (defined CLIENT_DLL || defined TOOL_DLL) && !defined GAME_DLL
+#if defined CLIENT_DLL
 extern IVModelInfoClient *modelinfo;
 #elif defined GAME_DLL
 extern IVModelInfo *modelinfo;
 #endif
 
-#if defined CLIENT_DLL || defined TOOL_DLL || defined GAME_DLL
+#if defined CLIENT_DLL || defined GAME_DLL
 inline bool IsModelIndexLoaded( modelindex_t modelindex )
 {
 	if( IsPrecachedModelIndex( modelindex ) )

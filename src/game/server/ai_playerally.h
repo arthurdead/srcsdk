@@ -390,7 +390,7 @@ public:
 	
 	bool		ShouldSpeakRandom( AIConcept_t ai_concept, int iChance );
 	bool		IsAllowedToSpeak( AIConcept_t ai_concept, bool bRespondingToPlayer = false );
-	bool		IsAllowedToSpeakFollowup( AIConcept_t concept, CBaseEntity *pIssuer, bool bSpecific );
+	bool		IsAllowedToSpeakFollowup( AIConcept_t ai_concept, CBaseEntity *pIssuer, bool bSpecific );
 	virtual bool SpeakIfAllowed( AIConcept_t ai_concept, const char *modifiers = NULL, bool bRespondingToPlayer = false, char *pszOutResponseChosen = NULL, size_t bufsize = 0 );
 	virtual bool SpeakIfAllowed( AIConcept_t ai_concept, AI_CriteriaSet* modifiers, bool bRespondingToPlayer = false, char *pszOutResponseChosen = NULL, size_t bufsize = 0 );
 	void		ModifyOrAppendCriteria( AI_CriteriaSet& set );
@@ -418,7 +418,7 @@ public:
 	virtual const char		*GetDeathMessageText( void ) { return "GAMEOVER_ALLY"; }
 	void			InputMakeGameEndAlly( inputdata_t &&inputdata );
 	void			InputMakeRegularAlly( inputdata_t &&inputdata );
-	bool			AskQuestionNow( CBaseEntity *pSpeechTarget = NULL, int iQARandomNumber = -1, const char *concept = TLK_QUESTION );
+	bool			AskQuestionNow( CBaseEntity *pSpeechTarget = NULL, int iQARandomNumber = -1, const char *conc = TLK_QUESTION );
 	void			InputAskQuestion( inputdata_t &&inputdata );
 	void			InputAnswerQuestion( inputdata_t &&inputdata );
 	void			InputAnswerQuestionHello( inputdata_t &&inputdata );

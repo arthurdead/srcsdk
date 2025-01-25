@@ -244,17 +244,17 @@ public:
 
 	// Damage Queries - these need to be implemented by the various subclasses (single-player, multi-player, etc).
 	// The queries represent queries against damage types and properties.
-	virtual bool	Damage_IsTimeBased( uint64 iDmgType );			// Damage types that are time-based.
-	virtual bool	Damage_ShouldGibCorpse( uint64 iDmgType );		// Damage types that gib the corpse.
-	virtual bool	Damage_ShowOnHUD( uint64 iDmgType );			// Damage types that have client HUD art.
-	virtual bool	Damage_NoPhysicsForce( uint64 iDmgType );		// Damage types that don't have to supply a physics force & position.
-	virtual bool	Damage_ShouldNotBleed( uint64 iDmgType );		// Damage types that don't make the player bleed.
+	virtual bool	Damage_IsTimeBased( DamageTypes_t iDmgType );			// Damage types that are time-based.
+	virtual bool	Damage_ShouldGibCorpse( DamageTypes_t iDmgType );		// Damage types that gib the corpse.
+	virtual bool	Damage_ShowOnHUD( DamageTypes_t iDmgType );			// Damage types that have client HUD art.
+	virtual bool	Damage_NoPhysicsForce( DamageTypes_t iDmgType );		// Damage types that don't have to supply a physics force & position.
+	virtual bool	Damage_ShouldNotBleed( DamageTypes_t iDmgType );		// Damage types that don't make the player bleed.
 	//Temp: These will go away once DamageTypes become enums.
-	virtual uint64		Damage_GetTimeBased( void );				// Actual bit-fields.
-	virtual uint64		Damage_GetShouldGibCorpse( void );
-	virtual uint64		Damage_GetShowOnHud( void );					
-	virtual uint64		Damage_GetNoPhysicsForce( void );
-	virtual uint64		Damage_GetShouldNotBleed( void );
+	virtual DamageTypes_t		Damage_GetTimeBased( void );				// Actual bit-fields.
+	virtual DamageTypes_t		Damage_GetShouldGibCorpse( void );
+	virtual DamageTypes_t		Damage_GetShowOnHud( void );					
+	virtual DamageTypes_t		Damage_GetNoPhysicsForce( void );
+	virtual DamageTypes_t		Damage_GetShouldNotBleed( void );
 
 	void LoadVoiceCommandScript( void );
 
@@ -271,7 +271,7 @@ public:
 	virtual const CViewVectors* GetViewVectors() const;
 
 // Damage rules for ammo types
-	virtual float GetAmmoDamage( CSharedBaseEntity *pAttacker, CSharedBaseEntity *pVictim, int nAmmoType );
+	virtual float GetAmmoDamage( CSharedBaseEntity *pAttacker, CSharedBaseEntity *pVictim, AmmoIndex_t nAmmoType );
     virtual float GetDamageMultiplier( void ) { return 1.0f; }    
 
 	virtual const unsigned char *GetEncryptionKey() { return NULL; }
@@ -389,7 +389,7 @@ public:
 	virtual int	GetAutoAimMode()	{ return AUTOAIM_ON; }
 
 	virtual bool ShouldUseRobustRadiusDamage(CBaseEntity *pEntity) { return false; }
-	virtual void  RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, float flRadius, int iClassIgnore, CBaseEntity *pEntityIgnore );
+	virtual void  RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, float flRadius, Class_T iClassIgnore, CBaseEntity *pEntityIgnore );
 	// Let the game rules specify if fall death should fade screen to black
 	virtual bool  FlPlayerFallDeathDoesScreenFade( CBasePlayer *pl ) { return TRUE; }
 
@@ -445,10 +445,10 @@ public:
 	virtual QAngle VecItemRespawnAngles( CItem *pItem );// what angles should this item use when respawing?
 
 // Ammo retrieval
-	virtual bool CanHaveAmmo( CBaseCombatCharacter *pPlayer, int iAmmoIndex ); // can this player take more of this ammo?
+	virtual bool CanHaveAmmo( CBaseCombatCharacter *pPlayer, AmmoIndex_t iAmmoIndex ); // can this player take more of this ammo?
 	virtual bool CanHaveAmmo( CBaseCombatCharacter *pPlayer, const char *szName );
 	virtual void PlayerGotAmmo( CBaseCombatCharacter *pPlayer, char *szName, int iCount );// called each time a player picks up some ammo in the world
-	virtual float GetAmmoQuantityScale( int iAmmoIndex ) { return 1.0f; }
+	virtual float GetAmmoQuantityScale( AmmoIndex_t iAmmoIndex ) { return 1.0f; }
 
 // AI Definitions
 	virtual void			InitDefaultAIRelationships( void );
@@ -492,7 +492,7 @@ public:
 	virtual void EndMultiplayerGame( void ) { GoToIntermission(); }
 				    
 	// trace line rules
-	virtual float WeaponTraceEntity( CBaseEntity *pEntity, const Vector &vecStart, const Vector &vecEnd, unsigned int mask, trace_t *ptr );
+	virtual float WeaponTraceEntity( CBaseEntity *pEntity, const Vector &vecStart, const Vector &vecEnd, ContentsFlags_t mask, trace_t *ptr );
 
 	// Setup g_pPlayerResource (some mods use a different entity type here).
 	virtual void CreateStandardEntities();

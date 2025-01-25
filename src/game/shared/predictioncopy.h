@@ -256,6 +256,7 @@ public:
 
 	void	DescribeData( int size, const char *indata );		
 
+	void	DescribeTString( const string_t *instring, int count );			
 	void	DescribeCString( const char *instring );			
 
 	void	DescribeVector( const Vector *inValue, int count );

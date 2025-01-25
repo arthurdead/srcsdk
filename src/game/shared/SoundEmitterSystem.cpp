@@ -184,7 +184,7 @@ EmitSound_t::EmitSound_t( const CSoundParameters &src )
 	m_pSoundName = src.soundname;
 	m_flVolume = src.volume;
 	m_SoundLevel = src.soundlevel;
-	m_nFlags = 0;
+	m_nFlags = SND_NOFLAGS;
 	m_nPitch = src.pitch;
 	m_nSpecialDSP = 0;
 	m_pOrigin = 0;
@@ -792,7 +792,7 @@ public:
 			ep.m_hSoundScriptHandle = (HSOUNDSCRIPTHANDLE)g_pSoundEmitterSystem->GetSoundIndex( ep.m_pSoundName );
 		}
 
-		if ( ep.m_hSoundScriptHandle == -1 )
+		if ( ep.m_hSoundScriptHandle == SOUNDEMITTER_INVALID_HANDLE )
 			return;
 
 		EmitSoundByHandle( filter, entindex, ep, ep.m_hSoundScriptHandle );
@@ -999,7 +999,7 @@ public:
 		EmitCloseCaption( filter, entindex, fromplayer, ep.m_pSoundName, ep.m_UtlVecSoundOrigin, duration, ep.m_bWarnOnMissingCloseCaption, bForceSubtitle );
 	}
 
-	void EmitAmbientSound( int entindex, const Vector& origin, const char *soundname, float flVolume, int iFlags, int iPitch, float soundtime /*= 0.0f*/, float *duration /*=NULL*/ )
+	void EmitAmbientSound( int entindex, const Vector& origin, const char *soundname, float flVolume, SoundFlags_t iFlags, int iPitch, float soundtime /*= 0.0f*/, float *duration /*=NULL*/ )
 	{
 		// Pull data from parameters
 		CSoundParameters params;
@@ -1137,7 +1137,7 @@ public:
 		}
 	}
 
-	void EmitAmbientSound( int entindex, const Vector &origin, const char *pSample, float volume, soundlevel_t soundlevel, int flags, int pitch, float soundtime /*= 0.0f*/, float *duration /*=NULL*/ )
+	void EmitAmbientSound( int entindex, const Vector &origin, const char *pSample, float volume, soundlevel_t soundlevel, SoundFlags_t flags, int pitch, float soundtime /*= 0.0f*/, float *duration /*=NULL*/ )
 	{
 #ifdef STAGING_ONLY
 		if ( sv_snd_filter.GetString()[ 0 ] && !V_stristr( pSample, sv_snd_filter.GetString() ))
@@ -1794,7 +1794,7 @@ soundlevel_t CSharedBaseEntity::LookupSoundLevel( const char *soundname, HSOUNDS
 //			flags - 
 //			*soundname - 
 //-----------------------------------------------------------------------------
-void CSharedBaseEntity::EmitAmbientSound( int entindex, const Vector& origin, const char *soundname, int flags, float soundtime /*= 0.0f*/, float *duration /*=NULL*/ )
+void CSharedBaseEntity::EmitAmbientSound( int entindex, const Vector& origin, const char *soundname, SoundFlags_t flags, float soundtime /*= 0.0f*/, float *duration /*=NULL*/ )
 {
 	g_SoundEmitterSystem.EmitAmbientSound( entindex, origin, soundname, 0.0, flags, 0, soundtime, duration );
 }
@@ -1821,8 +1821,8 @@ int SENTENCEG_Lookup(const char *sample)
 //			bUpdatePositions - 
 //			soundtime - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::EmitSentenceByIndex( IRecipientFilter& filter, int iEntIndex, int iChannel, int iSentenceIndex, 
-	float flVolume, soundlevel_t iSoundlevel, int iFlags /*= 0*/, int iPitch /*=PITCH_NORM*/,
+void CBaseEntity::EmitSentenceByIndex( IRecipientFilter& filter, int iEntIndex, SoundChannel_t iChannel, int iSentenceIndex, 
+	float flVolume, soundlevel_t iSoundlevel, SoundFlags_t iFlags /*= 0*/, int iPitch /*=PITCH_NORM*/,
 	const Vector *pOrigin /*=NULL*/, const Vector *pDirection /*=NULL*/, 
 	bool bUpdatePositions /*=true*/, float soundtime /*=0.0f*/, int iSpecialDSP /*= 0*/, int iSpeakerIndex /*= 0*/ )
 {
@@ -1853,7 +1853,7 @@ void CBaseEntity::EmitSentenceByIndex( IRecipientFilter& filter, int iEntIndex, 
 }
 #endif
 
-void UTIL_EmitAmbientSound( int entindex, const Vector &vecOrigin, const char *samp, float vol, soundlevel_t soundlevel, int fFlags, int pitch, float soundtime /*= 0.0f*/, float *duration /*=NULL*/ )
+void UTIL_EmitAmbientSound( int entindex, const Vector &vecOrigin, const char *samp, float vol, soundlevel_t soundlevel, SoundFlags_t fFlags, int pitch, float soundtime /*= 0.0f*/, float *duration /*=NULL*/ )
 {
 #ifdef STAGING_ONLY
 	if ( sv_snd_filter.GetString()[ 0 ] && !V_stristr( samp, sv_snd_filter.GetString() ))

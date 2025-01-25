@@ -877,7 +877,7 @@ bool CAI_Expresser::Speak( AIConcept_t &conc, AI_CriteriaSet * RESTRICT criteria
 	}
 
 	SpeechMsg( GetOuter(), "%s (%x) spoke %s (%f)", STRING(GetOuter()->GetEntityName()), GetOuter(), (const char*)conc, gpGlobals->curtime );
-	// Msg( "%s:%s to %s:%s\n", GetOuter()->GetDebugName(), concept.GetStringConcept(), criteria.GetValue(criteria.FindCriterionIndex("Subject")), pTarget ? pTarget->GetDebugName() : "none" );
+	// Msg( "%s:%s to %s:%s\n", GetOuter()->GetDebugName(), conc.GetStringConcept(), criteria.GetValue(criteria.FindCriterionIndex("Subject")), pTarget ? pTarget->GetDebugName() : "none" );
 
 	bool spoke = SpeakDispatchResponse( conc, &result, criteria, filter );
 	if ( pszOutResponseChosen )
@@ -944,11 +944,11 @@ int CAI_Expresser::SpeakRawSentence( const char *pszSentence, float delay, float
 		}
 
 		CPASAttenuationFilter filter( GetOuter(), soundlevel );
-		CBaseEntity::EmitSentenceByIndex( filter, GetOuter()->entindex(), CHAN_VOICE, sentenceIndex, volume, soundlevel, 0, GetVoicePitch());
+		CBaseEntity::EmitSentenceByIndex( filter, GetOuter()->entindex(), CHAN_VOICE, sentenceIndex, volume, soundlevel, SND_NOFLAGS, GetVoicePitch());
 	}
 	else
 	{
-		sentenceIndex = SENTENCEG_PlayRndSz( GetOuter()->NetworkProp()->edict(), pszSentence, volume, soundlevel, 0, GetVoicePitch() );
+		sentenceIndex = SENTENCEG_PlayRndSz( GetOuter()->NetworkProp()->edict(), pszSentence, volume, soundlevel, SND_NOFLAGS, GetVoicePitch() );
 	}
 
 	SpeechMsg( GetOuter(), "SpeakRawSentence( %s, %f) %f\n", pszSentence, delay, engine->SentenceLength( sentenceIndex ) );

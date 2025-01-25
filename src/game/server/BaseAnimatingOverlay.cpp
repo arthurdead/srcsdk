@@ -49,7 +49,7 @@ END_SEND_TABLE()
 
 CAnimationLayer::CAnimationLayer( )
 {
-	m_fFlags = 0;
+	m_fFlags = ANIM_LAYER_NO_FLAGS;
 	m_flWeight = 0;
 	m_flCycle = 0;
 	m_flPrevCycle = 0;
@@ -139,8 +139,6 @@ void CAnimationLayer::StudioFrameAdvance( float flInterval, CBaseAnimating *pOwn
 		}
 
 		m_flWeight = 3.0 * m_flWeight * m_flWeight - 2.0 * m_flWeight * m_flWeight * m_flWeight;
-		if (m_nSequence == 0)
-			m_flWeight = 0;
 	}
 }
 

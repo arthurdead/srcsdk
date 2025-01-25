@@ -656,7 +656,7 @@ enum
 static CTraceFilterSkipTwoEntities s_TraceFilter[MAX_NESTING];
 static int s_nTraceFilterCount = 0;
 
-ITraceFilter *CSharedGameMovement::LockTraceFilter( int collisionGroup )
+ITraceFilter *CSharedGameMovement::LockTraceFilter( Collision_Group_t collisionGroup )
 {
 	// If this assertion triggers, you forgot to call UnlockTraceFilter
 	Assert( s_nTraceFilterCount < MAX_NESTING );
@@ -681,7 +681,7 @@ void CSharedGameMovement::UnlockTraceFilter( ITraceFilter *&pFilter )
 //-----------------------------------------------------------------------------
 // Purpose: Allow bots etc to use slightly different solid masks
 //-----------------------------------------------------------------------------
-unsigned int CSharedGameMovement::PlayerSolidMask( bool brushOnly, CSharedBasePlayer *testPlayer ) const
+ContentsFlags_t CSharedGameMovement::PlayerSolidMask( bool brushOnly, CSharedBasePlayer *testPlayer ) const
 {
 	return ( brushOnly ) ? MASK_PLAYERSOLID_BRUSHONLY : MASK_PLAYERSOLID;
 }
@@ -828,7 +828,7 @@ inline void CSharedGameMovement::TracePlayerBBox( const Vector& start, const Vec
 }
 #endif
 
-EHANDLE CSharedGameMovement::TestPlayerPosition( const Vector& pos, int collisionGroup, trace_t& pm )
+EHANDLE CSharedGameMovement::TestPlayerPosition( const Vector& pos, Collision_Group_t collisionGroup, trace_t& pm )
 {
 	++m_nTraceCount;
 	Ray_t ray;
@@ -5140,7 +5140,7 @@ bool CSharedGameMovement::GameHasLadders() const
 //-----------------------------------------------------------------------------
 // Purpose: Traces player movement + position
 //-----------------------------------------------------------------------------
-void CSharedGameMovement::TracePlayerBBox( const Vector& start, const Vector& end, unsigned int fMask, int collisionGroup, trace_t& pm )
+void CSharedGameMovement::TracePlayerBBox( const Vector& start, const Vector& end, ContentsFlags_t fMask, Collision_Group_t collisionGroup, trace_t& pm )
 {
 	VPROF( "CSharedGameMovement::TracePlayerBBox" );
 
@@ -5155,7 +5155,7 @@ void CSharedGameMovement::TracePlayerBBox( const Vector& start, const Vector& en
 //-----------------------------------------------------------------------------
 // Purpose: overridded by game classes to limit results (to standable objects for example)
 //-----------------------------------------------------------------------------
-void  CSharedGameMovement::TryTouchGround( const Vector& start, const Vector& end, const Vector& mins, const Vector& maxs, unsigned int fMask, int collisionGroup, trace_t& pm )
+void  CSharedGameMovement::TryTouchGround( const Vector& start, const Vector& end, const Vector& mins, const Vector& maxs, ContentsFlags_t fMask, Collision_Group_t collisionGroup, trace_t& pm )
 {
 	VPROF( "CSharedGameMovement::TryTouchGround" );
 

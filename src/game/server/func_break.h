@@ -13,23 +13,54 @@
 #include "entityoutput.h"
 #include "props.h"
 
-typedef enum { expRandom = 0, expDirected, expUsePrecise} Explosions;
-typedef enum { matGlass = 0, matWood, matMetal, matFlesh, matCinderBlock, matCeilingTile, matComputer, matUnbreakableGlass, matRocks, matWeb, matNone, matLastMaterial } Materials;
+enum Explosions : unsigned char
+{
+	expRandom = 0,
+	expDirected,
+	expUsePrecise
+};
 
+enum Materials : unsigned char
+{
+	matGlass = 0,
+	matWood,
+	matMetal,
+	matFlesh,
+	matCinderBlock,
+	matCeilingTile,
+	matComputer,
+	matUnbreakableGlass,
+	matRocks,
+	matWeb,
+	matNone,
+	matLastMaterial
+};
 
 #define	NUM_SHARDS 6 // this many shards spawned when breakable objects break;
 
 // Spawnflags for func breakable
-#define SF_BREAK_TRIGGER_ONLY				0x0001	// may only be broken by trigger
-#define	SF_BREAK_TOUCH						0x0002	// can be 'crashed through' by running player (plate glass)
-#define SF_BREAK_PRESSURE					0x0004	// can be broken by a player standing on it
-#define SF_BREAK_PHYSICS_BREAK_IMMEDIATELY	0x0200	// the first physics collision this breakable has will immediately break it
-#define SF_BREAK_DONT_TAKE_PHYSICS_DAMAGE	0x0400	// this breakable doesn't take damage from physics collisions
-#define SF_BREAK_NO_BULLET_PENETRATION		0x0800  // don't allow bullets to penetrate
+enum SFBreakable_t : uint64
+{
+	SF_BREAK_TRIGGER_ONLY =				0x0001,	// may only be broken by trigger
+	SF_BREAK_TOUCH =						0x0002,	// can be 'crashed through' by running player (plate glass)
+	SF_BREAK_PRESSURE =					0x0004,	// can be broken by a player standing on it
+	SF_BREAK_PHYSICS_BREAK_IMMEDIATELY =	0x0200,	// the first physics collision this breakable has will immediately break it
+	SF_BREAK_DONT_TAKE_PHYSICS_DAMAGE =	0x0400,	// this breakable doesn't take damage from physics collisions
+	SF_BREAK_NO_BULLET_PENETRATION =		0x0800,  // don't allow bullets to penetrate
+
+	SF_BREAK_LAST_FLAG = SF_BREAK_NO_BULLET_PENETRATION,
+};
+
+FLAGENUM_OPERATORS( SFBreakable_t, uint64 )
 
 // Spawnflags for func_pushable (it's also func_breakable, so don't collide with those flags)
-#define SF_PUSH_BREAKABLE					0x0080
-#define SF_PUSH_NO_USE						0x0100	// player cannot +use pickup this ent
+enum SFPushable_t : unsigned int
+{
+	SF_PUSH_BREAKABLE =					(SF_BREAK_LAST_FLAG << 1),
+	SF_PUSH_NO_USE =						(SF_BREAK_LAST_FLAG << 2),	// player cannot +use pickup this ent
+};
+
+FLAGENUM_OPERATORS( SFPushable_t, uint64 )
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -38,6 +69,8 @@ class CBreakable : public CBaseEntity, public IBreakableWithPropData, public CDe
 {
 public:
 	DECLARE_CLASS( CBreakable, CBaseEntity );
+
+	DECLARE_SPAWNFLAGS( SFBreakable_t )
 
 	// basic functions
 	virtual void Spawn( void );

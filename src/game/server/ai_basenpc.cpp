@@ -10480,11 +10480,11 @@ int CAI_BaseNPC::PlaySentence( const char *pszSentence, float delay, float volum
 		{
 			sentenceIndex = SENTENCEG_Lookup( pszSentence );
 			CPASAttenuationFilter filter( this, soundlevel );
-			CBaseEntity::EmitSentenceByIndex( filter, entindex(), CHAN_VOICE, sentenceIndex, volume, soundlevel, 0, PITCH_NORM );
+			CBaseEntity::EmitSentenceByIndex( filter, entindex(), CHAN_VOICE, sentenceIndex, volume, soundlevel, SND_NOFLAGS, PITCH_NORM );
 		}
 		else
 		{
-			sentenceIndex = SENTENCEG_PlayRndSz( edict(), pszSentence, volume, soundlevel, 0, PITCH_NORM );
+			sentenceIndex = SENTENCEG_PlayRndSz( edict(), pszSentence, volume, soundlevel, SND_NOFLAGS, PITCH_NORM );
 		}
 	}
 

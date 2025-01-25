@@ -3908,7 +3908,7 @@ void CBaseAnimating::Freeze( float flFreezeAmount, CBaseEntity *pFreezer, Ray_t 
 
 		float flMidHeight = WorldSpaceCenter().z;
 
-		studiohdr_t *pStudioHdr = modelinfo->GetStudiomodel( GetModel() );
+		const studiohdr_t *pStudioHdr = modelinfo->GetStudiomodel( GetModel() );
 		if ( pStudioHdr )
 		{
 			// Freeze hitboxes that intersect this ray
@@ -3956,7 +3956,7 @@ void CBaseAnimating::Freeze( float flFreezeAmount, CBaseEntity *pFreezer, Ray_t 
 	}
 	else
 	{
-		studiohdr_t *pStudioHdr = GetModel() ? modelinfo->GetStudiomodel( GetModel() ) : NULL;
+		const studiohdr_t *pStudioHdr = GetModel() ? modelinfo->GetStudiomodel( GetModel() ) : NULL;
 		if ( pStudioHdr )
 		{
 			// Freeze all hitboxes

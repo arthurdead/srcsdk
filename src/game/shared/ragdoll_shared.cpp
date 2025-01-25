@@ -114,7 +114,7 @@ private:
 
 void RagdollSetupAnimatedFriction( IPhysicsEnvironment *pPhysEnv, ragdoll_t *ragdoll, modelindex_t iModelIndex )
 {
-	vcollide_t* pCollide = modelinfo->GetVCollide( iModelIndex );
+	const vcollide_t* pCollide = modelinfo->GetVCollide( iModelIndex );
 
 	if ( pCollide )
 	{
