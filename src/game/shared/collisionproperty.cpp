@@ -403,7 +403,7 @@ CSharedCollisionProperty::CCollisionProperty()
 	m_flHeight = 0.0f;
 	m_flLength = 0.0f;
 	m_triggerBloat = 0;
-	m_usSolidFlags = 0;
+	m_usSolidFlags = FSOLID_NONE;
 	m_nSolidType = SOLID_NONE;
 
 	// NOTE: This replicates previous behavior; we may always want to use BEST_COLLISION_BOUNDS
@@ -446,13 +446,13 @@ IHandleEntity *CSharedCollisionProperty::GetEntityHandle()
 //-----------------------------------------------------------------------------
 // Collision group
 //-----------------------------------------------------------------------------
-int CSharedCollisionProperty::GetCollisionGroup() const
+Collision_Group_t CSharedCollisionProperty::GetCollisionGroup() const
 {
 	return m_pOuter->GetCollisionGroup();
 }
 
 
-bool CSharedCollisionProperty::ShouldTouchTrigger( int triggerSolidFlags ) const
+bool CSharedCollisionProperty::ShouldTouchTrigger( SolidFlags_t triggerSolidFlags ) const
 {
 	// debris only touches certain triggers
 	if ( GetCollisionGroup() == COLLISION_GROUP_DEBRIS )
@@ -585,10 +585,10 @@ SolidType_t CSharedCollisionProperty::GetSolid() const
 //-----------------------------------------------------------------------------
 // Sets the solid flags
 //-----------------------------------------------------------------------------
-void CSharedCollisionProperty::SetSolidFlags( int flags )
+void CSharedCollisionProperty::SetSolidFlags( SolidFlags_t flags )
 {
-	int oldFlags = m_usSolidFlags;
-	m_usSolidFlags = (unsigned short)(flags & 0xFFFF);
+	SolidFlags_t oldFlags = m_usSolidFlags;
+	m_usSolidFlags = flags;
 	if ( oldFlags == m_usSolidFlags )
 		return;
 
@@ -754,7 +754,7 @@ float CSharedCollisionProperty::BoundingRadius2D() const
 void CSharedCollisionProperty::WorldSpaceTriggerBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs ) const
 {
 	WorldSpaceAABB( pVecWorldMins, pVecWorldMaxs );
-	if ( ( GetSolidFlags() & FSOLID_USE_TRIGGER_BOUNDS ) == 0 )
+	if ( ( GetSolidFlags() & FSOLID_USE_TRIGGER_BOUNDS ) == FSOLID_NONE )
 		return;
 
 	// Don't bloat below, we don't want to trigger it with our heads
@@ -800,12 +800,12 @@ const model_t* CSharedCollisionProperty::GetCollisionModel()
 // Collision methods implemented in the entity
 // FIXME: This shouldn't happen there!!
 //-----------------------------------------------------------------------------
-bool CSharedCollisionProperty::TestCollision( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr )
+bool CSharedCollisionProperty::TestCollision( const Ray_t &ray, ContentsFlags_t fContentsMask, trace_t& tr )
 {
 	return m_pOuter->TestCollision( ray, fContentsMask, tr );
 }
 
-bool CSharedCollisionProperty::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr )
+bool CSharedCollisionProperty::TestHitboxes( const Ray_t &ray, ContentsFlags_t fContentsMask, trace_t& tr )
 {
 	return m_pOuter->TestHitboxes( ray, fContentsMask, tr );
 }

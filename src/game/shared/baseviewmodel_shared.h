@@ -62,7 +62,7 @@ public:
 	virtual void					UpdateOnRemove( void );
 
 	// Weapon client handling
-	virtual void			SendViewModelMatchingSequence( int sequence );
+	virtual void			SendViewModelMatchingSequence( sequence_t sequence );
 	void			SendViewModelMatchingActivity( Activity activity )
 	{ SendViewModelMatchingSequence( SelectWeightedSequence(activity) ); }
 	virtual void			SetWeaponModel( const char *pszModelname, CSharedBaseCombatWeapon *weapon );
@@ -84,8 +84,8 @@ public:
 
 	virtual CSharedBaseEntity *GetOwner( void ) { return m_hOwner.Get(); };
 
-	virtual void			AddEffects( int nEffects );
-	virtual void			RemoveEffects( int nEffects );
+	virtual void			AddEffects( Effects_t nEffects );
+	virtual void			RemoveEffects( Effects_t nEffects );
 
 	void					SpawnControlPanels();
 	void					DestroyControlPanels();

@@ -35,13 +35,35 @@ extern CEngineSprite *Draw_SetSpriteTexture( const model_t *pSpriteModel, int fr
 // Save/Restore
 //-----------------------------------------------------------------------------
 
-BEGIN_MAPENTITY( CSharedSpriteTrail )
+BEGIN_MAPENTITY( CSharedSpriteTrail, MAPENT_POINTCLASS, "A magical trail you can parent to anything you heart desires." )
 
-	DEFINE_KEYFIELD_AUTO( m_flLifeTime, "lifetime" ),
-	DEFINE_KEYFIELD_AUTO( m_flStartWidth, "startwidth" ),
-	DEFINE_KEYFIELD_AUTO( m_flEndWidth, "endwidth" ),
-	DEFINE_KEYFIELD_AUTO( m_iszSpriteName, "spritename" ),
-	DEFINE_KEYFIELD_AUTO( m_bAnimate, "animate" ),
+	DEFINE_MAP_FIELD( m_flLifeTime,
+		"lifetime",
+		"Lifetime",
+		NULL,
+		"0.5"
+	),
+	DEFINE_MAP_FIELD( m_flStartWidth,
+		"startwidth",
+		"Start Width",
+		NULL,
+		"8.0"
+	),
+	DEFINE_MAP_FIELD( m_flEndWidth,
+		"endwidth",
+		"End Width",
+		NULL,
+		"1.0"
+	),
+	DEFINE_MAP_FIELD( m_iszSpriteName,
+		"spritename",
+		"Sprite Name",
+		NULL,
+		"sprites/bluelaser1.vmt"
+	),
+	DEFINE_MAP_FIELD( m_bAnimate,
+		"animate"
+	),
 
 END_MAPENTITY()
 

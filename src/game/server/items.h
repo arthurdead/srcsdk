@@ -35,16 +35,24 @@
 #define SIZE_AMMO_FLECHETTE			60
 #define SIZE_AMMO_URANIUM			30
 
-#define SF_ITEM_START_CONSTRAINED	0x00000001
-#define SF_ITEM_MUST_EXIST			0x00000002		// prevent the procedural population system from modifying this item
+enum SFItems_t : unsigned char
+{
+	SF_ITEM_START_CONSTRAINED =	(1<<1),
+	SF_ITEM_MUST_EXIST =			(1<<2),		// prevent the procedural population system from modifying this item
 
-// Copied from CBaseCombatWeapon's flags, including any additions we made to those.
-// I really, REALLY hope no item uses their own spawnflags either.
-#define SF_ITEM_NO_PLAYER_PICKUP	(1<<1)
-#define SF_ITEM_NO_PHYSCANNON_PUNT (1<<2)
-#define SF_ITEM_NO_NPC_PICKUP	(1<<3)
+	// Copied from CBaseCombatWeapon's flags, including any additions we made to those.
+	// I really, REALLY hope no item uses their own spawnflags either.
+	SF_ITEM_NO_PLAYER_PICKUP =	(1<<3),
+	SF_ITEM_NO_PHYSCANNON_PUNT = (1<<4),
+	SF_ITEM_NO_NPC_PICKUP =	(1<<5),
 
-#define SF_ITEM_ALWAYS_TOUCHABLE	(1<<6) // This needs to stay synced with the weapon spawnflag
+	SF_ITEM_ALWAYS_TOUCHABLE =	(1<<6), // This needs to stay synced with the weapon spawnflag
+
+	// !!!set this bit on guns and stuff that should never respawn.
+	SF_ITEM_NORESPAWN = (1<<7),
+};
+
+FLAGENUM_OPERATORS( SFItems_t, unsigned char )
 
 class CItem : public CBaseAnimating, public CDefaultPlayerPickupVPhysics
 {
@@ -53,6 +61,8 @@ public:
 
 	CItem();
 	virtual ~CItem();
+
+	DECLARE_SPAWNFLAGS( SFItems_t )
 
 	virtual void Spawn( void );
 	virtual void Precache();

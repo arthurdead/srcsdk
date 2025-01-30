@@ -335,6 +335,8 @@ public:
 	CSendPropExtra_Base			*m_pExtraData;
 };
 
+typedef SendPropInfo SendProp;
+
 class SendPropInfoEx : public SendPropInfo
 {
 public:
@@ -794,6 +796,9 @@ unsigned short offset_choose(unsigned short base_off)
 
 #define DEFINE_SEND_FIELD( varName, ... ) \
 	SendPropAuto_impl<typename NetworkVarType<decltype(currentSendDTClass::varName)>::type>( DT_VARNAME(varName), CNativeFieldInfo<decltype(currentSendDTClass::varName)>::FIELDTYPE, offset_choose<decltype(currentSendDTClass::varName)>(offsetof(currentSendDTClass, varName)) __VA_OPT__(, __VA_ARGS__) )
+
+#define DEFINE_SEND_EXCLUDE_FIELD(dtname, varname) \
+	SendPropExclude( SENDEXLCUDE( dtname, varname ) )
 
 void SendPropAuto_impl(
 	SendPropInfoEx &ret,

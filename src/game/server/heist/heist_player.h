@@ -32,7 +32,7 @@ public:
 
 private:
 	CNetworkVar(bool, m_bMaskingUp);
-	CNetworkVar(float, m_flLeaning);
+	CNetworkScale(m_flLeaning);
 };
 
 inline CHeistPlayer *ToHeistPlayer(CBaseEntity *pEntity)

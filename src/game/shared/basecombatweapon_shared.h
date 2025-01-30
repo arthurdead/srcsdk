@@ -59,6 +59,8 @@ class CUserCmd;
 
 enum BaseWeaponSF_t : uint64
 {
+	SF_WEAPON_NONE = 0,
+
 	//Start with a constraint in place (don't drop to floor)
 	SF_WEAPON_START_CONSTRAINED =	(1<<0),	
 	SF_WEAPON_NO_PLAYER_PICKUP =	(1<<1),
@@ -114,8 +116,8 @@ FLAGENUM_OPERATORS( BaseWeaponSF_t, uint64 )
 
 typedef struct
 {
-	int			baseAct;
-	int			weaponAct;
+	Activity			baseAct;
+	Activity			weaponAct;
 	bool		required;
 } acttable_t;
 
@@ -321,7 +323,7 @@ public:
 	virtual void			SetWeaponVisible( bool visible );
 	virtual bool			IsWeaponVisible( void );
 	virtual bool			ReloadOrSwitchWeapons( void );
-	virtual void			OnActiveStateChanged( int iOldState ) { return; }
+	virtual void			OnActiveStateChanged( WeaponState_t iOldState ) { return; }
 	virtual bool			HolsterOnDetach() { return false; }
 	virtual bool			IsHolstered(){ return m_bHolstered; }
 	virtual void			Detach() {}
@@ -698,7 +700,7 @@ protected:
 public:
 
 	// Networked fields
-	CNetworkVar( int, m_nViewModelIndex );
+	CNetworkVar( unsigned char, m_nViewModelIndex );
 
 	// Weapon firing
 	CNetworkTime( m_flNextPrimaryAttack );						// soonest time ItemPostFrame will call PrimaryAttack
@@ -727,7 +729,7 @@ public:
 
 private:
 	Activity				m_Activity;
-	int						m_nIdealSequence;
+	sequence_t						m_nIdealSequence;
 	Activity				m_IdealActivity;
 
 	bool					m_bRemoveable;
@@ -742,10 +744,10 @@ public:
 #ifdef CLIENT_DLL
 	static void				RecvProxy_WeaponState( const CRecvProxyData *pData, void *pStruct, void *pOut );
 #endif
-	int						WeaponState() const { return m_iState; }
+	WeaponState_t						WeaponState() const { return m_iState; }
 
 	// Weapon data
-	CNetworkVar( int, m_iState );				// See WEAPON_* definition
+	CNetworkVar( WeaponState_t, m_iState );				// See WEAPON_* definition
 	string_t				m_iszName;				// Classname of this weapon.
 	CNetworkVar( AmmoIndex_t, m_iPrimaryAmmoType );		// "primary" ammo index into the ammo info array 
 	CNetworkVar( AmmoIndex_t, m_iSecondaryAmmoType );	// "secondary" ammo index into the ammo info array

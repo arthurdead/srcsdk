@@ -237,8 +237,8 @@ protected:
 
 	void ResetGetPointContentsCache();
 	void ResetGetWaterContentsForPointCache();
-	int GetPointContentsCached( const Vector &point, int slot );
-	int GetWaterContentsForPointCached( const Vector &point, int slot );
+	ContentsFlags_t GetPointContentsCached( const Vector &point, int slot );
+	ContentsFlags_t GetWaterContentsForPointCached( const Vector &point, int slot );
 
 	// Ducking
 	virtual void	Duck( void );

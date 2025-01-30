@@ -157,6 +157,9 @@ enum fieldtype_t : uint64
 	FIELD_NPCSTATE =       (FIELD_UCHARACTER|(11 << FIELD_END_BITS)),
 
 	FIELD_EXT_TYPECOUNT = (FIELD_MOVECOLLIDE >> FIELD_END_BITS),		// MUST BE LAST
+
+	//remove later
+	FIELD_STRING = FIELD_POOLED_STRING,
 };
 
 COMPILE_TIME_ASSERT(MINIMUM_BITS_NEEDED(FIELD_LAST_FLAG >> FIELD_TYPE_BITS) == 5); //update FIELD_FLAGS_MASK
@@ -297,6 +300,7 @@ DECLARE_FIELD_INFO( FIELD_NPCSTATE,		 NPC_STATE )
 
 DECLARE_FIELD_TYPE_INFO( FIELD_TICK, int )
 DECLARE_FIELD_TYPE_INFO( FIELD_TIME, float )
+DECLARE_FIELD_TYPE_INFO( FIELD_SCALE, float )
 
 DECLARE_FIELD_TYPE_INFO( FIELD_EXACT_CLASSNAME, string_t )
 DECLARE_FIELD_TYPE_INFO( FIELD_PARTIAL_CLASSNAME, string_t )
@@ -386,6 +390,21 @@ public:
 	static inline auto NATIVESIZE = sizeof(native_type);
 };
 
+#ifdef __cpp_concepts
+
+template <typename T>
+	requires __is_enum(T)
+class CNativeFieldInfo<T>
+{
+public:
+	using native_type = T;
+	using info_type = typename CNativeFieldInfo<__underlying_type(T)>::info_type;
+	static inline auto FIELDTYPE = info_type::FIELDTYPE;
+	static inline auto NATIVESIZE = sizeof(native_type);
+};
+
+#endif
+
 #if defined GAME_DLL || defined CLIENT_DLL
 #ifndef __cpp_concepts
 	#error
@@ -396,9 +415,9 @@ template <typename T>
 class CNativeFieldInfo<T>
 {
 public:
-	using native_type = typename CNativeFieldInfo<typename T::BaseClass>::native_type;
+	using native_type = typename NetworkVarType<typename T::BaseClass>::type;
 	using info_type = typename CNativeFieldInfo<typename T::BaseClass>::info_type;
-	static inline auto FIELDTYPE = CNativeFieldInfo<typename T::BaseClass>::FIELDTYPE;
+	static inline auto FIELDTYPE = info_type::FIELDTYPE;
 	static inline auto NATIVESIZE = sizeof(native_type);
 };
 #endif
@@ -763,7 +782,7 @@ T *FieldInfo_t::GetField() const
 	MapField_impl<decltype(classNameTypedef::name)>( #name, offsetof(classNameTypedef, name) __VA_OPT__(, __VA_ARGS__) )
 
 #define DEFINE_MAP_FIELD_ARRAYELEM(name, i, ...) \
-	MapField_impl<decltype(classNameTypedef::name[0])>( #name "[" #i "]", (offsetof(classNameTypedef, name) + (sizeof(classNameTypedef::name[0]) * i)) __VA_OPT__(, __VA_ARGS__) )
+	MapField_impl<valve_type_traits::rem_ref_t<decltype(classNameTypedef::name[0])>>( #name "[" #i "]", (offsetof(classNameTypedef, name) + (sizeof(classNameTypedef::name[0]) * i)) __VA_OPT__(, __VA_ARGS__) )
 
 #define DEFINE_MAP_INPUT_FUNC(name, ...) \
 	MapInput_impl( #name, static_cast<inputfunc_t>(&classNameTypedef::name) __VA_OPT__(, __VA_ARGS__) )

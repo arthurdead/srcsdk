@@ -276,7 +276,7 @@ int CSharedBaseViewModel::ViewModelIndex( ) const
 //-----------------------------------------------------------------------------
 // Purpose: Pass our visibility on to our child screens
 //-----------------------------------------------------------------------------
-void CSharedBaseViewModel::AddEffects( int nEffects )
+void CSharedBaseViewModel::AddEffects( Effects_t nEffects )
 {
 	if ( nEffects & EF_NODRAW )
 	{
@@ -300,7 +300,7 @@ void CSharedBaseViewModel::AddEffects( int nEffects )
 //-----------------------------------------------------------------------------
 // Purpose: Pass our visibility on to our child screens
 //-----------------------------------------------------------------------------
-void CSharedBaseViewModel::RemoveEffects( int nEffects )
+void CSharedBaseViewModel::RemoveEffects( Effects_t nEffects )
 {
 	if ( nEffects & EF_NODRAW )
 	{
@@ -383,7 +383,7 @@ CSharedBaseCombatWeapon *CSharedBaseViewModel::GetOwningWeapon( void )
 // Purpose: 
 // Input  : sequence - 
 //-----------------------------------------------------------------------------
-void CSharedBaseViewModel::SendViewModelMatchingSequence( int sequence )
+void CSharedBaseViewModel::SendViewModelMatchingSequence( sequence_t sequence )
 {
 	// since all we do is send a sequence number down to the client, 
 	// set this here so other weapons code knows which sequence is playing.

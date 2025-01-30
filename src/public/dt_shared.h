@@ -35,6 +35,8 @@
 #define DataTableProp	RecvProp
 #define DataTable	RecvTable
 
+#define DEFINE_NETWORK_FIELD DEFINE_RECV_FIELD
+
 #endif
 
 // ------------------------------------------------------------------------ //
@@ -58,6 +60,8 @@
 
 #define DataTableProp	SendPropInfo
 #define DataTable	SendTableInfo
+
+#define DEFINE_NETWORK_FIELD DEFINE_SEND_FIELD
 
 #endif
 

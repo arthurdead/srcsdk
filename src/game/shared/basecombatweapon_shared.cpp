@@ -77,7 +77,8 @@ CSharedBaseCombatWeapon::CBaseCombatWeapon()
 	m_bFlipViewModel	= false;
 
 #if defined( CLIENT_DLL )
-	m_iState = m_iOldState = WEAPON_NOT_CARRIED;
+	m_iState = WEAPON_NOT_CARRIED;
+	m_iOldState = WEAPON_NOT_CARRIED;
 	m_iClip1 = -1;
 	m_iClip2 = -1;
 	m_iPrimaryAmmoType = -1;
@@ -266,7 +267,8 @@ void CSharedBaseCombatWeapon::Precache( void )
 	Assert( Q_strlen( GetWeaponScriptName() ) > 0 );
 	// Msg( "Client got %s\n", GetClassname() );
 #endif
-	m_iPrimaryAmmoType = m_iSecondaryAmmoType = -1;
+	m_iPrimaryAmmoType = AMMO_INVALID_INDEX;
+	m_iSecondaryAmmoType = AMMO_INVALID_INDEX;
 
 	// Add this weapon to the weapon registry, and get our index into it
 	// Get weapon data from script file
@@ -377,10 +379,10 @@ bool CSharedBaseCombatWeapon::KeyValue( const char *szKeyName, const char *szVal
 	}
 	else if ( FStrEq(szKeyName, "spawnflags") )
 	{
-		SetSpawnFlags( atoi(szValue) );
+		SetSpawnFlags( (BaseWeaponSF_t)atoi(szValue) );
 #ifndef CLIENT_DLL
 		// Some spawnflags have to be on the client right now
-		if (GetSpawnFlags() != 0)
+		if (GetSpawnFlags() != SF_WEAPON_NONE)
 			DispatchUpdateTransmitState();
 #endif
 	}
@@ -683,7 +685,7 @@ void CSharedBaseCombatWeapon::SetOwner( CSharedBaseCombatCharacter *owner )
 #ifndef CLIENT_DLL
 		// Make sure the weapon updates its state when it's removed from the player
 		// We have to force an active state change, because it's being dropped and won't call UpdateClientData()
-		int iOldState = m_iState;
+		WeaponState_t iOldState = m_iState;
 		m_iState = WEAPON_NOT_CARRIED;
 		OnActiveStateChanged( iOldState );
 #endif
@@ -790,7 +792,7 @@ void CSharedBaseCombatWeapon::Drop( const Vector &vecVelocity )
 	WeaponManager_AmmoMod( this );
 
 	//If it was dropped then there's no need to respawn it.
-	AddSpawnFlags( SF_NORESPAWN );
+	AddSpawnFlags( SF_WEAPON_NORESPAWN );
 
 	StopAnimation();
 	StopFollowingEntity( );
@@ -1076,7 +1078,7 @@ void CSharedBaseCombatWeapon::SetPickupTouch( void )
 #if !defined( CLIENT_DLL )
 	SetTouch(&CSharedBaseCombatWeapon::DefaultTouch);
 
-	if ( GetSpawnFlags() & SF_NORESPAWN )
+	if ( GetSpawnFlags() & SF_WEAPON_NORESPAWN )
 	{
 		SetThink( &CBaseEntity::SUB_Remove );
 		SetNextThink( gpGlobals->curtime + 30.0f );
@@ -1200,7 +1202,7 @@ void CSharedBaseCombatWeapon::SetActivity( Activity act, float duration )
 	SetModel( GetWorldModel() );
 #endif
 	
-	int sequence = SelectWeightedSequence( act ); 
+	sequence_t sequence = SelectWeightedSequence( act ); 
 	
 	// FORCE IDLE on sequences we don't have (which should be many)
 	if ( sequence == ACTIVITY_NOT_AVAILABLE )
@@ -1238,7 +1240,7 @@ void CSharedBaseCombatWeapon::SetActivity( Activity act, float duration )
 //====================================================================================
 int CSharedBaseCombatWeapon::UpdateClientData( CSharedBasePlayer *pPlayer )
 {
-	int iNewState = WEAPON_IS_CARRIED_BY_PLAYER;
+	WeaponState_t iNewState = WEAPON_IS_CARRIED_BY_PLAYER;
 
 	if ( pPlayer->GetActiveWeapon() == this )
 	{
@@ -1258,7 +1260,7 @@ int CSharedBaseCombatWeapon::UpdateClientData( CSharedBasePlayer *pPlayer )
 
 	if ( m_iState != iNewState )
 	{
-		int iOldState = m_iState;
+		WeaponState_t iOldState = m_iState;
 		m_iState = iNewState;
 		OnActiveStateChanged( iOldState );
 	}
@@ -2574,9 +2576,9 @@ void CSharedBaseCombatWeapon::MaintainIdealActivity( void )
 bool CSharedBaseCombatWeapon::SetIdealActivity( Activity ideal )
 {
 	MDLCACHE_CRITICAL_SECTION();
-	int	idealSequence = SelectWeightedSequence( ideal );
+	sequence_t	idealSequence = SelectWeightedSequence( ideal );
 
-	if ( idealSequence == -1 )
+	if ( idealSequence == INVALID_SEQUENCE )
 		return false;
 
 	//Take the new activity
@@ -2584,7 +2586,7 @@ bool CSharedBaseCombatWeapon::SetIdealActivity( Activity ideal )
 	m_nIdealSequence = idealSequence;
 
 	//Find the next sequence in the potential chain of sequences leading to our ideal one
-	int nextSequence = FindTransitionSequence( GetSequence(), m_nIdealSequence, NULL );
+	sequence_t nextSequence = FindTransitionSequence( GetSequence(), m_nIdealSequence, NULL );
 
 	// Don't use transitions when we're deploying
 	if ( ideal != ACT_VM_DRAW && IsWeaponVisible() && nextSequence != m_nIdealSequence )
@@ -2682,7 +2684,7 @@ void CSharedBaseCombatWeapon::Operator_FrameUpdate( CSharedBaseCombatCharacter *
 		if ( SequenceLoops() )
 		{
 			// animation does loop, which means we're playing subtle idle. Might need to fidget.
-			int iSequence = SelectWeightedSequence( GetActivity() );
+			sequence_t iSequence = SelectWeightedSequence( GetActivity() );
 			if ( iSequence != ACTIVITY_NOT_AVAILABLE )
 			{
 				ResetSequence( iSequence );	// Set to new anim (if it's there)
@@ -2881,27 +2883,84 @@ IMPLEMENT_NETWORKCLASS_ALIASED( BaseCombatWeapon, DT_BaseCombatWeapon )
 //-----------------------------------------------------------------------------
 // Purpose: Save Data for Base Weapon object
 //-----------------------------------------------------------------------------// 
-BEGIN_MAPENTITY( CBaseCombatWeapon )
+BEGIN_MAPENTITY( CBaseCombatWeapon, MAPENT_POINTCLASS )
 
-	DEFINE_INPUTFUNC( FIELD_VOID, "HideWeapon", InputHideWeapon ),
+	DEFINE_MAP_INPUT_FUNC( InputHideWeapon,
+		FIELD_VOID,
+		"HideWeapon",
+		"If this is the active weapon, it is immediately hidden."
+	),
 
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetAmmo1", InputSetAmmo1 ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetAmmo2", InputSetAmmo2 ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "GiveDefaultAmmo", InputGiveDefaultAmmo ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "EnablePlayerPickup", InputEnablePlayerPickup ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "DisablePlayerPickup", InputDisablePlayerPickup ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "EnableNPCPickup", InputEnableNPCPickup ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "DisableNPCPickup", InputDisableNPCPickup ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "BreakConstraint", InputBreakConstraint ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "ForcePrimaryFire", InputForcePrimaryFire ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "ForceSecondaryFire", InputForceSecondaryFire ),
+	DEFINE_MAP_INPUT_FUNC( InputSetAmmo1,
+		FIELD_FLOAT,
+		"SetAmmo1"
+	),
+	DEFINE_MAP_INPUT_FUNC( InputSetAmmo2,
+		FIELD_FLOAT,
+		"SetAmmo2"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputGiveDefaultAmmo,
+		FIELD_VOID,
+		"GiveDefaultAmmo"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputEnablePlayerPickup,
+		FIELD_VOID,
+		"EnablePlayerPickup"
+	),
+	DEFINE_MAP_INPUT_FUNC( InputDisablePlayerPickup,
+		FIELD_VOID,
+		"DisablePlayerPickup"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputEnableNPCPickup,
+		FIELD_VOID,
+		"EnableNPCPickup"
+	),
+	DEFINE_MAP_INPUT_FUNC( InputDisableNPCPickup,
+		FIELD_VOID,
+		"DisableNPCPickup"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputBreakConstraint,
+		FIELD_VOID,
+		"BreakConstraint"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputForcePrimaryFire,
+		FIELD_VOID,
+		"ForcePrimaryFire"
+	),
+	DEFINE_MAP_INPUT_FUNC( InputForceSecondaryFire,
+		FIELD_VOID,
+		"ForceSecondaryFire"
+	),
 
 	// Outputs
-	DEFINE_OUTPUT( m_OnPlayerUse, "OnPlayerUse"),
-	DEFINE_OUTPUT( m_OnPlayerPickup, "OnPlayerPickup"),
-	DEFINE_OUTPUT( m_OnNPCPickup, "OnNPCPickup"),
-	DEFINE_OUTPUT( m_OnCacheInteraction, "OnCacheInteraction" ),
-	DEFINE_OUTPUT( m_OnDropped, "OnDropped" ),
+	DEFINE_MAP_OUTPUT( m_OnPlayerUse,
+		"OnPlayerUse",
+		"Fires when the player +uses this weapon."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnPlayerPickup,
+		"OnPlayerPickup",
+		"Fires when the player picks up this weapon."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnNPCPickup,
+		"OnNPCPickup",
+		"Fires when an NPC picks up this weapon."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnCacheInteraction,
+		"OnCacheInteraction",
+		"Fires when the player 'proves' they've found this weapon. Fires on: Player Touch, +USE pickup, Physcannon pickup, Physcannon punt."
+	),
+
+	DEFINE_MAP_OUTPUT( m_OnDropped,
+		"OnDropped"
+	),
 
 END_MAPENTITY()
 
@@ -2913,7 +2972,7 @@ END_MAPENTITY()
 //			objectID - 
 // Output : void*
 //-----------------------------------------------------------------------------
-void* SendProxy_SendActiveLocalWeaponDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+void* SendProxy_SendActiveLocalWeaponDataTable( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
 {
 	// Get the weapon entity
 	CBaseCombatWeapon *pWeapon = (CBaseCombatWeapon*)pVarData;
@@ -2935,7 +2994,7 @@ REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendActiveLocalWeaponDataTab
 //-----------------------------------------------------------------------------
 // Purpose: Only send the LocalWeaponData to the player carrying the weapon
 //-----------------------------------------------------------------------------
-void* SendProxy_SendLocalWeaponDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+void* SendProxy_SendLocalWeaponDataTable( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
 {
 	// Get the weapon entity
 	CBaseCombatWeapon *pWeapon = (CBaseCombatWeapon*)pVarData;
@@ -2965,7 +3024,7 @@ REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendLocalWeaponDataTable );
 //-----------------------------------------------------------------------------
 // Purpose: Only send to non-local players
 //-----------------------------------------------------------------------------
-void* SendProxy_SendNonLocalWeaponDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+void* SendProxy_SendNonLocalWeaponDataTable( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
 {
 	pRecipients->SetAllRecipients();
 
@@ -3002,21 +3061,14 @@ void CSharedBaseCombatWeapon::RecvProxy_WeaponState( const CRecvProxyData *pData
 // Purpose: Propagation data for weapons. Only sent when a player's holding it.
 //-----------------------------------------------------------------------------
 BEGIN_NETWORK_TABLE_NOBASE( CSharedBaseCombatWeapon, DT_LocalActiveWeaponData )
+	DEFINE_NETWORK_FIELD( m_flNextPrimaryAttack ),
+	DEFINE_NETWORK_FIELD( m_flNextSecondaryAttack ),
+	DEFINE_NETWORK_FIELD( m_nNextThinkTick ),
+	DEFINE_NETWORK_FIELD( m_flTimeWeaponIdle ),
+	DEFINE_NETWORK_FIELD( m_bHolstered ),
+
 #if !defined( CLIENT_DLL )
-	SendPropTime( SENDINFO( m_flNextPrimaryAttack ) ),
-	SendPropTime( SENDINFO( m_flNextSecondaryAttack ) ),
-	SendPropInt( SENDINFO( m_nNextThinkTick ) ),
-	SendPropTime( SENDINFO( m_flTimeWeaponIdle ) ),
-
-	SendPropExclude( SENDEXLCUDE( DT_AnimTimeMustBeFirst, m_flAnimTime ) ),
-
-	SendPropBool( SENDINFO( m_bHolstered ) ),
-#else
-	RecvPropTime( RECVINFO( m_flNextPrimaryAttack ) ),
-	RecvPropTime( RECVINFO( m_flNextSecondaryAttack ) ),
-	RecvPropInt( RECVINFO( m_nNextThinkTick ) ),
-	RecvPropTime( RECVINFO( m_flTimeWeaponIdle ) ),
-	RecvPropBool( RECVINFO( m_bHolstered ) ),
+	DEFINE_SEND_EXCLUDE_FIELD( DT_AnimTimeMustBeFirst, m_flAnimTime ),
 #endif
 END_NETWORK_TABLE()
 
@@ -3024,48 +3076,32 @@ END_NETWORK_TABLE()
 // Purpose: Propagation data for weapons. Only sent when a player's holding it.
 //-----------------------------------------------------------------------------
 BEGIN_NETWORK_TABLE_NOBASE( CSharedBaseCombatWeapon, DT_LocalWeaponData )
+	DEFINE_NETWORK_FIELD( m_iClip1 ),
+	DEFINE_NETWORK_FIELD( m_iClip2 ),
+	DEFINE_NETWORK_FIELD( m_iPrimaryAmmoType ),
+	DEFINE_NETWORK_FIELD( m_iSecondaryAmmoType ),
+	DEFINE_NETWORK_FIELD( m_nViewModelIndex ),
+	DEFINE_NETWORK_FIELD( m_bFlipViewModel ),
+
 #if !defined( CLIENT_DLL )
-	SendPropIntWithMinusOneFlag( SENDINFO(m_iClip1 ), 8 ),
-	SendPropIntWithMinusOneFlag( SENDINFO(m_iClip2 ), 8 ),
-	SendPropInt( SENDINFO(m_iPrimaryAmmoType ), 8 ),
-	SendPropInt( SENDINFO(m_iSecondaryAmmoType ), 8 ),
-
-	SendPropInt( SENDINFO( m_nViewModelIndex ), VIEWMODEL_INDEX_BITS, SPROP_UNSIGNED ),
-
-	SendPropInt( SENDINFO( m_bFlipViewModel ) ),
-
-	SendPropExclude( SENDEXLCUDE( DT_AnimTimeMustBeFirst, m_flAnimTime ) ),
-
-#else
-	RecvPropIntWithMinusOneFlag( RECVINFO(m_iClip1 )),
-	RecvPropIntWithMinusOneFlag( RECVINFO(m_iClip2 )),
-	RecvPropInt( RECVINFO(m_iPrimaryAmmoType )),
-	RecvPropInt( RECVINFO(m_iSecondaryAmmoType )),
-
-	RecvPropInt( RECVINFO( m_nViewModelIndex ) ),
-
-	RecvPropBool( RECVINFO( m_bFlipViewModel ) ),
-
+	DEFINE_SEND_EXCLUDE_FIELD( DT_AnimTimeMustBeFirst, m_flAnimTime ),
 #endif
 END_NETWORK_TABLE()
 
 BEGIN_NETWORK_TABLE(CSharedBaseCombatWeapon, DT_BaseCombatWeapon)
+	DEFINE_NETWORK_FIELD( m_iViewModelIndex ),
+	DEFINE_NETWORK_FIELD( m_iWorldModelIndex ),
+	DEFINE_NETWORK_FIELD( m_iDroppedModelIndex ),
+	DEFINE_NETWORK_FIELD( m_hOwner ),
+
 #if !defined( CLIENT_DLL )
 	SendPropDataTable("LocalWeaponData", 0, &REFERENCE_SEND_TABLE(DT_LocalWeaponData), SendProxy_SendLocalWeaponDataTable ),
 	SendPropDataTable("LocalActiveWeaponData", 0, &REFERENCE_SEND_TABLE(DT_LocalActiveWeaponData), SendProxy_SendActiveLocalWeaponDataTable ),
-	SendPropModelIndex( SENDINFO(m_iViewModelIndex) ),
-	SendPropModelIndex( SENDINFO(m_iWorldModelIndex) ),
-	SendPropModelIndex( SENDINFO(m_iDroppedModelIndex) ),
 	SendPropInt( SENDINFO(m_iState ), 8, SPROP_UNSIGNED ),
-	SendPropEHandle( SENDINFO(m_hOwner) ),
 #else
 	RecvPropDataTable("LocalWeaponData", 0, 0, &REFERENCE_RECV_TABLE(DT_LocalWeaponData)),
 	RecvPropDataTable("LocalActiveWeaponData", 0, 0, &REFERENCE_RECV_TABLE(DT_LocalActiveWeaponData)),
-	RecvPropInt( RECVINFO(m_iViewModelIndex)),
-	RecvPropInt( RECVINFO(m_iWorldModelIndex)),
-	RecvPropInt( RECVINFO(m_iDroppedModelIndex) ),
 	RecvPropInt( RECVINFO(m_iState), 0, &CSharedBaseCombatWeapon::RecvProxy_WeaponState ),
-	RecvPropEHandle( RECVINFO(m_hOwner ) ),
 #endif
 END_NETWORK_TABLE()
 

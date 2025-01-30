@@ -480,22 +480,57 @@ LINK_ENTITY_TO_SERVERCLASS( func_useableladder, CFuncLadder );
 //---------------------------------------------------------
 // Save/Restore
 //---------------------------------------------------------
-BEGIN_MAPENTITY( CSharedFuncLadder )
-	DEFINE_KEYFIELD_AUTO( m_vecPlayerMountPositionTop, "point0" ),
-	DEFINE_KEYFIELD_AUTO( m_vecPlayerMountPositionBottom, "point1" ),
+BEGIN_MAPENTITY( CSharedFuncLadder, MAPENT_SOLIDCLASS, "Ladder. Players will be able to freely along one side of this brush, as if it was a ladder. If you are using a model prop for the visual representation of the ladder in the map, apply the toolsinvisibleladder material to the climbable side of the func_ladder brush." )
+	DEFINE_MAP_FIELD( m_vecPlayerMountPositionTop,
+		"point0",
+		"Start",
+		"Ladder start point."
+	),
+	DEFINE_MAP_FIELD( m_vecPlayerMountPositionBottom,
+		"point1",
+		"End"
+		"Ladder end point."
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_bDisabled, "StartDisabled" ),
+	DEFINE_MAP_FIELD( m_bDisabled,
+		"StartDisabled",
+		"Start Disabled",
+		"0"
+	),
 
 #if !defined( CLIENT_DLL )
-	DEFINE_KEYFIELD_AUTO( m_surfacePropName, "ladderSurfaceProperties" ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
+	DEFINE_MAP_FIELD( m_surfacePropName,
+		"ladderSurfaceProperties",
+		"Surface properties (optional)"
+	),
+	DEFINE_MAP_INPUT_FUNC( InputEnable,
+		FIELD_VOID,
+		"Enable",
+		"Enable this ladder."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputDisable,
+		FIELD_VOID,
+		"Disable",
+		"Disable this ladder."
+	),
 
-	DEFINE_INPUTFUNC( FIELD_VOID, "ForcePlayerOn", InputForcePlayerOn ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "CheckPlayerOn", InputCheckPlayerOn ),
+	DEFINE_MAP_INPUT_FUNC( InputForcePlayerOn,
+		FIELD_VOID,
+		"ForcePlayerOn"
+	),
+	DEFINE_MAP_INPUT_FUNC( InputCheckPlayerOn,
+		FIELD_VOID,
+		"CheckPlayerOn"
+	),
 
-	DEFINE_OUTPUT(	m_OnPlayerGotOnLadder,	"OnPlayerGotOnLadder" ),
-	DEFINE_OUTPUT(	m_OnPlayerGotOffLadder,	"OnPlayerGotOffLadder" ),
+	DEFINE_MAP_OUTPUT( m_OnPlayerGotOnLadder,
+		"OnPlayerGotOnLadder",
+		"Fired whenever a player gets on this ladder."
+	),
+	DEFINE_MAP_OUTPUT( m_OnPlayerGotOffLadder,
+		"OnPlayerGotOffLadder",
+		"Fired whenever a player gets off this ladder."
+	),
 #endif
 
 END_MAPENTITY()

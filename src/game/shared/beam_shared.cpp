@@ -36,10 +36,20 @@
 #if !defined( CLIENT_DLL )
 // Lightning target, just alias landmark
 
+enum SFInfoTarget_t : unsigned char
+{
+	SF_INFO_TARGET_FORCE_TRANSMIT = 0x01,
+	SF_INFO_TARGET_ALWAYS_TRANSMIT = 0x02
+};
+
+FLAGENUM_OPERATORS( SFInfoTarget_t, unsigned char )
+
 class CInfoTarget : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CInfoTarget, CPointEntity );
+
+	DECLARE_SPAWNFLAGS( SFInfoTarget_t )
 
 	void	Spawn( void );
 	virtual EdictStateFlags_t UpdateTransmitState();
@@ -50,7 +60,7 @@ void CInfoTarget::Spawn( void )
 {
 	BaseClass::Spawn();
 
-	if ( HasSpawnFlags(0x01) )
+	if ( HasSpawnFlags(SF_INFO_TARGET_FORCE_TRANSMIT) )
 	{
 		AddEFlags( EFL_FORCE_CHECK_TRANSMIT );
 	}
@@ -62,7 +72,7 @@ void CInfoTarget::Spawn( void )
 EdictStateFlags_t CInfoTarget::UpdateTransmitState()
 {
 	// Spawn flags 2 means we always transmit
-	if ( HasSpawnFlags(0x02) )
+	if ( HasSpawnFlags(SF_INFO_TARGET_ALWAYS_TRANSMIT) )
 		return SetTransmitState( FL_EDICT_ALWAYS );
 	return BaseClass::UpdateTransmitState();
 }
@@ -205,21 +215,67 @@ BEGIN_NETWORK_TABLE_NOBASE( CSharedBeam, DT_Beam )
 END_NETWORK_TABLE()
 
 #if !defined( CLIENT_DLL )
-BEGIN_MAPENTITY( CBeam )
-	
-	DEFINE_KEYFIELD_AUTO( m_flHDRColorScale, "HDRColorScale" ),
+BEGIN_MAPENTITY( CBeam, MAPENT_POINTCLASS, "This is the definition of the 'beam' class, but we don't want that in the entity list." )
 
-	DEFINE_KEYFIELD_AUTO( m_flDamage, "damage" ),
+	DEFINE_MAP_FIELD( m_flHDRColorScale,
+		"HDRColorScale",
+		"HDR color scale.",
+		"1.0",
+		"float value to multiply sprite color by when running in HDR mode."
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_nDissolveType, "dissolvetype" ),
+	DEFINE_MAP_FIELD( m_flDamage,
+		"damage",
+		"Damage / second",
+		"0",
+		"How much damage this beam does per second to things while active. For continuous damage, the value should be greater than 10 or it may not work."
+	),
+
+	DEFINE_MAP_FIELD( m_nDissolveType,
+		"dissolvetype",
+		"Dissolve Type",
+		NULL,
+		"-1", {
+			{"-1", "None"},
+			{"0", "Energy"},
+			{"1", "Heavy electrical"},
+			{"2", "Light electrical"},
+		}
+	),
 
 	// Inputs
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "Width", InputWidth ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "Noise", InputNoise ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "ColorRedValue", InputColorRedValue ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "ColorGreenValue", InputColorGreenValue ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "ColorBlueValue", InputColorBlueValue ),
-	DEFINE_INPUT( m_fSpeed, FIELD_FLOAT, "ScrollSpeed" ),
+	DEFINE_MAP_INPUT_FUNC( InputWidth,
+		FIELD_FLOAT,
+		"Width",
+		"Set the width of the beam, in pixels."
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputNoise,
+		FIELD_FLOAT,
+		"Noise"
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputColorRedValue,
+		FIELD_FLOAT,
+		"ColorRedValue",
+		"Sets the red color channel's value (0 - 255)."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputColorGreenValue,
+		FIELD_FLOAT,
+		"ColorGreenValue",
+		"Sets the green color channel's value (0 - 255)."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputColorBlueValue,
+		FIELD_FLOAT,
+		"ColorBlueValue",
+		"Sets the blue color channel's value (0 - 255)."
+	),
+
+	DEFINE_MAP_INPUT_FIELD( m_fSpeed,
+		FIELD_FLOAT,
+		"ScrollSpeed",
+		"Set the scroll speed in units per second (0 - 100)."
+	),
 
 END_MAPENTITY()
 
@@ -732,13 +788,13 @@ void CSharedBeam::BeamDamage( trace_t *ptr )
 		ClearMultiDamage();
 		Vector dir = ptr->endpos - GetAbsOrigin();
 		VectorNormalize( dir );
-		int nDamageType = DMG_ENERGYBEAM;
+		DamageTypes_t nDamageType = DMG_ENERGYBEAM;
 
-		if (m_nDissolveType == 0)
+		if (m_nDissolveType == ENTITY_DISSOLVE_NORMAL)
 		{
 			nDamageType = DMG_DISSOLVE;
 		}
-		else if ( m_nDissolveType > 0 )
+		else if ( m_nDissolveType != ENTITY_DISSOLVE_NORMAL )
 		{
 			nDamageType = DMG_DISSOLVE | DMG_SHOCK; 
 		}
@@ -837,7 +893,7 @@ void CSharedBeam::SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways )
 	}
 }
 
-int CSharedBeam::ShouldTransmit( const CCheckTransmitInfo *pInfo )
+EdictStateFlags_t CSharedBeam::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 {
 	if ( IsEffectActive( EF_NODRAW ) )
 		return FL_EDICT_DONTSEND;

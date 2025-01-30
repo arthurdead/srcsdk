@@ -3599,6 +3599,7 @@ bool CSharedGameMovement::InWater( void )
 	return ( player->GetWaterLevel() > WL_Feet );
 }
 
+#define UNCACHED_CONTENTS (ContentsFlags_t)-9999
 
 void CSharedGameMovement::ResetGetPointContentsCache()
 {
@@ -3606,7 +3607,7 @@ void CSharedGameMovement::ResetGetPointContentsCache()
 	{
 		for ( int i = 0; i < MAX_PLAYERS; ++i )
 		{
-			m_CachedGetPointContents[ i ][ slot ] = -9999;
+			m_CachedGetPointContents[ i ][ slot ] = UNCACHED_CONTENTS;
 		}
 	}
 }
@@ -3617,12 +3618,12 @@ void CSharedGameMovement::ResetGetWaterContentsForPointCache()
 	{
 		for ( int i = 0; i < MAX_PLAYERS; ++i )
 		{
-			m_CachedGetPointContents[ i ][ slot ] = -9999;
+			m_CachedGetPointContents[ i ][ slot ] = UNCACHED_CONTENTS;
 		}
 	}
 }
 
-int CSharedGameMovement::GetWaterContentsForPointCached( const Vector &point, int slot )
+ContentsFlags_t CSharedGameMovement::GetWaterContentsForPointCached( const Vector &point, int slot )
 {
 	if ( g_bMovementOptimizations ) 
 	{
@@ -3631,7 +3632,7 @@ int CSharedGameMovement::GetWaterContentsForPointCached( const Vector &point, in
 
 		int idx = player->entindex() - 1;
 
-		if ( m_CachedGetPointContents[ idx ][ slot ] == -9999 || point.DistToSqr( m_CachedGetPointContentsPoint[ idx ][ slot ] ) > 1 )
+		if ( m_CachedGetPointContents[ idx ][ slot ] == UNCACHED_CONTENTS || point.DistToSqr( m_CachedGetPointContentsPoint[ idx ][ slot ] ) > 1 )
 		{
 			m_CachedGetPointContents[ idx ][ slot ] = enginetrace->GetPointContents ( point, MASK_WATER );
 			m_CachedGetPointContentsPoint[ idx ][ slot ] = point;
@@ -3645,7 +3646,7 @@ int CSharedGameMovement::GetWaterContentsForPointCached( const Vector &point, in
 	}
 }
 
-int CSharedGameMovement::GetPointContentsCached( const Vector &point, int slot )
+ContentsFlags_t CSharedGameMovement::GetPointContentsCached( const Vector &point, int slot )
 {
 	if ( g_bMovementOptimizations ) 
 	{
@@ -3654,7 +3655,7 @@ int CSharedGameMovement::GetPointContentsCached( const Vector &point, int slot )
 
 		int idx = player->entindex() - 1;
 
-		if ( m_CachedGetPointContents[ idx ][ slot ] == -9999 || point.DistToSqr( m_CachedGetPointContentsPoint[ idx ][ slot ] ) > 1 )
+		if ( m_CachedGetPointContents[ idx ][ slot ] == UNCACHED_CONTENTS || point.DistToSqr( m_CachedGetPointContentsPoint[ idx ][ slot ] ) > 1 )
 		{
 			m_CachedGetPointContents[ idx ][ slot ] = enginetrace->GetPointContents ( point );
 			m_CachedGetPointContentsPoint[ idx ][ slot ] = point;
@@ -3699,7 +3700,7 @@ void CSharedGameMovement::GetWaterCheckPosition( int waterLevel, Vector *pos )
 bool CSharedGameMovement::CheckWater( void )
 {
 	Vector	point;
-	int		cont;
+	ContentsFlags_t		cont;
 
 	Vector vPlayerMins = GetPlayerMins();
 	Vector vPlayerMaxs = GetPlayerMaxs();
@@ -3718,7 +3719,7 @@ bool CSharedGameMovement::CheckWater( void )
 	if ( cont & MASK_WATER )
 	{
 		// Set water type
-		player->SetWaterType( cont );
+		player->SetWaterType( WaterTypeFromContents( cont ) );
 
 		// We are at least at level one
 		player->SetWaterLevel( WL_Feet );
@@ -3760,7 +3761,7 @@ bool CSharedGameMovement::CheckWater( void )
 			// BUGBUG -- this depends on the value of an unspecified enumerated type
 			// The deeper we are, the stronger the current.
 			Vector temp;
-			VectorMA( player->GetBaseVelocity(), 50.0*player->GetWaterLevel(), v, temp );
+			VectorMA( player->GetBaseVelocity(), 50.0*(int)player->GetWaterLevel(), v, temp );
 			player->SetBaseVelocity( temp );
 		}
 	}
@@ -3817,7 +3818,7 @@ void CSharedGameMovement::SetGroundEntity( trace_t *pm )
 	}
 }
 
-static inline void DoTrace( CTraceListData *pTraceListData, const Ray_t &ray, uint32 fMask, ITraceFilter *filter, trace_t *ptr, int *counter )
+static inline void DoTrace( CTraceListData *pTraceListData, const Ray_t &ray, ContentsFlags_t fMask, ITraceFilter *filter, trace_t *ptr, int *counter )
 {
 	++*counter;
 
@@ -3839,7 +3840,7 @@ static inline void DoTrace( CTraceListData *pTraceListData, const Ray_t &ray, ui
 // the original trace hit first.
 //-----------------------------------------------------------------------------
 void TracePlayerBBoxForGround( CTraceListData *pTraceListData, const Vector& start, const Vector& end, const Vector& minsSrc,
-							  const Vector& maxsSrc, unsigned int fMask,
+							  const Vector& maxsSrc, ContentsFlags_t fMask,
 							  ITraceFilter *filter, trace_t& pm, float minGroundNormalZ, bool overwriteEndpos, int *pCounter )
 {
 	VPROF( "TracePlayerBBoxForGround" );
@@ -3924,7 +3925,7 @@ void TracePlayerBBoxForGround( CTraceListData *pTraceListData, const Vector& sta
 // move the player down to the new floor and get stuck on a leaning wall that
 // the original trace hit first.
 //-----------------------------------------------------------------------------
-void CSharedGameMovement::TryTouchGroundInQuadrants( const Vector& start, const Vector& end, unsigned int fMask, int collisionGroup, trace_t& pm )
+void CSharedGameMovement::TryTouchGroundInQuadrants( const Vector& start, const Vector& end, ContentsFlags_t fMask, Collision_Group_t collisionGroup, trace_t& pm )
 {
 	VPROF( "CSharedGameMovement::TryTouchGroundInQuadrants" );
 
@@ -4577,9 +4578,9 @@ bool CSharedGameMovement::CanUnDuckJump( trace_t &trace )
 //-----------------------------------------------------------------------------
 void CSharedGameMovement::Duck( void )
 {
-	uint64 buttonsChanged	= ( mv->m_nOldButtons ^ mv->m_nButtons );	// These buttons have changed this frame
-	uint64 buttonsPressed	=  buttonsChanged & mv->m_nButtons;			// The changed ones still down are "pressed"
-	uint64 buttonsReleased	=  buttonsChanged & mv->m_nOldButtons;		// The changed ones which were previously down are "released"
+	InButtons_t buttonsChanged	= ( mv->m_nOldButtons ^ mv->m_nButtons );	// These buttons have changed this frame
+	InButtons_t buttonsPressed	=  buttonsChanged & mv->m_nButtons;			// The changed ones still down are "pressed"
+	InButtons_t buttonsReleased	=  buttonsChanged & mv->m_nOldButtons;		// The changed ones which were previously down are "released"
 
 	// Check to see if we are in the air.
 	bool bInAir = ( player->GetGroundEntity() == NULL );

@@ -284,11 +284,14 @@ enum Team_t : unsigned char
 #define MAX_TEAM_NAME_LENGTH	32	// Max length of a team's name
 
 // Weapon m_iState
-#define WEAPON_IS_ONTARGET				0x40
+enum WeaponState_t : unsigned char
+{
+	WEAPON_IS_ONTARGET =				0x40,
 
-#define WEAPON_NOT_CARRIED				0	// Weapon is on the ground
-#define WEAPON_IS_CARRIED_BY_PLAYER		1	// This client is carrying this weapon.
-#define WEAPON_IS_ACTIVE				2	// This client is carrying this weapon and it's the currently held weapon
+	WEAPON_NOT_CARRIED =				0,	// Weapon is on the ground
+	WEAPON_IS_CARRIED_BY_PLAYER =		1,	// This client is carrying this weapon.
+	WEAPON_IS_ACTIVE =				2,	// This client is carrying this weapon and it's the currently held weapon
+};
 
 // -----------------------------------------
 // Skill Level

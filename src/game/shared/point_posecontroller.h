@@ -12,7 +12,7 @@
 
 
 // Type of frequency modulations
-enum PoseController_FModType_t
+enum PoseController_FModType_t : unsigned char
 {
 	POSECONTROLLER_FMODTYPE_NONE = 0,
 	POSECONTROLLER_FMODTYPE_SINE,

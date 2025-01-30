@@ -267,7 +267,7 @@ private:
 	EHANDLE		m_hEndEntity;
 
 #if !defined( CLIENT_DLL )
-	int			m_nDissolveType;
+	EntityDissolve_t			m_nDissolveType;
 #endif
 
 public:

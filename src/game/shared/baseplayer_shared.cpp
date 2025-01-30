@@ -284,13 +284,13 @@ void CSharedBasePlayer::ItemPostFrame()
 		CBaseCombatWeapon *pWeapon = GetActiveWeapon();
 		
 		pWeapon->m_iClip1 = pWeapon->GetMaxClip1();
-		int iPrimaryAmmoType = pWeapon->GetPrimaryAmmoType();
-		if( iPrimaryAmmoType >= 0 )
+		AmmoIndex_t iPrimaryAmmoType = pWeapon->GetPrimaryAmmoType();
+		if( iPrimaryAmmoType != AMMO_INVALID_INDEX )
 			SetAmmoCount( GetAmmoDef()->MaxCarry( iPrimaryAmmoType, this ), iPrimaryAmmoType );
 		
 		pWeapon->m_iClip2 = pWeapon->GetMaxClip2();
-		int iSecondaryAmmoType = pWeapon->GetSecondaryAmmoType();
-		if( iSecondaryAmmoType >= 0 )
+		AmmoIndex_t iSecondaryAmmoType = pWeapon->GetSecondaryAmmoType();
+		if( iSecondaryAmmoType != AMMO_INVALID_INDEX )
 			SetAmmoCount( GetAmmoDef()->MaxCarry( iSecondaryAmmoType, this ), iSecondaryAmmoType );
 	}
 #else
@@ -742,7 +742,7 @@ void CSharedBasePlayer::PlayStepSound( const Vector &vecOrigin, surfacedata_t *p
 	ep.m_pSoundName = params.soundname;
 	ep.m_flVolume = fvol;
 	ep.m_SoundLevel = params.soundlevel;
-	ep.m_nFlags = 0;
+	ep.m_nFlags = SND_NOFLAGS;
 	ep.m_nPitch = params.pitch;
 	ep.m_pOrigin = &vecOrigin;
 
@@ -752,14 +752,14 @@ void CSharedBasePlayer::PlayStepSound( const Vector &vecOrigin, surfacedata_t *p
 	OnEmitFootstepSound( params, vecOrigin, fvol );
 }
 
-void CSharedBasePlayer::UpdateButtonState( uint64 nUserCmdButtonMask )
+void CSharedBasePlayer::UpdateButtonState( InButtons_t nUserCmdButtonMask )
 {
 	// Track button info so we can detect 'pressed' and 'released' buttons next frame
 	m_afButtonLast = m_nButtons;
 
 	// Get button states
 	m_nButtons = nUserCmdButtonMask;
- 	uint64 buttonsChanged = m_afButtonLast ^ m_nButtons;
+ 	InButtons_t buttonsChanged = m_afButtonLast ^ m_nButtons;
 	
 	// Debounced button codes for pressed/released
 	// UNDONE: Do we need auto-repeat?
@@ -1087,7 +1087,7 @@ CSharedBaseEntity *CSharedBasePlayer::FindUseEntity()
 
 	// NOTE: Some debris objects are useable too, so hit those as well
 	// A button, etc. can be made out of clip brushes, make sure it's +useable via a traceline, too.
-	int useableContents = MASK_SOLID | CONTENTS_DEBRIS | CONTENTS_PLAYERCLIP;
+	ContentsFlags_t useableContents = MASK_SOLID | CONTENTS_DEBRIS | CONTENTS_PLAYERCLIP;
 
 #ifndef CLIENT_DLL
 	CBaseEntity *pFoundByTrace = NULL;
@@ -1369,7 +1369,7 @@ void CSharedBasePlayer::PlayerUse ( void )
 
 		//!!!UNDONE: traceline here to prevent +USEing buttons through walls			
 
-		int caps = pUseEntity->ObjectCaps();
+		EntityCaps_t caps = pUseEntity->ObjectCaps();
 		variant_t emptyVariant;
 		if ( ( (m_nButtons & IN_USE) && (caps & FCAP_CONTINUOUS_USE) ) || ( (m_afButtonPressed & IN_USE) && (caps & (FCAP_IMPULSE_USE|FCAP_ONOFF_USE)) ) )
 		{
@@ -1501,7 +1501,7 @@ void CSharedBasePlayer::SmoothViewOnStairs( Vector& eyeOrigin )
 	}
 }
 
-static bool IsWaterContents( int contents )
+static bool IsWaterContents( ContentsFlags_t contents )
 {
 	if ( contents & MASK_WATER )
 		return true;
@@ -1516,7 +1516,7 @@ void CSharedBasePlayer::ResetObserverMode()
 {
 
 	m_hObserverTarget.Set( NULL );
-	m_iObserverMode = (int)OBS_MODE_NONE;
+	m_iObserverMode = OBS_MODE_NONE;
 
 #ifndef CLIENT_DLL
 	m_iObserverLastMode = OBS_MODE_ROAMING;
@@ -2084,7 +2084,7 @@ bool fogparams_t::operator !=( const fogparams_t& other ) const
 //-----------------------------------------------------------------------------
 // Purpose: Strips off IN_xxx flags from the player's input
 //-----------------------------------------------------------------------------
-void CSharedBasePlayer::ForceButtons( uint64 nButtons )
+void CSharedBasePlayer::ForceButtons( InButtons_t nButtons )
 {
 	m_afButtonForced |= nButtons;
 }
@@ -2092,7 +2092,7 @@ void CSharedBasePlayer::ForceButtons( uint64 nButtons )
 //-----------------------------------------------------------------------------
 // Purpose: Re-enables stripped IN_xxx flags to the player's input
 //-----------------------------------------------------------------------------
-void CSharedBasePlayer::UnforceButtons( uint64 nButtons )
+void CSharedBasePlayer::UnforceButtons( InButtons_t nButtons )
 {
 	m_afButtonForced &= ~nButtons;
 }

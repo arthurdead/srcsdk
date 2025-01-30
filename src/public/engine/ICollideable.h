@@ -43,10 +43,10 @@ public:
 	virtual void			WorldSpaceTriggerBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs ) const = 0;
 
 	// custom collision test
-	virtual bool			TestCollision( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr ) = 0;
+	virtual bool			TestCollision( const Ray_t &ray, ContentsFlags_t fContentsMask, trace_t& tr ) = 0;
 
 	// Perform hitbox test, returns true *if hitboxes were tested at all*!!
-	virtual bool			TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr ) = 0;
+	virtual bool			TestHitboxes( const Ray_t &ray, ContentsFlags_t fContentsMask, trace_t& tr ) = 0;
 
 	// Returns the BRUSH model index if this is a brush model. Otherwise, returns -1.
 	virtual modelindex_t				GetCollisionModelIndex() = 0;
@@ -74,7 +74,7 @@ public:
 	// It may or may not be a tight-fitting box and its volume may suddenly change
 	virtual void			WorldSpaceSurroundingBounds( Vector *pVecMins, Vector *pVecMaxs ) = 0;
 
-	virtual bool			ShouldTouchTrigger( int triggerSolidFlags ) const = 0;
+	virtual bool			ShouldTouchTrigger( SolidFlags_t triggerSolidFlags ) const = 0;
 
 	// returns NULL unless this collideable has specified FSOLID_ROOT_PARENT_ALIGNED
 	virtual const matrix3x4_t	*GetRootParentToWorldTransform() const = 0;

@@ -10,6 +10,7 @@
 #include "doors.h"
 #include "entitylist.h"
 #include "globals.h"
+#include "subs.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -41,20 +42,6 @@ LINK_ENTITY_TO_CLASS(info_null,CNullEntity);
 // Eh, good enough.
 LINK_ENTITY_TO_CLASS(func_null,CNullEntity);
 
-class CBaseDMStart : public CPointEntity
-{
-public:
-	DECLARE_CLASS( CBaseDMStart, CPointEntity );
-
-	bool IsTriggered( CBaseEntity *pEntity );
-
-	DECLARE_MAPENTITY();
-
-	string_t m_Master;
-
-private:
-};
-
 BEGIN_MAPENTITY( CBaseDMStart )
 
 	DEFINE_KEYFIELD_AUTO( m_Master, "master" ),
@@ -64,7 +51,8 @@ END_MAPENTITY()
 
 // These are the new entry points to entities. 
 LINK_ENTITY_TO_CLASS(info_player_deathmatch,CBaseDMStart);
-LINK_ENTITY_TO_CLASS(info_player_start,CPointEntity);
+LINK_ENTITY_TO_CLASS(info_player_start,CPlayerStart);
+LINK_ENTITY_TO_CLASS(info_player_coop,CPlayerStart);
 LINK_ENTITY_TO_CLASS(info_landmark,CPointEntity);
 
 bool CBaseDMStart::IsTriggered( CBaseEntity *pEntity )

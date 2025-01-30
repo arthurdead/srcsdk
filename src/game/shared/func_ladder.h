@@ -47,7 +47,12 @@ public:
 typedef CHandle< CSharedInfoLadderDismount > InfoLadderDismountHandle;
 
 // Spawnflags
-#define SF_LADDER_DONTGETON			1			// Set for ladders that are acting as automount points, but not really ladders
+enum SFLadders_t : unsigned char
+{
+	SF_LADDER_DONTGETON =			1			// Set for ladders that are acting as automount points, but not really ladders
+};
+
+FLAGENUM_OPERATORS( SFLadders_t, unsigned char )
 
 #if defined( CLIENT_DLL )
 #define CFuncLadder C_FuncLadder
@@ -71,6 +76,8 @@ public:
 	DECLARE_MAPENTITY();
 
 	virtual void Spawn();
+
+	DECLARE_SPAWNFLAGS( SFLadders_t )
 
 	virtual void DrawDebugGeometryOverlays(void);
 

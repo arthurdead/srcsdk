@@ -30,32 +30,129 @@
 LINK_ENTITY_TO_CLASS( point_posecontroller, CPoseController );	
 
 
-BEGIN_MAPENTITY( CPoseController )
+BEGIN_MAPENTITY( CPoseController, MAPENT_POINTCLASS, "An entity that controls a pose parameter of a prop and cycles the pose clientside." )
 
 	// Keys
-	DEFINE_KEYFIELD_AUTO( m_iszPropName, "PropName" ),
-	DEFINE_KEYFIELD_AUTO( m_iszPoseParameterName, "PoseParameterName" ),
-	DEFINE_KEYFIELD_AUTO( m_fPoseValue, "PoseValue" ),
-	DEFINE_KEYFIELD_AUTO( m_fInterpolationTime, "InterpolationTime" ),
-	DEFINE_KEYFIELD_AUTO( m_bInterpolationWrap, "InterpolationWrap" ),
-	DEFINE_KEYFIELD_AUTO( m_fCycleFrequency, "CycleFrequency" ),
-	DEFINE_KEYFIELD_AUTO( m_nFModType, "FModType" ),
-	DEFINE_KEYFIELD_AUTO( m_fFModTimeOffset, "FModTimeOffset" ),
-	DEFINE_KEYFIELD_AUTO( m_fFModRate, "FModRate" ),
-	DEFINE_KEYFIELD_AUTO( m_fFModAmplitude, "FModAmplitude" ),
+	DEFINE_MAP_FIELD( m_iszPropName,
+		"PropName",
+		"Target",
+		"Name of the prop to control. Can be any animating entity."
+	),
+	DEFINE_MAP_FIELD( m_iszPoseParameterName,
+		"PoseParameterName",
+		"Pose Parameter Name",
+		"Name of the pose parameter to control. Setting this to an invalid value will crash the game!"
+	),
+	DEFINE_MAP_FIELD( m_fPoseValue,
+		"PoseValue",
+		"Pose Parameter Value",
+		"Normalized value for the pose parameter from 0.0 and 1.0 (maps to min and max range).",
+		"0"
+	),
+	DEFINE_MAP_FIELD( m_fInterpolationTime,
+		"InterpolationTime",
+		"Interpolation Time",
+		"Number of seconds (0.0 to 10.0) for client to match absolue pose values.",
+		"0"
+	),
+	DEFINE_MAP_FIELD( m_bInterpolationWrap,
+		"InterpolationWrap",
+		"Interpolation Wrap",
+		"Should wrap from 0.0 to 1.0 when interpolating.",
+		"0"
+	),
+	DEFINE_MAP_FIELD( m_fCycleFrequency,
+		"CycleFrequency",
+		"Cycle Frequency",
+		"Base cycles per second from -10.0 to 10.0.",
+		"0"
+	),
+	DEFINE_MAP_FIELD( m_nFModType,
+		"FModType",
+		"Frequency Modulation Type",
+		NULL,
+		UTIL_VarArgs("%i", POSECONTROLLER_FMODTYPE_NONE), {
+			{UTIL_VarArgs("%i", POSECONTROLLER_FMODTYPE_NONE), "None"},
+			{UTIL_VarArgs("%i", POSECONTROLLER_FMODTYPE_SINE), "Sine"},
+			{UTIL_VarArgs("%i", POSECONTROLLER_FMODTYPE_SQUARE), "Square"},
+			{UTIL_VarArgs("%i", POSECONTROLLER_FMODTYPE_TRIANGLE), "Triangle"},
+			{UTIL_VarArgs("%i", POSECONTROLLER_FMODTYPE_SAWTOOTH), "Sawtooth"},
+			{UTIL_VarArgs("%i", POSECONTROLLER_FMODTYPE_NOISE), "Noise"},
+		}
+	),
+	DEFINE_MAP_FIELD( m_fFModTimeOffset,
+		"FModTimeOffset",
+		"Frequency Modulation Time Offset",
+		"Modulation time offset from -1.0f to 1.0.",
+		"0"
+	),
+	DEFINE_MAP_FIELD( m_fFModRate,
+		"FModRate",
+		"Frequency Modulation Rate",
+		"Modulation cycles per second from -10.0f to 10.0.",
+		"0"
+	),
+	DEFINE_MAP_FIELD( m_fFModAmplitude,
+		"FModAmplitude",
+		"Frequency Modulation Amplitude",
+		"Modulation extents from 0.0f to 10.0."
+		"0"
+	),
 
 	// Inputs
-	DEFINE_INPUTFUNC( FIELD_STRING,	"SetPoseParameterName", InputSetPoseParameterName ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetPoseValue", InputSetPoseValue ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetInterpolationTime", InputSetInterpolationTime ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetCycleFrequency", InputSetCycleFrequency ),
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetFModType", InputSetFModType ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFModTimeOffset", InputSetFModTimeOffset ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFModRate", InputSetFModRate ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFModAmplitude", InputSetFModAmplitude ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "RandomizeFMod", InputRandomizeFMod ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "GetFMod", InputGetFMod ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "SetTarget", InputSetTarget ),
+	DEFINE_MAP_INPUT_FUNC( InputSetPoseParameterName,
+		FIELD_STRING,
+		"SetPoseParameterName",
+		"Sets the pose parameter to control."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputSetPoseValue,
+		FIELD_FLOAT,
+		"SetPoseValue",
+		"Set the pose parameter to a normalized value between 0.0 and 1.0 (maps to min and max range)."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputSetInterpolationTime,
+		FIELD_FLOAT,
+		"SetInterpolationTime",
+		"Set the interpolation time to a number of seconds between 0.0 and 10.0."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputSetCycleFrequency,
+		FIELD_FLOAT,
+		"SetCycleFrequency",
+		"Set the pose parameter's base cycles per second from -10.0f to 10.0."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputSetFModType,
+		FIELD_INTEGER,
+		"SetFModType",
+		"Set the type of frequency modulation."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputSetFModTimeOffset,
+		FIELD_FLOAT,
+		"SetFModTimeOffset",
+		"Set the modulation time offset from -1.0f to 1.0."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputSetFModRate,
+		FIELD_FLOAT,
+		"SetFModRate",
+		"Set the modulation cycles per second from -10.0f to 10.0."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputSetFModAmplitude,
+		FIELD_FLOAT,
+		"SetFModAmplitude",
+		"Set the modulation extents from 0.0f to 10.0."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputRandomizeFMod,
+		FIELD_FLOAT,
+		"RandomizeFMod",
+		"Randomize the frequency modulation by an extremeness of 0.0 to 1.0."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputGetFMod,
+		FIELD_VOID,
+		"GetFMod"
+	),
+	DEFINE_MAP_INPUT_FUNC( InputSetTarget,
+		FIELD_VOID,
+		"SetTarget"
+	),
 END_MAPENTITY()
 
 
@@ -63,14 +160,14 @@ IMPLEMENT_SERVERCLASS_ST(CPoseController, DT_PoseController)
 	SendPropArray3( SENDINFO_ARRAY3(m_hProps), SendPropEHandle( SENDINFO_ARRAY(m_hProps) ) ),
 	SendPropArray3( SENDINFO_ARRAY3(m_chPoseIndex), SendPropInt( SENDINFO_ARRAY(m_chPoseIndex), 5, SPROP_UNSIGNED ) ),	// bits sent must be enough to represent MAXSTUDIOPOSEPARAM
 	SendPropBool( SENDINFO(m_bPoseValueParity) ),
-	SendPropFloat( SENDINFO(m_fPoseValue), 11, 0, 0.0f, 1.0f ),
-	SendPropFloat( SENDINFO(m_fInterpolationTime), 11, 0, 0.0f, MAX_POSE_INTERPOLATION_TIME ),
+	SendPropFloat( SENDINFO(m_fPoseValue), 11, SPROP_NONE, 0.0f, 1.0f ),
+	SendPropFloat( SENDINFO(m_fInterpolationTime), 11, SPROP_NONE, 0.0f, MAX_POSE_INTERPOLATION_TIME ),
 	SendPropBool( SENDINFO(m_bInterpolationWrap) ),
-	SendPropFloat( SENDINFO(m_fCycleFrequency), 11, 0, -MAX_POSE_CYCLE_FREQUENCY, MAX_POSE_CYCLE_FREQUENCY ),
+	SendPropFloat( SENDINFO(m_fCycleFrequency), 11, SPROP_NONE, -MAX_POSE_CYCLE_FREQUENCY, MAX_POSE_CYCLE_FREQUENCY ),
 	SendPropInt( SENDINFO(m_nFModType), 3, SPROP_UNSIGNED ),
-	SendPropFloat( SENDINFO(m_fFModTimeOffset), 11, 0, -1.0f, 1.0f ),
-	SendPropFloat( SENDINFO(m_fFModRate), 11, 0, -MAX_POSE_FMOD_RATE, MAX_POSE_FMOD_RATE ),
-	SendPropFloat( SENDINFO(m_fFModAmplitude), 11, 0, 0.0f, MAX_POSE_FMOD_AMPLITUDE ),
+	SendPropFloat( SENDINFO(m_fFModTimeOffset), 11, SPROP_NONE, -1.0f, 1.0f ),
+	SendPropFloat( SENDINFO(m_fFModRate), 11, SPROP_NONE, -MAX_POSE_FMOD_RATE, MAX_POSE_FMOD_RATE ),
+	SendPropFloat( SENDINFO(m_fFModAmplitude), 11, SPROP_NONE, 0.0f, MAX_POSE_FMOD_AMPLITUDE ),
 END_SEND_TABLE()
 
 

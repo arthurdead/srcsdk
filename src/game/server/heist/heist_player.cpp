@@ -8,14 +8,14 @@
 LINK_ENTITY_TO_CLASS(player, CHeistPlayer);
 
 BEGIN_SEND_TABLE_NOBASE(CHeistPlayer, DT_HeistLocalPlayerExclusive)
-	SendPropAuto( m_bMaskingUp ),
+	DEFINE_SEND_FIELD( m_bMaskingUp ),
 END_SEND_TABLE()
 
 BEGIN_SEND_TABLE_NOBASE(CHeistPlayer, DT_HeistNonLocalPlayerExclusive)
 END_SEND_TABLE()
 
 IMPLEMENT_SERVERCLASS_ST(CHeistPlayer, DT_Heist_Player)
-	SendPropAuto( m_flLeaning, 6, -1.0f, 1.0f ),
+	DEFINE_SEND_FIELD( m_flLeaning ),
 
 	SendPropDataTable("heistlocaldata", 0, &REFERENCE_SEND_TABLE(DT_HeistLocalPlayerExclusive), SendProxy_SendLocalDataTable),
 	SendPropDataTable("heistnonlocaldata", 0, &REFERENCE_SEND_TABLE(DT_HeistNonLocalPlayerExclusive), SendProxy_SendNonLocalDataTable),

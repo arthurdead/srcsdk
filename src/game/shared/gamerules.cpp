@@ -38,6 +38,7 @@
 #include "iscorer.h"
 #include "client.h"
 #include "items.h"
+#include "subs.h"
 
 #endif
 
@@ -634,18 +635,18 @@ bool CSharedGameRules::CanHaveAmmo( CBaseCombatCharacter *pPlayer, const char *s
 //-----------------------------------------------------------------------------
 CBaseEntity *FindPlayerStart(const char *pszClassName)
 {
-	#define SF_PLAYER_START_MASTER	1
-	
-	CBaseEntity *pStart = gEntList.FindEntityByClassname(NULL, pszClassName);
-	CBaseEntity *pStartFirst = pStart;
-	while (pStart != NULL)
+	CBaseEntity *pStartEnt = gEntList.FindEntityByClassname(NULL, pszClassName);
+	CBaseEntity *pStartFirst = pStartEnt;
+	while (pStartEnt != NULL)
 	{
+		CPlayerStart *pStart = assert_cast<CPlayerStart *>(pStartEnt);
+
 		if (pStart->HasSpawnFlags(SF_PLAYER_START_MASTER))
 		{
 			return pStart;
 		}
 
-		pStart = gEntList.FindEntityByClassname(pStart, pszClassName);
+		pStartEnt = gEntList.FindEntityByClassname(pStartEnt, pszClassName);
 	}
 
 	return pStartFirst;
@@ -2274,7 +2275,7 @@ QAngle CSharedGameRules::VecItemRespawnAngles(CItem *pItem)
 //=========================================================
 int CSharedGameRules::WeaponShouldRespawn( CBaseCombatWeapon *pWeapon )
 {
-	if ( pWeapon->HasSpawnFlags( SF_NORESPAWN ) )
+	if ( pWeapon->HasSpawnFlags( SF_WEAPON_NORESPAWN ) )
 	{
 		return GR_WEAPON_RESPAWN_NO;
 	}
@@ -2823,7 +2824,7 @@ void CSharedGameRules::PlayerGotItem( CBasePlayer *pPlayer, CItem *pItem )
 //=========================================================
 int CSharedGameRules::ItemShouldRespawn( CItem *pItem )
 {
-	if ( pItem->HasSpawnFlags( SF_NORESPAWN ) )
+	if ( pItem->HasSpawnFlags( SF_ITEM_NORESPAWN ) )
 	{
 		return GR_ITEM_RESPAWN_NO;
 	}

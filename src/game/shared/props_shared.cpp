@@ -822,14 +822,37 @@ CGameGibManager::~CGameGibManager()
 	}
 }
 
-BEGIN_MAPENTITY( CGameGibManager )
+BEGIN_MAPENTITY( CGameGibManager, MAPENT_POINTCLASS, "An entity to control the number of gibs in the world, for performance reasons." )
 
-	DEFINE_KEYFIELD_AUTO( m_iMaxPieces, "maxpieces" ),
-	DEFINE_KEYFIELD_AUTO( m_iMaxPiecesDX8, "maxpiecesdx8" ),
-	DEFINE_KEYFIELD_AUTO( m_bAllowNewGibs, "allownewgibs" ),
+	DEFINE_MAP_FIELD( m_iMaxPieces,
+		"maxpieces",
+		"Max Gib Count",
+		"Sets the max number of gib that can be spawned at a time. (-1=no limit)",
+		"-1"
+	),
+	DEFINE_MAP_FIELD( m_iMaxPiecesDX8,
+		"maxpiecesdx8",
+		"Max Gib Count On DX8",
+		"Sets the max number of gib that can be spawned at a time under DX8. (-1=use Max Gib Count setting)",
+		"-1"
+	),
+	DEFINE_MAP_FIELD( m_bAllowNewGibs,
+		"allownewgibs",
+		"Allow New Gibs To Spawn",
+		"If true, when the max gib count is reached, oldest gibs are removed as new gibs spawn. If false, new gibs will not be spawned once the gib limit is reached.",
+		"0"
+	),
 
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMaxPieces", InputSetMaxPieces ),
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMaxPiecesDX8", InputSetMaxPiecesDX8 ),
+	DEFINE_MAP_INPUT_FUNC( InputSetMaxPieces,
+		FIELD_INTEGER,
+		"SetMaxPieces",
+		"Set the max gib count."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputSetMaxPiecesDX8,
+		FIELD_INTEGER,
+		"SetMaxPiecesDX8",
+		"Set the max gib count under DX8."
+	),
 END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( game_gib_manager, CGameGibManager );

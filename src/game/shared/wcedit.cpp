@@ -230,24 +230,56 @@ public:
 
 LINK_ENTITY_TO_CLASS_ALIASED( hammer_updateignorelist, WCUpdateIgnoreList );
 
-BEGIN_MAPENTITY_ALIASED( WCUpdateIgnoreList )
+BEGIN_MAPENTITY_ALIASED( WCUpdateIgnoreList, MAPENT_POINTCLASS )
 
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[0], FIELD_POOLED_STRING, "IgnoredName01" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[1], FIELD_POOLED_STRING, "IgnoredName02" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[2], FIELD_POOLED_STRING, "IgnoredName03" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[3], FIELD_POOLED_STRING, "IgnoredName04" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[4], FIELD_POOLED_STRING, "IgnoredName05" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[5], FIELD_POOLED_STRING, "IgnoredName06" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[6], FIELD_POOLED_STRING, "IgnoredName07" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[7], FIELD_POOLED_STRING, "IgnoredName08" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[8], FIELD_POOLED_STRING, "IgnoredName09" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[9], FIELD_POOLED_STRING, "IgnoredName10" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[10], FIELD_POOLED_STRING, "IgnoredName11" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[11], FIELD_POOLED_STRING, "IgnoredName12" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[12], FIELD_POOLED_STRING, "IgnoredName13" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[13], FIELD_POOLED_STRING, "IgnoredName14" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[14], FIELD_POOLED_STRING, "IgnoredName15" ),
-	DEFINE_KEYFIELD( m_nIgnoredEntityNames[15], FIELD_POOLED_STRING, "IgnoredName16" ),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 0,
+		"IgnoredName01"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 1,
+		"IgnoredName02"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 2,
+		"IgnoredName03"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 3,
+		"IgnoredName04"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 4,
+		"IgnoredName05"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 5,
+		"IgnoredName06"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 6,
+		"IgnoredName07"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 7,
+		"IgnoredName08"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 8,
+		"IgnoredName09"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 9,
+		"IgnoredName10"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 10,
+		"IgnoredName11"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 11,
+		"IgnoredName12"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 12,
+		"IgnoredName13"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 13,
+		"IgnoredName14"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 14,
+		"IgnoredName15"
+	),
+	DEFINE_MAP_FIELD_ARRAYELEM( m_nIgnoredEntityNames, 15,
+		"IgnoredName16"
+	),
 
 END_MAPENTITY()
 

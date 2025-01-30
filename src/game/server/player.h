@@ -98,8 +98,10 @@ struct surfacedata_t;
 //
 // Player PHYSICS FLAGS bits
 //
-enum PlayerPhysFlag_e
+enum PlayerPhysFlag_e : unsigned char
 {
+	PFLAG_NONE = 0,
+
 	PFLAG_DIROVERRIDE	= ( 1<<0 ),		// override the player's directional control (trains, physics gun, etc.)
 	PFLAG_DUCKING		= ( 1<<1 ),		// In the process of ducking, but totally squatted yet
 	PFLAG_USING			= ( 1<<2 ),		// Using a continuous entity
@@ -110,6 +112,8 @@ enum PlayerPhysFlag_e
 	// If you add another flag here check that you aren't 
 	// overwriting phys flags in the HL2 of TF2 player classes
 };
+
+FLAGENUM_OPERATORS( PlayerPhysFlag_e, unsigned char )
 
 enum
 {
@@ -438,7 +442,7 @@ public:
 
 	virtual	CBaseCombatCharacter *ActivePlayerCombatCharacter( void ) { return this; }
 
-	bool					HasPhysicsFlag( unsigned int flag ) { return (m_afPhysicsFlags & flag) != 0; }
+	bool					HasPhysicsFlag( PlayerPhysFlag_e flag ) { return (m_afPhysicsFlags & flag) != PFLAG_NONE; }
 
 	// Weapon stuff
 	virtual Vector			Weapon_ShootPosition( );
@@ -732,7 +736,7 @@ public:
 	bool	HUDNeedsRestart() const { return m_fInitHUD; }
 	float	MaxSpeed() const		{ return m_flMaxspeed; }
 	bool	IsPlayerLockedInPlace() const { return m_iPlayerLocked != 0; }
-	bool	IsObserver() const		{ return (m_afPhysicsFlags & PFLAG_OBSERVER) != 0; }
+	bool	IsObserver() const		{ return (m_afPhysicsFlags & PFLAG_OBSERVER) != PFLAG_NONE; }
 	bool	IsOnTarget() const		{ return m_fOnTarget; }
 	float	MuzzleFlashTime() const { return m_flFlashTime; }
 	float	PlayerDrownTime() const	{ return m_AirFinished; }
@@ -998,7 +1002,7 @@ protected:
 	int						m_iTrain;				// Train control position
 
 	float					m_iRespawnFrames;	// used in PlayerDeathThink() to make sure players can always respawn
- 	unsigned int			m_afPhysicsFlags;	// physics flags - set when 'normal' physics should be revisited or overriden
+ 	PlayerPhysFlag_e			m_afPhysicsFlags;	// physics flags - set when 'normal' physics should be revisited or overriden
 	
 	// Vehicles
 	CNetworkHandle( CBaseEntity, m_hVehicle );
@@ -1023,7 +1027,7 @@ protected:
 	CNetworkVar( float, m_flDeathTime );		// the time at which the player died  (used in PlayerDeathThink())
 	float					m_flDeathAnimTime;	// the time at which the player finished their death anim (used in PlayerDeathThink() and ShouldTransmit())
 
-	CNetworkVar( int, m_iObserverMode );	// if in spectator mode != 0
+	CNetworkVar( ObserverMode_t, m_iObserverMode );	// if in spectator mode != 0
 	CNetworkVar( int,	m_iFOV );			// field of view
 	CNetworkVar( int,	m_iDefaultFOV );	// default field of view
 	CNetworkVar( int,	m_iFOVStart );		// What our FOV started at

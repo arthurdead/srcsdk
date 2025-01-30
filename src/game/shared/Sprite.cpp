@@ -33,24 +33,76 @@ LINK_ENTITY_TO_SERVERCLASS( env_sprite, CSprite );
 LINK_ENTITY_TO_SERVERCLASS( env_sprite_oriented, CSpriteOriented );
 
 #if !defined( CLIENT_DLL )
-BEGIN_MAPENTITY( CSprite )
+BEGIN_MAPENTITY( CSprite, MAPENT_POINTCLASS, "An entity that controls the drawing of a sprite in the world." )
 
-	DEFINE_KEYFIELD_AUTO( m_flSpriteScale, "scale" ),
-	DEFINE_KEYFIELD_AUTO( m_flSpriteFramerate, "framerate" ),
-	DEFINE_KEYFIELD_AUTO( m_flFrame, "frame" ),
+	DEFINE_MAP_FIELD( m_flSpriteScale,
+		"scale",
+		"Scale",
+		"Scale multiplier of the sprite.",
+		"0.25"
+	),
+	DEFINE_MAP_FIELD( m_flSpriteFramerate,
+		"framerate",
+		"Framerate",
+		"Rate at which the sprite should animate, if at all.",
+		"10.0"
+	),
+	DEFINE_MAP_FIELD( m_flFrame,
+		"frame"
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_flHDRColorScale, "HDRColorScale" ),
+	DEFINE_MAP_FIELD( m_flHDRColorScale,
+		"HDRColorScale",
+		"HDR color scale.",
+		"float value to multiply sprite color by when running in HDR mode.",
+		"0.7"
+	),
 
-	DEFINE_KEYFIELD_AUTO( m_flGlowProxySize, "GlowProxySize" ),
+	DEFINE_MAP_FIELD( m_flGlowProxySize,
+		"GlowProxySize",
+		"Size of Glow Proxy Geometry.",
+		"Size of the glow to be rendered for visibility testing. Must be larger than the distance from the sprite center to empty space. So if this glow is inside geometry (like a light bulb), set this value to be bigger than the bulb's radius. Any time a sphere of this radius would be visible (poking through any nearby geometry), the glow will be rendered.",
+		"2.0"
+	),
 
 	// Inputs
-	DEFINE_INPUT( m_flSpriteScale, FIELD_FLOAT, "SetScale" ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "HideSprite", InputHideSprite ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "ShowSprite", InputShowSprite ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "ToggleSprite", InputToggleSprite ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "ColorRedValue", InputColorRedValue ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "ColorGreenValue", InputColorGreenValue ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "ColorBlueValue", InputColorBlueValue ),
+	DEFINE_MAP_INPUT_FIELD( m_flSpriteScale,
+		FIELD_FLOAT,
+		"SetScale",
+		"Set the sprite's scale (0 - 8.0)."
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputHideSprite,
+		FIELD_VOID,
+		"HideSprite",
+		"Hide the sprite. Won't be drawn until the 'ShowSprite' input is received."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputShowSprite,
+		FIELD_VOID,
+		"ShowSprite",
+		"Show the sprite."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputToggleSprite,
+		FIELD_VOID,
+		"ToggleSprite",
+		"Toggle the sprite between hidden and shown."
+	),
+
+	DEFINE_MAP_INPUT_FUNC( InputColorRedValue,
+		FIELD_FLOAT,
+		"ColorRedValue",
+		"Sets the red color channel's value (0 - 255)."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputColorGreenValue,
+		FIELD_FLOAT,
+		"ColorGreenValue",
+		"Sets the green color channel's value (0 - 255)."
+	),
+	DEFINE_MAP_INPUT_FUNC( InputColorBlueValue,
+		FIELD_FLOAT,
+		"ColorBlueValue",
+		"Sets the blue color channel's value (0 - 255)."
+	),
 
 END_MAPENTITY()
 
