@@ -117,7 +117,6 @@ set(
 	"${SRCDIR}/public/tier1/utlsymbol.h"
 	"${SRCDIR}/public/tier1/utlsymbollarge.h"
 	"${SRCDIR}/public/tier1/utlvector.h"
-	"$<${IS_WINDOWS}:${SRCDIR}/common/xbox/xboxstubs.h>"
 )
 
 set_source_files_properties(
