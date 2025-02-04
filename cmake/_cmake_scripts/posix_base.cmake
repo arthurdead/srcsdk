@@ -1,8 +1,5 @@
 # posix_base.cmake
 
-string(REPLACE "-O3" "-O2" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-string(REPLACE "-O3" "-O2" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-
 find_package(Threads REQUIRED)
 
 if (${IS_XCODE})
@@ -19,6 +16,8 @@ endif()
 add_compile_options(
 	-g
 	-m32
+	$<$<CONFIG:Debug>:-fno-omit-frame-pointer>
+	-fvisibility=hidden
 	$<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
 	-fdiagnostics-color
 	-Wno-narrowing
@@ -26,7 +25,6 @@ add_compile_options(
 	-Usprintf
 	-Ustrncpy
 	-UPROTECTED_THINGS_ENABLE
-	$<${IS_LINUX}:-fabi-compat-version=2>
 )
 
 add_link_options(-m32)
@@ -36,8 +34,6 @@ add_compile_definitions(
 	POSIX
 	GNUC
 	COMPILER_GCC
-	NO_HOOK_MALLOC
-	NO_MALLOC_OVERRIDE
 	$<${IS_LINUX}:_LINUX>
 	$<${IS_LINUX}:LINUX>
 	$<${IS_OSX}:_OSX>
@@ -68,16 +64,14 @@ link_libraries(
 	$<${IS_LINUX}:m>
 )
 
-if (${IS_LINUX})
-	add_link_options(
-		-static-libgcc
-		-static-libstdc++
-	)
-endif()
-
 add_compile_options(
-	$<${IS_LINUX}:-march=pentium4>
-	-msse2 -mfpmath=sse -mtune=core2
+	$<${IS_LINUX}:-march=x86-64-v2>
+	-mtune=generic
+	-m3dnow -m3dnowa
+	-mmmx
+	-msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2
+	-mfpmath=sse
+	-mlzcnt
 )
 
 list(

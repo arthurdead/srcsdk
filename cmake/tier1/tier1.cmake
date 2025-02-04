@@ -135,6 +135,7 @@ add_library(
 target_compile_definitions(
 	tier1 PRIVATE
 	TIER1_STATIC_LIB
+	LIBNAME=tier1
 )
 
 target_link_libraries(

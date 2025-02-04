@@ -72,4 +72,5 @@ target_include_directories(
 target_compile_definitions(
 	mathlib PRIVATE
 	MATHLIB_LIB
+	LIBNAME=mathlib
 )

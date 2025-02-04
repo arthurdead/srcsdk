@@ -22,7 +22,13 @@ set(
 )
 
 add_library(fgdlib STATIC ${FGDLIB_SOURCE_FILES})
+
 target_include_directories(
 	fgdlib PRIVATE
 	"${SRCDIR}/utils/common"
+)
+
+target_compile_definitions(
+	fgdlib PRIVATE
+	LIBNAME=fgdlib
 )

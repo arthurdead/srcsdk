@@ -93,8 +93,31 @@ include("_cmake_scripts/base.cmake")
 include("_cmake_scripts/video_base.cmake")
 include("_cmake_scripts/postbuild.cmake")
 
+list(
+	APPEND ADDITIONAL_SOURCES_LIB
+	"${SRCDIR}/common/module_name.cpp"
+	"$<$<NOT:${IS_SOURCESDK}>:${SRCDIR}/common/debug_lib_check.cpp>"
+)
+
+list(
+	APPEND ADDITIONAL_SOURCES_DLL
+	"${SRCDIR}/common/module_name.cpp"
+	"${SRCDIR}/public/tier0/memoverride.cpp"
+	"${SRCDIR}/common/debug_dll_check.cpp"
+)
+
+list(
+	APPEND ADDITIONAL_SOURCES_EXE
+	"${SRCDIR}/public/tier0/memoverride.cpp"
+)
+
 set(LIBPUBLIC "${SRCDIR}/lib/public${PLATSUBDIR}")
 set(LIBCOMMON "${SRCDIR}/lib/common${PLATSUBDIR}")
+
+set(CMAKE_STATIC_LIBRARY_PREFIX "")
+
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${GAMEDIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIBPUBLIC})
 
 link_directories(
 	${LIBPUBLIC}
@@ -108,9 +131,6 @@ include_directories(
 	"${SRCDIR}/public/tier0"
 	"${SRCDIR}/public/tier1"
 )
-
-add_compile_definitions($<$<CONFIG:Debug>:DEBUG> $<$<CONFIG:Debug>:_DEBUG>)
-add_compile_definitions($<$<CONFIG:Release>:NDEBUG>)
 
 if (${IS_WINDOWS})
 	include("_cmake_scripts/windows_base.cmake")

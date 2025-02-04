@@ -9,9 +9,6 @@ if (${CMAKE_SIZEOF_VOID_P} EQUAL 8)
 	message(FATAL_ERROR "Source SDK 2013 only supports 32-bit generation")
 endif()
 
-# No frame pointer optimization
-set(NOFPO 1)
-
 set(MSVC_LINK_OPTION_IGNORE_DEFAULTLIBS_DEBUG
 	/NODEFAULTLIB:libc
 	/NODEFAULTLIB:libcd
@@ -37,6 +34,7 @@ add_compile_definitions(
 	_ALLOW_RUNTIME_LIBRARY_MISMATCH
 	_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH
 	_ALLOW_MSC_VER_MISMATCH
+	$<$<CONFIG:Release>:_HAS_ITERATOR_DEBUGGING=0>
 )
 
 # Remove default warning level from CMAKE_CXX_FLAGS (This is stupid I know)
@@ -51,8 +49,8 @@ string(REPLACE "/Zi" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 string(REPLACE "/Ob0" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 string(REPLACE "/Ob0" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 
-string(REPLACE "/Ob2" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-string(REPLACE "/Ob2" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+string(REGEX REPLACE "/Ob(?:2|3)" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+string(REGEX REPLACE "/Ob(?:2|3)" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 
 # These are expanded so that we can pass each option individually to the targets
 # So they may choose to exclude them
@@ -66,7 +64,7 @@ set(
 	#/WX
 
 	# Don't Omit Frame Pointers
-	"$<${NOFPO}:/Oy->"
+	$<$<CONFIG:Debug>:/Oy->
 
 	/MP # Multi-processor compilation
 	/Gw
@@ -88,7 +86,7 @@ set(
 	$<$<CONFIG:Release>:/Gy> # Enable Function-Level Linking
 
 	# Inline Function Expansion
-	$<$<CONFIG:Release>:/Ob2>
+	$<$<CONFIG:Release>:/Ob3>
 	$<$<CONFIG:Debug>:/Ob0>
 )
 
@@ -138,20 +136,13 @@ list(
 )
 
 list(
-	APPEND ADDITIONAL_COMPILE_DEFINITIONS_EXE
-	$<$<CONFIG:Debug>:_HAS_ITERATOR_DEBUGGING=0>
-)
-
-list(
 	APPEND ADDITIONAL_COMPILE_DEFINITIONS_DLL
 	_USRDLL
-	$<$<CONFIG:Debug>:_HAS_ITERATOR_DEBUGGING=0>
 )
 
 list(
 	APPEND ADDITIONAL_COMPILE_DEFINITIONS_LIB
 	_LIB
-	$<$<CONFIG:Debug>:_HAS_ITERATOR_DEBUGGING=0>
 )
 
 list(

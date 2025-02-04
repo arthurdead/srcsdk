@@ -167,7 +167,18 @@ set(
 )
 
 add_library(vgui_controls STATIC ${VGUI_CONTROLS_SOURCE_FILES})
+
 target_include_directories(
 	vgui_controls PRIVATE
 	$<TARGET_PROPERTY:steamworks,INTERFACE_INCLUDE_DIRECTORIES>
+)
+
+target_compile_definitions(
+	vgui_controls PRIVATE
+	LIBNAME=vgui_controls
+)
+
+target_link_libraries(
+	vgui_controls INTERFACE
+	$<TARGET_PROPERTY:steamworks,INTERFACE_LINK_LIBRARIES>
 )
