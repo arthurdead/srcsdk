@@ -16,13 +16,13 @@ endif()
 
 set(STEAMWORKSLIBDIR "${THIRDPARTYDIR}/steamworks_sdk_${STEAMWORKS_VER}/redistributable_bin/${PLATSUBDIR}")
 
-find_library(STEAM_API_LIB NAMES "steam_api" PATHS ${STEAMWORKSLIBDIR} NO_DEFAULT_PATH REQUIRED)
+find_library(STEAM_API_LIB NAMES "steam_api" PATHS ${ENGINEDIR} NO_DEFAULT_PATH REQUIRED)
 
-add_library(steamworks UNKNOWN IMPORTED)
+add_library(steam_api SHARED IMPORTED)
 
-set_target_properties(steamworks PROPERTIES IMPORTED_LOCATION ${STEAM_API_LIB})
+set_target_properties(steam_api PROPERTIES IMPORTED_LOCATION ${STEAM_API_LIB})
 
 target_include_directories(
-	steamworks INTERFACE
+	steam_api INTERFACE
 	"${THIRDPARTYDIR}/steamworks_sdk_${STEAMWORKS_VER}/public"
 )

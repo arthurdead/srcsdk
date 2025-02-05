@@ -10,7 +10,8 @@
 				"src/vaudio_minimp3",
 				"src/thirdparty",
 				"meson/build_linux",
-				"meson/build_windows"
+				"meson/build_windows",
+				"cmake/build"
 			]
 		},
 		{

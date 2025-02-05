@@ -36,6 +36,7 @@ set(
 	"${TIER1_DIR}/reliabletimer.cpp"
 	"${TIER1_DIR}/stringpool.cpp"
 	"${TIER1_DIR}/strtools.cpp"
+	"${TIER1_DIR}/strtools_unicode.cpp"
 	"${TIER1_DIR}/tier1.cpp"
 	"${TIER1_DIR}/tokenreader.cpp"
 	"${TIER1_DIR}/sparsematrix.cpp"
@@ -131,10 +132,17 @@ add_library(
 	${TIER1_SOURCE_FILES}
 )
 
+set_target_properties(tier1 PROPERTIES PREFIX "")
+
 target_compile_definitions(
 	tier1 PRIVATE
 	TIER1_STATIC_LIB
 	LIBNAME=tier1
+)
+
+target_include_directories(
+	tier1 INTERFACE
+	"${SRCDIR}/public/tier1"
 )
 
 target_link_libraries(

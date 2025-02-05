@@ -64,6 +64,8 @@ endif()
 
 add_library(mathlib STATIC ${MATHLIB_SOURCE_FILES})
 
+set_target_properties(mathlib PROPERTIES PREFIX "")
+
 target_include_directories(
 	mathlib PRIVATE
 	"${SRCDIR}/public/mathlib"

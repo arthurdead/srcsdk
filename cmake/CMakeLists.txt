@@ -42,7 +42,7 @@ endif()
 if (UNIX AND NOT APPLE)
 	set(STEAMDIR "$ENV{HOME}/.steam/steam")
 elseif (WIN32)
-	get_filename_component(STEAMDIR  "[HKEY_CURRENT_USER\\SOFTWARE\\Valve\\Steam;SteamPath]" ABSOLUTE CACHE)
+	get_filename_component(STEAMDIR "[HKEY_CURRENT_USER\\SOFTWARE\\Valve\\Steam;SteamPath]" ABSOLUTE CACHE)
 else ()
 	message( FATAL_ERROR "Please define the STEAMDIR variable" )
 endif()
@@ -52,7 +52,9 @@ if (NOT DEFINED GAMEDIR)
 endif()
 
 if (NOT DEFINED ENGINEDIR)
-	if (${HACKMGR_ENGINE_TARGET} STREQUAL "SDK2013MP")
+	if (${DEDICATED})
+		set(ENGINEDIR "${STEAMDIR}/steamapps/common/Source SDK Base 2013 Dedicated Server")
+	elseif (${HACKMGR_ENGINE_TARGET} STREQUAL "SDK2013MP")
 		set(ENGINEDIR "${STEAMDIR}/steamapps/common/Source SDK Base 2013 Multiplayer")
 	elseif (${HACKMGR_ENGINE_TARGET} STREQUAL "SDK2013SP")
 		set(ENGINEDIR "${STEAMDIR}/steamapps/common/Source SDK Base 2013 Singleplayer")
@@ -60,6 +62,8 @@ if (NOT DEFINED ENGINEDIR)
 		message( FATAL_ERROR "Invalid engine target" )
 	endif()
 endif()
+
+set(ENGINEBINDIR "${ENGINEDIR}/bin")
 
 set(THIRDPARTYDIR "${SRCDIR}/thirdparty")
 
@@ -114,14 +118,13 @@ list(
 set(LIBPUBLIC "${SRCDIR}/lib/public${PLATSUBDIR}")
 set(LIBCOMMON "${SRCDIR}/lib/common${PLATSUBDIR}")
 
-set(CMAKE_STATIC_LIBRARY_PREFIX "")
-
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${GAMEDIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIBPUBLIC})
 
 link_directories(
 	${LIBPUBLIC}
 	${LIBCOMMON}
+	"${ENGINEDIR}/bin"
 )
 
 include_directories(
