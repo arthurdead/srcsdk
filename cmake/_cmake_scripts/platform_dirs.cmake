@@ -21,9 +21,9 @@ else ()
 endif ()
 
 if (DEDICATED)
-	set(PLATSUBDIR_DED "/dedicated")
+	set(PLATSUBDIR_DED "dedicated")
 else ()
-	set(PLATSUBDIR_DED "/.")
+	set(PLATSUBDIR_DED ".")
 endif ()
 
 set(PLATSUBDIR "${PLATSUBDIR_OS}/${PLATSUBDIR_ENGINE}/${PLATSUBDIR_DED}")

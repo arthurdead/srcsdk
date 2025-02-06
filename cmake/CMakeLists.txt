@@ -91,8 +91,31 @@ set(ADDITIONAL_COMPILE_DEFINITIONS_EXE)
 set(ADDITIONAL_COMPILE_DEFINITIONS_DLL)
 set(ADDITIONAL_COMPILE_DEFINITIONS_LIB)
 
-include("_cmake_scripts/pch_skip.cmake")
+option(FUNNY ":^)" OFF)
+
 include("_cmake_scripts/platform_dirs.cmake")
+
+if (${FUNNY})
+	set(FUNNY_SRCDIR "${SRCDIR}/../src_funny")
+
+	set(FUNNY_LIBPUBLIC "${FUNNY_SRCDIR}/lib/public${PLATSUBDIR}")
+
+	add_compile_definitions(
+		$<$<BOOL:${FUNNY}>:FUNNY>
+	)
+
+	include_directories(
+		"${FUNNY_SRCDIR}"
+		"${FUNNY_SRCDIR}/common"
+		"${FUNNY_SRCDIR}/public"
+	)
+
+	link_directories(
+		${FUNNY_LIBPUBLIC}
+	)
+endif()
+
+include("_cmake_scripts/pch_skip.cmake")
 include("_cmake_scripts/base.cmake")
 include("_cmake_scripts/video_base.cmake")
 include("_cmake_scripts/postbuild.cmake")
@@ -124,7 +147,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIBPUBLIC})
 link_directories(
 	${LIBPUBLIC}
 	${LIBCOMMON}
-	"${ENGINEDIR}/bin"
+	${ENGINEBINDIR}
 )
 
 include_directories(
@@ -263,7 +286,7 @@ foreach(target ${ALL_TARGETS})
 		add_libraries_filtered(${target} ADDITIONAL_LINK_LIBRARIES_EXE)
 		add_sources_filtered(${target} ADDITIONAL_SOURCES_EXE)
 		target_link_options(${target} PRIVATE ${ADDITIONAL_LINK_OPTIONS_EXE})
-		target_compile_definitions(${target} PRIVATE MEMOVERRIDE_MODULE=$<TARGET_NAME_IF_EXISTS:${target}>)
+		#target_compile_definitions(${target} PRIVATE MEMOVERRIDE_MODULE=$<TARGET_NAME_IF_EXISTS:${target}>)
 		add_compile_definitions_filtered(${target} ADDITIONAL_COMPILE_DEFINITIONS_EXE)
 
 		# Only applies to Linux and OSX
@@ -273,7 +296,7 @@ foreach(target ${ALL_TARGETS})
 		add_libraries_filtered(${target} ADDITIONAL_LINK_LIBRARIES_DLL)
 		add_sources_filtered(${target} ADDITIONAL_SOURCES_DLL)
 		target_link_options(${target} PRIVATE ${ADDITIONAL_LINK_OPTIONS_DLL})
-		target_compile_definitions(${target} PRIVATE MEMOVERRIDE_MODULE=$<TARGET_NAME_IF_EXISTS:${target}> DLLNAME=$<TARGET_NAME_IF_EXISTS:${target}>)
+		#target_compile_definitions(${target} PRIVATE MEMOVERRIDE_MODULE=$<TARGET_NAME_IF_EXISTS:${target}> DLLNAME=$<TARGET_NAME_IF_EXISTS:${target}>)
 		add_compile_definitions_filtered(${target} ADDITIONAL_COMPILE_DEFINITIONS_DLL)
 
 		# Only applies to Linux and OSX
@@ -282,7 +305,7 @@ foreach(target ${ALL_TARGETS})
 		add_compile_options_filtered(${target} ADDITIONAL_COMPILE_OPTIONS_LIB)
 		add_sources_filtered(${target} ADDITIONAL_SOURCES_LIB)
 		target_link_options(${target} PRIVATE ${ADDITIONAL_LINK_OPTIONS_LIB})
-		target_compile_definitions(${target} PRIVATE LIBNAME=$<TARGET_NAME_IF_EXISTS:${target}>)
+		#target_compile_definitions(${target} PRIVATE LIBNAME=$<TARGET_NAME_IF_EXISTS:${target}>)
 		add_compile_definitions_filtered(${target} ADDITIONAL_COMPILE_DEFINITIONS_LIB)
 	endif()
 

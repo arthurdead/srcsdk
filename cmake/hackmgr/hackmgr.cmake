@@ -39,6 +39,11 @@ target_sources(hackmgr PUBLIC
 	"${SRCDIR}/public/tier0/logging.cpp"
 )
 
+target_sources(hackmgr INTERFACE
+	"${SRCDIR}/public/hackmgr/depend_on_hackmgr.cpp"
+	"${SRCDIR}/public/hackmgr/dlloverride.cpp"
+)
+
 target_include_directories(
 	hackmgr PRIVATE
 	"${SRCDIR}/materialsystem"

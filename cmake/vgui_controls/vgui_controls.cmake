@@ -170,6 +170,10 @@ add_library(vgui_controls STATIC ${VGUI_CONTROLS_SOURCE_FILES})
 
 set_target_properties(vgui_controls PROPERTIES PREFIX "")
 
+target_sources(vgui_controls INTERFACE
+	"${SRCDIR}/public/vgui_controls/vgui_controls.cpp"
+)
+
 target_include_directories(
 	vgui_controls PRIVATE
 	$<TARGET_PROPERTY:steam_api,INTERFACE_INCLUDE_DIRECTORIES>
