@@ -13,7 +13,7 @@
 
 ServerClass *g_pServerClassHead=NULL;
 
-ServerClass::ServerClass( const char *pNetworkName, SendTable *pTable )
+ServerClass::ServerClass( const char *pNetworkName, SendTableInfo *pTable )
 {
 	m_pNetworkName = pNetworkName;
 	m_pTable = pTable;

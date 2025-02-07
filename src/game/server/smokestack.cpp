@@ -28,13 +28,13 @@ IMPLEMENT_SERVERCLASS_ST(CSmokeStack, DT_SmokeStack)
 
 	// Note: the base color is specified in the smokestack entity, but the directional
 	// and ambient light must come from env_particlelight entities.
-	SendPropVector( SENDINFO_NOCHECK(m_DirLight.m_vPos), 0, SPROP_NOSCALE ),
-	SendPropVector( SENDINFO_NOCHECK(m_DirLight.m_vColor), 0, SPROP_NOSCALE ),
-	SendPropFloat( SENDINFO_NOCHECK(m_DirLight.m_flIntensity), 0, SPROP_NOSCALE ),
+	SendPropVector( SENDINFO_STRUCTELEM(m_DirLight, m_vPos), 0, SPROP_NOSCALE ),
+	SendPropVector( SENDINFO_STRUCTELEM(m_DirLight, m_vColor), 0, SPROP_NOSCALE ),
+	SendPropFloat( SENDINFO_STRUCTELEM(m_DirLight, m_flIntensity), 0, SPROP_NOSCALE ),
 
-	SendPropVector( SENDINFO_NOCHECK(m_AmbientLight.m_vPos), 0, SPROP_NOSCALE ),
-	SendPropVector( SENDINFO_NOCHECK(m_AmbientLight.m_vColor), 0, SPROP_NOSCALE ),
-	SendPropFloat( SENDINFO_NOCHECK(m_AmbientLight.m_flIntensity), 0, SPROP_NOSCALE ),
+	SendPropVector( SENDINFO_STRUCTELEM(m_AmbientLight, m_vPos), 0, SPROP_NOSCALE ),
+	SendPropVector( SENDINFO_STRUCTELEM(m_AmbientLight, m_vColor), 0, SPROP_NOSCALE ),
+	SendPropFloat( SENDINFO_STRUCTELEM(m_AmbientLight, m_flIntensity), 0, SPROP_NOSCALE ),
 
 	SendPropVector(SENDINFO(m_vWind), 0, SPROP_NOSCALE),
 	SendPropFloat(SENDINFO(m_flTwist), 0, SPROP_NOSCALE),
@@ -76,12 +76,6 @@ END_MAPENTITY()
 //-----------------------------------------------------------------------------
 CSmokeStack::CSmokeStack()
 {
-	//memset( &m_AmbientLight, 0, sizeof(m_AmbientLight) ); 
-	//memset( &m_DirLight, 0, sizeof(m_DirLight) ); 
-
-	IMPLEMENT_NETWORKVAR_CHAIN( &m_AmbientLight );
-	IMPLEMENT_NETWORKVAR_CHAIN( &m_DirLight );
-
 	m_flTwist = 0;
 	SetRenderColor( 0, 0, 0 );
 	SetRenderAlpha( 255 );

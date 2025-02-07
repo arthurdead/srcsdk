@@ -217,6 +217,18 @@ void variant_t::SetEntityH( CSharedBaseEntity *val )
 	fieldType_ = FIELD_EHANDLE; 
 }
 
+void variant_t::SetCString( const char *str )
+{
+	dealloc(); 
+#if 0
+	szVal = strdup(str);
+	fieldType_ = FIELD_CSTRING;
+#else
+	iszVal = AllocPooledString(str);
+	fieldType_ = FIELD_POOLED_STRING;
+#endif
+}
+
 const char *variant_t::String( void ) const
 {
 	static char strbuffer[512];

@@ -840,6 +840,8 @@ constexpr inline const bool is_ehandle_v = is_ehandle_<T>::value;
 #define ANGLE_BITS 13
 #define DISTANCE_BITS 12
 #define SCALE_BITS 8
+#define WEIGHT_BITS 8
+#define ORDER_BITS 4
 
 #define ANIMATION_SEQUENCE_BITS			12	// 4096 sequences
 #define ANIMATION_SKIN_BITS				10	// 1024 body skin selections FIXME: this seems way high

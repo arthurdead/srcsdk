@@ -391,7 +391,8 @@ ParsePropRes_t CBaseProp::ParsePropData( void )
 //-----------------------------------------------------------------------------
 void CBaseProp::UpdateNavObstacle( bool bForce )
 {
-	if( !m_bCanBecomeObstacle || !IsSolid() || HasSpawnFlags( SF_PHYSPROP_DEBRIS ) )
+	CPhysicsProp *pPhysProp = IsPropPhysics() ? assert_cast<CPhysicsProp *>(this) : NULL;
+	if( !m_bCanBecomeObstacle || !IsSolid() || (pPhysProp && pPhysProp->HasSpawnFlags( SF_PHYSPROP_DEBRIS )) )
 		return;
 
 	if( !RecastMgr().HasMeshes() )

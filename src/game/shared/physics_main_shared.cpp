@@ -1249,7 +1249,7 @@ bool CSharedBaseEntity::PhysicsCheckWater( void )
 
 	// The deeper we are, the stronger the current.
 	Vector newBaseVelocity;
-	VectorMA (GetBaseVelocity(), 50.0*GetWaterLevel(), v, newBaseVelocity);
+	VectorMA (GetBaseVelocity(), 50.0*(int)GetWaterLevel(), v, newBaseVelocity);
 	SetBaseVelocity( newBaseVelocity );
 	
 	return GetWaterLevel() > WL_Feet;

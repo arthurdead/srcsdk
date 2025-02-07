@@ -14,7 +14,12 @@
 #include "fogcontroller.h"
 
 // Spawn Flags
-#define SF_POSTPROCESS_MASTER		0x0001
+enum SFPPController_t : unsigned char
+{
+	SF_POSTPROCESS_MASTER =		0x0001
+};
+
+FLAGENUM_OPERATORS( SFPPController_t, unsigned char )
 
 //=============================================================================
 //
@@ -26,6 +31,8 @@ public:
 	DECLARE_SERVERCLASS();
 	DECLARE_MAPENTITY();
 	DECLARE_CLASS( CPostProcessController, CBaseEntity );
+
+	DECLARE_SPAWNFLAGS( SFPPController_t )
 
 	CPostProcessController();
 	virtual ~CPostProcessController();
@@ -52,7 +59,7 @@ public:
 
 	void Spawn( void );
 
-	bool IsMaster( void ) const { return HasSpawnFlags( SF_FOG_MASTER ); }
+	bool IsMaster( void ) const { return HasSpawnFlags( SF_POSTPROCESS_MASTER ); }
 
 public:
 	CNetworkArray( float, m_flPostProcessParameters, POST_PROCESS_PARAMETER_COUNT );

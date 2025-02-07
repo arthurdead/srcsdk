@@ -292,11 +292,11 @@ void CBaseToggle::AngularMoveDone( void )
 }
 
 
-float CBaseToggle::AxisValue( int flags, const QAngle &angles )
+float CBaseToggle::AxisValue( const QAngle &angles )
 {
-	if ( FBitSet(flags, SF_DOOR_ROTATE_ROLL) )
+	if ( HasSpawnFlags( SF_TOGGLE_ROTATE_ROLL) )
 		return angles.z;
-	if ( FBitSet(flags, SF_DOOR_ROTATE_PITCH) )
+	if ( HasSpawnFlags( SF_TOGGLE_ROTATE_PITCH) )
 		return angles.x;
 
 	return angles.y;
@@ -305,22 +305,22 @@ float CBaseToggle::AxisValue( int flags, const QAngle &angles )
 
 void CBaseToggle::AxisDir( void )
 {
-	if ( HasSpawnFlags( SF_DOOR_ROTATE_ROLL ) )
+	if ( HasSpawnFlags( SF_TOGGLE_ROTATE_ROLL ) )
 		m_vecMoveAng = QAngle( 0, 0, 1 );	// angles are roll
-	else if ( HasSpawnFlags( SF_DOOR_ROTATE_PITCH ) )
+	else if ( HasSpawnFlags( SF_TOGGLE_ROTATE_PITCH ) )
 		m_vecMoveAng = QAngle( 1, 0, 0 );	// angles are pitch
 	else
 		m_vecMoveAng = QAngle( 0, 1, 0 );		// angles are yaw
 }
 
 
-float CBaseToggle::AxisDelta( int flags, const QAngle &angle1, const QAngle &angle2 )
+float CBaseToggle::AxisDelta( const QAngle &angle1, const QAngle &angle2 )
 {
 	// UNDONE: Use AngleDistance() here?
-	if ( FBitSet (flags, SF_DOOR_ROTATE_ROLL) )
+	if ( HasSpawnFlags ( SF_TOGGLE_ROTATE_ROLL) )
 		return angle1.z - angle2.z;
 	
-	if ( FBitSet (flags, SF_DOOR_ROTATE_PITCH) )
+	if ( HasSpawnFlags ( SF_TOGGLE_ROTATE_PITCH) )
 		return angle1.x - angle2.x;
 
 	return angle1.y - angle2.y;

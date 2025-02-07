@@ -43,7 +43,7 @@ bool CSharedBaseCombatCharacter::SwitchToNextBestWeapon(CSharedBaseCombatWeapon 
 // Input  :
 // Output : true is switch succeeded
 //-----------------------------------------------------------------------------
-int CSharedBaseCombatCharacter::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon, int viewmodelindex /*=VIEWMODEL_WEAPON*/, bool bDeploy ) 
+WeaponSwitchResult_t CSharedBaseCombatCharacter::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon, viewmodelindex_t viewmodelindex /*=VIEWMODEL_WEAPON*/, bool bDeploy ) 
 {
 	if ( pWeapon == NULL )
 		return WEAPON_SWITCH_FAILED;
@@ -157,12 +157,12 @@ CSharedBaseCombatWeapon *CSharedBaseCombatCharacter::GetWeapon( int i ) const
 // Input  : iCount - 
 //			iAmmoIndex - 
 //-----------------------------------------------------------------------------
-void CSharedBaseCombatCharacter::RemoveAmmo( int iCount, int iAmmoIndex )
+void CSharedBaseCombatCharacter::RemoveAmmo( int iCount, AmmoIndex_t iAmmoIndex )
 {
 	if (iCount <= 0)
 		return;
 
-	if ( iAmmoIndex < 0 )
+	if ( iAmmoIndex == AMMO_INVALID_INDEX )
 		return;
 
 	// Infinite ammo?
@@ -192,7 +192,7 @@ void CSharedBaseCombatCharacter::RemoveAllAmmo( )
 //-----------------------------------------------------------------------------
 // FIXME: This is a sort of hack back-door only used by physgun!
 //-----------------------------------------------------------------------------
-void CSharedBaseCombatCharacter::SetAmmoCount( int iCount, int iAmmoIndex )
+void CSharedBaseCombatCharacter::SetAmmoCount( int iCount, AmmoIndex_t iAmmoIndex )
 {
 	// NOTE: No sound, no max check! Seems pretty bogus to me!
 	m_iAmmo.Set( iAmmoIndex, iCount );
@@ -204,9 +204,9 @@ void CSharedBaseCombatCharacter::SetAmmoCount( int iCount, int iAmmoIndex )
 // Input  :	Ammo Index
 // Output :	The amount of ammo
 //-----------------------------------------------------------------------------
-int CSharedBaseCombatCharacter::GetAmmoCount( int iAmmoIndex ) const
+int CSharedBaseCombatCharacter::GetAmmoCount( AmmoIndex_t iAmmoIndex ) const
 {
-	if ( iAmmoIndex == -1 )
+	if ( iAmmoIndex == AMMO_INVALID_INDEX )
 		return 0;
 
 	// Infinite ammo?
@@ -259,7 +259,7 @@ int CSharedBaseCombatCharacter::Weapon_GetSlot( const char *pszWeapon, int iSubT
 	return -1;
 }
 
-int CSharedBaseCombatCharacter::BloodColor()
+BloodColor_t CSharedBaseCombatCharacter::BloodColor()
 {
 	return m_bloodColor;
 }
@@ -268,7 +268,7 @@ int CSharedBaseCombatCharacter::BloodColor()
 //-----------------------------------------------------------------------------
 // Blood color (see BLOOD_COLOR_* macros in baseentity.h)
 //-----------------------------------------------------------------------------
-void CSharedBaseCombatCharacter::SetBloodColor( int nBloodColor )
+void CSharedBaseCombatCharacter::SetBloodColor( BloodColor_t nBloodColor )
 {
 	m_bloodColor = nBloodColor;
 }
@@ -536,12 +536,12 @@ bool CSharedBaseCombatCharacter::IsAbleToSee( CSharedBaseCombatCharacter *pBCC, 
 class CTraceFilterNoCombatCharacters : public CTraceFilterSimple
 {
 public:
-	CTraceFilterNoCombatCharacters( const IHandleEntity *passentity = NULL, int collisionGroup = COLLISION_GROUP_NONE )
+	CTraceFilterNoCombatCharacters( const IHandleEntity *passentity = NULL, Collision_Group_t collisionGroup = COLLISION_GROUP_NONE )
 		: CTraceFilterSimple( passentity, collisionGroup )
 	{
 	}
 
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 	{
 		if ( CTraceFilterSimple::ShouldHitEntity( pHandleEntity, contentsMask ) )
 		{
@@ -569,20 +569,20 @@ public:
 	// It does have a base, but we'll never network anything below here..
 	DECLARE_CLASS( CTraceFilterSkipTwoEntitiesNoCombatCharacters, CTraceFilterNoCombatCharacters );
 	
-	CTraceFilterSkipTwoEntitiesNoCombatCharacters( const IHandleEntity *passentity = NULL, const IHandleEntity *passentity2 = NULL, int collisionGroup = COLLISION_GROUP_NONE );
-	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	CTraceFilterSkipTwoEntitiesNoCombatCharacters( const IHandleEntity *passentity = NULL, const IHandleEntity *passentity2 = NULL, Collision_Group_t collisionGroup = COLLISION_GROUP_NONE );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask );
 	virtual void SetPassEntity2( const IHandleEntity *pPassEntity2 ) { m_pPassEnt2 = pPassEntity2; }
 
 private:
 	const IHandleEntity *m_pPassEnt2;
 };
 
-CTraceFilterSkipTwoEntitiesNoCombatCharacters::CTraceFilterSkipTwoEntitiesNoCombatCharacters( const IHandleEntity *passentity, const IHandleEntity *passentity2, int collisionGroup ) :
+CTraceFilterSkipTwoEntitiesNoCombatCharacters::CTraceFilterSkipTwoEntitiesNoCombatCharacters( const IHandleEntity *passentity, const IHandleEntity *passentity2, Collision_Group_t collisionGroup ) :
 	BaseClass( passentity, collisionGroup ), m_pPassEnt2(passentity2)
 {
 }
 
-bool CTraceFilterSkipTwoEntitiesNoCombatCharacters::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterSkipTwoEntitiesNoCombatCharacters::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	Assert( pHandleEntity );
 	if ( !PassServerEntityFilter( pHandleEntity, m_pPassEnt2 ) )
@@ -605,7 +605,7 @@ bool CSharedBaseCombatCharacter::ComputeTargetIsInDarkness( const Vector &vecEye
 	// Check light info
 	const float flMinLightIntensity = 0.1f;
 
-	if ( GetLightIntensity( vecTargetPos ) >= flMinLightIntensity )
+	if ( GetLightIntensity( this, vecTargetPos ) >= flMinLightIntensity )
 		return false;
 
 	CTraceFilterNoNPCsOrPlayer lightingFilter( this, COLLISION_GROUP_NONE );
@@ -619,7 +619,7 @@ bool CSharedBaseCombatCharacter::ComputeTargetIsInDarkness( const Vector &vecEye
 	if ( ( result.fraction < 1.0f ) && ( ( result.surface.flags & SURF_SKY ) == 0 ) )
 	{
 		// Target is in darkness, the wall behind him is too, and we are too far away
-		if ( GetLightIntensity( result.endpos ) < flMinLightIntensity )
+		if ( GetLightIntensity( this, result.endpos ) < flMinLightIntensity )
 			return true;
 	}
 
@@ -703,7 +703,7 @@ bool CSharedBaseCombatCharacter::IsInFieldOfView( const Vector &pos ) const
 	return IsLookingTowards( pos );
 }
 
-static bool TraceFilterNoCombatCharacters( IHandleEntity *pServerEntity, int contentsMask )
+static bool TraceFilterNoCombatCharacters( IHandleEntity *pServerEntity, ContentsFlags_t contentsMask )
 {
 	// Honor BlockLOS also to allow seeing through partially-broken doors
 	CSharedBaseEntity *entity = EntityFromEntityHandle( pServerEntity );

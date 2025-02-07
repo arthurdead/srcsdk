@@ -74,7 +74,7 @@ activitylist_t *ActivityList_AddActivityEntry( const char *pName, Activity iActi
 	
 	// UNDONE: This implies that ALL shared activities are added before ANY custom activities
 	// UNDONE: Segment these instead?  It's a 32-bit int, how many activities do we need?
-	if ( iActivityIndex > g_HighestActivity )
+	if ( (unsigned short)iActivityIndex > (unsigned short)g_HighestActivity )
 	{
 		g_HighestActivity = iActivityIndex;
 	}
@@ -122,7 +122,7 @@ bool ActivityList_RegisterSharedActivity( const char *pszActivityName, Activity 
 	// technically order isn't dependent, but it's too damn easy to forget to add new ACT_'s to all three lists.
 	if(!g_bRegisteringAliases) {
 		static Activity lastActivityIndex = (Activity)-3;
-		Assert( lastActivityIndex == (Activity)-3 || (iActivityIndex < LAST_SHARED_ACTIVITY && iActivityIndex == lastActivityIndex + 1) );
+		Assert( lastActivityIndex == (Activity)-3 || ((unsigned short)iActivityIndex < (unsigned short)LAST_SHARED_ACTIVITY && (unsigned short)iActivityIndex == ((unsigned short)lastActivityIndex + 1)) );
 		lastActivityIndex = iActivityIndex;
 	}
 #endif
@@ -171,7 +171,7 @@ Activity ActivityList_RegisterPrivateActivity( const char *pszActivityName )
 		}
 	}
 
-	pList = ActivityList_AddActivityEntry( pszActivityName, (Activity)(g_HighestActivity+1), true );
+	pList = ActivityList_AddActivityEntry( pszActivityName, (Activity)((unsigned short)g_HighestActivity+1), true );
 	return (Activity)pList->activityIndex;
 }
 
@@ -223,9 +223,9 @@ void ActivityList_RegisterSharedActivities( void )
 	g_bRegisteringAliases = false;
 #endif
 
-	AssertMsg( g_HighestActivity == LAST_SHARED_ACTIVITY - 1, "Not all activities from ai_activity.h registered in activitylist.cpp" ); 
+	AssertMsg( g_HighestActivity == (Activity)((unsigned short)LAST_SHARED_ACTIVITY - 1), "Not all activities from ai_activity.h registered in activitylist.cpp" ); 
 
-	Assert(g_HighestActivity <= (Activity)(unsigned short)-1);
+	Assert((unsigned short)g_HighestActivity <= (unsigned short)-1);
 } 
 
 

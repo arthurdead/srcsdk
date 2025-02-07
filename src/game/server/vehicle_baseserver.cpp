@@ -41,8 +41,8 @@ CBaseServerVehicle::CBaseServerVehicle( void )
 {
 	m_pVehicle = NULL;
 	m_pDrivableVehicle = NULL;
-	m_nNPCButtons = 0;
-	m_nPrevNPCButtons = 0;
+	m_nNPCButtons = IN_NONE;
+	m_nPrevNPCButtons = IN_NONE;
 	m_flTurnDegrees = 0;
 
 	m_bParsedAnimations = false;
@@ -145,7 +145,7 @@ CBaseEntity	*CBaseServerVehicle::GetDriver( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CBaseCombatCharacter *CBaseServerVehicle::GetPassenger( int nRole ) 
+CBaseCombatCharacter *CBaseServerVehicle::GetPassenger( PassengerRole_t nRole ) 
 { 
 	Assert( nRole == VEHICLE_ROLE_DRIVER ); 
 	CBaseEntity *pDriver = GetDrivableVehicle()->GetDriver();
@@ -159,7 +159,7 @@ CBaseCombatCharacter *CBaseServerVehicle::GetPassenger( int nRole )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CBaseServerVehicle::GetPassengerRole( CBaseCombatCharacter *pPassenger )
+PassengerRole_t CBaseServerVehicle::GetPassengerRole( CBaseCombatCharacter *pPassenger )
 {
 	if ( pPassenger == GetDrivableVehicle()->GetDriver() )
 		return VEHICLE_ROLE_DRIVER;
@@ -359,7 +359,7 @@ const PassengerSeatAnims_t *CBaseServerVehicle::NPC_GetPassengerSeatAnims( CBase
 //-----------------------------------------------------------------------------
 // Purpose: Get and set the current driver. Use PassengerRole_t enum in shareddefs.h for adding passengers
 //-----------------------------------------------------------------------------
-void CBaseServerVehicle::SetPassenger( int nRole, CBaseCombatCharacter *pPassenger )
+void CBaseServerVehicle::SetPassenger( PassengerRole_t nRole, CBaseCombatCharacter *pPassenger )
 {
 	// Baseclass only handles vehicles with a single passenger
 	Assert( nRole == VEHICLE_ROLE_DRIVER ); 
@@ -420,7 +420,7 @@ void CBaseServerVehicle::SetPassenger( int nRole, CBaseCombatCharacter *pPasseng
 //-----------------------------------------------------------------------------
 // Purpose: Get a position in *world space* inside the vehicle for the player to start at
 //-----------------------------------------------------------------------------
-void CBaseServerVehicle::GetPassengerSeatPoint( int nRole, Vector *pPoint, QAngle *pAngles )
+void CBaseServerVehicle::GetPassengerSeatPoint( PassengerRole_t nRole, Vector *pPoint, QAngle *pAngles )
 {
 	Assert( nRole == VEHICLE_ROLE_DRIVER ); 
 
@@ -430,8 +430,8 @@ void CBaseServerVehicle::GetPassengerSeatPoint( int nRole, Vector *pPoint, QAngl
 		char pAttachmentName[32];
 		Q_snprintf( pAttachmentName, sizeof( pAttachmentName ), "vehicle_feet_passenger%d", nRole );
 		int nFeetAttachmentIndex = pAnimating->LookupAttachment(pAttachmentName);
-		int nIdleSequence = pAnimating->SelectWeightedSequence( ACT_IDLE );
-		if ( nFeetAttachmentIndex > 0 && nIdleSequence != -1 )
+		sequence_t nIdleSequence = pAnimating->SelectWeightedSequence( ACT_IDLE );
+		if ( nFeetAttachmentIndex > 0 && nIdleSequence != INVALID_SEQUENCE )
 		{
 			// FIXME: This really wants to be a faster query than this implementation!
 			Vector vecOrigin;
@@ -499,7 +499,7 @@ bool CBaseServerVehicle::CheckExitPoint( float yaw, int distance, Vector *pEndPo
 //-----------------------------------------------------------------------------
 // Purpose: Where does this passenger exit the vehicle?
 //-----------------------------------------------------------------------------
-bool CBaseServerVehicle::GetPassengerExitPoint( int nRole, Vector *pExitPoint, QAngle *pAngles )
+bool CBaseServerVehicle::GetPassengerExitPoint( PassengerRole_t nRole, Vector *pExitPoint, QAngle *pAngles )
 { 
 	Assert( nRole == VEHICLE_ROLE_DRIVER ); 
 
@@ -796,7 +796,7 @@ void CBaseServerVehicle::ParseNPCRoles( KeyValues *pkvPassengerList )
 //			flCyclePoint - 0.0 - 1.0
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CBaseServerVehicle::GetLocalAttachmentAtTime( int nQuerySequence, int nAttachmentIndex, float flCyclePoint, Vector *vecOriginOut, QAngle *vecAnglesOut )
+bool CBaseServerVehicle::GetLocalAttachmentAtTime( sequence_t nQuerySequence, int nAttachmentIndex, float flCyclePoint, Vector *vecOriginOut, QAngle *vecAnglesOut )
 {
 	CBaseAnimating *pAnimating = m_pVehicle->GetBaseAnimating();
 	if ( pAnimating == NULL )
@@ -850,8 +850,8 @@ bool CBaseServerVehicle::GetLocalAttachmentAtTime( const char *lpszAnimName, int
 	if ( pAnimating == NULL )
 		return false;
 
-	int nQuerySequence = pAnimating->LookupSequence( lpszAnimName );
-	if ( nQuerySequence < 0 )
+	sequence_t nQuerySequence = pAnimating->LookupSequence( lpszAnimName );
+	if ( nQuerySequence == INVALID_SEQUENCE )
 		return false;
 
 	return GetLocalAttachmentAtTime( nQuerySequence, nAttachmentIndex, flCyclePoint, vecOriginOut, vecAnglesOut );
@@ -951,7 +951,7 @@ void CBaseServerVehicle::HandlePassengerEntry( CBaseCombatCharacter *pPassenger,
 	if ( pPlayer != NULL )
 	{
 		// Find out which hitbox the player's eyepoint is within
-		int iEntryAnim = GetEntryAnimForPoint( pPlayer->EyePosition() );
+		sequence_t iEntryAnim = GetEntryAnimForPoint( pPlayer->EyePosition() );
 
 		// Get this interface for animation queries
 		CBaseAnimating *pAnimating = dynamic_cast<CBaseAnimating *>(m_pVehicle);
@@ -1015,14 +1015,14 @@ bool CBaseServerVehicle::HandlePassengerExit( CBaseCombatCharacter *pPassenger )
 		// Find the right exit anim to use based on available exit points.
 		Vector vecExitPoint;
 		bool bAllPointsBlocked;
-		int iSequence = GetExitAnimToUse( vecExitPoint, bAllPointsBlocked );
+		sequence_t iSequence = GetExitAnimToUse( vecExitPoint, bAllPointsBlocked );
 
 		// If all exit points were blocked and this vehicle doesn't allow exiting in
 		// these cases, bail.
 		Vector vecNewPos = pPlayer->GetAbsOrigin();
 		QAngle angNewAngles = pPlayer->GetAbsAngles();
 
-		int nRole = GetPassengerRole( pPlayer );
+		PassengerRole_t nRole = GetPassengerRole( pPlayer );
 		if ( ( bAllPointsBlocked ) || ( iSequence == ACTIVITY_NOT_AVAILABLE ) )
 		{
 			// Animation-driven exit points are all blocked, or we have none. Fall back to the more simple static exit points.
@@ -1038,7 +1038,7 @@ bool CBaseServerVehicle::HandlePassengerExit( CBaseCombatCharacter *pPassenger )
 		// whether we're blocked or not. We're getting out, one way or another.
 		GetDrivableVehicle()->PreExitVehicle( pPlayer, nRole );
 
-		if ( iSequence > ACTIVITY_NOT_AVAILABLE )
+		if ( iSequence != ACTIVITY_NOT_AVAILABLE )
 		{
 			CBaseAnimating *pAnimating = dynamic_cast<CBaseAnimating *>(m_pVehicle);
 			if ( pAnimating )
@@ -1088,7 +1088,7 @@ bool CBaseServerVehicle::HandlePassengerExit( CBaseCombatCharacter *pPassenger )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CBaseServerVehicle::GetEntryAnimForPoint( const Vector &vecEyePoint )
+sequence_t CBaseServerVehicle::GetEntryAnimForPoint( const Vector &vecEyePoint )
 {
 	// Parse the vehicle animations the first time they get in the vehicle
 	if ( !m_bParsedAnimations )
@@ -1100,25 +1100,25 @@ int CBaseServerVehicle::GetEntryAnimForPoint( const Vector &vecEyePoint )
 
 	// No entry anims? Vehicles with no entry anims are always enterable.
 	if ( !m_EntryAnimations.Count() )
-		return 0;
+		return ROOT_SEQUENCE;
 
 	// Figure out which entrypoint hitbox the player is in
 	CBaseAnimating *pAnimating = dynamic_cast<CBaseAnimating *>(m_pVehicle);
 	if ( !pAnimating )
-		return 0;
+		return ROOT_SEQUENCE;
 
 	CStudioHdr *pStudioHdr = pAnimating->GetModelPtr();
 	if (!pStudioHdr)
-		return 0;
+		return ROOT_SEQUENCE;
 	int iHitboxSet = FindHitboxSetByName( pStudioHdr, "entryboxes" );
-	mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( iHitboxSet );
+	const mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( iHitboxSet );
 	if ( !set || !set->numhitboxes )
-		return 0;
+		return ROOT_SEQUENCE;
 
 	// Loop through the hitboxes and find out which one we're in
 	for ( int i = 0; i < set->numhitboxes; i++ )
 	{
-		mstudiobbox_t *pbox = set->pHitbox( i );
+		const mstudiobbox_t *pbox = set->pHitbox( i );
 
 		Vector vecPosition;
 		QAngle vecAngles;
@@ -1155,7 +1155,7 @@ int CBaseServerVehicle::GetEntryAnimForPoint( const Vector &vecEyePoint )
 //			bAllPointsBlocked - Returns whether all exit points were found to be blocked.
 // Output : 
 //-----------------------------------------------------------------------------
-int CBaseServerVehicle::GetExitAnimToUse( Vector &vecEyeExitEndpoint, bool &bAllPointsBlocked )
+sequence_t CBaseServerVehicle::GetExitAnimToUse( Vector &vecEyeExitEndpoint, bool &bAllPointsBlocked )
 {
 	bAllPointsBlocked = false;
 	
@@ -1188,7 +1188,7 @@ int CBaseServerVehicle::GetExitAnimToUse( Vector &vecEyeExitEndpoint, bool &bAll
 	if ( pPlayer == NULL )
 		return ACTIVITY_NOT_AVAILABLE;
 
-	int nRole = GetPassengerRole( pPlayer );
+	PassengerRole_t nRole = GetPassengerRole( pPlayer );
 
 	int nBestExitAnim = -1;
 	bool bBestExitIsEscapePoint = true;
@@ -1317,7 +1317,7 @@ int CBaseServerVehicle::GetExitAnimToUse( Vector &vecEyeExitEndpoint, bool &bAll
 		flMaxCosAngleDelta = flCosAngleDelta;
 	}
 
-	if ( nBestExitAnim >= 0 )
+	if ( nBestExitAnim != -1 )
 	{
 		m_vecCurrentExitEndPoint = vecBestExitPoint;
 
@@ -1405,8 +1405,8 @@ void CBaseServerVehicle::HandleEntryExitFinish( bool bExitAnimOn, bool bResetAni
 	if ( bResetAnim )
 	{
 		// Start the vehicle idling again
-		int iSequence = pAnimating->SelectWeightedSequence( ACT_IDLE );
-		if ( iSequence > ACTIVITY_NOT_AVAILABLE )
+		sequence_t iSequence = pAnimating->SelectWeightedSequence( ACT_IDLE );
+		if ( iSequence != ACTIVITY_NOT_AVAILABLE )
 		{
 			pAnimating->SetCycle( 0 );
 			pAnimating->m_flAnimTime = gpGlobals->curtime;
@@ -1422,7 +1422,7 @@ void CBaseServerVehicle::HandleEntryExitFinish( bool bExitAnimOn, bool bResetAni
 //-----------------------------------------------------------------------------
 // Purpose: Where does the passenger see from?
 //-----------------------------------------------------------------------------
-void CBaseServerVehicle::GetVehicleViewPosition( int nRole, Vector *pAbsOrigin, QAngle *pAbsAngles, float *pFOV /*= NULL*/ )
+void CBaseServerVehicle::GetVehicleViewPosition( PassengerRole_t nRole, Vector *pAbsOrigin, QAngle *pAbsAngles, float *pFOV /*= NULL*/ )
 {
 	Assert( nRole == VEHICLE_ROLE_DRIVER );
 	CBaseCombatCharacter *pPassenger = GetPassenger( VEHICLE_ROLE_DRIVER );

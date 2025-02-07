@@ -100,9 +100,9 @@ IMPLEMENT_SERVERCLASS_ST(CTEBubbles, DT_TEBubbles)
 	SendPropVector( SENDINFO(m_vecMins), -1, SPROP_COORD),
 	SendPropVector( SENDINFO(m_vecMaxs), -1, SPROP_COORD),
 	SendPropModelIndex( SENDINFO(m_nModelIndex) ),
-	SendPropFloat( SENDINFO(m_fHeight ), 17, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
+	SendPropFloat( SENDINFO(m_fHeight ), 17, SPROP_NONE, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
 	SendPropInt( SENDINFO(m_nCount), 8, SPROP_UNSIGNED ),
-	SendPropFloat( SENDINFO(m_fSpeed ), 17, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
+	SendPropFloat( SENDINFO(m_fSpeed ), 17, SPROP_NONE, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
 END_SEND_TABLE()
 
 

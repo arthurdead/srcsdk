@@ -91,7 +91,7 @@ void CMessage::InputShowMessage( inputdata_t &&inputdata )
 {
 	CBaseEntity *pPlayer = NULL;
 
-	if ( m_spawnflags & SF_MESSAGE_ALL )
+	if ( HasSpawnFlags( SF_MESSAGE_ALL ) )
 	{
 		UTIL_ShowMessageAll( STRING( m_iszMessage ) );
 	}
@@ -125,7 +125,7 @@ void CMessage::InputShowMessage( inputdata_t &&inputdata )
 		EmitSound( filter, entindex(), ep );
 	}
 
-	if ( m_spawnflags & SF_MESSAGE_ONCE )
+	if ( HasSpawnFlags( SF_MESSAGE_ONCE ) )
 	{
 		UTIL_Remove( this );
 	}
@@ -141,7 +141,7 @@ void CMessage::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useT
 	inputdata.pActivator	= NULL;
 	inputdata.pCaller		= NULL;
 
-	InputShowMessage( inputdata );
+	InputShowMessage( Move(inputdata) );
 }
 
 

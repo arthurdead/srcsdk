@@ -66,6 +66,7 @@ if build_libs
 			#join_paths(public_dir,'dt_send.cpp'),
 			#join_paths(public_dir,'dt_recv.cpp'),
 			join_paths(public_dir,'dt_common.cpp'),
+			join_paths(public_dir,'datamap.cpp'),
 		),
 		include_directories: include_directories(
 			hackmgr_src_dir,

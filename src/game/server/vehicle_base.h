@@ -43,7 +43,7 @@ public:
 							CFourWheelServerVehicle( void );
 	virtual bool			IsVehicleUpright( void );
 	virtual bool			IsVehicleBodyInWater( void );
-	virtual void			GetVehicleViewPosition( int nRole, Vector *pOrigin, QAngle *pAngles, float *pFOV = NULL );
+	virtual void			GetVehicleViewPosition( PassengerRole_t nRole, Vector *pOrigin, QAngle *pAngles, float *pFOV = NULL );
 	IPhysicsVehicleController *GetVehicleController();
 	const vehicleparams_t	*GetVehicleParams( void );
 	const vehicle_controlparams_t *GetVehicleControlParams( void );
@@ -68,6 +68,13 @@ private:
 	ViewSmoothingData_t		m_ViewSmoothing;
 };
 
+enum SFPropVehicle_t : unsigned char
+{
+	SF_PROP_VEHICLE_ALWAYSTHINK =		0x00000001,
+};
+
+FLAGENUM_OPERATORS( SFPropVehicle_t, unsigned char )
+
 //-----------------------------------------------------------------------------
 // Purpose: Base class for four wheel physics vehicles
 //-----------------------------------------------------------------------------
@@ -78,8 +85,10 @@ public:
 	CPropVehicle();
 	virtual ~CPropVehicle();
 
-	void SetVehicleType( unsigned int nVehicleType )			{ m_nVehicleType = nVehicleType; }
-	unsigned int GetVehicleType( void )							{ return m_nVehicleType; }
+	DECLARE_SPAWNFLAGS( SFPropVehicle_t )
+
+	void SetVehicleType( VehicleType_t nVehicleType )			{ m_nVehicleType = nVehicleType; }
+	VehicleType_t GetVehicleType( void )							{ return m_nVehicleType; }
 
 	// CBaseEntity
 	virtual void	Precache();
@@ -123,7 +132,7 @@ protected:
 
 protected:
 	CFourWheelVehiclePhysics		m_VehiclePhysics;
-	unsigned int					m_nVehicleType;
+	VehicleType_t					m_nVehicleType;
 	string_t						m_vehicleScript;
 
 	CUtlVector<EHANDLE>				m_hPhysicsChildren;	// List of entities who wish to get physics callbacks from the vehicle
@@ -193,7 +202,7 @@ public:
 
 	// Driving
 	void	DriveVehicle( CBasePlayer *pPlayer, CUserCmd *ucmd );	// Player driving entrypoint
-	virtual void DriveVehicle( float flFrameTime, CUserCmd *ucmd, uint64 iButtonsDown, uint64 iButtonsReleased ); // Driving Button handling
+	virtual void DriveVehicle( float flFrameTime, CUserCmd *ucmd, InButtons_t iButtonsDown, InButtons_t iButtonsReleased ); // Driving Button handling
 
 	virtual bool IsOverturned( void );
 	virtual bool IsVehicleBodyInWater( void ) { return false; }
@@ -216,10 +225,10 @@ public:
 	virtual void		SetVehicleExitAnim( bool bOn, Vector vecEyeExitEndpoint ) { m_bExitAnimOn = bOn; if ( bOn ) m_vecEyeExitEndpoint = vecEyeExitEndpoint; }
 	virtual void		EnterVehicle( CBaseCombatCharacter *pPassenger );
 
-	virtual bool		AllowBlockedExit( CBaseCombatCharacter *pPassenger, int nRole ) { return true; }
-	virtual bool		AllowMidairExit( CBaseCombatCharacter *pPassenger, int nRole ) { return false; }
-	virtual void		PreExitVehicle( CBaseCombatCharacter *pPassenger, int nRole ) {}
-	virtual void		ExitVehicle( int nRole );
+	virtual bool		AllowBlockedExit( CBaseCombatCharacter *pPassenger, PassengerRole_t nRole ) { return true; }
+	virtual bool		AllowMidairExit( CBaseCombatCharacter *pPassenger, PassengerRole_t nRole ) { return false; }
+	virtual void		PreExitVehicle( CBaseCombatCharacter *pPassenger, PassengerRole_t nRole ) {}
+	virtual void		ExitVehicle( PassengerRole_t nRole );
 	virtual string_t	GetVehicleScriptName() { return m_vehicleScript; }
 	
 	virtual bool		PassengerShouldReceiveDamage( CTakeDamageInfo &info ) { return true; }

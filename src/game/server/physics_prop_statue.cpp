@@ -224,7 +224,7 @@ bool CStatueProp::CreateVPhysicsFromHitBoxes( CBaseAnimating *pInitBaseAnimating
 	if ( !pStudioHdr )
 		return false;
 
-	mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( m_nHitboxSet );
+	const mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( m_nHitboxSet );
 	if ( !set )
 		return false;
 
@@ -240,7 +240,7 @@ bool CStatueProp::CreateVPhysicsFromHitBoxes( CBaseAnimating *pInitBaseAnimating
 	for ( int i = 0; i < set->numhitboxes; i++ )
 	{
 		// Get the hitbox info
-		mstudiobbox_t *pbox = set->pHitbox( i );
+		const mstudiobbox_t *pbox = set->pHitbox( i );
 		GetBonePosition( pbox->bone, position, angles );
 
 		// Accumulate volume and area

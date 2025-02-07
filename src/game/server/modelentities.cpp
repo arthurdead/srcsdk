@@ -78,8 +78,8 @@ bool CFuncBrush::CreateVPhysics( void )
 	IPhysicsObject *pPhys = VPhysicsInitShadow(false, false);
 	if ( pPhys )
 	{
-		int contents = modelinfo->GetModelContents( GetModelIndex() );
-		if ( ! (contents & (MASK_SOLID|MASK_PLAYERSOLID|MASK_NPCSOLID)) )
+		ContentsFlags_t contents = modelinfo->GetModelContents( GetModelIndex() );
+		if ( (contents & (MASK_SOLID|MASK_PLAYERSOLID|MASK_NPCSOLID)) == CONTENTS_EMPTY )
 		{
 			// leave the physics shadow there in case it has crap constrained to it
 			// but disable collisions with it
@@ -199,6 +199,22 @@ bool CFuncBrush::IsOn( void ) const
 }
 
 
+//
+// Filters controlling what this trigger responds to.
+//
+enum TriggerFilters_e : unsigned char
+{
+	TRIGGER_IGNORENONE = 0,
+	TRIGGER_IGNOREPLAYERS	= 0x01,
+	TRIGGER_IGNORENPCS		= 0x02,
+	TRIGGER_IGNOREPUSHABLES	= 0x04,
+	TRIGGER_IGNORETOUCH		= 0x08,
+	TRIGGER_IGNOREUSE		= 0x10,
+	TRIGGER_IGNOREALL		= 0x20,
+};
+
+FLAGENUM_OPERATORS( TriggerFilters_e, unsigned char )
+
 //-----------------------------------------------------------------------------
 // Purpose: Invisible field that activates when touched
 //			All inputs are passed up to the main entity, unless filtered out
@@ -206,19 +222,6 @@ bool CFuncBrush::IsOn( void ) const
 // DVS TODO: obsolete, remove
 class CTriggerBrush : public CBaseEntity
 {
-	//
-	// Filters controlling what this trigger responds to.
-	//
-	enum TriggerFilters_e
-	{
-		TRIGGER_IGNOREPLAYERS	= 0x01,
-		TRIGGER_IGNORENPCS		= 0x02,
-		TRIGGER_IGNOREPUSHABLES	= 0x04,
-		TRIGGER_IGNORETOUCH		= 0x08,
-		TRIGGER_IGNOREUSE		= 0x10,
-		TRIGGER_IGNOREALL		= 0x20,
-	};
-
 public:
 	DECLARE_CLASS( CTriggerBrush, CBaseEntity );
 
@@ -229,7 +232,7 @@ public:
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
 	// input filtering (use/touch/blocked)
-	bool PassesInputFilter( CBaseEntity *pOther, int filter );
+	bool PassesInputFilter( CBaseEntity *pOther, TriggerFilters_e filter );
 
 	// input functions
 	void InputEnable( inputdata_t &&inputdata )
@@ -249,8 +252,8 @@ public:
 	COutputEvent m_OnUse;
 
 	// data
-	int m_iInputFilter;
-	int m_iDontMessageParent;
+	TriggerFilters_e m_iInputFilter;
+	bool m_bDontMessageParent;
 
 	DECLARE_MAPENTITY();
 };
@@ -260,7 +263,7 @@ LINK_ENTITY_TO_CLASS( trigger_brush, CTriggerBrush );
 BEGIN_MAPENTITY( CTriggerBrush )
 
 	DEFINE_KEYFIELD_AUTO( m_iInputFilter, "InputFilter" ),
-	DEFINE_KEYFIELD_AUTO( m_iDontMessageParent, "DontMessageParent" ),
+	DEFINE_KEYFIELD_AUTO( m_bDontMessageParent, "DontMessageParent" ),
 
 	DEFINE_OUTPUT( m_OnStartTouch, "OnStartTouch" ),
 	DEFINE_OUTPUT( m_OnEndTouch, "OnEndTouch" ),
@@ -296,7 +299,7 @@ void CTriggerBrush::StartTouch( CBaseEntity *pOther )
 	if ( PassesInputFilter(pOther, m_iInputFilter) && !(m_iInputFilter & TRIGGER_IGNORETOUCH) )
 	{
 		m_OnStartTouch.FireOutput( pOther, this );
-		if ( !m_iDontMessageParent )
+		if ( !m_bDontMessageParent )
 			BaseClass::StartTouch( pOther );
 	}
 }
@@ -312,7 +315,7 @@ void CTriggerBrush::EndTouch( CBaseEntity *pOther )
 	{
 		m_OnEndTouch.FireOutput( pOther, this );
 
-		if ( !m_iDontMessageParent )
+		if ( !m_bDontMessageParent )
 			BaseClass::EndTouch( pOther );
 	}
 }
@@ -330,7 +333,7 @@ void CTriggerBrush::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE
 	if ( PassesInputFilter(pActivator, m_iInputFilter) && !(m_iInputFilter & TRIGGER_IGNOREUSE) )
 	{
 		m_OnUse.FireOutput( pActivator, this );
-		if ( !m_iDontMessageParent )
+		if ( !m_bDontMessageParent )
 		{
 			BaseClass::Use( pActivator, pCaller, useType, value );
 		}
@@ -344,9 +347,9 @@ void CTriggerBrush::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE
 //			filter - a field of standard filters (TriggerFilters_e)
 // Output : Returns true if the input passes, false if it should be ignored
 //-----------------------------------------------------------------------------
-bool CTriggerBrush::PassesInputFilter( CBaseEntity *pOther, int filter )
+bool CTriggerBrush::PassesInputFilter( CBaseEntity *pOther, TriggerFilters_e filter )
 {
-	if ( !filter )
+	if ( filter == TRIGGER_IGNORENONE )
 		return true;
 
 	// check for players

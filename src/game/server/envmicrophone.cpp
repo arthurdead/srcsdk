@@ -89,7 +89,13 @@ void CEnvMicrophone::Spawn(void)
 	//
 	// Build our sound type mask from our spawnflags.
 	//
-	static int nFlags[][2] =
+	struct SFToSound_t
+	{
+		SFMicrophone_t spawnflag;
+		int sound;
+	};
+
+	static SFToSound_t nFlags[] =
 	{
 		{ SF_MICROPHONE_SOUND_COMBAT,			SOUND_COMBAT },
 		{ SF_MICROPHONE_SOUND_WORLD,			SOUND_WORLD },
@@ -100,9 +106,9 @@ void CEnvMicrophone::Spawn(void)
 
 	for (int i = 0; i < sizeof(nFlags) / sizeof(nFlags[0]); i++)
 	{
-		if (m_spawnflags & nFlags[i][0])
+		if (HasSpawnFlags( nFlags[i].spawnflag ) )
 		{
-			m_nSoundMask |= nFlags[i][1];
+			m_nSoundMask |= nFlags[i].sound;
 		}
 	}
 
@@ -275,7 +281,7 @@ void CEnvMicrophone::InputSetVolumeScale( inputdata_t &&inputdata )
 //-----------------------------------------------------------------------------
 void CEnvMicrophone::InputSetChannel( inputdata_t &&inputdata )
 {
-	m_nChannel = inputdata.value.Int();
+	m_nChannel = (SoundChannel_t)inputdata.value.Int();
 }
 
 //-----------------------------------------------------------------------------
@@ -677,7 +683,7 @@ void CEnvMicrophone::OnSoundStopped( const char *soundname )
 // Output : Returns whether or not the sentence was swallowed by the microphone.
 //			Swallowed sentences should not be played by the sound system.
 //-----------------------------------------------------------------------------
-bool CEnvMicrophone::OnSentencePlayed( int entindex, int sentenceIndex, soundlevel_t soundlevel, float flVolume, int iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins )
+bool CEnvMicrophone::OnSentencePlayed( int entindex, int sentenceIndex, soundlevel_t soundlevel, float flVolume, SoundFlags_t iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins )
 {
 	bool bSwallowed = false;
 

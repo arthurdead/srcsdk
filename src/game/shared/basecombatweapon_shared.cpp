@@ -72,7 +72,7 @@ CSharedBaseCombatWeapon::CBaseCombatWeapon()
 	m_bReloadsSingly	= false;
 
 	// Defaults to zero
-	m_nViewModelIndex	= 0;
+	m_nViewModelIndex	= VIEWMODEL_WEAPON;
 
 	m_bFlipViewModel	= false;
 
@@ -197,7 +197,7 @@ void CSharedBaseCombatWeapon::Spawn( void )
 	SetGlobalFadeScale( 0.0f );
 
 	// Assume 
-	m_nViewModelIndex = 0;
+	m_nViewModelIndex = VIEWMODEL_WEAPON;
 
 	// Don't reset to default ammo if we're supposed to use the keyvalue
 	if (!HasSpawnFlags( SF_WEAPON_PRESERVE_AMMO ))
@@ -278,7 +278,7 @@ void CSharedBaseCombatWeapon::Precache( void )
 		if ( GetWpnData().szAmmo1[0] )
 		{
 			m_iPrimaryAmmoType = GetAmmoDef()->Index( GetWpnData().szAmmo1 );
-			if (m_iPrimaryAmmoType == -1)
+			if (m_iPrimaryAmmoType == AMMO_INVALID_INDEX)
 			{
 				Log_Error(LOG_WEAPONPARSE,"ERROR: Weapon (%s) using undefined primary ammo type (%s)\n",GetClassname(), GetWpnData().szAmmo1);
 			}
@@ -286,7 +286,7 @@ void CSharedBaseCombatWeapon::Precache( void )
 		if ( GetWpnData().szAmmo2[0] )
 		{
 			m_iSecondaryAmmoType = GetAmmoDef()->Index( GetWpnData().szAmmo2 );
-			if (m_iSecondaryAmmoType == -1)
+			if (m_iSecondaryAmmoType == AMMO_INVALID_INDEX)
 			{
 				Log_Error(LOG_WEAPONPARSE,"ERROR: Weapon (%s) using undefined secondary ammo type (%s)\n",GetClassname(),GetWpnData().szAmmo2);
 			}
@@ -410,7 +410,7 @@ const FileWeaponInfo_t &CSharedBaseCombatWeapon::GetWpnData( void ) const
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-const char *CSharedBaseCombatWeapon::GetViewModel( int /*viewmodelindex = 0 -- this is ignored in the base class here*/ ) const
+const char *CSharedBaseCombatWeapon::GetViewModel( viewmodelindex_t /*viewmodelindex = 0 -- this is ignored in the base class here*/ ) const
 {
 	return GetWpnData().szViewModel;
 }
@@ -728,7 +728,7 @@ bool CSharedBaseCombatWeapon::CanBeSelected( void )
 bool CSharedBaseCombatWeapon::HasAmmo( void )
 {
 	// Weapons with no ammo types can always be selected
-	if ( m_iPrimaryAmmoType == -1 && m_iSecondaryAmmoType == -1  )
+	if ( m_iPrimaryAmmoType == AMMO_INVALID_INDEX && m_iSecondaryAmmoType == AMMO_INVALID_INDEX  )
 		return true;
 	if ( GetWeaponFlags() & ITEM_FLAG_SELECTONEMPTY )
 		return true;
@@ -898,7 +898,7 @@ void CSharedBaseCombatWeapon::OnPickedUp( CSharedBaseCombatCharacter *pNewOwner 
 //			&tr - 
 //			iTracerType - 
 //-----------------------------------------------------------------------------
-void CSharedBaseCombatWeapon::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType )
+void CSharedBaseCombatWeapon::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, AmmoTracer_t iTracerType )
 {
 	CSharedBaseEntity *pOwner = GetOwner();
 
@@ -1271,9 +1271,9 @@ int CSharedBaseCombatWeapon::UpdateClientData( CSharedBasePlayer *pPlayer )
 // Purpose: 
 // Input  : index - 
 //-----------------------------------------------------------------------------
-void CSharedBaseCombatWeapon::SetViewModelIndex( int index )
+void CSharedBaseCombatWeapon::SetViewModelIndex( viewmodelindex_t index )
 {
-	Assert( index >= 0 && index < MAX_VIEWMODELS );
+	Assert( (unsigned char)index < (unsigned char)MAX_VIEWMODELS );
 	m_nViewModelIndex = index;
 }
 
@@ -1281,14 +1281,14 @@ void CSharedBaseCombatWeapon::SetViewModelIndex( int index )
 // Purpose: 
 // Input  : iActivity - 
 //-----------------------------------------------------------------------------
-void CSharedBaseCombatWeapon::SendViewModelAnim( int nSequence )
+void CSharedBaseCombatWeapon::SendViewModelAnim( sequence_t nSequence )
 {
 #if defined( CLIENT_DLL )
 	if ( !IsPredicted() )
 		return;
 #endif
 	
-	if ( nSequence < 0 )
+	if ( nSequence == INVALID_SEQUENCE )
 		return;
 
 	CSharedBasePlayer *pOwner = ToBasePlayer( GetOwner() );
@@ -1371,10 +1371,18 @@ void CSharedBaseCombatWeapon::SetViewModel()
 //-----------------------------------------------------------------------------
 bool CSharedBaseCombatWeapon::SendWeaponAnim( Activity iActivity )
 {
+	MDLCACHE_CRITICAL_SECTION();
+	sequence_t	idealSequence = SelectWeightedSequence( iActivity );
+
+	return SendWeaponAnim( idealSequence, iActivity );
+}
+
+bool CSharedBaseCombatWeapon::SendWeaponAnim( sequence_t nSequence, Activity iActivity )
+{
 	//iActivity = TranslateViewmodelHandActivity( (Activity)iActivity );
 
 	//For now, just set the ideal activity and be done with it
-	return SetIdealActivity( (Activity) iActivity );
+	return SetIdealSequence( nSequence, iActivity );
 }
 
 //====================================================================================
@@ -1454,7 +1462,7 @@ bool CSharedBaseCombatWeapon::HasSecondaryAmmo( void )
 //-----------------------------------------------------------------------------
 bool CSharedBaseCombatWeapon::UsesPrimaryAmmo( void )
 {
-	if ( m_iPrimaryAmmoType < 0 )
+	if ( m_iPrimaryAmmoType == AMMO_INVALID_INDEX )
 		return false;
 	return true;
 }
@@ -1464,7 +1472,7 @@ bool CSharedBaseCombatWeapon::UsesPrimaryAmmo( void )
 //-----------------------------------------------------------------------------
 bool CSharedBaseCombatWeapon::UsesSecondaryAmmo( void )
 {
-	if ( m_iSecondaryAmmoType < 0 )
+	if ( m_iSecondaryAmmoType == AMMO_INVALID_INDEX )
 		return false;
 	return true;
 }
@@ -2173,7 +2181,8 @@ bool CSharedBaseCombatWeapon::DefaultReload( int iClipSize1, int iClipSize2, Act
 	MDLCACHE_CRITICAL_SECTION();
 	float flSequenceEndTime = gpGlobals->curtime + SequenceDuration();
 	pOwner->SetNextAttack( flSequenceEndTime );
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = flSequenceEndTime;
+	m_flNextPrimaryAttack = flSequenceEndTime;
+	m_flNextSecondaryAttack = flSequenceEndTime;
 
 	m_bInReload = true;
 
@@ -2578,8 +2587,18 @@ bool CSharedBaseCombatWeapon::SetIdealActivity( Activity ideal )
 	MDLCACHE_CRITICAL_SECTION();
 	sequence_t	idealSequence = SelectWeightedSequence( ideal );
 
+	return SetIdealSequence( idealSequence, ideal );
+}
+
+bool CSharedBaseCombatWeapon::SetIdealSequence( sequence_t idealSequence, Activity ideal )
+{
+	MDLCACHE_CRITICAL_SECTION();
+
 	if ( idealSequence == INVALID_SEQUENCE )
 		return false;
+
+	if ( ideal == ACT_INVALID )
+		ideal = GetSequenceActivity( idealSequence );
 
 	//Take the new activity
 	m_IdealActivity	 = ideal;

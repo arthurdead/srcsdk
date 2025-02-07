@@ -49,11 +49,11 @@ public:
 	}
 
 	// Input handlers
-	void InputSetTargetPlane( inputdata_t &&inputdata ) { m_hTargetPlane = inputdata.value.Entity(); if (m_hTargetPlane) { m_target = m_hTargetPlane->GetEntityName(); } }
-	void InputSetTargetPlaneAngle( inputdata_t &&inputdata ) { Vector vec; inputdata.value.Vector3D(vec); m_PlaneAngles.Init(vec.x, vec.y, vec.z); }
+	void InputSetTargetPlane( inputdata_t &&inputdata ) { m_hTargetPlane = inputdata.value.EntityH(); if (m_hTargetPlane) { m_target = m_hTargetPlane->GetEntityName(); } }
+	void InputSetTargetPlaneAngle( inputdata_t &&inputdata ) { Vector vec = inputdata.value.Vector3D(); m_PlaneAngles.Init(vec.x, vec.y, vec.z); }
 	void InputSetSkyMode( inputdata_t &&inputdata ) { m_iSkyMode = inputdata.value.Int(); }
 	void InputSetRenderTarget( inputdata_t &&inputdata ) { m_iszRenderTarget = inputdata.value.StringID(); }
-	void InputSetFogController( inputdata_t &&inputdata ) { m_hFogController = inputdata.value.Entity(); if (m_hFogController) { m_iszFogController = m_hFogController->GetEntityName(); } }
+	void InputSetFogController( inputdata_t &&inputdata ) { m_hFogController = inputdata.value.EntityH(); if (m_hFogController) { m_iszFogController = m_hFogController->GetEntityName(); } }
 	void InputSetScale( inputdata_t &&inputdata ) { m_flScale = inputdata.value.Float(); }
 
 private:

@@ -13,8 +13,13 @@
 #include "baseentity.h"
 #include "playernet_vars.h"
 
-#define SF_SKY_MASTER (1 << 0)
-#define SF_SKY_START_UPDATING (1 << 1)
+enum SFSkyCam_t : unsigned char
+{
+	SF_SKY_MASTER = (1 << 0),
+	SF_SKY_START_UPDATING = (1 << 1),
+};
+
+FLAGENUM_OPERATORS( SFSkyCam_t, unsigned char )
 
 //=============================================================================
 //
@@ -31,6 +36,8 @@ public:
 	~CSkyCamera();
 	virtual void Spawn( void );
 	virtual void Activate();
+
+	DECLARE_SPAWNFLAGS( SFSkyCam_t )
 
 	bool AcceptInput( const char *szInputName, CBaseEntity *pActivator, CBaseEntity *pCaller, variant_t &&Value, int outputID );
 

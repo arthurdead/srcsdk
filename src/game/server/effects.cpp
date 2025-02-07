@@ -38,18 +38,35 @@
 
 extern ConVarBase *violence_hgibs;
 
-#define SF_FUNNEL_REVERSE			1 // funnel effect repels particles instead of attracting them.
-#define SF_FUNNEL_DONT_REMOVE		2
+enum SFFunnel_t : unsigned char
+{
+	SF_FUNNEL_REVERSE =			1, // funnel effect repels particles instead of attracting them.
+	SF_FUNNEL_DONT_REMOVE =		2,
+};
 
-#define	SF_GIBSHOOTER_REPEATABLE	(1<<0)	// allows a gibshooter to be refired
-#define	SF_SHOOTER_FLAMING			(1<<1)	// gib is on fire
-#define SF_SHOOTER_STRICT_REMOVE	(1<<2)	// remove this gib even if it is in the player's view
+FLAGENUM_OPERATORS( SFFunnel_t, unsigned char )
+
+enum SFShooter_t : unsigned char
+{
+	SF_SHOOTER_REPEATABLE =	(1<<0),	// allows a gibshooter to be refired
+	SF_SHOOTER_FLAMING =			(1<<1),	// gib is on fire
+	SF_SHOOTER_STRICT_REMOVE =	(1<<2),	// remove this gib even if it is in the player's view
+};
+
+enum SFBubbles_t : unsigned char
+{
+	SF_BUBBLES_STARTOFF =		0x0001,
+};
+
+FLAGENUM_OPERATORS( SFBubbles_t, unsigned char )
 
 // UNDONE: This should be client-side and not use TempEnts
 class CBubbling : public CBaseEntity
 {
 public:
 	DECLARE_CLASS( CBubbling, CBaseEntity );
+
+	DECLARE_SPAWNFLAGS( SFBubbles_t )
 
 	virtual  void	Spawn( void );
 	virtual void	Precache( void );
@@ -95,10 +112,6 @@ BEGIN_MAPENTITY( CBubbling )
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetFrequency", InputSetFrequency ),
 
 END_MAPENTITY()
-
-
-
-#define SF_BUBBLES_STARTOFF		0x0001
 
 void CBubbling::Spawn( void )
 {
@@ -308,7 +321,7 @@ void CEnvTracer::TracerThink( void )
 //#################################################################################
 //  >> CGibShooter
 //#################################################################################
-enum GibSimulation_t
+enum GibSimulation_t : unsigned char
 {
 	GIB_SIMULATE_POINT,
 	GIB_SIMULATE_PHYSICS,
@@ -319,6 +332,8 @@ class CGibShooter : public CBaseEntity
 {
 public:
 	DECLARE_CLASS( CGibShooter, CBaseEntity );
+
+	DECLARE_SPAWNFLAGS( SFShooter_t )
 
 	void Spawn( void );
 	void Precache( void );
@@ -345,7 +360,7 @@ protected:
 	float	m_flGibAngVelocity;
 	float	m_flVariance;
 	float	m_flGibLife;
-	int		m_nSimulationType;
+	GibSimulation_t		m_nSimulationType;
 	int		m_nMaxGibModelFrame;
 	float	m_flDelay;
 
@@ -597,7 +612,7 @@ void CGibShooter::ShootThink ( void )
 
 	if ( --m_iGibs <= 0 )
 	{
-		if ( HasSpawnFlags(SF_GIBSHOOTER_REPEATABLE) )
+		if ( HasSpawnFlags(SF_SHOOTER_REPEATABLE) )
 		{
 			m_iGibs = m_iGibCapacity;
 			SetThink ( NULL );
@@ -864,7 +879,7 @@ CBaseEntity *CRotorWashShooter::DoWashPush( float flWashStartTime, const Vector 
 
 	if ( --m_iGibs <= 0 )
 	{
-		if ( HasSpawnFlags(SF_GIBSHOOTER_REPEATABLE) )
+		if ( HasSpawnFlags(SF_SHOOTER_REPEATABLE) )
 		{
 			m_iGibs = m_iGibCapacity;
 		}
@@ -878,6 +893,18 @@ CBaseEntity *CRotorWashShooter::DoWashPush( float flWashStartTime, const Vector 
 	return pGib;
 }
 
+enum SFBlood_t : unsigned char
+{
+	SF_BLOOD_RANDOM =		0x0001,
+	SF_BLOOD_STREAM =		0x0002,
+	SF_BLOOD_PLAYER =		0x0004,
+	SF_BLOOD_DECAL =		0x0008,
+	SF_BLOOD_CLOUD =		0x0010,
+	SF_BLOOD_DROPS =		0x0020,
+	SF_BLOOD_GORE =		0x0040,
+};
+
+FLAGENUM_OPERATORS( SFBlood_t, unsigned char )
 
 // Blood effects
 class CBlood : public CPointEntity
@@ -885,14 +912,16 @@ class CBlood : public CPointEntity
 public:
 	DECLARE_CLASS( CBlood, CPointEntity );
 
+	DECLARE_SPAWNFLAGS( SFBlood_t )
+
 	void	Precache();
 	void	Spawn( void );
 	bool	KeyValue( const char *szKeyName, const char *szValue );
 
-	inline	int		Color( void ) { return m_Color; }
+	inline	BloodColor_t		Color( void ) { return m_Color; }
 	inline	float 	BloodAmount( void ) { return m_flAmount; }
 
-	inline	void SetColor( int color ) { m_Color = color; }
+	inline	void SetColor( BloodColor_t color ) { m_Color = color; }
 
 	// Input handlers
 	void InputEmitBlood( inputdata_t &&inputdata );
@@ -904,7 +933,7 @@ public:
 
 	Vector m_vecSprayDir;
 	float m_flAmount;
-	int m_Color;
+	BloodColor_t m_Color;
 
 private:
 };
@@ -919,15 +948,6 @@ BEGIN_MAPENTITY( CBlood )
 	DEFINE_INPUTFUNC( FIELD_VOID, "EmitBlood", InputEmitBlood ),
 
 END_MAPENTITY()
-
-
-#define SF_BLOOD_RANDOM		0x0001
-#define SF_BLOOD_STREAM		0x0002
-#define SF_BLOOD_PLAYER		0x0004
-#define SF_BLOOD_DECAL		0x0008
-#define SF_BLOOD_CLOUD		0x0010
-#define SF_BLOOD_DROPS		0x0020
-#define SF_BLOOD_GORE		0x0040
 
 //-----------------------------------------------------------------------------
 // Precache
@@ -1028,7 +1048,7 @@ void UTIL_BloodSprayPrecache()
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void UTIL_BloodSpray( const Vector &pos, const Vector &dir, int color, int amount, int flags )
+void UTIL_BloodSpray( const Vector &pos, const Vector &dir, BloodColor_t color, int amount, BloodSprayFlags_t flags )
 {
 	if( color == DONT_BLEED )
 		return;
@@ -1038,8 +1058,8 @@ void UTIL_BloodSpray( const Vector &pos, const Vector &dir, int color, int amoun
 	data.m_vOrigin = pos;
 	data.m_vNormal = dir;
 	data.m_flScale = (float)amount;
-	data.m_fFlags = flags;
-	data.m_nColor = color;
+	data.m_fFlags = (unsigned int)flags;
+	data.m_nColor = (unsigned char)color;
 
 	DispatchEffect( "bloodspray", data );
 }
@@ -1076,7 +1096,7 @@ void CBlood::InputEmitBlood( inputdata_t &&inputdata )
 	//
 	if ( HasSpawnFlags( SF_BLOOD_CLOUD | SF_BLOOD_DROPS | SF_BLOOD_GORE ) )
 	{
-		int nFlags = 0;
+		BloodSprayFlags_t nFlags = FX_BLOODSPRAY_NONE;
 		if (HasSpawnFlags(SF_BLOOD_CLOUD))
 		{
 			nFlags |= FX_BLOODSPRAY_CLOUD;
@@ -1122,6 +1142,8 @@ class CEnvFunnel : public CBaseEntity
 	DECLARE_MAPENTITY();
 public:
 	DECLARE_CLASS( CEnvFunnel, CBaseEntity );
+
+	DECLARE_SPAWNFLAGS( SFFunnel_t )
 
 	void	Spawn( void );
 	void	Precache( void );
@@ -1603,14 +1625,21 @@ void CEnvWind::WindThink( void )
 // CEmbers
 //==================================================
 
-#define	bitsSF_EMBERS_START_ON	0x00000001
-#define	bitsSF_EMBERS_TOGGLE	0x00000002
+enum SFEmbers_t : unsigned char
+{
+	SF_EMBERS_START_ON =	0x00000001,
+	SF_EMBERS_TOGGLE =	0x00000002,
+};
+
+FLAGENUM_OPERATORS( SFEmbers_t, unsigned char )
 
 // UNDONE: This is a brush effect-in-volume entity, move client side.
 class CEmbers : public CBaseEntity
 {
 public:
 	DECLARE_CLASS( CEmbers, CBaseEntity );
+
+	DECLARE_SPAWNFLAGS( SFEmbers_t )
 
 	void	Spawn( void );
 	void	Precache( void );
@@ -1662,7 +1691,7 @@ void CEmbers::Spawn( void )
 	SetUse( &CEmbers::EmberUse );
 
 	//Start off if we're targetted (unless flagged)
-	m_bEmit = ( HasSpawnFlags( bitsSF_EMBERS_START_ON ) || ( !GetEntityName() ) );
+	m_bEmit = ( HasSpawnFlags( SF_EMBERS_START_ON ) || ( !GetEntityName() ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -1682,7 +1711,7 @@ void CEmbers::Precache( void )
 void CEmbers::EmberUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
 	//If we're not toggable, only allow one use
-	if ( !HasSpawnFlags( bitsSF_EMBERS_TOGGLE ) )
+	if ( !HasSpawnFlags( SF_EMBERS_TOGGLE ) )
 	{
 		SetUse( NULL );
 	}
@@ -1876,13 +1905,21 @@ void CEnvMuzzleFlash::InputFire( inputdata_t &&inputdata )
 //=========================================================
 // Splash!
 //=========================================================
-#define SF_ENVSPLASH_FINDWATERSURFACE	0x00000001
-#define SF_ENVSPLASH_DIMINISH			0x00000002
+
+enum SFEnvSplash_t : unsigned char
+{
+	SF_ENVSPLASH_FINDWATERSURFACE =	0x00000001,
+	SF_ENVSPLASH_DIMINISH =			0x00000002,
+};
+
+FLAGENUM_OPERATORS( SFEnvSplash_t, unsigned char )
+
 class CEnvSplash : public CPointEntity
 {
-	DECLARE_CLASS( CEnvSplash, CPointEntity );
-
 public:
+	DECLARE_CLASS( CEnvSplash, CPointEntity );
+	DECLARE_SPAWNFLAGS( SFEnvSplash_t )
+
 	virtual void Precache();
 	virtual void Spawn();
 	// Input handlers
@@ -2249,7 +2286,7 @@ LINK_ENTITY_TO_CLASS( env_quadraticbeam, CEnvQuadraticBeam );
 IMPLEMENT_SERVERCLASS_ST( CEnvQuadraticBeam, DT_QuadraticBeam )
 	SendPropVector(SENDINFO(m_targetPosition), -1, SPROP_COORD),
 	SendPropVector(SENDINFO(m_controlPosition), -1, SPROP_COORD),
-	SendPropFloat(SENDINFO(m_scrollRate), 8, 0, -4, 4),
+	SendPropFloat(SENDINFO(m_scrollRate), 8, SPROP_NONE, -4, 4),
 	SendPropFloat(SENDINFO(m_flWidth), -1, SPROP_NOSCALE),
 END_SEND_TABLE()
 
@@ -2285,12 +2322,21 @@ void EffectsPrecache( void *pUser )
 
 PRECACHE_REGISTER_FN( EffectsPrecache );
 
+enum SFViewPunch_t : unsigned char
+{
+	SF_PUNCH_EVERYONE =	0x0001,		// Don't check radius
+	SF_PUNCH_IN_AIR =		0x0002,		// Punch players in air
+};
+
+FLAGENUM_OPERATORS( SFViewPunch_t, unsigned char )
 
 class CEnvViewPunch : public CPointEntity
 {
 public:
 
 	DECLARE_CLASS( CEnvViewPunch, CPointEntity );
+
+	DECLARE_SPAWNFLAGS( SFViewPunch_t )
 
 	virtual void Spawn();
 
@@ -2318,10 +2364,6 @@ BEGIN_MAPENTITY( CEnvViewPunch )
 
 END_MAPENTITY()
 
-#define SF_PUNCH_EVERYONE	0x0001		// Don't check radius
-#define SF_PUNCH_IN_AIR		0x0002		// Punch players in air
-
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void CEnvViewPunch::Spawn( void )
@@ -2329,7 +2371,7 @@ void CEnvViewPunch::Spawn( void )
 	SetSolid( SOLID_NONE );
 	SetMoveType( MOVETYPE_NONE );
 
-	if ( GetSpawnFlags() & SF_PUNCH_EVERYONE )
+	if ( HasSpawnFlags( SF_PUNCH_EVERYONE ) )
 	{
 		m_flRadius = 0;
 	}

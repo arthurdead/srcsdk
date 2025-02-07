@@ -29,6 +29,8 @@ class CChoreoEvent;
 class CChoreoScene;
 class CChoreoActor;
 struct flexsettinghdr_t;
+enum animlayerindex_t : unsigned char;
+enum sequence_t : unsigned short;
 
 //-----------------------------------------------------------------------------
 // Purpose: One of a number of currently playing scene events for this actor
@@ -59,6 +61,9 @@ public:
 	// FIXME: Evil, make accessors or figure out better place
 	// FIXME: This won't work, scenes don't save and restore...
 	animlayerindex_t						m_iLayer;
+
+	bool m_bDeferred;
+
 	int						m_iPriority;
 	sequence_t						m_nSequence;
 	bool					m_bIsGesture;

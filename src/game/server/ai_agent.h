@@ -24,7 +24,7 @@ void DevMsg( CAI_Agent *pAI, unsigned flags, const char *pszFormat, ... );
 void DevMsg( CAI_Agent *pAI, const char *pszFormat, ... );
 
 typedef CBitVec<MAX_CONDITIONS> CAI_ScheduleBits;
-
+enum DebugOverlayBits_t : uint64;
 
 //=============================================================================
 //
@@ -331,7 +331,7 @@ public:
 	// -----------------------------
 	//  Debuging Fields and Methods
 	// -----------------------------
-	int					m_AgentDebugOverlays;
+	DebugOverlayBits_t					m_AgentDebugOverlays;
 	Vector				m_vecAgentDebugOverlaysPos;
 	const char*			m_failText;					// Text of why it failed
 	const char*			m_interruptText;			// Text of why schedule interrupted
@@ -341,7 +341,7 @@ public:
 	void 				DumpTaskTimings();
 	virtual int			DrawDebugTextOverlays( int text_offset );
 	void		 EntityText( int text_offset, const char *text, float flDuration, int r = 255, int g = 255, int b = 255, int a = 255 );
-	int GetDebugOverlayFlags() {return m_AgentDebugOverlays;}
+	DebugOverlayBits_t GetDebugOverlayFlags() {return m_AgentDebugOverlays;}
 	string_t GetEntityName() { return NULL_STRING; }
 };
 

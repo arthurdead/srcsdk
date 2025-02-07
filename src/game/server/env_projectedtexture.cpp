@@ -213,7 +213,7 @@ void CEnvProjectedTexture::InputSetFOV( inputdata_t &&inputdata )
 
 void CEnvProjectedTexture::InputSetTarget( inputdata_t &&inputdata )
 {
-	m_hTargetEntity = inputdata.value.Entity();
+	m_hTargetEntity = inputdata.value.EntityH();
 }
 
 void CEnvProjectedTexture::InputSetCameraSpace( inputdata_t &&inputdata )
@@ -260,7 +260,7 @@ void CEnvProjectedTexture::Spawn( void )
 
 void CEnvProjectedTexture::Activate( void )
 {
-	if ( GetSpawnFlags() & ENV_PROJECTEDTEXTURE_STARTON )
+	if ( HasSpawnFlags( ENV_PROJECTEDTEXTURE_STARTON ) )
 	{
 		m_bState = true;
 	}

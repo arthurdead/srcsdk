@@ -34,6 +34,17 @@ public:
 	Vector  m_force;
 };
 
+enum SFShake_t : unsigned char
+{
+	SF_SHAKE_EVERYONE =	0x0001,		// Don't check radius
+	SF_SHAKE_INAIR =		0x0004,		// Shake players in air
+	SF_SHAKE_PHYSICS =	0x0008,		// Shake physically (not just camera)
+	SF_SHAKE_ROPES =		0x0010,		// Shake ropes too.
+	SF_SHAKE_NO_VIEW =	0x0020,		// DON'T shake the view (only ropes and/or physics objects)
+	SF_SHAKE_NO_RUMBLE =	0x0040,		// DON'T Rumble the XBox Controller
+};
+
+FLAGENUM_OPERATORS( SFShake_t, unsigned char )
 
 class CEnvShake : public CPointEntity
 {
@@ -55,6 +66,8 @@ private:
 
 public:
 	DECLARE_CLASS( CEnvShake, CPointEntity );
+
+	DECLARE_SPAWNFLAGS( SFShake_t )
 
 	virtual ~CEnvShake( void );
 	virtual void	Precache( void );
@@ -97,16 +110,6 @@ BEGIN_MAPENTITY( CEnvShake )
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "Frequency", InputFrequency ),
 
 END_MAPENTITY()
-
-
-
-#define SF_SHAKE_EVERYONE	0x0001		// Don't check radius
-#define SF_SHAKE_INAIR		0x0004		// Shake players in air
-#define SF_SHAKE_PHYSICS	0x0008		// Shake physically (not just camera)
-#define SF_SHAKE_ROPES		0x0010		// Shake ropes too.
-#define SF_SHAKE_NO_VIEW	0x0020		// DON'T shake the view (only ropes and/or physics objects)
-#define SF_SHAKE_NO_RUMBLE	0x0040		// DON'T Rumble the XBox Controller
-#define SF_TILT_EASE_INOUT	0x0080		// Ease in and out of the tilt
 
 //-----------------------------------------------------------------------------
 // Purpose: Destructor.
@@ -202,7 +205,7 @@ void CEnvShake::ApplyShake( ShakeCommand_t command )
 				extents.z = MAX(extents.z, 100);
 				Vector mins = GetAbsOrigin() - extents;
 				Vector maxs = GetAbsOrigin() + extents;
-				int count = UTIL_EntitiesInBox( list, 1024, mins, maxs, 0 );
+				int count = UTIL_EntitiesInBox( list, 1024, mins, maxs, FL_NO_ENTITY_FLAGS );
 
 				for ( int i = 0; i < count; i++ )
 				{
@@ -392,6 +395,19 @@ int CEnvShake::DrawDebugTextOverlays( void )
 
 static ConCommand shake("shake", CC_Shake, "Shake the screen.", FCVAR_CHEAT );
 
+enum SFTilt_t : unsigned char
+{
+	SF_TILT_NONE = 0,
+	SF_TILT_EVERYONE =	0x0001,		// Don't check radius
+	SF_TILT_INAIR =		0x0004,		// Shake players in air
+	SF_TILT_PHYSICS =	0x0008,		// Shake physically (not just camera)
+	SF_TILT_ROPES =		0x0010,		// Shake ropes too.
+	SF_TILT_NO_VIEW =	0x0020,		// DON'T shake the view (only ropes and/or physics objects)
+	SF_TILT_NO_RUMBLE =	0x0040,		// DON'T Rumble the XBox Controller
+	SF_TILT_EASE_INOUT =	0x0080,		// Ease in and out of the tilt
+};
+
+FLAGENUM_OPERATORS( SFTilt_t, unsigned char )
 
 // Tilt effect
 
@@ -407,6 +423,8 @@ private:
 
 public:
 	DECLARE_CLASS( CEnvShake, CPointEntity );
+
+	DECLARE_SPAWNFLAGS( SFTilt_t )
 
 	virtual void	Precache( void );
 	virtual void	Spawn( void );
@@ -454,7 +472,7 @@ QAngle CEnvTilt::TiltAngle( void )
 float CEnvTilt::Radius(bool bPlayers)
 {
 	// The radius for players is zero if SF_SHAKE_EVERYONE is set
-	if ( bPlayers && HasSpawnFlags(SF_SHAKE_EVERYONE))
+	if ( bPlayers && HasSpawnFlags(SF_TILT_EVERYONE))
 		return 0;
 	return m_Radius;
 }
@@ -475,12 +493,12 @@ void CEnvTilt::Spawn( void )
 	SetSolid( SOLID_NONE );
 	SetMoveType( MOVETYPE_NONE );
 
-	if ( GetSpawnFlags() & SF_SHAKE_EVERYONE )
+	if ( HasSpawnFlags( SF_TILT_EVERYONE ) )
 	{
 		m_Radius = 0;
 	}
 
-	if ( HasSpawnFlags( SF_SHAKE_NO_VIEW ) && !HasSpawnFlags( SF_SHAKE_PHYSICS ) && !HasSpawnFlags( SF_SHAKE_ROPES ) )
+	if ( HasSpawnFlags( SF_TILT_NO_VIEW ) && !HasSpawnFlags( SF_TILT_PHYSICS ) && !HasSpawnFlags( SF_TILT_ROPES ) )
 	{
 		DevWarning( "env_shake %s with \"Don't shake view\" spawnflag set without \"Shake physics\" or \"Shake ropes\" spawnflags set.", GetDebugName() );
 	}
@@ -492,9 +510,9 @@ void CEnvTilt::Spawn( void )
 //-----------------------------------------------------------------------------
 void CEnvTilt::ApplyTilt( ShakeCommand_t command )
 {
-	if ( !HasSpawnFlags( SF_SHAKE_NO_VIEW ) || !HasSpawnFlags( SF_SHAKE_NO_RUMBLE ) )
+	if ( !HasSpawnFlags( SF_TILT_NO_VIEW ) || !HasSpawnFlags( SF_TILT_NO_RUMBLE ) )
 	{
-		UTIL_ScreenTilt( GetAbsOrigin(), TiltAngle(), Duration(), Radius(), TiltTime(), command, (GetSpawnFlags() & SF_TILT_EASE_INOUT) != 0 );
+		UTIL_ScreenTilt( GetAbsOrigin(), TiltAngle(), Duration(), Radius(), TiltTime(), command, HasSpawnFlags(SF_TILT_EASE_INOUT) );
 	}
 }
 
@@ -504,11 +522,11 @@ void CEnvTilt::ApplyTilt( ShakeCommand_t command )
 //-----------------------------------------------------------------------------
 void CEnvTilt::InputStartTilt( inputdata_t &&inputdata )
 {
-	if ( HasSpawnFlags( SF_SHAKE_NO_RUMBLE ) )
+	if ( HasSpawnFlags( SF_TILT_NO_RUMBLE ) )
 	{
 		ApplyTilt( SHAKE_START_NORUMBLE );
 	}
-	else if ( HasSpawnFlags( SF_SHAKE_NO_VIEW ) )
+	else if ( HasSpawnFlags( SF_TILT_NO_VIEW ) )
 	{
 		ApplyTilt( SHAKE_START_RUMBLEONLY );
 	}

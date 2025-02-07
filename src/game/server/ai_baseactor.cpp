@@ -366,21 +366,21 @@ bool CAI_BaseActor::StartSceneEvent( CSceneEventInfo *info, CChoreoScene *scene,
 						variant_t variant;
 						if (bParameter && sParameter[0])
 						{
-							const char *strParam = sParameter;
-							if (strParam[0] == '!')
+							string_t strParam = NULL_STRING;
+							if (sParameter[0] == '!')
 							{
-								CBaseEntity *pParamEnt = UTIL_FindNamedSceneEntity(strParam, this, pSceneEnt);
-								if (pParamEnt && pParamEnt->GetEntityName() != NULL_STRING && !gEntList.FindEntityProcedural(strParam))
+								CBaseEntity *pParamEnt = UTIL_FindNamedSceneEntity(sParameter, this, pSceneEnt);
+								if (pParamEnt && pParamEnt->GetEntityName() != NULL_STRING && !gEntList.FindEntityProcedural(sParameter))
 								{
 									// We make sure it's a scene entity that can't be found with entlist procedural so we can translate !target# without messing with !activators, etc.
 									//const char *newname = pParamEnt->GetEntityName().ToCStr();
-									strParam = pParamEnt->GetEntityName().ToCStr();
+									strParam = pParamEnt->GetEntityName();
 								}
 							}
 
-							if (strParam)
+							if (strParam != NULL_STRING)
 							{
-								variant.SetString(MAKE_STRING(strParam));
+								variant.SetStringT(strParam);
 							}
 						}
 

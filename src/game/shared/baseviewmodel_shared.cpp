@@ -52,7 +52,7 @@ CSharedBaseViewModel::CBaseViewModel()
 	// Prefix of the animations that should be used by the player carrying this weapon
 	m_sAnimationPrefix	= NULL_STRING;
 
-	m_nViewModelIndex	= 0;
+	m_nViewModelIndex	= VIEWMODEL_WEAPON;
 
 	m_nAnimationParity	= 0;
 
@@ -259,16 +259,16 @@ void CSharedBaseViewModel::SetOwner( CSharedBaseEntity *pEntity )
 // Purpose: 
 // Input  : nIndex - 
 //-----------------------------------------------------------------------------
-void CSharedBaseViewModel::SetIndex( int nIndex )
+void CSharedBaseViewModel::SetIndex( viewmodelindex_t nIndex )
 {
+	Assert( (unsigned char)nIndex < (unsigned char)MAX_VIEWMODELS );
 	m_nViewModelIndex = nIndex;
-	Assert( m_nViewModelIndex < (1 << VIEWMODEL_INDEX_BITS) );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CSharedBaseViewModel::ViewModelIndex( ) const
+viewmodelindex_t CSharedBaseViewModel::ViewModelIndex( ) const
 {
 	return m_nViewModelIndex;
 }
@@ -587,7 +587,7 @@ BEGIN_NETWORK_TABLE_NOBASE(CSharedBaseViewModel, DT_BaseViewModel)
 	SendPropInt( SENDINFO( m_nResetEventsParity ), EF_PARITY_BITS, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO( m_nMuzzleFlashParity ), EF_MUZZLEFLASH_BITS, SPROP_UNSIGNED ),
 
-	//SendPropArray	(SendPropFloat(SENDINFO_ARRAY(m_flPoseParameter),	8, 0, 0.0f, 1.0f), m_flPoseParameter),
+	//SendPropArray	(SendPropFloat(SENDINFO_ARRAY(m_flPoseParameter),	8, SPROP_NONE, 0.0f, 1.0f), m_flPoseParameter),
 #else
 	RecvPropInt		(RECVINFO(m_nModelIndex)),
 	RecvPropInt		(RECVINFO(m_nSkin)),

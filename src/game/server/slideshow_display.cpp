@@ -133,8 +133,8 @@ IMPLEMENT_SERVERCLASS_ST( CSlideshowDisplay, DT_SlideshowDisplay )
 	SendPropString( SENDINFO( m_szDisplayText ) ),
 	SendPropString( SENDINFO( m_szSlideshowDirectory ) ),
 	SendPropArray3( SENDINFO_ARRAY3(m_chCurrentSlideLists), SendPropInt( SENDINFO_ARRAY(m_chCurrentSlideLists), 8, SPROP_UNSIGNED ) ),
-	SendPropFloat( SENDINFO(m_fMinSlideTime), 11, 0, 0.0f, 20.0f ),
-	SendPropFloat( SENDINFO(m_fMaxSlideTime), 11, 0, 0.0f, 20.0f ),
+	SendPropFloat( SENDINFO(m_fMinSlideTime), 11, SPROP_NONE, 0.0f, 20.0f ),
+	SendPropFloat( SENDINFO(m_fMaxSlideTime), 11, SPROP_NONE, 0.0f, 20.0f ),
 	SendPropInt( SENDINFO(m_iCycleType), 2, SPROP_UNSIGNED ),
 	SendPropBool( SENDINFO(m_bNoListRepeats) ),
 END_SEND_TABLE()

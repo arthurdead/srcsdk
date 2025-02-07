@@ -11,6 +11,17 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+enum SFFade_t : unsigned char
+{
+	SF_FADE_IN =				0x0001,		// Fade in, not out
+	SF_FADE_MODULATE =		0x0002,		// Modulate, don't blend
+	SF_FADE_ONLYONE =			0x0004,
+	SF_FADE_STAYOUT =			0x0008,
+	SF_FADE_DONT_PURGE =		0x0016,
+};
+
+FLAGENUM_OPERATORS( SFFade_t, unsigned char )
+
 class CEnvFade : public CLogicalEntity
 {
 private:
@@ -25,6 +36,8 @@ private:
 
 public:
 	DECLARE_CLASS( CEnvFade, CLogicalEntity );
+
+	DECLARE_SPAWNFLAGS( SFFade_t )
 
 	virtual void Spawn( void );
 
@@ -55,14 +68,6 @@ BEGIN_MAPENTITY( CEnvFade )
 	DEFINE_OUTPUT( m_OnBeginFade, "OnBeginFade"),
 
 END_MAPENTITY()
-
-
-
-#define SF_FADE_IN				0x0001		// Fade in, not out
-#define SF_FADE_MODULATE		0x0002		// Modulate, don't blend
-#define SF_FADE_ONLYONE			0x0004
-#define SF_FADE_STAYOUT			0x0008
-#define SF_FADE_DONT_PURGE		0x0016
 
 //-----------------------------------------------------------------------------
 // Purpose: 

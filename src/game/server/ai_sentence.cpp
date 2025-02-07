@@ -71,7 +71,7 @@ void CAI_SentenceBase::UpdateSentenceQueue()
 
 	if ( GetOuter()->FOkToMakeSound( m_nQueueSoundPriority ) )
 	{
-		SENTENCEG_PlaySentenceIndex( GetOuter()->edict(), m_nQueuedSentenceIndex, GetVolume(), GetSoundLevel(), 0, GetVoicePitch() );
+		SENTENCEG_PlaySentenceIndex( GetOuter()->edict(), m_nQueuedSentenceIndex, GetVolume(), GetSoundLevel(), SND_NOFLAGS, GetVoicePitch() );
 
 		const char *pSentenceName = engine->SentenceNameFromIndex( m_nQueuedSentenceIndex ); 
 		SentenceMsg( "Speaking [from QUEUE]", pSentenceName );
@@ -119,7 +119,7 @@ bool CAI_SentenceBase::MatchesCriteria( SentenceCriteria_t nCriteria )
 //-----------------------------------------------------------------------------
 int CAI_SentenceBase::PlaySentence( const char *pSentence )
 {
-	int nSentenceIndex = SENTENCEG_PlayRndSz( GetOuter()->edict(), pSentence, GetVolume(), GetSoundLevel(), 0, GetVoicePitch());
+	int nSentenceIndex = SENTENCEG_PlayRndSz( GetOuter()->edict(), pSentence, GetVolume(), GetSoundLevel(), SND_NOFLAGS, GetVoicePitch());
 	if ( nSentenceIndex < 0 )
 	{
 		SentenceMsg( "BOGUS", pSentence );

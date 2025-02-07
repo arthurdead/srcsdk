@@ -470,7 +470,7 @@ int			UTIL_EntityInSolid( CBaseEntity *ent );
 
 bool		UTIL_IsMasterTriggered	(string_t sMaster, CBaseEntity *pActivator);
 void		UTIL_BloodStream( const Vector &origin, const Vector &direction, BloodColor_t color, int amount );
-void		UTIL_BloodSpray( const Vector &pos, const Vector &dir, BloodColor_t color, int amount, int flags );
+void		UTIL_BloodSpray( const Vector &pos, const Vector &dir, BloodColor_t color, int amount, BloodSprayFlags_t flags );
 void		UTIL_BloodSprayPrecache();
 Vector		UTIL_RandomBloodVector( void );
 void		UTIL_ImpactTrace( trace_t *pTrace, DamageTypes_t iDamageType, const char *pCustomImpactName = NULL );
@@ -626,23 +626,35 @@ float UTIL_ScaleForGravity( float desiredGravity );
 #define LFO_TRIANGLE		2
 #define LFO_RANDOM			3
 
-// func_rotating
-#define SF_BRUSH_ROTATE_Y_AXIS		0
-#define SF_BRUSH_ROTATE_START_ON	1
-#define SF_BRUSH_ROTATE_BACKWARDS	2
-#define SF_BRUSH_ROTATE_Z_AXIS		4
-#define SF_BRUSH_ROTATE_X_AXIS		8
-#define SF_BRUSH_ROTATE_CLIENTSIDE	1024
-
 // brought over from bmodels.cpp
-#define	SF_BRUSH_ACCDCC					16	// brush should accelerate and decelerate when toggled
-#define	SF_BRUSH_HURT					32	// rotating brush that inflicts pain based on rotation speed
-#define	SF_ROTATING_NOT_SOLID			64	// some special rotating objects are not solid.
 
+// func_rotating
+enum SFRotatingBrush_t : unsigned short
+{
+	SF_BRUSH_ROTATE_Y_AXIS =		(1 << 0),
+	SF_BRUSH_ROTATE_START_ON =	(1 << 1),
+	SF_BRUSH_ROTATE_BACKWARDS =	(1 << 2),
+	SF_BRUSH_ROTATE_Z_AXIS =		(1 << 3),
+	SF_BRUSH_ROTATE_NOT_SOLID =					(1 << 4),	// some special rotating objects are not solid.
+	SF_BRUSH_ROTATE_HURT =					(1 << 5),	// rotating brush that inflicts pain based on rotation speed
+	SF_BRUSH_ROTATE_SMALLRADIUS	= (1 << 6),
+	SF_BRUSH_ROTATE_MEDIUMRADIUS = (1 << 7),
+	SF_BRUSH_ROTATE_LARGERADIUS = (1 << 8),
+	SF_BRUSH_ROTATE_X_AXIS =		(1 << 9),
+	SF_BRUSH_ROTATE_CLIENTSIDE =	(1 << 10),
+	SF_BRUSH_ROTATE_ACCDCC =		(1 << 11),	// brush should accelerate and decelerate when toggled
+};
 
-#define SF_BRUSH_ROTATE_SMALLRADIUS	128
-#define SF_BRUSH_ROTATE_MEDIUMRADIUS 256
-#define SF_BRUSH_ROTATE_LARGERADIUS 512
+FLAGENUM_OPERATORS( SFRotatingBrush_t, unsigned short )
+
+enum SFBrush_t : uint64
+{
+	SF_BRUSH_IGNORE_PLAYERUSE = (1 << 0),
+
+	SF_BRUSH_LAST_FLAG = SF_BRUSH_IGNORE_PLAYERUSE,
+};
+
+FLAGENUM_OPERATORS( SFBrush_t, unsigned char )
 
 #define PUSH_BLOCK_ONLY_X	1
 #define PUSH_BLOCK_ONLY_Y	2

@@ -10,6 +10,13 @@
 
 #include "ai_basenpc.h"
 
+enum SFHCycler_t : uint64
+{
+	SF_HCYCLER_NOTSOLID = (SF_NPC_LAST_SHARED_FLAG << 1),
+};
+
+FLAGENUM_OPERATORS( SFHCycler_t, uint64 )
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -17,6 +24,8 @@ class CCycler : public CAI_BaseNPC
 {
 public:
 	DECLARE_CLASS( CCycler, CAI_BaseNPC );
+
+	DECLARE_SPAWNFLAGS( SFHCycler_t )
 
 	void GenericCyclerSpawn(char *szModel, Vector vecMin, Vector vecMax);
 	virtual EntityCaps_t ObjectCaps( void ) { return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE); }

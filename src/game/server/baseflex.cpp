@@ -33,9 +33,6 @@ static ConVar scene_showunlock( "scene_showunlock", "0", FCVAR_ARCHIVE, "Show wh
 
 // static ConVar scene_checktagposition( "scene_checktagposition", "0", FCVAR_ARCHIVE, "When playing back a choreographed scene, check the current position of the tags relative to where they were authored." );
 
-// Fake layer # to force HandleProcessSceneEvent to actually allocate the layer during npc think time instead of in between.
-#define REQUEST_DEFERRED_LAYER_ALLOCATION	-2
-
 extern bool g_bClientFlex;
 
 // ---------------------------------------------------------------------
@@ -118,7 +115,7 @@ void CBaseFlex::SetFlexWeight( LocalFlexController_t index, float value )
 		if (! pstudiohdr)
 			return;
 
-		mstudioflexcontroller_t *pflexcontroller = pstudiohdr->pFlexcontroller( index );
+		const mstudioflexcontroller_t *pflexcontroller = pstudiohdr->pFlexcontroller( index );
 
 		if (pflexcontroller->max != pflexcontroller->min)
 		{
@@ -138,7 +135,7 @@ float CBaseFlex::GetFlexWeight( LocalFlexController_t index )
 		if (! pstudiohdr)
 			return 0;
 
-		mstudioflexcontroller_t *pflexcontroller = pstudiohdr->pFlexcontroller( index );
+		const mstudioflexcontroller_t *pflexcontroller = pstudiohdr->pFlexcontroller( index );
 
 		if (pflexcontroller->max != pflexcontroller->min)
 		{
@@ -424,7 +421,8 @@ bool CBaseFlex::RequestStartSequenceSceneEvent( CSceneEventInfo *info, CChoreoSc
 
 	// This is a bit of a hack, but we need to defer the actual allocation until Process which will sync the layer allocation
 	//  to the NPCs think/m_flAnimTime instead of some arbitrary tick
-	info->m_iLayer = REQUEST_DEFERRED_LAYER_ALLOCATION;
+	info->m_bDeferred = true;
+	info->m_iLayer = INVALID_ANIMLAYER;
 	info->m_pActor = actor;
 	return true;
 }
@@ -434,7 +432,7 @@ bool CBaseFlex::RequestStartGestureSceneEvent( CSceneEventInfo *info, CChoreoSce
 	info->m_nSequence = LookupSequence( event->GetParameters() );
 
 	// make sure sequence exists
-	if (info->m_nSequence < 0)
+	if (info->m_nSequence == INVALID_SEQUENCE)
 	{
 		Warning( "CSceneEntity %s :\"%s\" unable to find gesture \"%s\"\n", STRING(GetEntityName()), actor->GetName(), event->GetParameters() );
 		return false;
@@ -442,17 +440,19 @@ bool CBaseFlex::RequestStartGestureSceneEvent( CSceneEventInfo *info, CChoreoSce
 
 	// This is a bit of a hack, but we need to defer the actual allocation until Process which will sync the layer allocation
 	//  to the NPCs think/m_flAnimTime instead of some arbitrary tick
-	info->m_iLayer = REQUEST_DEFERRED_LAYER_ALLOCATION;
+	info->m_bDeferred = true;
+	info->m_iLayer = INVALID_ANIMLAYER;
 	info->m_pActor = actor;
 	return true;
 }
 
 bool CBaseFlex::HandleStartSequenceSceneEvent( CSceneEventInfo *info, CChoreoScene *scene, CChoreoEvent *event, CChoreoActor *actor )
 {
-	Assert( info->m_iLayer == REQUEST_DEFERRED_LAYER_ALLOCATION );
+	Assert( info->m_bDeferred == true );
 
 	info->m_nSequence = LookupSequence( event->GetParameters() );
 	info->m_iLayer = INVALID_ANIMLAYER;
+	info->m_bDeferred = false;
 
 	if (info->m_nSequence == INVALID_SEQUENCE)
 	{
@@ -506,10 +506,11 @@ bool CBaseFlex::HandleStartSequenceSceneEvent( CSceneEventInfo *info, CChoreoSce
 
 bool CBaseFlex::HandleStartGestureSceneEvent( CSceneEventInfo *info, CChoreoScene *scene, CChoreoEvent *event, CChoreoActor *actor )
 {
-	Assert( info->m_iLayer == REQUEST_DEFERRED_LAYER_ALLOCATION );
+	Assert( info->m_bDeferred == true );
 
 	info->m_nSequence = LookupSequence( event->GetParameters() );
 	info->m_iLayer = INVALID_ANIMLAYER;
+	info->m_bDeferred = false;
 
 	if (info->m_nSequence == INVALID_SEQUENCE)
 	{
@@ -578,8 +579,8 @@ bool CBaseFlex::HandleStartGestureSceneEvent( CSceneEventInfo *info, CChoreoScen
 		{
 			CStudioHdr *pstudiohdr = GetModelPtr();
 			
-			mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( info->m_nSequence );
-			mstudioanimdesc_t &animdesc = pstudiohdr->pAnimdesc( pstudiohdr->iRelativeAnim( info->m_nSequence, seqdesc.anim(0,0) ) );
+			const mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( info->m_nSequence );
+			const mstudioanimdesc_t &animdesc = pstudiohdr->pAnimdesc( pstudiohdr->iRelativeAnim( info->m_nSequence, seqdesc.anim(0,0) ) );
 
 			// check in the tag indexes
 			KeyValues *pkvFaceposer;
@@ -923,9 +924,9 @@ void CBaseFlex::ProcessSceneEvents( void )
 {
 	VPROF( "CBaseFlex::ProcessSceneEvents" );
 	// slowly decay to netural expression
-	for ( LocalFlexController_t i = LocalFlexController_t(0); i < GetNumFlexControllers(); i++)
+	for ( int i = 0; i < GetNumFlexControllers(); i++)
 	{
-		SetFlexWeight( i, GetFlexWeight( i ) * 0.95 );
+		SetFlexWeight( (LocalFlexController_t)i, GetFlexWeight( (LocalFlexController_t)i ) * 0.95 );
 	}
 
 	bool bHasForegroundEvents = false;
@@ -1805,7 +1806,7 @@ void CBaseFlex::AddFlexAnimation( CSceneEventInfo *info )
 
 				// Get spline intensity for controller
 				float flIntensity = track->GetIntensity( scenetime, side );
-				if ( controller >= LocalFlexController_t(0) )
+				if ( controller != INVALID_FLEXCONTROLLER )
 				{
 					float orig = GetFlexWeight( controller );
 					SetFlexWeight( controller, orig * (1 - weight) + flIntensity * weight );
@@ -1818,7 +1819,7 @@ void CBaseFlex::AddFlexAnimation( CSceneEventInfo *info )
 
 			// Get spline intensity for controller
 			float flIntensity = track->GetIntensity( scenetime, 0 );
-			if ( controller >= LocalFlexController_t(0) )
+			if ( controller != INVALID_FLEXCONTROLLER )
 			{
 				float orig = GetFlexWeight( controller );
 				SetFlexWeight( controller, orig * (1 - weight) + flIntensity * weight );
@@ -1893,7 +1894,7 @@ bool CBaseFlex::ProcessGestureSceneEvent( CSceneEventInfo *info, CChoreoScene *s
 	if ( !info || !event || !scene )
 		return false;
 	
-	if ( info->m_iLayer == REQUEST_DEFERRED_LAYER_ALLOCATION )
+	if ( info->m_bDeferred == true )
 	{
 		HandleStartGestureSceneEvent( info, scene, event, info->m_pActor );
 	}
@@ -1969,7 +1970,7 @@ bool CBaseFlex::ProcessSequenceSceneEvent( CSceneEventInfo *info, CChoreoScene *
 		return false;
 	
 	bool bNewlyAllocated = false;
-	if ( info->m_iLayer == REQUEST_DEFERRED_LAYER_ALLOCATION )
+	if ( info->m_bDeferred == true )
 	{
 		bool result = HandleStartSequenceSceneEvent( info, scene, event, info->m_pActor );
 		if (!result)
@@ -2011,7 +2012,7 @@ bool CBaseFlex::ProcessSequenceSceneEvent( CSceneEventInfo *info, CChoreoScene *
 		float spline = 3 * info->m_flWeight * info->m_flWeight - 2 * info->m_flWeight * info->m_flWeight * info->m_flWeight;
 		SetLayerWeight( info->m_iLayer, flWeight * spline );
 
-		bool looping = ((GetSequenceFlags( GetModelPtr(), info->m_nSequence ) & STUDIO_LOOPING) != 0);
+		bool looping = ((GetSequenceFlags( GetModelPtr(), info->m_nSequence ) & STUDIO_LOOPING) != STUDIO_NO_SEQUENCE_FLAGS);
 		if (!looping)
 		{
 			float dt =  scene->GetTime() - event->GetStartTime();
@@ -2268,6 +2269,7 @@ m_pActor( NULL ),
 m_hSceneEntity( NULL ),
 m_bStarted( false ),
 m_iLayer( INVALID_ANIMLAYER ),
+m_bDeferred( false ),
 m_iPriority( 0 ),
 m_nSequence( INVALID_SEQUENCE ),
 m_bIsGesture( false ),
@@ -2332,7 +2334,7 @@ public:
 	DECLARE_MAPENTITY();
 
 	CFlexCycler() { m_iszSentence = NULL_STRING; m_sentence = 0; }
-	void GenericCyclerSpawn(char *szModel, Vector vecMin, Vector vecMax);
+	void GenericCyclerSpawn(const char *szModel, Vector vecMin, Vector vecMax);
 	virtual EntityCaps_t ObjectCaps( void ) { return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE); }
 	int OnTakeDamage( const CTakeDamageInfo &info );
 	void Spawn( void );
@@ -2375,7 +2377,7 @@ class CGenericFlexCycler : public CFlexCycler
 public:
 	DECLARE_CLASS( CGenericFlexCycler, CFlexCycler );
 
-	void Spawn( void ) { GenericCyclerSpawn( (char *)STRING( GetModelName() ), Vector(-16, -16, 0), Vector(16, 16, 72) ); }
+	void Spawn( void ) { GenericCyclerSpawn( STRING( GetModelName() ), Vector(-16, -16, 0), Vector(16, 16, 72) ); }
 };
 
 LINK_ENTITY_TO_CLASS( cycler_flex, CGenericFlexCycler );
@@ -2387,7 +2389,7 @@ ConVar	flex_talk( "flex_talk","0" );
 
 // Cycler member functions
 
-void CFlexCycler::GenericCyclerSpawn(char *szModel, Vector vecMin, Vector vecMax)
+void CFlexCycler::GenericCyclerSpawn(const char *szModel, Vector vecMin, Vector vecMax)
 {
 	if (!szModel || !*szModel)
 	{
@@ -2731,7 +2733,7 @@ void CFlexCycler::Think( void )
 			{
 				Msg( "%d : %s\n", sentenceIndex, pszSentence );
 				CPASAttenuationFilter filter( this );
-				CBaseEntity::EmitSentenceByIndex( filter, entindex(), CHAN_VOICE, sentenceIndex, 1, SNDLVL_TALKING, 0, PITCH_NORM );
+				CBaseEntity::EmitSentenceByIndex( filter, entindex(), CHAN_VOICE, sentenceIndex, 1, SNDLVL_TALKING, SND_NOFLAGS, PITCH_NORM );
 			}
 			else
 			{
@@ -2746,7 +2748,7 @@ void CFlexCycler::Think( void )
 			if (sentenceIndex >= 0)
 			{
 				CPASAttenuationFilter filter( this );
-				CBaseEntity::EmitSentenceByIndex( filter, entindex(), CHAN_VOICE, sentenceIndex, 1, SNDLVL_TALKING, 0, PITCH_NORM );
+				CBaseEntity::EmitSentenceByIndex( filter, entindex(), CHAN_VOICE, sentenceIndex, 1, SNDLVL_TALKING, SND_NOFLAGS, PITCH_NORM );
 			}
 			flex_talk.SetValue( "0" );
 		}

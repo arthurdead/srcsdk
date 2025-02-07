@@ -129,7 +129,7 @@ END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST(CTeamTrainWatcher, DT_TeamTrainWatcher)
 
-	SendPropFloat( SENDINFO( m_flTotalProgress ), 11, 0, 0.0f, 1.0f ),
+	SendPropFloat( SENDINFO( m_flTotalProgress ), 11, SPROP_NONE, 0.0f, 1.0f ),
 	SendPropInt( SENDINFO( m_iTrainSpeedLevel ), 4 ),
 	SendPropTime( SENDINFO( m_flRecedeTime ) ),
 	SendPropInt( SENDINFO( m_nNumCappers ) ),

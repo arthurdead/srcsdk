@@ -13,14 +13,6 @@
 #include "ai_criteria.h"
 #include "ai_baseactor.h"
 #include "ai_speechfilter.h"
-#ifndef _WIN32
-#undef min
-#endif
-#include "stdstring.h"
-#ifndef _WIN32
-#undef MINMAX_H
-#include "minmax.h"
-#endif
 
 //-----------------------------------------------------------------------------
 
@@ -270,7 +262,7 @@ struct AISpeechSelection_t
 		hSpeechTarget = pTarget;
 	}
 
-	std::string		ai_concept;
+	AIConcept_t		ai_concept;
 	AI_Response		response;
 	EHANDLE			hSpeechTarget;
 };
@@ -367,7 +359,7 @@ public:
 	bool 		SelectSpeechResponse( AIConcept_t ai_concept, const char *pszModifiers, CBaseEntity *pTarget, AISpeechSelection_t *pSelection );
 	void		SetPendingSpeech( AIConcept_t ai_concept, AI_Response *pResponse );
 	void 		ClearPendingSpeech();
-	bool		HasPendingSpeech()	{ return !m_PendingConcept.empty(); }
+	bool		HasPendingSpeech()	{ return m_PendingConcept.IsValid(); }
 
 	//---------------------------------
 	
@@ -468,7 +460,7 @@ private:
 	//---------------------------------
 	
 	AI_Response		m_PendingResponse;
-	std::string		m_PendingConcept;
+	AIConcept_t		m_PendingConcept;
 	float			m_TimePendingSet;
 
 	//---------------------------------

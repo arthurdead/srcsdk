@@ -646,22 +646,22 @@ bool CSharedBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 
 	if ( FStrEq( szKeyName, "mincpulevel" ))
 	{
-		m_nMinCPULevel = atoi( szValue );
+		m_nMinCPULevel = (CPULevel_t)atoi( szValue );
 		return true;
 	}
 	if ( FStrEq( szKeyName, "maxcpulevel" ))
 	{
-		m_nMaxCPULevel = atoi( szValue );
+		m_nMaxCPULevel = (CPULevel_t)atoi( szValue );
 		return true;
 	}
 	if ( FStrEq( szKeyName, "mingpulevel" ))
 	{
-		m_nMinGPULevel = atoi( szValue );
+		m_nMinGPULevel = (GPULevel_t)atoi( szValue );
 		return true;
 	}
 	if ( FStrEq( szKeyName, "maxgpulevel" ))
 	{
-		m_nMaxGPULevel = atoi( szValue );
+		m_nMaxGPULevel = (GPULevel_t)atoi( szValue );
 		return true;
 	}
 
@@ -820,7 +820,7 @@ bool CSharedBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int i
 
 	if ( FStrEq( szKeyName, "nodamageforces" ))
 	{
-		Q_snprintf( szValue, iMaxLen, "%d", IsEffectActive( EFL_NO_DAMAGE_FORCES ) );
+		Q_snprintf( szValue, iMaxLen, "%d", IsEFlagSet( EFL_NO_DAMAGE_FORCES ) );
 		return true;
 	}
 
@@ -875,11 +875,11 @@ bool CSharedBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int i
 // Input  : collisionGroup - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CSharedBaseEntity::ShouldCollide( Collision_Group_t collisionGroup, int contentsMask ) const
+bool CSharedBaseEntity::ShouldCollide( Collision_Group_t collisionGroup, ContentsFlags_t contentsMask ) const
 {
 	if ( m_CollisionGroup == COLLISION_GROUP_DEBRIS )
 	{
-		if ( ! (contentsMask & CONTENTS_DEBRIS) )
+		if ( (contentsMask & CONTENTS_DEBRIS) == CONTENTS_EMPTY )
 			return false;
 	}
 	return true;
@@ -922,13 +922,13 @@ void CSharedBaseEntity::DecalTrace( trace_t *pTrace, char const *decalName )
 
 	CBroadcastRecipientFilter filter;
 	te->Decal( filter, 0.0, &pTrace->endpos, &pTrace->startpos,
-		pTrace->GetEntityIndex(), pTrace->hitbox, index );
+		pTrace->GetEntityIndex(), pTrace->Hitbox(), index );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Base handling for impacts against entities
 //-----------------------------------------------------------------------------
-void CSharedBaseEntity::ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName )
+void CSharedBaseEntity::ImpactTrace( trace_t *pTrace, DamageTypes_t iDamageType, const char *pCustomImpactName )
 {
 	VPROF( "CSharedBaseEntity::ImpactTrace" );
 	Assert( pTrace->m_pEnt );
@@ -945,7 +945,7 @@ void CSharedBaseEntity::ImpactTrace( trace_t *pTrace, int iDamageType, const cha
 		data.m_nSurfaceProp = 0;
 	}
 	data.m_nDamageType = iDamageType;
-	data.m_nHitBox = pTrace->hitbox;
+	data.m_nHitBox = pTrace->Hitbox();
 #ifdef CLIENT_DLL
 	data.m_hEntity = ClientEntityList().EntIndexToHandle( pEntity->entindex() );
 #else
@@ -968,7 +968,7 @@ void CSharedBaseEntity::ImpactTrace( trace_t *pTrace, int iDamageType, const cha
 // Input  : bitsDamageType - the damage type
 // Output : the index of the damage decal to use
 //-----------------------------------------------------------------------------
-char const *CSharedBaseEntity::DamageDecal( int bitsDamageType, int gameMaterial )
+char const *CSharedBaseEntity::DamageDecal( DamageTypes_t bitsDamageType, int gameMaterial )
 {
 	if ( GetRenderMode() == kRenderTransAlpha )
 		return "";
@@ -1817,7 +1817,7 @@ bool CSharedBaseEntity::VPhysicsInitSetup()
 //			physics alone determines where it goes (gravity, friction, etc)
 //			and the entity receives updates from vphysics.  SetAbsOrigin(), etc do not affect the object!
 //-----------------------------------------------------------------------------
-IPhysicsObject *CSharedBaseEntity::VPhysicsInitNormal( SolidType_t solidType, int nSolidFlags, bool createAsleep, solid_t *pSolid )
+IPhysicsObject *CSharedBaseEntity::VPhysicsInitNormal( SolidType_t solidType, SolidFlags_t nSolidFlags, bool createAsleep, solid_t *pSolid )
 {
 	if ( !VPhysicsInitSetup() )
 		return NULL;
@@ -1928,7 +1928,7 @@ bool CSharedBaseEntity::IsBSPModel() const
 //-----------------------------------------------------------------------------
 // Invalidates the abs state of all children
 //-----------------------------------------------------------------------------
-void CSharedBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
+void CSharedBaseEntity::InvalidatePhysicsRecursive( InvalidatePhysicsBits_t nChangeFlags )
 {
 	// Main entry point for dirty flag setting for the 90% case
 	// 1) If the origin changes, then we have to update abstransform, Shadow projection, PVS, KD-tree, 
@@ -1943,16 +1943,16 @@ void CSharedBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 	// Other stuff:
 	// 1) Marking the surrounding bounds dirty will automatically mark KD tree + PVS dirty.
 	
-	int nDirtyFlags = 0;
+	EntityFlags_t nDirtyFlags = EFL_NONE;
 
-	int nChildrenChangeFlags = (nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED));
+	InvalidatePhysicsBits_t nChildrenChangeFlags = (nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED));
 
-	if ( (nChangeFlags & VELOCITY_CHANGED) != 0 )
+	if ( (nChangeFlags & VELOCITY_CHANGED) != NOTHING_CHANGED )
 	{
 		nDirtyFlags |= EFL_DIRTY_ABSVELOCITY;
 	}
 
-	if ( (nChangeFlags & POSITION_CHANGED) != 0 )
+	if ( (nChangeFlags & POSITION_CHANGED) != NOTHING_CHANGED )
 	{
 		nDirtyFlags |= EFL_DIRTY_ABSTRANSFORM;
 
@@ -1972,7 +1972,7 @@ void CSharedBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 
 	// NOTE: This has to be done after velocity + position are changed
 	// because we change the nChangeFlags for the child entities
-	if ( (nChangeFlags & ANGLES_CHANGED) != 0 )
+	if ( (nChangeFlags & ANGLES_CHANGED) != NOTHING_CHANGED )
 	{
 		nDirtyFlags |= EFL_DIRTY_ABSTRANSFORM;
 
@@ -1989,7 +1989,7 @@ void CSharedBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 		nChildrenChangeFlags |= (POSITION_CHANGED | VELOCITY_CHANGED);
 	}
 
-	if ( (nChangeFlags & SEQUENCE_CHANGED) != 0 )
+	if ( (nChangeFlags & SEQUENCE_CHANGED) != NOTHING_CHANGED )
 	{
 		if ( !bSurroundDirty && !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
 		{
@@ -2002,12 +2002,12 @@ void CSharedBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 		}
 	}
 
-	if ( (nChangeFlags & ANIMATION_CHANGED) != 0 )
+	if ( (nChangeFlags & ANIMATION_CHANGED) != NOTHING_CHANGED )
 	{
 		nChildrenChangeFlags |= (POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED);
 	}
 
-	if ( (nChangeFlags & BOUNDS_CHANGED) != 0 )
+	if ( (nChangeFlags & BOUNDS_CHANGED) != NOTHING_CHANGED )
 	{
 		nChildrenChangeFlags |= (POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED);
 	}
@@ -2041,7 +2041,7 @@ void CSharedBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 	{
 		// If this is due to the parent animating, only invalidate children that are parented to an attachment
 		// Entities that are following also access attachments points on parents and must be invalidated.
-		if ( (nChangeFlags & ANIMATION_CHANGED) != 0 && (nChangeFlags & (POSITION_CHANGED | VELOCITY_CHANGED | ANGLES_CHANGED)) == 0 )
+		if ( (nChangeFlags & ANIMATION_CHANGED) != NOTHING_CHANGED && (nChangeFlags & (POSITION_CHANGED | VELOCITY_CHANGED | ANGLES_CHANGED)) == NOTHING_CHANGED )
 		{
 #ifdef CLIENT_DLL
 			if ( (pChild->GetParentAttachment() == 0) && !pChild->IsFollowingEntity() )
@@ -2054,7 +2054,7 @@ void CSharedBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 		pChild->InvalidatePhysicsRecursive( nChildrenChangeFlags );
 	}
 
-	if ( (nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | ANIMATION_CHANGED)) != 0 )
+	if ( (nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | ANIMATION_CHANGED)) != NOTHING_CHANGED )
 	{
 		CSharedBaseAnimating *pAnim = GetBaseAnimating();
 		if ( pAnim )
@@ -2110,9 +2110,9 @@ Go to the trouble of combining multiple pellets into a single damage call.
 class CBulletsTraceFilter : public CTraceFilterSimpleList
 {
 public:
-	CBulletsTraceFilter( int collisionGroup ) : CTraceFilterSimpleList( collisionGroup ) {}
+	CBulletsTraceFilter( Collision_Group_t collisionGroup ) : CTraceFilterSimpleList( collisionGroup ) {}
 
-	bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 	{
 		if ( m_PassEntities.Count() )
 		{
@@ -2139,8 +2139,8 @@ void CSharedBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 	static int	tracerCount;
 	trace_t		tr;
 	CAmmoDef*	pAmmoDef	= GetAmmoDef();
-	uint64			nDamageType	= pAmmoDef->DamageType(info.m_iAmmoType);
-	int			nAmmoFlags	= pAmmoDef->Flags(info.m_iAmmoType);
+	DamageTypes_t			nDamageType	= pAmmoDef->DamageType(info.m_iAmmoType);
+	AmmoFlags_t			nAmmoFlags	= pAmmoDef->Flags(info.m_iAmmoType);
 	
 	bool bDoServerEffects = true;
 
@@ -2220,7 +2220,7 @@ void CSharedBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 	bool bStartedInWater = false;
 	if ( bUnderwaterBullets )
 	{
-		bStartedInWater = ( enginetrace->GetPointContents( info.m_vecSrc, MASK_WATER ) & (CONTENTS_WATER|CONTENTS_SLIME) ) != 0;
+		bStartedInWater = ( enginetrace->GetPointContents( info.m_vecSrc, MASK_WATER ) & (CONTENTS_WATER|CONTENTS_SLIME) ) != CONTENTS_EMPTY;
 	}
 
 	// Prediction is only usable on players
@@ -2380,7 +2380,7 @@ void CSharedBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 #endif
 
 		// Make sure given a valid bullet type
-		if (info.m_iAmmoType == -1)
+		if (info.m_iAmmoType == AMMO_INVALID_INDEX)
 		{
 			DevMsg("ERROR: Undefined ammo type!\n");
 			return;
@@ -2427,17 +2427,17 @@ void CSharedBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 #endif
 			}
 
-			int nActualDamageType = nDamageType;
+			DamageTypes_t nActualDamageType = nDamageType;
 			if ( flActualDamage == 0.0 )
 			{
 				flActualDamage = GameRules()->GetAmmoDamage( pAttacker, tr.m_pEnt, info.m_iAmmoType );
 			}
-			else if ((info.m_nFlags & FIRE_BULLETS_NO_AUTO_GIB_TYPE) == 0)
+			else if ((info.m_nFlags & FIRE_BULLETS_NO_AUTO_GIB_TYPE) == FIRE_BULLETS_NO_FLAGS)
 			{
 				nActualDamageType = nDamageType | ((flActualDamage > 16) ? DMG_ALWAYSGIB : DMG_NEVERGIB );
 			}
 
-			if ( !bHitWater || ((info.m_nFlags & FIRE_BULLETS_DONT_HIT_UNDERWATER) == 0) )
+			if ( !bHitWater || ((info.m_nFlags & FIRE_BULLETS_DONT_HIT_UNDERWATER) == FIRE_BULLETS_NO_FLAGS) )
 			{
 				// Damage specified by function parameter
 				CSharedTakeDamageInfo dmgInfo( this, pAttacker, flActualDamage, nActualDamageType );
@@ -2491,8 +2491,9 @@ void CSharedBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 			surfacedata_t *psurf = physprops->GetSurfaceData( tr.surface.surfaceProps );
 			if ( ( psurf != NULL ) && ( psurf->game.material == CHAR_TEX_GLASS ) && ( tr.m_pEnt->ClassMatches( "func_breakable" ) ) )
 			{
+				CBreakable *pBreakable = assert_cast<CBreakable *>(tr.m_pEnt);
 				// Query the func_breakable for whether it wants to allow for bullet penetration
-				if ( tr.m_pEnt->HasSpawnFlags( SF_BREAK_NO_BULLET_PENETRATION ) == false )
+				if ( pBreakable->HasSpawnFlags( SF_BREAK_NO_BULLET_PENETRATION ) == false )
 				{
 					bHitGlass = true;
 				}
@@ -2625,7 +2626,7 @@ bool CSharedBaseEntity::HandleShotImpactingWater( const FireBulletsInfo_t &info,
 	AI_TraceLine( info.m_vecSrc, vecEnd, (MASK_SHOT|CONTENTS_WATER|CONTENTS_SLIME), pTraceFilter, &waterTrace );
 	
 	// See if this is the point we entered
-	if ( ( enginetrace->GetPointContents( waterTrace.endpos - Vector(0,0,0.1f), MASK_WATER ) & (CONTENTS_WATER|CONTENTS_SLIME) ) == 0 )
+	if ( ( enginetrace->GetPointContents( waterTrace.endpos - Vector(0,0,0.1f), MASK_WATER ) & (CONTENTS_WATER|CONTENTS_SLIME) ) == CONTENTS_EMPTY )
 		return false;
 
 	if ( ShouldDrawWaterImpacts() )
@@ -2727,7 +2728,7 @@ void CSharedBaseEntity::TraceAttack( const CSharedTakeDamageInfo &info, const Ve
 //-----------------------------------------------------------------------------
 // Allows the shooter to change the impact effect of his bullets
 //-----------------------------------------------------------------------------
-void CSharedBaseEntity::DoImpactEffect( trace_t &tr, int nDamageType )
+void CSharedBaseEntity::DoImpactEffect( trace_t &tr, DamageTypes_t nDamageType )
 {
 	// give shooter a chance to do a custom impact.
 	UTIL_ImpactTrace( &tr, nDamageType );
@@ -2782,7 +2783,7 @@ void CSharedBaseEntity::ComputeTracerStartPosition( const Vector &vecShotSrc, Ve
 //
 // Output :
 //-----------------------------------------------------------------------------
-void CSharedBaseEntity::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType )
+void CSharedBaseEntity::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, AmmoTracer_t iTracerType )
 {
 	const char *pszTracerName = GetTracerType();
 
@@ -2822,13 +2823,13 @@ float CSharedBaseEntity::HealthFraction() const
 	return flFraction;
 }
 
-int CSharedBaseEntity::BloodColor()
+BloodColor_t CSharedBaseEntity::BloodColor()
 {
 	return DONT_BLEED; 
 }
 
 
-void CSharedBaseEntity::TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, uint64 bitsDamageType )
+void CSharedBaseEntity::TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, DamageTypes_t bitsDamageType )
 {
 	if ((BloodColor() == DONT_BLEED) || (BloodColor() == BLOOD_COLOR_MECH))
 	{
@@ -2838,7 +2839,7 @@ void CSharedBaseEntity::TraceBleed( float flDamage, const Vector &vecDir, trace_
 	if (flDamage == 0)
 		return;
 
-	if (! (bitsDamageType & (DMG_CRUSH | DMG_BULLET | DMG_SLASH | DMG_BLAST | DMG_CLUB | DMG_AIRBOAT)))
+	if ((bitsDamageType & (DMG_CRUSH | DMG_BULLET | DMG_SLASH | DMG_BLAST | DMG_CLUB | DMG_AIRBOAT)) == DMG_GENERIC)
 		return;
 
 	// make blood decal on the wall!
@@ -2916,7 +2917,7 @@ void CSharedBaseEntity::ModifyEmitSoundParams( EmitSound_t &params )
 }
 
 #if defined(GAME_DLL)
-void CSharedBaseEntity::ModifySentenceParams( int &iSentenceIndex, int &iChannel, float &flVolume, soundlevel_t &iSoundlevel, SoundFlags_t &iFlags, int &iPitch,
+void CSharedBaseEntity::ModifySentenceParams( int &iSentenceIndex, SoundChannel_t &iChannel, float &flVolume, soundlevel_t &iSoundlevel, SoundFlags_t &iFlags, int &iPitch,
 	const Vector **pOrigin, const Vector **pDirection, bool &bUpdatePositions, float &soundtime, int &iSpecialDSP, int &iSpeakerIndex )
 {
 
@@ -3068,9 +3069,9 @@ void CSharedBaseEntity::ApplyLocalAngularVelocityImpulse( const AngularImpulse &
 	}
 }
 
-void CSharedBaseEntity::SetCollisionGroup( int collisionGroup )
+void CSharedBaseEntity::SetCollisionGroup( Collision_Group_t collisionGroup )
 {
-	if ( (int)m_CollisionGroup != collisionGroup )
+	if ( m_CollisionGroup != collisionGroup )
 	{
 		m_CollisionGroup = collisionGroup;
 		CollisionRulesChanged();
@@ -3233,7 +3234,7 @@ void CSharedBaseEntity::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 	}
 
 	// Append base stuff
-	set.AppendCriteria("spawnflags", UTIL_VarArgs("%i", GetSpawnFlags()));
+	set.AppendCriteria("spawnflags", UTIL_VarArgs("%llu", GetRawSpawnFlags()));
 	set.AppendCriteria("flags", UTIL_VarArgs("%llu", GetFlags()));
 #endif
 }

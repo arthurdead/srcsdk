@@ -14,7 +14,7 @@
 #include "tier1/utlvector.h"
 #include "recast_imgr.h"
 
-enum RecastOfffMeshConnSF_t : unsigned short;
+enum RecastOfffMeshConnSF_t : uint64;
 
 class CMapMesh;
 

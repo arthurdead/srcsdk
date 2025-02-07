@@ -12,7 +12,7 @@
 #include "baseentity.h"
 #include "recast/recast_imgr.h"
 
-enum RecastOfffMeshConnSF_t : unsigned short
+enum RecastOfffMeshConnSF_t : uint64
 {
 	SF_OFFMESHCONN_NONE = 0,
 
@@ -35,7 +35,7 @@ enum RecastOfffMeshConnSF_t : unsigned short
 	SF_OFFMESHCONN_TYPE_PLAYER = (SF_OFFMESHCONN_TYPE_FLAGS_START << RECAST_NAVMESH_PLAYER),
 };
 
-FLAGENUM_OPERATORS( RecastOfffMeshConnSF_t, unsigned short )
+FLAGENUM_OPERATORS( RecastOfffMeshConnSF_t, uint64 )
 
 //-----------------------------------------------------------------------------
 // 

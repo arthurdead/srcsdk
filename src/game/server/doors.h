@@ -19,30 +19,30 @@
 //Voila, dynamicly generated checkboxes on the Flags tab of Entity Properties.
 
 // doors
-enum DoorSF_t : unsigned int
+enum DoorSF_t : uint64
 {
-	SF_DOOR_ROTATE_YAW =			0,		// yaw by default
-	SF_DOOR_START_OPEN_OBSOLETE =	1,
-	SF_DOOR_ROTATE_BACKWARDS =	2,
-	SF_DOOR_NONSOLID_TO_PLAYER =	4,
-	SF_DOOR_PASSABLE =			8,
-	SF_DOOR_ONEWAY =				16,
-	SF_DOOR_NO_AUTO_RETURN =		32,
-	SF_DOOR_ROTATE_ROLL =			64,
-	SF_DOOR_ROTATE_PITCH =		128,
-	SF_DOOR_PUSE =				256,	// door can be opened by player's use button.
-	SF_DOOR_NONPCS =				512,	// NPC can't open
-	SF_DOOR_PTOUCH =				1024, // player touch opens
-	SF_DOOR_LOCKED =				2048,	// Door is initially locked
-	SF_DOOR_SILENT =				4096,	// Door plays no audible sound, and does not alert NPCs when opened
-	SF_DOOR_USE_CLOSES =			8192,	// Door can be +used to close before its autoreturn delay has expired.
-	SF_DOOR_SILENT_TO_NPCS =		16384,	// Does not alert NPC's when opened.
-	SF_DOOR_IGNORE_USE =			32768,	// Completely ignores player +use commands.
-	SF_DOOR_NEW_USE_RULES =		65536,	// For func_door entities, behave more like prop_door_rotating with respect to +USE (changelist 242482)
-	SF_DOOR_START_UNBREAKABLE =	524288,
+	SF_DOOR_ROTATE_YAW =			(SF_TOGGLE_LAST_FLAG << 1),		// yaw by default
+	SF_DOOR_START_OPEN_OBSOLETE =	(SF_TOGGLE_LAST_FLAG << 2),
+	SF_DOOR_ROTATE_BACKWARDS =	(SF_TOGGLE_LAST_FLAG << 3),
+	SF_DOOR_NONSOLID_TO_PLAYER =	(SF_TOGGLE_LAST_FLAG << 4),
+	SF_DOOR_PASSABLE =			(SF_TOGGLE_LAST_FLAG << 5),
+	SF_DOOR_ONEWAY =				(SF_TOGGLE_LAST_FLAG << 6),
+	SF_DOOR_NO_AUTO_RETURN =		(SF_TOGGLE_LAST_FLAG << 7),
+	SF_DOOR_ROTATE_ROLL =			(SF_TOGGLE_LAST_FLAG << 8),
+	SF_DOOR_ROTATE_PITCH =		(SF_TOGGLE_LAST_FLAG << 9),
+	SF_DOOR_PUSE =				(SF_TOGGLE_LAST_FLAG << 10),	// door can be opened by player's use button.
+	SF_DOOR_NONPCS =				(SF_TOGGLE_LAST_FLAG << 11),	// NPC can't open
+	SF_DOOR_PTOUCH =				(SF_TOGGLE_LAST_FLAG << 12), // player touch opens
+	SF_DOOR_LOCKED =				(SF_TOGGLE_LAST_FLAG << 13),	// Door is initially locked
+	SF_DOOR_SILENT =				(SF_TOGGLE_LAST_FLAG << 14),	// Door plays no audible sound, and does not alert NPCs when opened
+	SF_DOOR_USE_CLOSES =			(SF_TOGGLE_LAST_FLAG << 15),	// Door can be +used to close before its autoreturn delay has expired.
+	SF_DOOR_SILENT_TO_NPCS =		(SF_TOGGLE_LAST_FLAG << 16),	// Does not alert NPC's when opened.
+	SF_DOOR_IGNORE_USE =			(SF_TOGGLE_LAST_FLAG << 17),	// Completely ignores player +use commands.
+	SF_DOOR_NEW_USE_RULES =		(SF_TOGGLE_LAST_FLAG << 18),	// For func_door entities, behave more like prop_door_rotating with respect to +USE (changelist 242482)
+	SF_DOOR_START_UNBREAKABLE =	(SF_TOGGLE_LAST_FLAG << 19),
 };
 
-FLAGENUM_OPERATORS( DoorSF_t, unsigned int )
+FLAGENUM_OPERATORS( DoorSF_t, uint64 )
 
 enum FuncDoorSpawnPos_t : unsigned char
 {

@@ -102,6 +102,11 @@ extern CStandardRecvProxiesEx g_StandardRecvProxies;
 
 class CRecvDecoder;
 
+class CRecvPropExtra_Base
+{
+public:
+	virtual ~CRecvPropExtra_Base() {}
+};
 
 class RecvProp
 {
@@ -153,8 +158,8 @@ public:
 	void					SetInsideArray();
 
 	// Some property types bind more data to the prop in here.
-	const void*			GetExtraData() const;
-	void				SetExtraData( const void *pData );
+	CRecvPropExtra_Base*			GetExtraData() const;
+	void				SetExtraData( CRecvPropExtra_Base *pData );
 
 	// If it's one of the numbered "000", "001", etc properties in an array, then
 	// these can be used to get its array property name for debugging.
@@ -174,7 +179,7 @@ public:
 	bool					m_bInsideArray;		// Set to true by the engine if this property sits inside an array.
 
 	// Extra data that certain special property types bind to the property here.
-	const void *m_pExtraData;
+	CRecvPropExtra_Base *m_pExtraData;
 
 	// If this is an array (DPT_Array).
 	RecvProp				*m_pArrayProp;
@@ -691,16 +696,16 @@ inline void RecvProp::SetInsideArray()
 	m_bInsideArray = true;
 }
 
-inline const void* RecvProp::GetExtraData() const
+inline CRecvPropExtra_Base* RecvProp::GetExtraData() const
 {
 	return m_pExtraData;
 }
 
-inline void RecvProp::SetExtraData( const void *pData )
+inline void RecvProp::SetExtraData( CRecvPropExtra_Base *pData )
 {
-	if((m_Flags & SPROP_UTLVECTOR_EXTRADATA) != 0) {
+	if((m_Flags & SPROP_ALLOCATED_EXTRADATA) != SPROP_NONE) {
 		if(m_pExtraData) {
-			delete reinterpret_cast<CRecvPropExtra_UtlVector *>(const_cast<void *>(m_pExtraData));
+			delete m_pExtraData;
 		}
 	}
 

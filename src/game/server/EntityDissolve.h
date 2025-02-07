@@ -21,7 +21,7 @@ public:
 	~CEntityDissolve( void );
 
 	static CEntityDissolve	*Create( CBaseEntity *pTarget, const char *pMaterialName, 
-		float flStartTime, int nDissolveType = 0, bool *pRagdollCreated = NULL );
+		float flStartTime, EntityDissolve_t nDissolveType = ENTITY_DISSOLVE_NORMAL, bool *pRagdollCreated = NULL );
 	static CEntityDissolve	*Create( CBaseEntity *pTarget, CBaseEntity *pSource );
 	
 	void	Precache();
@@ -30,7 +30,7 @@ public:
 	void	SetStartTime( float flStartTime );
 	void	SetDissolverOrigin( Vector vOrigin ) { m_vDissolverOrigin = vOrigin; }
 	void	SetMagnitude( int iMagnitude ){ m_nMagnitude = iMagnitude; }
-	void	SetDissolveType( int iType ) { m_nDissolveType = iType;	}
+	void	SetDissolveType( EntityDissolve_t iType ) { m_nDissolveType = iType;	}
 
 	Vector	GetDissolverOrigin( void ) 
 	{ 
@@ -38,7 +38,7 @@ public:
 		return vReturn;	
 	}
 	int		GetMagnitude( void ) { return m_nMagnitude;	}
-	int		GetDissolveType( void ) { return m_nDissolveType;	}
+	EntityDissolve_t		GetDissolveType( void ) { return m_nDissolveType;	}
 
 	DECLARE_MAPENTITY();
 
@@ -55,7 +55,7 @@ protected:
 	void	DissolveThink( void );
 	void	ElectrocuteThink( void );
 
-	CNetworkVar( int, m_nDissolveType );
+	CNetworkVar( EntityDissolve_t, m_nDissolveType );
 	CNetworkVector( m_vDissolverOrigin );
 	CNetworkVar( int, m_nMagnitude );
 };

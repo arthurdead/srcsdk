@@ -11,12 +11,24 @@
 
 #include "baseentity.h"
 
+enum SFSpark_t : unsigned char
+{
+	SF_SPARK_START_ON			= (1 << 0),
+	SF_SPARK_GLOW				= (1 << 1),
+	SF_SPARK_SILENT			= (1 << 2),
+	SF_SPARK_DIRECTIONAL		= (1 << 3),
+};
+
+FLAGENUM_OPERATORS( SFSpark_t, unsigned char )
+
 class CEnvSpark : public CPointEntity
 {
+public:
 	DECLARE_CLASS( CEnvSpark, CPointEntity );
 
-public:
 	CEnvSpark( void );
+
+	DECLARE_SPAWNFLAGS( SFSpark_t )
 
 	void	Spawn( void );
 	void	Precache( void );

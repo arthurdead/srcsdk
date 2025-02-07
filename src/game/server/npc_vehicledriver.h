@@ -15,7 +15,12 @@ class CPropVehicleDriveable;
 //------------------------------------
 // Spawnflags
 //------------------------------------
-#define SF_VEHICLEDRIVER_INACTIVE		(1 << 16)
+enum SFNpcVehicleDriver_t : uint64
+{
+	SF_VEHICLEDRIVER_INACTIVE =		(SF_NPC_LAST_SHARED_FLAG << 1),
+};
+
+FLAGENUM_OPERATORS( SFNpcVehicleDriver_t, uint64 )
 
 //=========================================================
 // Custom schedules
@@ -119,6 +124,8 @@ public:
 	CNPC_VehicleDriver( void );
 	~CNPC_VehicleDriver( void );
 
+	DECLARE_SPAWNFLAGS( SFNpcVehicleDriver_t )
+
 	virtual void	Spawn( void );
 	virtual void	Precache( void );
 	virtual void	Activate( void );
@@ -147,7 +154,7 @@ public:
 	void			ClearWaypoints( void );
 	void			CheckForTeleport( void );
 
-	int				BloodColor( void ) { return DONT_BLEED; }
+	BloodColor_t				BloodColor( void ) { return DONT_BLEED; }
 
 #ifdef HL2_DLL
 	Class_T			Classify( void ) { return CLASS_METROPOLICE; }

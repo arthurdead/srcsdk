@@ -154,6 +154,16 @@ public:
 };
 static CLightCacheSystem lightcache;
 
+void UpdateLightIntensity( const Vector &pos )
+{
+	UpdateLightIntensity( UTIL_GetLocalPlayer()->entindex(), pos );
+}
+
+void UpdateLightIntensity( const CBaseEntity *pTarget, const Vector &pos )
+{
+	UpdateLightIntensity( pTarget->IsPlayer() ? pTarget->entindex() : UTIL_GetLocalPlayer()->entindex(), pos );
+}
+
 void UpdateLightIntensity( int playerIndex, const Vector &pos )
 {
 #ifndef SWDS
@@ -179,6 +189,16 @@ void UpdateLightIntensity( int playerIndex, const Vector &pos )
 		}
 	}
 #endif
+}
+
+float GetLightIntensity( const Vector &pos )
+{
+	return GetLightIntensity( UTIL_GetLocalPlayer()->entindex(), pos );
+}
+
+float GetLightIntensity( const CBaseEntity *pTarget, const Vector &pos )
+{
+	return GetLightIntensity( pTarget->IsPlayer() ? pTarget->entindex() : UTIL_GetLocalPlayer()->entindex(), pos );
 }
 
 float GetLightIntensity( int playerIndex, const Vector &pos )

@@ -166,7 +166,7 @@ void CVGuiScreen::SetOverlayMaterial( const char *pMaterial )
 
 bool CVGuiScreen::IsActive() const 
 { 
-	return (m_fScreenFlags & VGUI_SCREEN_ACTIVE) != 0; 
+	return (m_fScreenFlags & VGUI_SCREEN_ACTIVE) != VGUI_SCREEN_NO_FLAGS; 
 }
 
 void CVGuiScreen::SetActive( bool bActive )
@@ -190,7 +190,7 @@ void CVGuiScreen::SetActive( bool bActive )
 //-----------------------------------------------------------------------------
 bool CVGuiScreen::IsAttachedToViewModel() const
 {
-	return (m_fScreenFlags & VGUI_SCREEN_ATTACHED_TO_VIEWMODEL) != 0; 
+	return (m_fScreenFlags & VGUI_SCREEN_ATTACHED_TO_VIEWMODEL) != VGUI_SCREEN_NO_FLAGS; 
 }
 
 //-----------------------------------------------------------------------------
@@ -248,7 +248,7 @@ void CVGuiScreen::InputSetInactive( inputdata_t &&inputdata )
 
 bool CVGuiScreen::IsVisibleOnlyToTeammates() const 
 { 
-	return (m_fScreenFlags & VGUI_SCREEN_VISIBLE_TO_TEAMMATES) != 0; 
+	return (m_fScreenFlags & VGUI_SCREEN_VISIBLE_TO_TEAMMATES) != VGUI_SCREEN_NO_FLAGS; 
 }
 
 void CVGuiScreen::MakeVisibleOnlyToTeammates( bool bActive )
@@ -307,7 +307,7 @@ EdictStateFlags_t CVGuiScreen::UpdateTransmitState()
 	}
 }
 
-int CVGuiScreen::ShouldTransmit( const CCheckTransmitInfo *pInfo )
+EdictStateFlags_t CVGuiScreen::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 {
 	Assert( IsAttachedToViewModel() );
 

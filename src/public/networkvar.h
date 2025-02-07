@@ -579,7 +579,11 @@ template< class Type, class Changer >
 class CNetworkVarEmbeddedBase : public Type
 {
 public:
-	CNetworkVarEmbeddedBase() = default;
+	CNetworkVarEmbeddedBase()
+		: Type()
+	{
+		this->NetworkStateChanged();
+	}
 
 	CNetworkVarEmbeddedBase& operator=( const CNetworkVarEmbeddedBase &val ) = delete;
 	CNetworkVarEmbeddedBase& operator=( CNetworkVarEmbeddedBase &&val ) = delete;
@@ -615,11 +619,61 @@ template< class Type, class Changer >
 class CNetworkVarEmbeddedCopyableBase : public Type
 {
 public:
-	CNetworkVarEmbeddedCopyableBase() = default;
-	CNetworkVarEmbeddedCopyableBase(const CNetworkVarEmbeddedCopyableBase &) = default;
-	CNetworkVarEmbeddedCopyableBase(CNetworkVarEmbeddedCopyableBase &&) = default;
-	CNetworkVarEmbeddedCopyableBase &operator=(const CNetworkVarEmbeddedCopyableBase &) = default;
-	CNetworkVarEmbeddedCopyableBase &operator=(CNetworkVarEmbeddedCopyableBase &&) = default;
+	CNetworkVarEmbeddedCopyableBase()
+		: Type()
+	{
+		this->NetworkStateChanged();
+	}
+
+	CNetworkVarEmbeddedCopyableBase(const CNetworkVarEmbeddedCopyableBase &other)
+		: Type(static_cast<const Type &>(other))
+	{
+		this->NetworkStateChanged();
+	}
+
+	CNetworkVarEmbeddedCopyableBase(const Type &other)
+		: Type(other)
+	{
+		this->NetworkStateChanged();
+	}
+
+	CNetworkVarEmbeddedCopyableBase(CNetworkVarEmbeddedCopyableBase &&other)
+		: Type(::Move(other))
+	{
+		this->NetworkStateChanged();
+		other.NetworkStateChanged();
+	}
+
+	CNetworkVarEmbeddedCopyableBase(Type &&other)
+		: Type(::Move(other))
+	{
+		this->NetworkStateChanged();
+		other.NetworkStateChanged();
+	}
+
+	CNetworkVarEmbeddedCopyableBase &operator=(const CNetworkVarEmbeddedCopyableBase &other)
+	{
+		Type::operator=(static_cast<const Type &>(other));
+		return *this;
+	}
+
+	CNetworkVarEmbeddedCopyableBase &operator=(const Type &other)
+	{
+		Type::operator=(other);
+		return *this;
+	}
+
+	CNetworkVarEmbeddedCopyableBase &operator=(CNetworkVarEmbeddedCopyableBase &&other)
+	{
+		Type::operator=(::Move(other));
+		return *this;
+	}
+
+	CNetworkVarEmbeddedCopyableBase &operator=(Type &&other)
+	{
+		Type::operator=(::Move(other));
+		return *this;
+	}
 
 	using Type::Type;
 	using Type::operator=;
@@ -1964,18 +2018,31 @@ struct NetworkVarType<T>
 // Internal macros used in definitions of network vars.
 #ifndef CLIENT_DLL
 #define NETWORK_VAR_STATECHANGED( name, stateChangedFn ) \
+public: \
 	static void CallOuterNetworkStateChanged_impl( void *ptr ) \
 	{ \
 		CHECK_USENETWORKVARS ( ( NetworkVar_##name##_OuterClass * ) ( ((uint8 *)ptr) - NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() ) )->stateChangedFn( NetworkVar_##name##_OuterClass::GetOffset_##name##_memory() ); \
+	} \
+public: \
+	void NetworkStateChanged() \
+	{ \
+		CallOuterNetworkStateChanged_impl( this ); \
 	}
 
 #define NETWORK_VAR_STATECHANGED_ARRAY( name, stateChangedFn ) \
+public: \
 	static void CallOuterNetworkStateChanged_impl( void *ptr, int i ) \
 	{ \
 		CHECK_USENETWORKVARS ( ( NetworkVar_##name##_OuterClass * ) ( ((uint8 *)ptr) - NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() ) )->stateChangedFn( NetworkVar_##name##_OuterClass::GetOffset_##name##_memory( i ) ); \
+	} \
+public: \
+	void NetworkStateChanged( int i ) \
+	{ \
+		CallOuterNetworkStateChanged_impl( this, i ); \
 	}
 
 #define NETWORK_VAR_STATECHANGED_EMBEDDED( name, stateChangedFn ) \
+public: \
 	static void CallOuterNetworkStateChanged_impl( void *ptr ) \
 	{ \
 		CHECK_USENETWORKVARS ( ( NetworkVar_##name##_OuterClass * ) ( ((uint8 *)ptr) - NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() ) )->stateChangedFn( NetworkVar_##name##_OuterClass::GetOffset_##name##_memory() ); \
@@ -1983,6 +2050,15 @@ struct NetworkVarType<T>
 	static void CallOuterNetworkStateChanged_impl( void *ptr, unsigned short offset ) \
 	{ \
 		CHECK_USENETWORKVARS ( ( NetworkVar_##name##_OuterClass * ) ( ((uint8 *)ptr) - NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() ) )->stateChangedFn( NetworkVar_##name##_OuterClass::GetOffset_##name##_memory( offset ) ); \
+	} \
+public: \
+	void NetworkStateChanged() \
+	{ \
+		CallOuterNetworkStateChanged_impl( this ); \
+	} \
+	void NetworkStateChanged( unsigned short offset ) \
+	{ \
+		CallOuterNetworkStateChanged_impl( this, offset ); \
 	}
 #else
 #define NETWORK_VAR_STATECHANGED( name, stateChangedFn )
@@ -2009,6 +2085,7 @@ struct NetworkVarType<T>
 	public: \
 		template <typename T> friend void ServerClassInit(); \
 		typedef NetworkVar_##name##_OuterClass::NetworkVar_##name##_BaseClass BaseClass; \
+		friend class base< __VA_OPT__(__VA_ARGS__,) NetworkVar_##name##_OuterClass::NetworkVar_##name >; \
 		using base< __VA_OPT__(__VA_ARGS__,) NetworkVar_##name##_OuterClass::NetworkVar_##name >::base; \
 		using NetworkVar_##name##_BaseClass::operator=; \
 		NetworkVar_##name() = default;
@@ -2026,6 +2103,7 @@ struct NetworkVarType<T>
 			static unsigned short offset = MyOffsetOf(NetworkVar_##name##_OuterClass::NetworkVar_##name, m_Value); \
 			return offset; \
 		} \
+	public: \
 		static typename NetworkVarType< NetworkVar_##name##_OuterClass::NetworkVar_##name##_BaseClass >::type &GetValue_location_impl( void *ptr ) \
 		{ \
 			return static_cast<NetworkVar_##name##_OuterClass::NetworkVar_##name *>(ptr)->m_Value; \
@@ -2044,6 +2122,7 @@ struct NetworkVarType<T>
 			static unsigned short offset = MyOffsetOf(otherClass, otherName); \
 			return offset; \
 		} \
+	public: \
 		static typename NetworkVarType< NetworkVar_##name##_BaseClass >::type &GetValue_location_impl( void *ptr ) \
 		{ \
 			return (( ( NetworkVar_##name##_OuterClass * ) ( ((uint8 *)ptr) - NetworkVar_##name##_OuterClass::GetOffset_##name##_NetworkVar() ) )->*( &otherClass::otherName )); \

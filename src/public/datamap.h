@@ -301,6 +301,7 @@ DECLARE_FIELD_INFO( FIELD_NPCSTATE,		 NPC_STATE )
 DECLARE_FIELD_TYPE_INFO( FIELD_TICK, int )
 DECLARE_FIELD_TYPE_INFO( FIELD_TIME, float )
 DECLARE_FIELD_TYPE_INFO( FIELD_SCALE, float )
+DECLARE_FIELD_TYPE_INFO( FIELD_DISTANCE, float )
 
 DECLARE_FIELD_TYPE_INFO( FIELD_EXACT_CLASSNAME, string_t )
 DECLARE_FIELD_TYPE_INFO( FIELD_PARTIAL_CLASSNAME, string_t )
@@ -337,6 +338,8 @@ DECLARE_FIELD_NETWORK_INFO( FIELD_MODELINDEX, CNetworkModelIndexBaseImpl )
 DECLARE_FIELD_NETWORK_INFO( FIELD_TIME, CNetworkTimeBase )
 DECLARE_FIELD_NETWORK_INFO( FIELD_SCALE, CNetworkScaleBase )
 DECLARE_FIELD_NETWORK_INFO( FIELD_DISTANCE, CNetworkDistanceBase )
+DECLARE_FIELD_NETWORK_INFO( FIELD_FLOAT, CNetworkAnimCycleBase )
+DECLARE_FIELD_NETWORK_INFO( FIELD_USHORT, CNetworkSequenceBase )
 
 #if defined( CLIENT_DLL ) || defined( GAME_DLL )
 template <typename T, typename H>
@@ -551,7 +554,9 @@ const char *GetFieldName( fieldtype_t type, bool pretty );
 // we know the output type from the variable itself, so it doesn't need to be specified here
 
 class ICustomFieldOps;
+#if defined GAME_DLL || defined CLIENT_DLL
 extern ICustomFieldOps *eventFuncs;
+#endif
 #define DEFINE_OUTPUT( name, outputname ) \
 	typedescription_t(eventFuncs, #name, sizeof(((classNameTypedef *)0)->name), 1, offsetof(classNameTypedef, name), FTYPEDESC_OUTPUT|FTYPEDESC_KEY, outputname, 0)
 
@@ -822,7 +827,11 @@ template <typename T>
 {
 	typedescription_t ret;
 	MapField_impl(ret, name, offset, sizeof(T), CNativeFieldInfo<T>::FIELDTYPE, FTYPEDESC_OUTPUT );
+#if defined GAME_DLL || defined CLIENT_DLL
 	ret.pFieldOps = eventFuncs;
+#else
+	ret.pFieldOps = NULL;
+#endif
 	ret.externalName = fgdname;
 	ret.m_pGuiName = fgdname;
 	return ret;

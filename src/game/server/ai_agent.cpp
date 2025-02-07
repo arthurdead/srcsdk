@@ -699,7 +699,7 @@ CAI_Agent::~CAI_Agent(void)
 
 //-----------------------------------------------------------------------------
 
-static void AIMsgGuts( CAI_Agent *pAI, unsigned flags, const char *pszMsg )
+static void AIMsgGuts( CAI_Agent *pAI, AIMsgFlags flags, const char *pszMsg )
 {
 // 	int			len		= strlen( pszMsg );
 // 	const char *pszFmt2 = NULL;
@@ -720,7 +720,7 @@ static void AIMsgGuts( CAI_Agent *pAI, unsigned flags, const char *pszMsg )
 // 		 gpGlobals->tickcount );
 }
 
-void DevMsg( CAI_Agent *pAI, unsigned flags, const char *pszFormat, ... )
+void DevMsg( CAI_Agent *pAI, AIMsgFlags flags, const char *pszFormat, ... )
 {
 	if ( (flags & AIMF_IGNORE_SELECTED) || (pAI->GetDebugOverlayFlags() & OVERLAY_NPC_SELECTED_BIT) )
 	{
@@ -734,7 +734,7 @@ void DevMsg( CAI_Agent *pAI, const char *pszFormat, ... )
 {
 	if ( (pAI->GetDebugOverlayFlags() & OVERLAY_NPC_SELECTED_BIT) )
 	{
-		AIMsgGuts( pAI, 0, CFmtStr( &pszFormat ) );
+		AIMsgGuts( pAI, AIMF_NO_FLAGS, CFmtStr( &pszFormat ) );
 	}
 }
 

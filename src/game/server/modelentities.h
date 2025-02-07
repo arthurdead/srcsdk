@@ -12,15 +12,6 @@
 #include "baseentity.h"
 #include "baseentity_shared.h"
 
-//!! replace this with generic start enabled/disabled
-enum SFBrush_t : unsigned char
-{
-	SF_WALL_START_OFF = 0x0001,
-	SF_IGNORE_PLAYERUSE = 0x0002
-};
-
-FLAGENUM_OPERATORS( SFBrush_t, unsigned char )
-
 //-----------------------------------------------------------------------------
 // Purpose: basic solid geometry
 // enabled state:	brush is visible
@@ -36,7 +27,7 @@ public:
 
 	DECLARE_SPAWNFLAGS( SFBrush_t )
 
-	virtual EntityCaps_t ObjectCaps( void ) { return HasSpawnFlags(SF_IGNORE_PLAYERUSE) ? BaseClass::ObjectCaps() : BaseClass::ObjectCaps() | FCAP_IMPULSE_USE; }
+	virtual EntityCaps_t ObjectCaps( void ) { return HasSpawnFlags(SF_BRUSH_IGNORE_PLAYERUSE) ? BaseClass::ObjectCaps() : BaseClass::ObjectCaps() | FCAP_IMPULSE_USE; }
 
 	virtual int DrawDebugTextOverlays( void );
 

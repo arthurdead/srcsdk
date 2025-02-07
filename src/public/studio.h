@@ -56,6 +56,9 @@ UNORDEREDENUM_OPERATORS( PoseParameter_t, unsigned char )
 inline const Activity INVALID_ACTIVITY = (Activity)-1;
 inline const sequence_t INVALID_SEQUENCE = (sequence_t)-1;
 
+//TODO!!!! i don't think models are guaranteed to have sequences? so forcing sequence 0 is erroneous
+inline const sequence_t ROOT_SEQUENCE = (sequence_t)0;
+
 // So we have something more succint to check for than '-1'
 #define ACTIVITY_NOT_AVAILABLE INVALID_SEQUENCE
 #define ACT_INVALID INVALID_ACTIVITY

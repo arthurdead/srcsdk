@@ -349,7 +349,7 @@ void CBaseTrigger::InitTrigger( )
 
 	m_hTouchingEntities.Purge();
 
-	if ( HasSpawnFlags( SF_TRIG_TOUCH_DEBRIS ) )
+	if ( HasSpawnFlags( SF_TRIGGER_TOUCH_DEBRIS ) )
 	{
 		CollisionProp()->AddSolidFlags( FSOLID_TRIGGER_TOUCH_DEBRIS );
 	}
@@ -371,7 +371,7 @@ bool CBaseTrigger::PassesTriggerFilters(CBaseEntity *pOther)
 		||
 		(HasSpawnFlags(SF_TRIGGER_ALLOW_ITEMS) && pOther->GetMoveType() == MOVETYPE_FLYGRAVITY)
 		||
-		(	HasSpawnFlags(SF_TRIG_TOUCH_DEBRIS) && 
+		(	HasSpawnFlags(SF_TRIGGER_TOUCH_DEBRIS) && 
 			(pOther->GetCollisionGroup() == COLLISION_GROUP_DEBRIS ||
 			pOther->GetCollisionGroup() == COLLISION_GROUP_DEBRIS_TRIGGER || 
 			pOther->GetCollisionGroup() == COLLISION_GROUP_INTERACTIVE_DEBRIS)
@@ -906,7 +906,7 @@ bool CTriggerHurt::KeyValue( const char *szKeyName, const char *szValue )
 	// Additional OR flags
 	if (FStrEq( szKeyName, "damageor" ) || FStrEq( szKeyName, "damagepresets" ))
 	{
-		m_bitsDamageInflict |= atoi(szValue);
+		m_bitsDamageInflict |= (DamageTypes_t)atoi(szValue);
 	}
 	else
 		return BaseClass::KeyValue( szKeyName, szValue );
@@ -1044,13 +1044,19 @@ void CTriggerOnce::Spawn( void )
 //  Triggers once when player is looking at m_target
 //
 // ##################################################################################
-#define SF_TRIGGERLOOK_FIREONCE		128
-#define SF_TRIGGERLOOK_USEVELOCITY	256
+enum SFTriggerLook_t : uint64
+{
+	SF_TRIGGERLOOK_FIREONCE =		(SF_TRIGGER_LAST_FLAG << 1),
+	SF_TRIGGERLOOK_USEVELOCITY = 	(SF_TRIGGER_LAST_FLAG << 2),
+};
+
+FLAGENUM_OPERATORS( SFTriggerLook_t, uint64 )
 
 class CTriggerLook : public CTriggerOnce
 {
 public:
 	DECLARE_CLASS( CTriggerLook, CTriggerOnce );
+	DECLARE_SPAWNFLAGS( SFTriggerLook_t )
 
 	CUtlVector<EHANDLE> m_hLookTargets;
 	float m_flFieldOfView;
@@ -1343,7 +1349,7 @@ void CTriggerVolume::Activate( void )
 
 #define cchMapNameMost 32
 
-enum
+enum : unsigned char
 {
 	TRANSITION_VOLUME_SCREENED_OUT = 0,
 	TRANSITION_VOLUME_NOT_FOUND = 1,
@@ -1853,7 +1859,7 @@ bool TestEntityTriggerIntersection_Accurate( CBaseEntity *pTrigger, CBaseEntity 
 				}
 				else
 				{
-					vcollide_t *pVCollide = modelinfo->GetVCollide( pEntity->GetModelIndex() );
+					const vcollide_t *pVCollide = modelinfo->GetVCollide( pEntity->GetModelIndex() );
 					if ( pVCollide && pVCollide->solidCount )
 					{
 						collidelist_t element;
@@ -2061,6 +2067,9 @@ class CTriggerPush : public CBaseTrigger
 public:
 	DECLARE_CLASS( CTriggerPush, CBaseTrigger );
 
+	DECLARE_SPAWNFLAGS( SFTriggerPush_t )
+	DECLARE_SPAWNFLAGS_OVERLOAD( SFTrigger_t )
+
 	void Spawn( void );
 	void Activate( void );
 	void Touch( CBaseEntity *pOther );
@@ -2130,7 +2139,7 @@ void CTriggerPush::InputSetSpeed( inputdata_t &&inputdata )
 //-----------------------------------------------------------------------------
 void CTriggerPush::InputSetPushDir( inputdata_t &&inputdata )
 {
-	inputdata.value.Vector3D( m_vecPushDir );
+	m_vecPushDir = inputdata.value.Vector3D();
 
 	// Convert pushdir from angles to a vector
 	Vector vecAbsDir;
@@ -2181,7 +2190,7 @@ void CTriggerPush::Touch( CBaseEntity *pOther )
 	VectorRotate( m_vecPushDir, EntityToWorldTransform(), vecAbsDir );
 
 	// Instant trigger, just transfer velocity and remove
-	if (HasSpawnFlags(SF_TRIG_PUSH_ONCE))
+	if (HasSpawnFlags(SF_TRIGGER_PUSH_ONCE))
 	{
 		pOther->ApplyAbsVelocityImpulse( m_flPushSpeed * vecAbsDir );
 
@@ -2234,7 +2243,7 @@ void CTriggerPush::Touch( CBaseEntity *pOther )
 			if ( pOther->IsPlayer() && 
 				 pOther->GetMoveType() == MOVETYPE_LADDER )
 			{
-				if ( !HasSpawnFlags(SF_TRIG_PUSH_AFFECT_PLAYER_ON_LADDER) )
+				if ( !HasSpawnFlags(SF_TRIGGER_PUSH_AFFECT_PLAYER_ON_LADDER) )
 				{
 					// Ignore the push
 					return;
@@ -2273,7 +2282,7 @@ void CTriggerPush::Touch( CBaseEntity *pOther )
 
 void CTriggerPush::InputSetPushDirection( inputdata_t &&inputdata )
 {
-	inputdata.value.Vector3D( m_vecPushDir );
+	m_vecPushDir = inputdata.value.Vector3D();
 
 	// Convert pushdir from angles to a vector
 	Vector vecAbsDir;
@@ -2302,12 +2311,19 @@ void CTriggerPush::DrawDebugGeometryOverlays()
 //-----------------------------------------------------------------------------
 // Teleport trigger
 //-----------------------------------------------------------------------------
-const int SF_TELEPORT_PRESERVE_ANGLES = 0x20;	// Preserve angles even when a local landmark is not specified
+enum SFTriggerTeleport_t : uint64
+{
+	SF_TELEPORT_PRESERVE_ANGLES = (SF_TRIGGER_LAST_FLAG << 1),	// Preserve angles even when a local landmark is not specified
+};
+
+FLAGENUM_OPERATORS( SFTriggerTeleport_t, uint64 )
 
 class CTriggerTeleport : public CBaseTrigger
 {
 public:
 	DECLARE_CLASS( CTriggerTeleport, CBaseTrigger );
+
+	DECLARE_SPAWNFLAGS( SFTriggerTeleport_t )
 
 	virtual void Spawn( void ) OVERRIDE;
 	virtual void Touch( CBaseEntity *pOther ) OVERRIDE;
@@ -2766,7 +2782,7 @@ void CTriggerCamera::InputDisable( inputdata_t &&inputdata )
 //------------------------------------------------------------------------------
 void CTriggerCamera::InputSetTarget( inputdata_t &&inputdata )
 {
-	BaseClass::InputSetTarget( inputdata );
+	BaseClass::InputSetTarget( ::Move(inputdata) );
 
 	if ( FStrEq(STRING(m_target), "!player") )
 	{
@@ -3212,7 +3228,7 @@ void CTriggerCamera::Move()
 
 			if ( pPlayer  )
 			{
-				uint64 buttonsChanged = m_nPlayerButtons ^ pPlayer->m_nButtons;
+				InButtons_t buttonsChanged = m_nPlayerButtons ^ pPlayer->m_nButtons;
 
 				if ( buttonsChanged && pPlayer->m_nButtons )
 				{
@@ -3230,7 +3246,7 @@ void CTriggerCamera::Move()
 	if (m_pPath)
 	{
 		// Subtract movement from the previous frame
-		if (m_pPath->GetSpawnFlags() & SF_PATHCORNER_TELEPORT)
+		if (m_pPath->HasSpawnFlags(SF_PATHCORNER_TELEPORT))
 		{
 			SetAbsOrigin(m_pPath->GetAbsOrigin());
 			m_moveDistance = -1;  //Make sure we enter the conditional below and advance to the next corner.
@@ -4004,9 +4020,12 @@ int CTriggerImpact::DrawDebugTextOverlays(void)
 
 class CTriggerPlayerMovement : public CBaseTrigger
 {
+public:
 	DECLARE_CLASS( CTriggerPlayerMovement, CBaseTrigger );
 	DECLARE_SERVERCLASS();
-public:
+
+	DECLARE_SPAWNFLAGS( SFPlayerMovementTrigger_t )
+	DECLARE_SPAWNFLAGS_OVERLOAD( SFTrigger_t )
 
 	void Spawn( void );
 	void StartTouch( CBaseEntity *pOther );

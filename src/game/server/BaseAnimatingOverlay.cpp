@@ -20,13 +20,11 @@
 
 extern ConVar ai_sequence_debug;
 
-#define ORDER_BITS			4
-
 BEGIN_SEND_TABLE_NOBASE(CAnimationLayer, DT_Animationlayer)
 	SendPropInt		(SENDINFO(m_nSequence),		ANIMATION_SEQUENCE_BITS,SPROP_UNSIGNED),
 	SendPropFloat	(SENDINFO(m_flCycle),		ANIMATION_CYCLE_BITS,	SPROP_ROUNDDOWN,	0.0f,   1.0f),
 	SendPropFloat	(SENDINFO(m_flPrevCycle),	ANIMATION_CYCLE_BITS,	SPROP_ROUNDDOWN,	0.0f,   1.0f),
-	SendPropFloat	(SENDINFO(m_flWeight),		WEIGHT_BITS,			0,	0.0f,	1.0f),
+	SendPropFloat	(SENDINFO(m_flWeight),		WEIGHT_BITS,			SPROP_NONE,	0.0f,	1.0f),
 	SendPropInt		(SENDINFO(m_nOrder),		ORDER_BITS,				SPROP_UNSIGNED),
 END_SEND_TABLE()
 
@@ -34,7 +32,7 @@ END_SEND_TABLE()
 BEGIN_SEND_TABLE_NOBASE( CBaseAnimatingOverlay, DT_OverlayVars )
 	SendPropUtlVectorDataTable( 
 		m_AnimOverlay,
-		CBaseAnimatingOverlay::MAX_OVERLAYS, // max elements
+		MAX_ANIM_OVERLAYS, // max elements
 		DT_Animationlayer )
 END_SEND_TABLE()
 
@@ -55,9 +53,9 @@ CAnimationLayer::CAnimationLayer( )
 	m_flPrevCycle = 0;
 	m_bSequenceFinished = false;
 	m_nActivity = ACT_INVALID;
-	m_nSequence = 0;
+	m_nSequence = INVALID_SEQUENCE;
 	m_nPriority = 0;
-	m_nOrder.Set( CBaseAnimatingOverlay::MAX_OVERLAYS );
+	m_nOrder.Set( MAX_ANIM_OVERLAYS );
 
 	m_flBlendIn = 0.0;
 	m_flBlendOut = 0.0;
@@ -71,12 +69,26 @@ CAnimationLayer::CAnimationLayer( )
 	m_flLayerFadeOuttime = 0;
 }
 
-
-void CAnimationLayer::Init( CBaseAnimatingOverlay *pOverlay )
+void CNetworkedAnimationLayer::Init( CBaseAnimatingOverlay *pOverlay )
 {
 	m_pOwnerEntity = pOverlay;
 }
 
+void CNetworkedAnimationLayer::NetworkStateChanged()
+{
+	if(m_pOwnerEntity) {
+		m_pOwnerEntity->m_AnimOverlay.NetworkStateChanged();
+	}
+}
+
+void CNetworkedAnimationLayer::NetworkStateChanged( unsigned short offset )
+{
+	//TODO!!!! impossible to get exact offset?
+
+	if(m_pOwnerEntity) {
+		m_pOwnerEntity->m_AnimOverlay.NetworkStateChanged();
+	}
+}
 
 //------------------------------------------------------------------------------
 // Purpose :
@@ -164,18 +176,18 @@ void CBaseAnimatingOverlay::VerifyOrder( void )
 #ifdef _DEBUG
 	int i, j;
 	// test sorting of the layers
-	int layer[MAX_OVERLAYS];
+	int layer[MAX_ANIM_OVERLAYS];
 	int maxOrder = -1;
-	for (i = 0; i < MAX_OVERLAYS; i++)
+	for (i = 0; i < MAX_ANIM_OVERLAYS; i++)
 	{
-		layer[i] = MAX_OVERLAYS;
+		layer[i] = MAX_ANIM_OVERLAYS;
 	}
 	for (i = 0; i < m_AnimOverlay.Count(); i++)
 	{
-		if (m_AnimOverlay[ i ].m_nOrder < MAX_OVERLAYS)
+		if (m_AnimOverlay[ i ].m_nOrder < MAX_ANIM_OVERLAYS)
 		{
 			j = m_AnimOverlay[ i ].m_nOrder;
-			Assert( layer[j] == MAX_OVERLAYS );
+			Assert( layer[j] == MAX_ANIM_OVERLAYS );
 			layer[j] = i;
 			if (j > maxOrder)
 				maxOrder = j;
@@ -246,7 +258,7 @@ void CBaseAnimatingOverlay::StudioFrameAdvance ()
 
 	for ( int i = 0; i < vecAnimOverlay.Count(); i++ )
 	{
-		CAnimationLayer *pLayer = &vecAnimOverlay[i];
+		CNetworkedAnimationLayer *pLayer = &vecAnimOverlay[i];
 		
 		if (pLayer->IsActive())
 		{
@@ -428,11 +440,11 @@ void CBaseAnimatingOverlay::GetSkeleton( CStudioHdr *pStudioHdr, Vector pos[], Q
 	boneSetup.AccumulatePose( pos, q, GetSequence(), GetCycle(), 1.0, gpGlobals->curtime, m_pIk );
 
 	// sort the layers
-	int layer[MAX_OVERLAYS] = {};
+	int layer[MAX_ANIM_OVERLAYS] = {};
 	int i;
 	for (i = 0; i < m_AnimOverlay.Count(); i++)
 	{
-		layer[i] = MAX_OVERLAYS;
+		layer[i] = MAX_ANIM_OVERLAYS;
 	}
 	for (i = 0; i < m_AnimOverlay.Count(); i++)
 	{
@@ -665,30 +677,30 @@ animlayerindex_t CBaseAnimatingOverlay::AllocateLayer( int iPriority )
 
 	if (iOpenLayer == -1)
 	{
-		if (vecAnimOverlay.Count() >= MAX_OVERLAYS)
+		if (vecAnimOverlay.Count() >= MAX_ANIM_OVERLAYS)
 		{
 			return INVALID_ANIMLAYER;
 		}
 
 		iOpenLayer = vecAnimOverlay.AddToTail();
-		CAnimationLayer &layer = vecAnimOverlay[iOpenLayer];
+		CNetworkedAnimationLayer &layer = vecAnimOverlay[iOpenLayer];
 		layer.Init( this );
 	}
 
 	// make sure there's always an empty unused layer so that history slots will be available on the client when it is used
 	if (iNumOpen == 0)
 	{
-		if (vecAnimOverlay.Count() < MAX_OVERLAYS)
+		if (vecAnimOverlay.Count() < MAX_ANIM_OVERLAYS)
 		{
 			i = vecAnimOverlay.AddToTail();
-			CAnimationLayer &layer = vecAnimOverlay[i];
+			CNetworkedAnimationLayer &layer = vecAnimOverlay[i];
 			layer.Init( this );
 		}
 	}
 
 	for (i = 0; i < vecAnimOverlay.Count(); i++)
 	{
-		if ( vecAnimOverlay[i].m_nOrder >= iNewOrder && vecAnimOverlay[i].m_nOrder < MAX_OVERLAYS)
+		if ( vecAnimOverlay[i].m_nOrder >= iNewOrder && vecAnimOverlay[i].m_nOrder < MAX_ANIM_OVERLAYS)
 		{
 			CAnimationLayer &layer = vecAnimOverlay[i];
 			layer.m_nOrder++;
@@ -1111,7 +1123,7 @@ void CBaseAnimatingOverlay::FastRemoveLayer( animlayerindex_t iLayer )
 		}
 	}
 
-	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+	CNetworkedAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
 	layer.Init( this );
 
 	VerifyOrder();

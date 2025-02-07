@@ -13,10 +13,13 @@
 
 class IPhysicsObject;
 
-#define VEHICLE_TYPE_CAR_WHEELS			(1<<0)
-#define VEHICLE_TYPE_CAR_RAYCAST		(1<<1)
-#define VEHICLE_TYPE_JETSKI_RAYCAST		(1<<2)
-#define VEHICLE_TYPE_AIRBOAT_RAYCAST	(1<<3)
+enum VehicleType_t : unsigned int
+{
+	VEHICLE_TYPE_CAR_WHEELS =			(1<<0),
+	VEHICLE_TYPE_CAR_RAYCAST =		(1<<1),
+	VEHICLE_TYPE_JETSKI_RAYCAST =		(1<<2),
+	VEHICLE_TYPE_AIRBOAT_RAYCAST =	(1<<3)
+};
 
 #define VEHICLE_MAX_AXLE_COUNT	4
 #define VEHICLE_MAX_GEAR_COUNT	6
@@ -231,14 +234,14 @@ class CPassengerSeatTransition;
 typedef CUtlVector< CPassengerSeatTransition> PassengerSeatAnims_t;
 
 // Seat query types
-enum VehicleSeatQuery_e
+enum VehicleSeatQuery_e : unsigned char
 {
 	VEHICLE_SEAT_ANY,			// Any available seat for our role
 	VEHICLE_SEAT_NEAREST,		// Seat closest to our starting point
 };
 
 // Seat anim types for return
-enum PassengerSeatAnimType_t
+enum PassengerSeatAnimType_t : unsigned char
 {
 	PASSENGER_SEAT_ENTRY,
 	PASSENGER_SEAT_EXIT

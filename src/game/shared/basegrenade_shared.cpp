@@ -101,11 +101,8 @@ END_PREDICTION_DATA()
 
 #endif
 
-// Grenades flagged with this will be triggered when the owner calls detonateSatchelCharges
-#define SF_DETONATE		0x0001
-
 // UNDONE: temporary scorching for PreAlpha - find a less sleazy permenant solution.
-void CSharedBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
+void CSharedBaseGrenade::Explode( trace_t *pTrace, DamageTypes_t bitsDamageType )
 {
 #if !defined( CLIENT_DLL )
 	
@@ -121,7 +118,7 @@ void CSharedBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 	}
 
 	Vector vecAbsOrigin = GetAbsOrigin();
-	int contents = UTIL_PointContents ( vecAbsOrigin, MASK_WATER );
+	ContentsFlags_t contents = UTIL_PointContents ( vecAbsOrigin, MASK_WATER );
 
 	// Since this code only runs on the server, make sure it shows the tempents it creates.
 	// This solves a problem with remote detonating the pipebombs (client wasn't seeing the explosion effect)
@@ -135,7 +132,7 @@ void CSharedBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 
 		te->Explosion( filter, -1.0, // don't apply cl_interp delay
 			&vecAbsOrigin,
-			!( contents & MASK_WATER ) ? g_sModelIndexFireball : g_sModelIndexWExplosion,
+			(( contents & MASK_WATER ) == CONTENTS_EMPTY) ? g_sModelIndexFireball : g_sModelIndexWExplosion,
 			m_DmgRadius * .03, 
 			25,
 			TE_EXPLFLAG_NONE|TE_EXPLFLAG_DLIGHT,
@@ -149,7 +146,7 @@ void CSharedBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 		CPASFilter filter( vecAbsOrigin );
 		te->Explosion( filter, -1.0, // don't apply cl_interp delay
 			&vecAbsOrigin, 
-			!( contents & MASK_WATER ) ? g_sModelIndexFireball : g_sModelIndexWExplosion,
+			(( contents & MASK_WATER ) == CONTENTS_EMPTY) ? g_sModelIndexFireball : g_sModelIndexWExplosion,
 			m_DmgRadius * .03, 
 			25,
 			TE_EXPLFLAG_NONE|TE_EXPLFLAG_DLIGHT,

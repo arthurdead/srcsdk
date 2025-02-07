@@ -50,8 +50,8 @@ bool CFuncWall::CreateVPhysics( void )
 	IPhysicsObject *pPhys = VPhysicsInitStatic();
 	if ( pPhys )
 	{
-		int contents = modelinfo->GetModelContents( GetModelIndex() );
-		if ( ! (contents & (MASK_SOLID|MASK_PLAYERSOLID|MASK_NPCSOLID)) )
+		ContentsFlags_t contents = modelinfo->GetModelContents( GetModelIndex() );
+		if ( (contents & (MASK_SOLID|MASK_PLAYERSOLID|MASK_NPCSOLID)) == CONTENTS_EMPTY )
 		{
 			// leave the physics shadow there in case it has crap constrained to it
 			// but disable collisions with it
@@ -72,7 +72,12 @@ void CFuncWall::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 }
 
 
-#define SF_WALL_START_OFF		0x0001
+enum SFWall_t : unsigned char
+{
+	SF_WALL_START_OFF =		0x0001
+};
+
+FLAGENUM_OPERATORS( SFWall_t, unsigned char )
 
 class CFuncWallToggle : public CFuncWall
 {
@@ -80,6 +85,8 @@ public:
 	DECLARE_CLASS( CFuncWallToggle, CFuncWall );
 
 	DECLARE_MAPENTITY();
+
+	DECLARE_SPAWNFLAGS( SFWall_t )
 
 	void	Spawn( void );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
@@ -240,8 +247,13 @@ void CFuncVehicleClip::InputDisable( inputdata_t &&inputdata )
 
 //============================= FUNC_CONVEYOR =======================================
 
-#define SF_CONVEYOR_VISUAL		0x0001
-#define SF_CONVEYOR_NOTSOLID	0x0002
+enum SFConveyor_t : unsigned char
+{
+	SF_CONVEYOR_VISUAL =		0x0001,
+	SF_CONVEYOR_NOTSOLID =	0x0002
+};
+
+FLAGENUM_OPERATORS( SFConveyor_t, unsigned char )
 
 class CFuncConveyor : public CFuncWall
 {
@@ -249,6 +261,8 @@ public:
 	DECLARE_CLASS( CFuncConveyor, CFuncWall );
 	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
+
+	DECLARE_SPAWNFLAGS( SFConveyor_t )
 
 	CFuncConveyor();
 
@@ -384,6 +398,7 @@ class CFuncRotating : public CBaseEntity
 {
 public:
 	DECLARE_CLASS( CFuncRotating, CBaseEntity );
+	DECLARE_SPAWNFLAGS( SFRotatingBrush_t )
 	// basic functions
 	void Spawn( void  );
 	void Precache( void  );
@@ -639,6 +654,10 @@ void CFuncRotating::Spawn( )
 	{
 		m_vecMoveAng = QAngle(1,0,0);
 	}
+	else if ( HasSpawnFlags(SF_BRUSH_ROTATE_Y_AXIS) )
+	{
+		m_vecMoveAng = QAngle(0,1,0);	// y-axis
+	}
 	else
 	{
 		m_vecMoveAng = QAngle(0,1,0);	// y-axis
@@ -657,7 +676,7 @@ void CFuncRotating::Spawn( )
 	//
 	// Some rotating objects like fake volumetric lights will not be solid.
 	//
-	if ( HasSpawnFlags(SF_ROTATING_NOT_SOLID) )
+	if ( HasSpawnFlags(SF_BRUSH_ROTATE_NOT_SOLID) )
 	{
 		AddSolidFlags( FSOLID_NOT_SOLID );
 		SetMoveType( MOVETYPE_PUSH );
@@ -694,7 +713,7 @@ void CFuncRotating::Spawn( )
 	//
 	// Can this brush inflict pain?
 	//
-	if ( HasSpawnFlags(SF_BRUSH_HURT) )
+	if ( HasSpawnFlags(SF_BRUSH_ROTATE_HURT) )
 	{
 		SetTouch( &CFuncRotating::HurtTouch );
 	}
@@ -1139,7 +1158,7 @@ void CFuncRotating::SetTargetSpeed( float flSpeed )
 	//
 	// If we don't accelerate, change to the new speed instantly.
 	//
-	if ( !HasSpawnFlags(SF_BRUSH_ACCDCC ) )
+	if ( !HasSpawnFlags(SF_BRUSH_ROTATE_ACCDCC ) )
 	{
 		UpdateSpeed( m_flTargetSpeed );
 		SetMoveDone( &CFuncRotating::RotateMove );
@@ -1444,10 +1463,11 @@ void CFuncVPhysicsClip::InputDisable( inputdata_t &&inputdata )
 
 void CFuncVPhysicsClip::InputSetFilter( inputdata_t &&inputdata )
 {
-	if (inputdata.value.Entity())
+	CBaseEntity *pEnt = inputdata.value.EntityP();
+	if (pEnt)
 	{
-		m_iFilterName = inputdata.value.Entity()->GetEntityName();
-		m_hFilter = dynamic_cast<CBaseFilter *>(inputdata.value.Entity().Get());
+		m_iFilterName = pEnt->GetEntityName();
+		m_hFilter = dynamic_cast<CBaseFilter *>(pEnt);
 	}
 	else
 	{

@@ -15,12 +15,16 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define SF_ENTMAKER_AUTOSPAWN				0x0001
-#define SF_ENTMAKER_WAITFORDESTRUCTION		0x0002
-#define SF_ENTMAKER_IGNOREFACING			0x0004
-#define SF_ENTMAKER_CHECK_FOR_SPACE			0x0008
-#define SF_ENTMAKER_CHECK_PLAYER_LOOKING	0x0010
+enum SFEntMaker_t : unsigned char
+{
+	SF_ENTMAKER_AUTOSPAWN =				0x0001,
+	SF_ENTMAKER_WAITFORDESTRUCTION =		0x0002,
+	SF_ENTMAKER_IGNOREFACING =			0x0004,
+	SF_ENTMAKER_CHECK_FOR_SPACE =			0x0008,
+	SF_ENTMAKER_CHECK_PLAYER_LOOKING =	0x0010,
+};
 
+FLAGENUM_OPERATORS( SFEntMaker_t, unsigned char )
 
 //-----------------------------------------------------------------------------
 // Purpose: An entity that mapmakers can use to ensure there's a required entity never runs out.
@@ -31,6 +35,8 @@ class CEnvEntityMaker : public CPointEntity
 	DECLARE_CLASS( CEnvEntityMaker, CPointEntity );
 public:
 	DECLARE_MAPENTITY();
+
+	DECLARE_SPAWNFLAGS( SFEntMaker_t )
 
 	virtual void Spawn( void );
 	virtual void Activate( void );
@@ -120,7 +126,7 @@ void CEnvEntityMaker::Activate( void )
 	}
 
 	// Spawn an instance
-	if ( m_spawnflags & SF_ENTMAKER_AUTOSPAWN )
+	if ( HasSpawnFlags( SF_ENTMAKER_AUTOSPAWN ) )
 	{
 		SpawnEntity();
 	}
@@ -325,7 +331,7 @@ void CEnvEntityMaker::CheckSpawnThink( void )
 	if ( m_hCurrentInstance )
 	{
 		// If Wait-For-Destruction is set, abort immediately
-		if ( m_spawnflags & SF_ENTMAKER_WAITFORDESTRUCTION )
+		if ( HasSpawnFlags( SF_ENTMAKER_WAITFORDESTRUCTION ) )
 			return;
 	}
 
@@ -394,8 +400,7 @@ void CEnvEntityMaker::InputForceSpawnAtEntityCenter( inputdata_t &&inputdata )
 //-----------------------------------------------------------------------------
 void CEnvEntityMaker::InputForceSpawnAtPosition( inputdata_t &&inputdata )
 {
-	Vector vecPos;
-	inputdata.value.Vector3D(vecPos);
+	Vector vecPos = inputdata.value.Vector3D();
 	if (vecPos != vec3_origin && vecPos.IsValid())
 	{
 		SpawnEntity(vecPos, GetLocalAngles());

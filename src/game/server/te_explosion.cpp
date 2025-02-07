@@ -99,7 +99,7 @@ void CTEExplosion::Test( const Vector& current_origin, const QAngle& current_ang
 
 IMPLEMENT_SERVERCLASS_ST(CTEExplosion, DT_TEExplosion)
 	SendPropModelIndex( SENDINFO(m_nModelIndex) ),
-	SendPropFloat( SENDINFO(m_fScale ), 9, 0, 0.0, 51.2 ),
+	SendPropFloat( SENDINFO(m_fScale ), 9, SPROP_NONE, 0.0, 51.2 ),
 	SendPropInt( SENDINFO(m_nFrameRate), 8, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nFlags), 10, SPROP_UNSIGNED ),
 	SendPropVector( SENDINFO(m_vecNormal), -1, SPROP_COORD),

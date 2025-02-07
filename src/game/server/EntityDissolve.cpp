@@ -184,7 +184,7 @@ void CEntityDissolve::InputDissolve( inputdata_t &&inputdata )
 // Input  : pTarget - 
 //-----------------------------------------------------------------------------
 CEntityDissolve *CEntityDissolve::Create( CBaseEntity *pTarget, const char *pMaterialName, 
-	float flStartTime, int nDissolveType, bool *pRagdollCreated )
+	float flStartTime, EntityDissolve_t nDissolveType, bool *pRagdollCreated )
 {
 	if ( pRagdollCreated )
 	{
@@ -339,7 +339,7 @@ void CEntityDissolve::DissolveThink( void )
 		// passing NULL to TakeDamage causes bad things to happen
 		CBasePlayer *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
 
-		int iNoPhysicsDamage = GameRules()->Damage_GetNoPhysicsForce();
+		DamageTypes_t iNoPhysicsDamage = GameRules()->Damage_GetNoPhysicsForce();
 		CTakeDamageInfo info( pPlayer, pPlayer, 10000.0, DMG_GENERIC | DMG_REMOVENORAGDOLL | iNoPhysicsDamage );
 		pTarget->TakeDamage( info );
 

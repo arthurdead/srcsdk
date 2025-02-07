@@ -762,7 +762,7 @@ void CAmbientGeneric::InputStopSound( inputdata_t &&inputdata )
 
 void CAmbientGeneric::SendSound( SoundFlags_t flags)
 {
-	int iFlags = flags != SND_STOP ? ((int)flags | m_iSoundFlags) : flags;
+	SoundFlags_t iFlags = flags != SND_STOP ? (flags | m_iSoundFlags) : flags;
 	char *szSoundFile = (char *)STRING( m_iszSound );
 	CBaseEntity* pSoundSource = m_hSoundSource;
 	if ( pSoundSource )

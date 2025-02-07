@@ -30,14 +30,14 @@ abstract_class IVehicle
 {
 public:
 	// Get and set the current driver. Use PassengerRole_t enum in shareddefs.h for adding passengers
-	virtual CSharedBaseCombatCharacter*	GetPassenger( int nRole = VEHICLE_ROLE_DRIVER ) = 0;
-	virtual int						GetPassengerRole( CSharedBaseCombatCharacter *pPassenger ) = 0;
+	virtual CSharedBaseCombatCharacter*	GetPassenger( PassengerRole_t nRole = VEHICLE_ROLE_DRIVER ) = 0;
+	virtual PassengerRole_t						GetPassengerRole( CSharedBaseCombatCharacter *pPassenger ) = 0;
 	
 	// Where is the passenger seeing from?
-	virtual void			GetVehicleViewPosition( int nRole, Vector *pOrigin, QAngle *pAngles, float *pFOV = NULL ) = 0;
+	virtual void			GetVehicleViewPosition( PassengerRole_t nRole, Vector *pOrigin, QAngle *pAngles, float *pFOV = NULL ) = 0;
 
 	// Does the player use his normal weapons while in this mode?
-	virtual bool			IsPassengerUsingStandardWeapons( int nRole = VEHICLE_ROLE_DRIVER ) = 0;
+	virtual bool			IsPassengerUsingStandardWeapons( PassengerRole_t nRole = VEHICLE_ROLE_DRIVER ) = 0;
 
 	// Process movement
 	virtual void			SetupMove( CSharedBasePlayer *player, CUserCmd *ucmd, IMoveHelper *pHelper, CMoveData *move ) = 0;

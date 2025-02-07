@@ -16,9 +16,11 @@
 class CAI_Concept : public ResponseRules::CRR_Concept
 {
 public:
-	CAI_Concept() {};
+	typedef ResponseRules::CRR_Concept BaseClass;
+
+	CAI_Concept() : BaseClass() {};
 	// construct concept from a string.
-	CAI_Concept(const char *fromString) : CRR_Concept(fromString) {} ;
+	CAI_Concept(const char *fromString) : BaseClass(fromString) {} ;
 
 	// get/set BS
 	inline EHANDLE GetSpeaker() const { return m_hSpeaker; }
@@ -40,5 +42,6 @@ protected:
 	*/
 };
 
+inline const CAI_Concept INVALID_AI_CONCEPT;
 
 #endif

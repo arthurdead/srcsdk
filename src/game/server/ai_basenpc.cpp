@@ -1551,7 +1551,7 @@ const char *CAI_BaseNPC::GetTracerType( void )
 //			&tr - 
 //			iTracerType - 
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType )
+void CAI_BaseNPC::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, AmmoTracer_t iTracerType )
 {
 	if ( GetActiveWeapon() )
 	{
@@ -1733,7 +1733,7 @@ void CAI_BaseNPC::MakeDamageBloodDecal ( int cCount, float flNoise, trace_t *ptr
 // Input  : &tr - 
 //			nDamageType - 
 //-----------------------------------------------------------------------------
-void CAI_BaseNPC::DoImpactEffect( trace_t &tr, int nDamageType )
+void CAI_BaseNPC::DoImpactEffect( trace_t &tr, DamageTypes_t nDamageType )
 {
 	if ( GetActiveWeapon() != NULL )
 	{
@@ -7804,7 +7804,7 @@ void CAI_BaseNPC::InputChangeWeapon( inputdata_t &&inputdata )
 		}
 
 		variant_t variant;
-		variant.SetString(pSwitchTo->GetClassnameStr());
+		variant.SetStringT(pSwitchTo->GetClassnameStr());
 		g_EventQueue.AddEvent(this, "UnholsterWeapon", variant, GetLayerDuration(iHolsterLayer) /*+ 0.65*/, this, this);
 	}
 }
@@ -8819,7 +8819,7 @@ void CAI_BaseNPC::HandleAnimEvent( animevent_t *pEvent )
 			break;
 		// fall through...
 	case SCRIPT_EVENT_SENTENCE:			// Play a named sentence group
-		SENTENCEG_PlayRndSz( edict(), pEvent->options, 1.0, SNDLVL_TALKING, 0, 100 );
+		SENTENCEG_PlayRndSz( edict(), pEvent->options, 1.0, SNDLVL_TALKING, SND_NOFLAGS, 100 );
 		break;
 
 	case SCRIPT_EVENT_FIREEVENT:

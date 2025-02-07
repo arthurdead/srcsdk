@@ -66,7 +66,7 @@ void CEnvLaser::Spawn( void )
 		m_pSprite->SetTransparency( kRenderGlow, GetRenderColorR(), GetRenderColorG(), GetRenderColorB(), GetRenderAlpha(), GetRenderFX() );
 	}
 
-	if ( GetEntityName() != NULL_STRING && !(m_spawnflags & SF_BEAM_STARTON) )
+	if ( GetEntityName() != NULL_STRING && !HasSpawnFlags(SF_BEAM_STARTON) )
 	{
 		TurnOff();
 	}

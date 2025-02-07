@@ -209,7 +209,7 @@ CON_COMMAND( clear_debug_overlays, "clears debug overlays" )
 	// Clear all entities of their debug overlays
 	while ( pEntity )
 	{
-		pEntity->m_debugOverlays = 0;
+		pEntity->m_debugOverlays = OVERLAY_NONE;
 		// UNDONE: Clear out / expire timed overlays?
 		pEntity = gEntList.NextEnt( pEntity );
 	}

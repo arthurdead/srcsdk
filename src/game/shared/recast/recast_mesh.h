@@ -136,8 +136,8 @@ namespace NAI_Hull
 
 	MapMeshType_t MapMeshType(NavMeshType_t type);
 
-	unsigned int TraceMask(NavMeshType_t type);
-	unsigned int TraceMask(MapMeshType_t type);
+	ContentsFlags_t TraceMask(NavMeshType_t type);
+	ContentsFlags_t TraceMask(MapMeshType_t type);
 }
 
 //--------------------------------------------------------------------------------------------------------------

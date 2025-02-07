@@ -272,6 +272,8 @@ public:
 	CBasePlayer();
 	~CBasePlayer();
 
+	DECLARE_SPAWNFLAGS( SFPlayer_t )
+
 	virtual void		PostConstructor( const char *szClassname );
 
 	// IPlayerInfo passthrough (because we can't do multiple inheritance)
@@ -289,12 +291,12 @@ public:
 
 	static CBasePlayer		*CreatePlayer( const char *className, edict_t *ed );
 
-	virtual void			CreateViewModel( int viewmodelindex = VIEWMODEL_WEAPON );
-	CBaseViewModel			*GetViewModel( int viewmodelindex = VIEWMODEL_WEAPON, bool bObserverOK = true );
+	virtual void			CreateViewModel( viewmodelindex_t viewmodelindex = VIEWMODEL_WEAPON );
+	CBaseViewModel			*GetViewModel( viewmodelindex_t viewmodelindex = VIEWMODEL_WEAPON, bool bObserverOK = true );
 	void					HideViewModels( void );
 	void					DestroyViewModels( void );
 
-	virtual void			CreateHandModel( int viewmodelindex = VIEWMODEL_HANDS, int parentViewmodelindex = VIEWMODEL_WEAPON );
+	virtual void			CreateHandModel( viewmodelindex_t viewmodelindex = VIEWMODEL_HANDS, viewmodelindex_t parentViewmodelindex = VIEWMODEL_WEAPON );
 
 	CPlayerStateGame			*PlayerData( void ) { return &pl; }
 
@@ -331,7 +333,7 @@ public:
 	virtual void			Duck( void );
 
 	const char				*GetTracerType( void );
-	void					MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType );
+	void					MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, AmmoTracer_t iTracerType );
 	void					DoImpactEffect( trace_t &tr, int nDamageType );
 
 	void					AddToPlayerSimulationList( CBaseEntity *other );
@@ -449,7 +451,7 @@ public:
 	virtual bool			Weapon_CanUse( CBaseCombatWeapon *pWeapon );
 	virtual void			Weapon_Equip( CBaseCombatWeapon *pWeapon, bool bDeploy = true );
 	virtual	void			Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget /* = NULL */, const Vector *pVelocity /* = NULL */ );
-	virtual	int			Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex = VIEWMODEL_WEAPON, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
+	virtual	WeaponSwitchResult_t			Weapon_Switch( CBaseCombatWeapon *pWeapon, viewmodelindex_t viewmodelindex = VIEWMODEL_WEAPON, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
 	virtual void			Weapon_SetLast( CBaseCombatWeapon *pWeapon );
 	virtual bool			Weapon_ShouldSetLast( CBaseCombatWeapon *pOldWeapon, CBaseCombatWeapon *pNewWeapon ) { return true; }
 	virtual bool			Weapon_ShouldSelectItem( CBaseCombatWeapon *pWeapon );

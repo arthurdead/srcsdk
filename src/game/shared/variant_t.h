@@ -129,6 +129,7 @@ public:
 	{ dealloc(); bVal = b; fieldType_ = FIELD_BOOLEAN; }
 	void SetStringT( string_t str )
 	{ dealloc(); iszVal = str; fieldType_ = FIELD_POOLED_STRING; }
+	void SetCString( const char *str );
 	void SetModelnameT( string_t str )
 	{ dealloc(); iszVal = str; fieldType_ = FIELD_POOLED_MODELNAME; }
 	void SetSoundnameT( string_t str )

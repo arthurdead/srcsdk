@@ -12,14 +12,19 @@
 #include "baseentity.h"
 #include "entityoutput.h"
 
+enum SFMessage_t : unsigned char
+{
+	SF_MESSAGE_ONCE =			0x0001,		// Fade in, not out
+	SF_MESSAGE_ALL =			0x0002,		// Send to all clients
+};
 
-#define SF_MESSAGE_ONCE			0x0001		// Fade in, not out
-#define SF_MESSAGE_ALL			0x0002		// Send to all clients
+FLAGENUM_OPERATORS( SFMessage_t, unsigned char )
 
 class CMessage : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CMessage, CPointEntity );
+	DECLARE_SPAWNFLAGS( SFMessage_t )
 
 	void	Spawn( void );
 	void	Precache( void );

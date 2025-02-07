@@ -58,14 +58,20 @@ typedef struct dynpitchvol
 
 } dynpitchvol_t;
 
-#define SF_AMBIENT_SOUND_EVERYWHERE			1
-#define SF_AMBIENT_SOUND_START_SILENT		16
-#define SF_AMBIENT_SOUND_NOT_LOOPING		32
+enum SFAmbientGeneric_t : unsigned char
+{
+	SF_AMBIENT_SOUND_EVERYWHERE =			1,
+	SF_AMBIENT_SOUND_START_SILENT =		16,
+	SF_AMBIENT_SOUND_NOT_LOOPING =		32,
+};
+
+FLAGENUM_OPERATORS( SFAmbientGeneric_t, unsigned char )
 
 class CAmbientGeneric : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CAmbientGeneric, CPointEntity );
+	DECLARE_SPAWNFLAGS( SFAmbientGeneric_t )
 
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 	virtual void Spawn( void );
@@ -108,7 +114,7 @@ public:
 	EHANDLE m_hSoundSource;	// entity from which the sound comes
 	int		m_nSoundSourceEntIndex; // In case the entity goes away before we finish stopping the sound...
 
-	int		m_iSoundFlags;
+	SoundFlags_t		m_iSoundFlags;
 
 	COutputEvent m_OnSoundFinished;
 };

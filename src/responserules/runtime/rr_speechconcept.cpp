@@ -30,6 +30,11 @@ static void InitializeRRConceptTable()
 	}
 }
 
+CRR_Concept::CRR_Concept()
+	: m_iConcept()
+{
+}
+
 // construct from string
 CRR_Concept::CRR_Concept(const char *fromString)
 {
@@ -46,8 +51,24 @@ CRR_Concept &CRR_Concept::operator=(const char *fromString)
 
 bool CRR_Concept::operator==(const char *pszConcept)
 {
-	int otherConcept = g_pRRConceptTable->Find(pszConcept);
-	return ( otherConcept != UTL_INVAL_SYMBOL && otherConcept == m_iConcept );
+	CUtlSymbol otherConcept = g_pRRConceptTable->Find(pszConcept);
+	return ( otherConcept.IsValid() && otherConcept == m_iConcept );
+}
+
+bool CRR_Concept::operator!=(const char *pszConcept)
+{
+	CUtlSymbol otherConcept = g_pRRConceptTable->Find(pszConcept);
+
+	if( !otherConcept.IsValid() || !m_iConcept.IsValid() ) {
+		return true;
+	}
+
+	return ( otherConcept != m_iConcept );
+}
+
+bool CRR_Concept::IsValid() const
+{
+	return m_iConcept.IsValid();
 }
 
 const char *CRR_Concept::GetStringConcept() const

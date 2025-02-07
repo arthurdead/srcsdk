@@ -20,8 +20,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define SF_PROP_VEHICLE_ALWAYSTHINK		0x00000001
-
 ConVar g_debug_vehiclebase( "g_debug_vehiclebase", "0", FCVAR_CHEAT );
 extern ConVar g_debug_vehicledriver;
 
@@ -530,7 +528,7 @@ void CPropVehicleDriveable::EnterVehicle( CBaseCombatCharacter *pPassenger )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropVehicleDriveable::ExitVehicle( int nRole )
+void CPropVehicleDriveable::ExitVehicle( PassengerRole_t nRole )
 {
 	CBasePlayer *pPlayer = m_hPlayer;
 	if ( !pPlayer )
@@ -579,9 +577,9 @@ void CPropVehicleDriveable::DriveVehicle( CBasePlayer *pPlayer, CUserCmd *ucmd )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropVehicleDriveable::DriveVehicle( float flFrameTime, CUserCmd *ucmd, uint64 iButtonsDown, uint64 iButtonsReleased )
+void CPropVehicleDriveable::DriveVehicle( float flFrameTime, CUserCmd *ucmd, InButtons_t iButtonsDown, InButtons_t iButtonsReleased )
 {
-	uint64 iButtons = ucmd->buttons;
+	InButtons_t iButtons = ucmd->buttons;
 
 	m_VehiclePhysics.UpdateDriverControls( ucmd, flFrameTime );
 
@@ -943,7 +941,7 @@ void CPropVehicleDriveable::VPhysicsCollision( int index, gamevcollisionevent_t 
 	}
 
 	// Over our skill's minimum crash level?
-	int damageType = 0;
+	DamageTypes_t damageType = DMG_GENERIC;
 	float flDamage = CalculatePhysicsImpactDamage( index, pEvent, gDefaultPlayerVehicleImpactDamageTable, 1.0, true, damageType );
 	if ( flDamage > 0 && m_flNoImpactDamageTime < gpGlobals->curtime )
 	{
@@ -1134,7 +1132,7 @@ void CFourWheelServerVehicle::SetVehicle( CBaseEntity *pVehicle )
 //-----------------------------------------------------------------------------
 // Purpose: Modify the player view/camera while in a vehicle
 //-----------------------------------------------------------------------------
-void CFourWheelServerVehicle::GetVehicleViewPosition( int nRole, Vector *pAbsOrigin, QAngle *pAbsAngles, float *pFOV /*= NULL*/ )
+void CFourWheelServerVehicle::GetVehicleViewPosition( PassengerRole_t nRole, Vector *pAbsOrigin, QAngle *pAbsAngles, float *pFOV /*= NULL*/ )
 {
 	CBaseEntity *pDriver = GetPassenger( nRole );
 	if ( pDriver && pDriver->IsPlayer())
@@ -1237,7 +1235,7 @@ void CFourWheelServerVehicle::NPC_SetDriver( CNPC_VehicleDriver *pDriver )
 {
 	if ( pDriver )
 	{
-		m_nNPCButtons = 0;
+		m_nNPCButtons = IN_NONE;
 		GetFourWheelVehicle()->m_hNPCDriver = pDriver;
 		GetFourWheelVehicle()->StartEngine();
 		SetVehicleVolume( 1.0 );	// Vehicles driven by NPCs are louder
@@ -1294,16 +1292,20 @@ void CFourWheelServerVehicle::NPC_DriveVehicle( void )
 	}
 #endif
 
-	uint64 buttonsChanged = m_nPrevNPCButtons ^ m_nNPCButtons;
-	uint64 afButtonPressed = buttonsChanged & m_nNPCButtons;		// The changed ones still down are "pressed"
-	uint64 afButtonReleased = buttonsChanged & (~m_nNPCButtons);	// The ones not down are "released"
+	InButtons_t buttonsChanged = m_nPrevNPCButtons ^ m_nNPCButtons;
+	InButtons_t afButtonPressed = buttonsChanged & m_nNPCButtons;		// The changed ones still down are "pressed"
+	InButtons_t afButtonReleased = buttonsChanged & (~m_nNPCButtons);	// The ones not down are "released"
 	CUserCmd fakeCmd;
 	fakeCmd.Reset();
 	fakeCmd.buttons = m_nNPCButtons;
-	fakeCmd.forwardmove += 200.0f * ( m_nNPCButtons & IN_FORWARD );
-	fakeCmd.forwardmove -= 200.0f * ( m_nNPCButtons & IN_BACK );
-	fakeCmd.sidemove -= 200.0f * ( m_nNPCButtons & IN_MOVELEFT );
-	fakeCmd.sidemove += 200.0f * ( m_nNPCButtons & IN_MOVERIGHT );
+	if( ( m_nNPCButtons & IN_FORWARD ) != IN_NONE )
+		fakeCmd.forwardmove += 200.0f;
+	else if( ( m_nNPCButtons & IN_BACK ) != IN_NONE )
+		fakeCmd.forwardmove -= 200.0f;
+	if ( ( m_nNPCButtons & IN_MOVELEFT ) != IN_NONE )
+		fakeCmd.sidemove -= 200.0f;
+	else if ( ( m_nNPCButtons & IN_MOVERIGHT ) != IN_NONE )
+		fakeCmd.sidemove += 200.0f;
 
 	GetFourWheelVehicle()->DriveVehicle( gpGlobals->frametime, &fakeCmd, afButtonPressed, afButtonReleased );
 	m_nPrevNPCButtons = m_nNPCButtons;

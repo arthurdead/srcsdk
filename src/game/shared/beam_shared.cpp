@@ -235,11 +235,11 @@ BEGIN_MAPENTITY( CBeam, MAPENT_POINTCLASS, "This is the definition of the 'beam'
 		"dissolvetype",
 		"Dissolve Type",
 		NULL,
-		"-1", {
-			{"-1", "None"},
-			{"0", "Energy"},
-			{"1", "Heavy electrical"},
-			{"2", "Light electrical"},
+		UTIL_VarArgs("%i", ENTITY_DISSOLVE_INVALID), {
+			{UTIL_VarArgs("%i", ENTITY_DISSOLVE_INVALID), "None"},
+			{UTIL_VarArgs("%i", ENTITY_DISSOLVE_NORMAL), "Energy"},
+			{UTIL_VarArgs("%i", ENTITY_DISSOLVE_ELECTRICAL), "Heavy electrical"},
+			{UTIL_VarArgs("%i", ENTITY_DISSOLVE_ELECTRICAL_LIGHT), "Light electrical"},
 		}
 	),
 
@@ -337,7 +337,7 @@ CSharedBeam::CBeam( void )
 	m_flHDRColorScale = 1.0f; // default value.
 
 #if !defined( CLIENT_DLL )
-	m_nDissolveType = -1;
+	m_nDissolveType = ENTITY_DISSOLVE_INVALID;
 #else
 	m_queryHandleHalo = 0;
 #endif
@@ -788,15 +788,11 @@ void CSharedBeam::BeamDamage( trace_t *ptr )
 		ClearMultiDamage();
 		Vector dir = ptr->endpos - GetAbsOrigin();
 		VectorNormalize( dir );
-		DamageTypes_t nDamageType = DMG_ENERGYBEAM;
+		DamageTypes_t nDamageType = ((m_nDissolveType != ENTITY_DISSOLVE_INVALID) ? DMG_DISSOLVE : DMG_ENERGYBEAM);
 
-		if (m_nDissolveType == ENTITY_DISSOLVE_NORMAL)
+		if ( nDamageType == DMG_DISSOLVE && (m_nDissolveType != ENTITY_DISSOLVE_NORMAL) )
 		{
-			nDamageType = DMG_DISSOLVE;
-		}
-		else if ( m_nDissolveType != ENTITY_DISSOLVE_NORMAL )
-		{
-			nDamageType = DMG_DISSOLVE | DMG_SHOCK; 
+			nDamageType |= DMG_SHOCK; 
 		}
 
 		CTakeDamageInfo info( this, this, m_flDamage * (gpGlobals->curtime - m_flFireTime), nDamageType );

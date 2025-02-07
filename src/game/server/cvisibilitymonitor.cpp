@@ -256,7 +256,7 @@ bool CVisibilityMonitor::EntityIsVisibleToPlayer( const visibility_target_t &tar
 		*numTraces += 1;
 
 		trace_t tr;
-		int mask = MASK_BLOCKLOS_AND_NPCS & ~CONTENTS_BLOCKLOS;
+		ContentsFlags_t mask = MASK_BLOCKLOS_AND_NPCS & ~CONTENTS_BLOCKLOS;
 		UTIL_TraceLine( vecPlayerOrigin, vecTargetOrigin, mask, pEyeEntity, COLLISION_GROUP_NONE, &tr );
 
 		if( tr.fraction == 1.0f || tr.m_pEnt == target.entity )

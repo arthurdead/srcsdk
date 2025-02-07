@@ -38,3 +38,15 @@ void CGameTrace::SetHitbox( int hitbox )
 	Assert( m_pEnt && !m_pEnt->IsWorld() );
 	hitbox_or_static_prop = hitbox;
 }
+
+int CGameTrace::Hitbox() const
+{
+	Assert( m_pEnt && !m_pEnt->IsWorld() );
+	return hitbox_or_static_prop;
+}
+
+int CGameTrace::StaticPropIdx() const
+{
+	Assert( m_pEnt && m_pEnt->IsWorld() );
+	return hitbox_or_static_prop;
+}

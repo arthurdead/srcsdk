@@ -14,6 +14,7 @@
 class IPhysicsObject;
 class CBaseEntity;
 struct gamevcollisionevent_t;
+enum DamageTypes_t : uint64;
 
 struct impactentry_t
 {
@@ -52,10 +53,10 @@ extern impactdamagetable_t gDefaultPlayerImpactDamageTable;
 extern impactdamagetable_t gDefaultPlayerVehicleImpactDamageTable;
 
 // NOTE Default uses default NPC table
-float CalculateDefaultPhysicsDamage( int index, gamevcollisionevent_t *pEvent, float energyScale, bool allowStaticDamage, uint64 &damageTypeOut, string_t iszDamageTableName = NULL_STRING, bool bDamageFromHeldObjects = false );
+float CalculateDefaultPhysicsDamage( int index, gamevcollisionevent_t *pEvent, float energyScale, bool allowStaticDamage, DamageTypes_t &damageTypeOut, string_t iszDamageTableName = NULL_STRING, bool bDamageFromHeldObjects = false );
 
 // use passes in the table
-float CalculatePhysicsImpactDamage( int index, gamevcollisionevent_t *pEvent, const impactdamagetable_t &table, float energyScale, bool allowStaticDamage, uint64 &damageTypeOut, bool bDamageFromHeldObjects = false );
+float CalculatePhysicsImpactDamage( int index, gamevcollisionevent_t *pEvent, const impactdamagetable_t &table, float energyScale, bool allowStaticDamage, DamageTypes_t &damageTypeOut, bool bDamageFromHeldObjects = false );
 
 struct vphysics_objectstress_t
 {

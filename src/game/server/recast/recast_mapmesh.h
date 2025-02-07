@@ -48,7 +48,7 @@ public:
 private:
 	bool IsTriangleInValidArea( const Vector *vTriangle, bool bCheckNoArea = true );
 	void AddCollisionModelToMesh( const matrix3x4_t &transform, CPhysCollide const *pCollisionModel, 
-			CUtlVector<float> &verts, CUtlVector<int> &triangles, int filterContents = CONTENTS_EMPTY );
+			CUtlVector<float> &verts, CUtlVector<int> &triangles, ContentsFlags_t filterContents = CONTENTS_EMPTY );
 
 	virtual bool GenerateDispVertsAndTris( void *fileContent, CUtlVector<float> &verts, CUtlVector<int> &triangles );
 	virtual bool GenerateStaticPropData( void *fileContent, CUtlVector<float> &verts, CUtlVector<int> &triangles );

@@ -14,7 +14,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define SF_HUDHINT_ALLPLAYERS			0x0001
+enum SFHudHint_t : unsigned char
+{
+	SF_HUDHINT_ALLPLAYERS =			0x0001,
+};
+
+FLAGENUM_OPERATORS( SFHudHint_t, unsigned char )
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -23,6 +28,8 @@ class CEnvHudHint : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CEnvHudHint, CPointEntity );
+
+	DECLARE_SPAWNFLAGS( SFHudHint_t )
 
 	void	Spawn( void );
 	void	Precache( void );

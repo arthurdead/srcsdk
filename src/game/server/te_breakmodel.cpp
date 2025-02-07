@@ -120,7 +120,7 @@ IMPLEMENT_SERVERCLASS_ST(CTEBreakModel, DT_TEBreakModel)
 	SendPropModelIndex( SENDINFO(m_nModelIndex) ),
 	SendPropInt( SENDINFO(m_nRandomization), 9, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nCount), 8, SPROP_UNSIGNED ),
-	SendPropFloat( SENDINFO(m_fTime), 10, 0, 0, 102.4 ),
+	SendPropFloat( SENDINFO(m_fTime), 10, SPROP_NONE, 0, 102.4 ),
 	SendPropInt( SENDINFO(m_nFlags), 8, SPROP_UNSIGNED ),
 END_SEND_TABLE()
 

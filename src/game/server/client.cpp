@@ -376,7 +376,7 @@ void ClientPrecache( void )
 
 	// Force levels
 	char pBuf[MAX_PATH];
-	for ( int i = 0; i < CPU_LEVEL_PC_COUNT; ++i )
+	for ( int i = 0; i < CPU_LEVEL_COUNT; ++i )
 	{
 		Q_snprintf( pBuf, sizeof(pBuf), "cfg/cpu_level_%d_pc.ekv", i );
 		engine->ForceExactFile( pBuf );
@@ -384,19 +384,19 @@ void ClientPrecache( void )
 		engine->ForceExactFile( pBuf );
 	}
 
-	for ( int i = 0; i < GPU_LEVEL_PC_COUNT; ++i )
+	for ( int i = 0; i < GPU_LEVEL_COUNT; ++i )
 	{
 		Q_snprintf( pBuf, sizeof(pBuf), "cfg/gpu_level_%d_pc.ekv", i );
 		engine->ForceExactFile( pBuf );
 	}
 
-	for ( int i = 0; i < MEM_LEVEL_PC_COUNT; ++i )
+	for ( int i = 0; i < MEM_LEVEL_COUNT; ++i )
 	{
 		Q_snprintf( pBuf, sizeof(pBuf), "cfg/mem_level_%d_pc.ekv", i );
 		engine->ForceExactFile( pBuf );
 	}
 
-	for ( int i = 0; i < GPU_MEM_LEVEL_PC_COUNT; ++i )
+	for ( int i = 0; i < GPU_MEM_LEVEL_COUNT; ++i )
 	{
 		Q_snprintf( pBuf, sizeof(pBuf), "cfg/gpu_mem_level_%d_pc.ekv", i );
 		engine->ForceExactFile( pBuf );
@@ -425,7 +425,7 @@ CON_COMMAND_F( cast_ray, "Tests collision detection", FCVAR_CHEAT )
 		DevMsg(1, "Hit %s\nposition %.2f, %.2f, %.2f\nangles %.2f, %.2f, %.2f\n", tr.m_pEnt->GetClassname(),
 			tr.m_pEnt->GetAbsOrigin().x, tr.m_pEnt->GetAbsOrigin().y, tr.m_pEnt->GetAbsOrigin().z,
 			tr.m_pEnt->GetAbsAngles().x, tr.m_pEnt->GetAbsAngles().y, tr.m_pEnt->GetAbsAngles().z );
-		DevMsg(1, "Hit: hitbox %d, hitgroup %d, physics bone %d, solid %d, surface %s, surfaceprop %s, contents %08x\n", tr.hitbox, tr.hitgroup, tr.physicsbone, tr.m_pEnt->GetSolid(), tr.surface.name, physprops->GetPropName( tr.surface.surfaceProps ), tr.contents );
+		DevMsg(1, "Hit: hitbox %d, hitgroup %d, physics bone %d, solid %d, surface %s, surfaceprop %s, contents %08x\n", tr.hitbox_or_static_prop, tr.hitgroup, tr.physicsbone, tr.m_pEnt->GetSolid(), tr.surface.name, physprops->GetPropName( tr.surface.surfaceProps ), tr.contents );
 		NDebugOverlay::Line( start, tr.endpos, 0, 255, 0, false, 10 );
 		NDebugOverlay::Line( tr.endpos, tr.endpos + tr.plane.normal * 12, 255, 255, 0, false, 10 );
 	}
@@ -448,7 +448,7 @@ CON_COMMAND_F( cast_hull, "Tests hull collision detection", FCVAR_CHEAT )
 		DevMsg(1, "Hit %s\nposition %.2f, %.2f, %.2f\nangles %.2f, %.2f, %.2f\n", tr.m_pEnt->GetClassname(),
 			tr.m_pEnt->GetAbsOrigin().x, tr.m_pEnt->GetAbsOrigin().y, tr.m_pEnt->GetAbsOrigin().z,
 			tr.m_pEnt->GetAbsAngles().x, tr.m_pEnt->GetAbsAngles().y, tr.m_pEnt->GetAbsAngles().z );
-		DevMsg(1, "Hit: hitbox %d, hitgroup %d, physics bone %d, solid %d, surface %s, surfaceprop %s\n", tr.hitbox, tr.hitgroup, tr.physicsbone, tr.m_pEnt->GetSolid(), tr.surface.name, physprops->GetPropName( tr.surface.surfaceProps ) );
+		DevMsg(1, "Hit: hitbox %d, hitgroup %d, physics bone %d, solid %d, surface %s, surfaceprop %s\n", tr.hitbox_or_static_prop, tr.hitgroup, tr.physicsbone, tr.m_pEnt->GetSolid(), tr.surface.name, physprops->GetPropName( tr.surface.surfaceProps ) );
 		NDebugOverlay::SweptBox( start, tr.endpos, -extents, extents, vec3_angle, 0, 0, 255, 0, 10 );
 		Vector end = tr.endpos;// - tr.plane.normal * DotProductAbs( tr.plane.normal, extents );
 		NDebugOverlay::Line( end, end + tr.plane.normal * 24, 255, 255, 64, false, 10 );
@@ -504,7 +504,7 @@ CBaseEntity *GetNextCommandEntity( CBasePlayer *pPlayer, const char *name, CBase
 // Purpose: called each time a player uses a "cmd" command
 // Input  : pPlayer - the player who issued the command
 //-----------------------------------------------------------------------------
-void SetDebugBits( CBasePlayer* pPlayer, const char *name, int bit )
+void SetDebugBits( CBasePlayer* pPlayer, const char *name, DebugOverlayBits_t bit )
 {
 	if ( !pPlayer )
 		return;
@@ -1116,7 +1116,7 @@ public:
 //------------------------------------------------------------------------------
 // A small wrapper around SV_Move that never clips against the supplied entity.
 //------------------------------------------------------------------------------
-bool TestEntityPosition ( CBaseEntity *pEntity, unsigned int mask )
+bool TestEntityPosition ( CBaseEntity *pEntity, ContentsFlags_t mask )
 {
 	trace_t	trace;
 	IPhysicsObject *physObject = pEntity->VPhysicsGetObject();
@@ -1149,7 +1149,7 @@ bool TestEntityPosition ( CBaseEntity *pEntity, unsigned int mask )
 // the entity position is passible.
 // Used for putting the player in valid space when toggling off noclip mode.
 //------------------------------------------------------------------------------
-static int FindPassableSpace( CBaseEntity *pEntity, unsigned int mask, const Vector& direction, float step, Vector& oldorigin )
+static int FindPassableSpace( CBaseEntity *pEntity, ContentsFlags_t mask, const Vector& direction, float step, Vector& oldorigin )
 {
 	int i;
 	for ( i = 0; i < 100; i++ )
@@ -1171,7 +1171,7 @@ static int FindPassableSpace( CBaseEntity *pEntity, unsigned int mask, const Vec
 // Test various directions for empty space -- for debugging only; this is slow and
 // meant for finding a place to put a noclipped player who goes solid again.
 //------------------------------------------------------------------------------
-bool FindEmptySpace( CBaseEntity *pEntity, unsigned int mask, const Vector &forward, const Vector &right, const Vector &up, Vector *testOrigin )
+bool FindEmptySpace( CBaseEntity *pEntity, ContentsFlags_t mask, const Vector &forward, const Vector &right, const Vector &up, Vector *testOrigin )
 {
 	return	FindPassableSpace( pEntity, mask, forward, 1, *testOrigin )	||  // forward
 			FindPassableSpace( pEntity, mask, right, 1, *testOrigin )	||  // right
@@ -1199,14 +1199,14 @@ void EnableNoClip( CBasePlayer *pPlayer )
 
 void DisableNoClip( CBasePlayer *pPlayer )
 {
-	CPlayerState *pl = pPlayer->PlayerData();
+	CPlayerStateGame *pl = pPlayer->PlayerData();
 	Assert( pl );
 
 	pPlayer->SetMoveType( MOVETYPE_WALK );
 
 	ClientPrint( pPlayer, HUD_PRINTCONSOLE, "noclip OFF\n");
 	Vector oldorigin = pPlayer->GetAbsOrigin();
-	unsigned int mask = MASK_PLAYERSOLID;
+	ContentsFlags_t mask = MASK_PLAYERSOLID;
 	if ( noclip_fixup.GetBool() && !TestEntityPosition( pPlayer, mask ) )
 	{
 		Vector forward, right, up;

@@ -31,8 +31,8 @@ BEGIN_MAPENTITY( CBaseDoor )
 	DEFINE_KEYFIELD_AUTO( m_NoiseArrivedClosed, "closesound" ),
 	DEFINE_KEYFIELD_AUTO( m_ChainTarget, "chainstodoor" ),
 
-	DEFINE_KEYFIELD( m_ls.sLockedSound, FIELD_SOUNDNAME, "locked_sound" ),
-	DEFINE_KEYFIELD( m_ls.sUnlockedSound, FIELD_SOUNDNAME, "unlocked_sound" ),
+	DEFINE_KEYFIELD( m_ls.sLockedSound, FIELD_POOLED_SOUNDNAME, "locked_sound" ),
+	DEFINE_KEYFIELD( m_ls.sUnlockedSound, FIELD_POOLED_SOUNDNAME, "unlocked_sound" ),
 	DEFINE_KEYFIELD_AUTO( m_flWaveHeight, "WaveHeight" ),
 	DEFINE_KEYFIELD_AUTO( m_flBlockDamage, "dmg" ),
 	DEFINE_KEYFIELD_AUTO( m_eSpawnPosition, "spawnpos" ),
@@ -92,7 +92,7 @@ END_SEND_TABLE()
 //				is unlocked' sound.
 //			fbutton - 
 //-----------------------------------------------------------------------------
-void PlayLockSounds(CBaseEntity *pEdict, locksound_t *pls, int flocked, int fbutton)
+void PlayLockSounds(CBaseDoor *pEdict, locksound_t *pls, int flocked, int fbutton)
 {
 	if ( pEdict->HasSpawnFlags( SF_DOOR_SILENT ) )
 	{
@@ -132,7 +132,7 @@ void PlayLockSounds(CBaseEntity *pEdict, locksound_t *pls, int flocked, int fbut
 																STRING(pls->sLockedSentence), 
 																0.85f, 
 																SNDLVL_NORM, 
-																0, 
+																SND_NOFLAGS, 
 																100, 
 																pls->iLockedSentence, 
 																FALSE);
@@ -176,7 +176,7 @@ void PlayLockSounds(CBaseEntity *pEdict, locksound_t *pls, int flocked, int fbut
 			int iprev = pls->iUnlockedSentence;
 			
 			pls->iUnlockedSentence = SENTENCEG_PlaySequentialSz(pEdict->edict(), STRING(pls->sUnlockedSentence), 
-					  0.85, SNDLVL_NORM, 0, 100, pls->iUnlockedSentence, FALSE);
+					  0.85, SNDLVL_NORM, SND_NOFLAGS, 100, pls->iUnlockedSentence, FALSE);
 			pls->iLockedSentence = 0;
 
 			// make sure we don't keep calling last sentence in list
@@ -399,7 +399,7 @@ bool CBaseDoor::CreateVPhysics( )
 	{
 		// special contents
 		AddSolidFlags( FSOLID_VOLUME_CONTENTS );
-		SETBITS( m_spawnflags, SF_DOOR_SILENT );	// water is silent for now
+		AddSpawnFlags( SF_DOOR_SILENT );	// water is silent for now
 
 		IPhysicsObject *pPhysics = VPhysicsInitShadow( false, false );
 		fluidparams_t fluid;

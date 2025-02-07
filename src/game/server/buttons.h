@@ -11,12 +11,30 @@
 #include "basetoggle.h"
 #include "locksounds.h"
 
+enum SFButton_t : uint64
+{
+	SF_BUTTON_DONTMOVE =				(SF_TOGGLE_LAST_FLAG << 1),
+	SF_BUTTON_TOGGLE =				(SF_TOGGLE_LAST_FLAG << 2),		// button stays pushed until reactivated
+	SF_BUTTON_TOUCH_ACTIVATES =		(SF_TOGGLE_LAST_FLAG << 3),		// Button fires when touched.
+	SF_BUTTON_DAMAGE_ACTIVATES =		(SF_TOGGLE_LAST_FLAG << 4),		// Button fires when damaged.
+	SF_BUTTON_USE_ACTIVATES =			(SF_TOGGLE_LAST_FLAG << 5),	// Button fires when used.
+	SF_BUTTON_LOCKED =				(SF_TOGGLE_LAST_FLAG << 6),	// Whether the button is initially locked.
+	SF_BUTTON_SPARK_IF_OFF =			(SF_TOGGLE_LAST_FLAG << 7),	// button sparks in OFF state
+	SF_BUTTON_JIGGLE_ON_USE_LOCKED =	(SF_TOGGLE_LAST_FLAG << 8),	// whether to jiggle if someone uses us when we're locked
+
+	SF_BUTTON_LAST_FLAG = SF_BUTTON_JIGGLE_ON_USE_LOCKED,
+};
+
+FLAGENUM_OPERATORS( SFButton_t, uint64 )
+
 class CBaseButton : public CBaseToggle
 {
 public:
 
 	DECLARE_CLASS( CBaseButton, CBaseToggle );
 	DECLARE_SERVERCLASS();
+
+	DECLARE_SPAWNFLAGS( SFButton_t )
 
 	void Spawn( void );
 	virtual void Precache( void );
@@ -51,7 +69,13 @@ protected:
 
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );
 	
-	enum BUTTON_CODE { BUTTON_NOTHING, BUTTON_ACTIVATE, BUTTON_RETURN, BUTTON_PRESS };
+	enum BUTTON_CODE : unsigned char
+	{
+		BUTTON_NOTHING,
+		BUTTON_ACTIVATE,
+		BUTTON_RETURN,
+		BUTTON_PRESS
+	};
 
 	BUTTON_CODE	ButtonResponseToTouch( void );
 	void Press( CBaseEntity *pActivator, BUTTON_CODE eCode );
@@ -88,6 +112,15 @@ protected:
 	int		m_nState;
 };
 
+enum SFRotButton_t : uint64
+{
+	SF_ROTBUTTON_NOTSOLID =			(SF_BUTTON_LAST_FLAG << 1),
+	SF_ROTBUTTON_BACKWARDS = (SF_BUTTON_LAST_FLAG << 2),
+
+	SF_ROTBUTTON_LAST_FLAG = SF_ROTBUTTON_BACKWARDS,
+};
+
+FLAGENUM_OPERATORS( SFRotButton_t, uint64 )
 
 //
 // Rotating button (aka "lever")
@@ -97,17 +130,34 @@ class CRotButton : public CBaseButton
 public:
 	DECLARE_CLASS( CRotButton, CBaseButton );
 
+	DECLARE_SPAWNFLAGS_OVERLOAD( SFButton_t )
+	DECLARE_SPAWNFLAGS( SFRotButton_t )
+
 	void Spawn( void );
 	bool CreateVPhysics( void );
-
 };
 
+//-----------------------------------------------------------------------------
+// CMomentaryRotButton spawnflags
+//-----------------------------------------------------------------------------
+enum SFMomentaryRotButton_t : uint64
+{
+	SF_MOMENTARY_DOOR =			(SF_ROTBUTTON_LAST_FLAG << 1),
+	SF_MOMENTARY_NOT_USABLE =		(SF_ROTBUTTON_LAST_FLAG << 2),
+	SF_MOMENTARY_AUTO_RETURN =	(SF_ROTBUTTON_LAST_FLAG << 3),
+};
+
+FLAGENUM_OPERATORS( SFMomentaryRotButton_t, uint64 )
 
 class CMomentaryRotButton : public CRotButton
 {
 	DECLARE_CLASS( CMomentaryRotButton, CRotButton );
 
 public:
+	DECLARE_SPAWNFLAGS_OVERLOAD( SFButton_t )
+	DECLARE_SPAWNFLAGS_OVERLOAD( SFRotButton_t )
+	DECLARE_SPAWNFLAGS( SFMomentaryRotButton_t )
+
 	void	Spawn ( void );
 	bool	CreateVPhysics( void );
 	virtual EntityCaps_t ObjectCaps( void );

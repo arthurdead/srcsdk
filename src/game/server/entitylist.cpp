@@ -77,7 +77,7 @@ public:
 	
 	bool ShouldAddEntity( CBaseEntity *pEntity )
 	{
-		return ((pEntity->GetFlags() & FL_AIMTARGET) != 0);
+		return ((pEntity->GetFlags() & FL_AIMTARGET) != FL_NO_ENTITY_FLAGS);
 	}
 
 	// IEntityListener

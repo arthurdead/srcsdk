@@ -41,9 +41,16 @@
 // used in places with both NPCs and players don't check whether the target is a NPC or a player.
 // Spawnflags are also transmitted to the client and use a special network proxy to get around this without having to transmit unused bits.
 // Be sure to update the SendPropInt() entry for m_spawnflags in player.cpp when you add any new spawnflags!
-#define SF_PLAYER_NO_GEIGER			(1 << 16)
-#define SF_PLAYER_HIDE_SQUAD_HUD	(1 << 17)
-#define SF_PLAYER_SUPPRESS_FIRING	(1 << 18)
+enum SFPlayer_t : uint64
+{
+	SF_PLAYER_NO_GEIGER =			(1 << 0),
+	SF_PLAYER_HIDE_SQUAD_HUD =	(1 << 1),
+	SF_PLAYER_SUPPRESS_FIRING =	(1 << 2),
+
+	SF_PLAYER_LAST_FLAG = SF_PLAYER_SUPPRESS_FIRING,
+};
+
+FLAGENUM_OPERATORS( SFPlayer_t, uint64 )
 
 typedef struct autoaim_params_t
 {

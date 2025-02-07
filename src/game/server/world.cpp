@@ -40,7 +40,12 @@ extern void ActivityList_Free( void );
 extern CUtlMemoryPool g_EntityListPool;
 
 #if !defined( CLIENT_DLL )
-#define SF_GAME_EVENT_PROXY_AUTO_VISIBILITY		1
+enum SFEventProxy_t : unsigned char
+{
+	SF_GAME_EVENT_PROXY_AUTO_VISIBILITY	=	1
+};
+
+FLAGENUM_OPERATORS( SFEventProxy_t, unsigned char )
 
 //=========================================================
 // Allows level designers to generate certain game events 
@@ -54,6 +59,8 @@ private:
 
 public:
 	DECLARE_CLASS( CInfoGameEventProxy, CPointEntity );
+
+	DECLARE_SPAWNFLAGS( SFEventProxy_t )
 
 	void Spawn();
 	EdictStateFlags_t UpdateTransmitState();
@@ -72,7 +79,7 @@ void CInfoGameEventProxy::Spawn()
 
 	m_flRange *= 12.0f; // Convert feet to inches
 
-	if( GetSpawnFlags() & SF_GAME_EVENT_PROXY_AUTO_VISIBILITY )
+	if( HasSpawnFlags( SF_GAME_EVENT_PROXY_AUTO_VISIBILITY ) )
 	{
 		VisibilityMonitor_AddEntity( this, m_flRange, &CInfoGameEventProxy::GameEventProxyCallback, NULL );
 	}
@@ -135,12 +142,18 @@ BEGIN_MAPENTITY( CInfoGameEventProxy )
 END_MAPENTITY()
 #endif
 
-#define SF_DECAL_NOTINDEATHMATCH		2048
+enum SFDecal_t : unsigned short
+{
+	SF_DECAL_NOTINDEATHMATCH =		2048
+};
+
+FLAGENUM_OPERATORS( SFDecal_t, unsigned short )
 
 class CDecal : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CDecal, CPointEntity );
+	DECLARE_SPAWNFLAGS( SFDecal_t )
 
 	void	Spawn( void );
 	bool	KeyValue( const char *szKeyName, const char *szValue );
@@ -170,8 +183,8 @@ private:
 
 BEGIN_MAPENTITY( CDecal )
 
-	DEFINE_KEYFIELD_AUTO( m_bLowPriority, "LowPriority" ) // Don't mark as FDECAL_PERMANENT so not save/restored and will be reused on the client preferentially
-	DEFINE_KEYFIELD_AUTO( m_entityName, "ApplyEntity" ) // Force apply to this entity instead of tracing
+	DEFINE_KEYFIELD_AUTO( m_bLowPriority, "LowPriority" ), // Don't mark as FDECAL_PERMANENT so not save/restored and will be reused on the client preferentially
+	DEFINE_KEYFIELD_AUTO( m_entityName, "ApplyEntity" ), // Force apply to this entity instead of tracing
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
 
@@ -209,12 +222,12 @@ void CDecal::Activate()
 class CTraceFilterValidForDecal : public CTraceFilterSimple
 {
 public:
-	CTraceFilterValidForDecal(const IHandleEntity *passentity, int collisionGroup )
+	CTraceFilterValidForDecal(const IHandleEntity *passentity, Collision_Group_t collisionGroup )
 	 :	CTraceFilterSimple( passentity, collisionGroup )
 	{
 	}
 
-	virtual bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
+	virtual bool ShouldHitEntity( IHandleEntity *pServerEntity, ContentsFlags_t contentsMask )
 	{
 		static const char *ppszIgnoredClasses[] = 
 		{
@@ -358,6 +371,13 @@ bool CDecal::KeyValue( const char *szKeyName, const char *szValue )
 	return true;
 }
 
+enum SFProjectedDecal_t : unsigned short
+{
+	SF_PROJECTED_DECAL_NOTINDEATHMATCH =		2048
+};
+
+FLAGENUM_OPERATORS( SFProjectedDecal_t, unsigned short )
+
 //-----------------------------------------------------------------------------
 // Purpose: Projects a decal against a prop
 //-----------------------------------------------------------------------------
@@ -365,6 +385,7 @@ class CProjectedDecal : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CProjectedDecal, CPointEntity );
+	DECLARE_SPAWNFLAGS( SFProjectedDecal_t )
 
 	void	Spawn( void );
 	bool	KeyValue( const char *szKeyName, const char *szValue );
@@ -403,7 +424,7 @@ LINK_ENTITY_TO_CLASS( info_projecteddecal, CProjectedDecal );
 void CProjectedDecal::Spawn( void )
 {
 	if ( m_nTexture < 0 || 
-		(GameRules()->IsDeathmatch() && HasSpawnFlags( SF_DECAL_NOTINDEATHMATCH )) )
+		(GameRules()->IsDeathmatch() && HasSpawnFlags( SF_PROJECTED_DECAL_NOTINDEATHMATCH )) )
 	{
 		UTIL_Remove( this );
 		return;

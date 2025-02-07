@@ -280,7 +280,7 @@ enum Team_t : unsigned char
 	TEAMNUM_NUM_BITS = 6,
 };
 
-#define MAX_TEAMS				32	// Max number of teams in a game
+#define MAX_TEAMS				4	// Max number of teams in a game
 #define MAX_TEAM_NAME_LENGTH	32	// Max length of a team's name
 
 // Weapon m_iState
@@ -320,10 +320,20 @@ enum Skill_t : unsigned char
 
 // Humans only have left and right hands, though we might have aliens with more
 //  than two, sigh
-#define MAX_VIEWMODELS			2
 
-#define VIEWMODEL_WEAPON 0
-#define VIEWMODEL_HANDS 1
+enum viewmodelindex_t : unsigned char
+{
+	VIEWMODEL_WEAPON = 0,
+	VIEWMODEL_HANDS = 1,
+
+	MAX_VIEWMODELS,
+
+	LAST_VIEWMODEL_INDEX = VIEWMODEL_HANDS,
+
+	VIEWMODEL_INDEX_BITS = MINIMUM_BITS_NEEDED(LAST_VIEWMODEL_INDEX),
+};
+
+UNORDEREDENUM_OPERATORS( viewmodelindex_t, unsigned char )
 
 #define MAX_BEAM_ENTS			10
 
@@ -353,6 +363,8 @@ enum Muzzleflash_t : unsigned short
 // Entity Dissolve types
 enum EntityDissolve_t : unsigned char
 {
+	ENTITY_DISSOLVE_INVALID = (unsigned char)-1,
+
 	ENTITY_DISSOLVE_NORMAL = 0,
 	ENTITY_DISSOLVE_ELECTRICAL,
 	ENTITY_DISSOLVE_ELECTRICAL_LIGHT,
@@ -666,6 +678,7 @@ FLAGENUM_OPERATORS( EntityBehaviorFlags_t, uint64 )
 //-----------------------------------------------------------------------------
 enum BloodSprayFlags_t : unsigned char
 {
+	FX_BLOODSPRAY_NONE = 0,
 	FX_BLOODSPRAY_DROPS	= 0x01,
 	FX_BLOODSPRAY_GORE	= 0x02,
 	FX_BLOODSPRAY_CLOUD	= 0x04,
@@ -992,6 +1005,7 @@ enum
 //-----------------------------------------------------------------------------
 enum InvalidatePhysicsBits_t : unsigned char
 {
+	NOTHING_CHANGED = 0,
 	POSITION_CHANGED	= 0x1,
 	ANGLES_CHANGED		= 0x2,
 	VELOCITY_CHANGED	= 0x4,

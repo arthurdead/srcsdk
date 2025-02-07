@@ -14,12 +14,18 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define ENV_ZOOM_OVERRIDE (1<<0)
+enum SFEnvZoom_t : unsigned char
+{
+	ENV_ZOOM_OVERRIDE = (1<<0),
+};
+
+FLAGENUM_OPERATORS( SFEnvZoom_t, unsigned char )
 
 class CEnvZoom : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CEnvZoom, CPointEntity );
+	DECLARE_SPAWNFLAGS( SFEnvZoom_t )
 
 	void	InputZoom( inputdata_t &&inputdata );
 	void	InputUnZoom( inputdata_t &&inputdata );

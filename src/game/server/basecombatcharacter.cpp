@@ -336,7 +336,7 @@ public:
 static CUtlRBTree<VisibilityCacheEntry_t, unsigned short, CVisibilityCacheEntryLess> g_VisibilityCache;
 const float VIS_CACHE_ENTRY_LIFE = .090;
 
-bool CBaseCombatCharacter::FVisible( CBaseEntity *pEntity, int traceMask, CBaseEntity **ppBlocker )
+bool CBaseCombatCharacter::FVisible( CBaseEntity *pEntity, ContentsFlags_t traceMask, CBaseEntity **ppBlocker )
 {
 	VPROF( "CBaseCombatCharacter::FVisible" );
 
@@ -797,15 +797,16 @@ void CBaseCombatCharacter::Spawn( void )
 
 	RemoveRagdoll();
 
-	UpdateLightIntensity( IsPlayer() ? entindex() : UTIL_GetLocalPlayer(), EyePosition() );
+	UpdateLightIntensity( this, EyePosition() );
 }
 
 void CBaseCombatCharacter::NotifySystemEvent( CBaseEntity *pNotify, notify_system_event_t eventType, const notify_system_event_params_t &params )
 {
 	BaseClass::NotifySystemEvent( pNotify, eventType, params );
 
-	if(eventType == NOTIFY_EVENT_TELEPORT) {
-		UpdateLightIntensity( pNotify->EyePosition() );
+	if(eventType == NOTIFY_EVENT_TELEPORT)
+	{
+		UpdateLightIntensity( this, pNotify->EyePosition() );
 	}
 }
 
@@ -1097,7 +1098,7 @@ void CBaseCombatCharacter::Weapon_SetActivity( Activity newActivity, float durat
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
-CBaseEntity *CBaseCombatCharacter::CheckTraceHullAttack( float flDist, const Vector &mins, const Vector &maxs, float flDamage, int iDmgType, float forceScale, bool bDamageAnyNPC )
+CBaseEntity *CBaseCombatCharacter::CheckTraceHullAttack( float flDist, const Vector &mins, const Vector &maxs, float flDamage, DamageTypes_t iDmgType, float forceScale, bool bDamageAnyNPC )
 {
 	// If only a length is given assume we want to trace in our facing direction
 	Vector forward;
@@ -1127,7 +1128,7 @@ CBaseEntity *CBaseCombatCharacter::CheckTraceHullAttack( float flDist, const Vec
 //			contentsMask - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CTraceFilterMelee::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+bool CTraceFilterMelee::ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 {
 	if ( !StandardFilterRules( pHandleEntity, contentsMask ) )
 		return false;
@@ -1224,7 +1225,7 @@ bool CTraceFilterMelee::ShouldHitEntity( IHandleEntity *pHandleEntity, int conte
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
-CBaseEntity *CBaseCombatCharacter::CheckTraceHullAttack( const Vector &vStart, const Vector &vEnd, const Vector &mins, const Vector &maxs, float flDamage, int iDmgType, float flForceScale, bool bDamageAnyNPC )
+CBaseEntity *CBaseCombatCharacter::CheckTraceHullAttack( const Vector &vStart, const Vector &vEnd, const Vector &mins, const Vector &maxs, float flDamage, DamageTypes_t iDmgType, float flForceScale, bool bDamageAnyNPC )
 {
 	// Handy debuging tool to visualize HullAttack trace
 	if ( ai_show_hull_attacks.GetBool() )
@@ -1694,7 +1695,7 @@ void CBaseCombatCharacter::Event_Killed( const CTakeDamageInfo &info )
 		bool bRagdollCreated = false;
 		if ( (info.GetDamageType() & DMG_DISSOLVE) && CanBecomeRagdoll() )
 		{
-			int nDissolveType = ENTITY_DISSOLVE_NORMAL;
+			EntityDissolve_t nDissolveType = ENTITY_DISSOLVE_NORMAL;
 			if ( info.GetDamageType() & DMG_SHOCK )
 			{
 				nDissolveType = ENTITY_DISSOLVE_ELECTRICAL;
@@ -1718,7 +1719,7 @@ void CBaseCombatCharacter::Event_Killed( const CTakeDamageInfo &info )
 		}
 #endif
 
-		if ( !bRagdollCreated && ( info.GetDamageType() & DMG_REMOVENORAGDOLL ) == 0 )
+		if ( !bRagdollCreated && ( info.GetDamageType() & DMG_REMOVENORAGDOLL ) == DMG_GENERIC )
 		{
 			BecomeRagdoll( info, forceVector );
 		}
@@ -2050,12 +2051,12 @@ void CBaseCombatCharacter::Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector
 
 	m_OnWeaponDrop.FireOutput(pWeapon, this);
 
-	if ( HasSpawnFlags( SF_NPC_NO_WEAPON_DROP ) )
+	CAI_BaseNPC *pNPC = MyNPCPointer();
+	if ( pNPC && pNPC->HasSpawnFlags( SF_NPC_NO_WEAPON_DROP ) )
 	{
 		// Don't drop weapons when the super physgun is happening.
 		UTIL_Remove( pWeapon );
 	}
-
 }
 
 
@@ -2259,11 +2260,12 @@ void CBaseCombatCharacter::Weapon_HandleEquip( CBaseCombatWeapon *pWeapon )
 	// Gotta do this *after* Equip because it may whack maxRange
 	if ( IsPlayer() == false )
 	{
+		CAI_BaseNPC *pNPC = MyNPCPointer();
 		// If SF_NPC_LONG_RANGE spawn flags is set let weapon work from any distance
-		if ( HasSpawnFlags(SF_NPC_LONG_RANGE) )
+		if ( pNPC && pNPC->HasSpawnFlags(SF_NPC_LONG_RANGE) )
 		{
-			pWeapon->m_fMaxRange1 = 999999999;
-			pWeapon->m_fMaxRange2 = 999999999;
+			pWeapon->m_fMaxRange1 = 9999999;
+			pWeapon->m_fMaxRange2 = 9999999;
 		}
 	}
 	else if (bPreserveAmmo)
@@ -2381,7 +2383,7 @@ CBaseCombatWeapon *CBaseCombatCharacter::Weapon_GetSlot( int slot ) const
 //-----------------------------------------------------------------------------
 // Purpose: Get a pointer to a weapon this character has that uses the specified ammo
 //-----------------------------------------------------------------------------
-CBaseCombatWeapon *CBaseCombatCharacter::Weapon_GetWpnForAmmo( int iAmmoIndex )
+CBaseCombatWeapon *CBaseCombatCharacter::Weapon_GetWpnForAmmo( AmmoIndex_t iAmmoIndex )
 {
 	for ( int i = 0; i < MAX_WEAPONS; i++ )
 	{
@@ -2548,9 +2550,9 @@ void CBaseCombatCharacter::RemoveAllWeapons()
 
 
 // take health
-int CBaseCombatCharacter::TakeHealth (float flHealth, int bitsDamageType)
+int CBaseCombatCharacter::TakeHealth (float flHealth, DamageTypes_t bitsDamageType)
 {
-	if (!m_takedamage)
+	if (m_takedamage == DAMAGE_NO)
 		return 0;
 
 	float flRatio = clamp( (float)GetHealth() / (float)m_iMaxHealth, 0.f, 1.f );
@@ -2580,7 +2582,7 @@ int CBaseCombatCharacter::OnTakeDamage( const CTakeDamageInfo &info )
 {
 	int retVal = 0;
 
-	if (!m_takedamage)
+	if (m_takedamage == DAMAGE_NO)
 		return 0;
 
 	m_iDamageCount++;
@@ -2594,7 +2596,7 @@ int CBaseCombatCharacter::OnTakeDamage( const CTakeDamageInfo &info )
 	// track damage history
 	if ( info.GetAttacker() )
 	{
-		int attackerTeam = info.GetAttacker()->GetTeamNumber();
+		Team_t attackerTeam = info.GetAttacker()->GetTeamNumber();
 
 		m_hasBeenInjured |= ( 1 << attackerTeam );
 
@@ -3330,7 +3332,7 @@ void CBaseCombatCharacter::AddRelationship( const char *pszRelationship, CBaseEn
 						int nNumClasses = GameRules()->NumEntityClasses();
 						for (int i = 0; i < nNumClasses; i++)
 						{
-							if (FStrEq(GameRules()->AIClassText(i), entityString))
+							if (FStrEq(GameRules()->AIClassText((Class_T)i), entityString))
 							{
 								resultClass = (Class_T)i;
 							}
@@ -3385,7 +3387,7 @@ Vector CBaseCombatCharacter::Weapon_ShootPosition( )
 CBaseEntity *CBaseCombatCharacter::FindHealthItem( const Vector &vecPosition, const Vector &range )
 {
 	CBaseEntity *list[1024];
-	int count = UTIL_EntitiesInBox( list, 1024, vecPosition - range, vecPosition + range, 0 );
+	int count = UTIL_EntitiesInBox( list, 1024, vecPosition - range, vecPosition + range, FL_NO_ENTITY_FLAGS );
 
 	for ( int i = 0; i < count; i++ )
 	{
@@ -3584,7 +3586,7 @@ CBaseEntity *CBaseCombatCharacter::Weapon_FindUsable( const Vector &range )
 //			iMax - Max carrying capability of the player
 // Output : Amount of ammo actually given
 //-----------------------------------------------------------------------------
-int CBaseCombatCharacter::GiveAmmo( int iCount, int iAmmoIndex, bool bSuppressSound)
+int CBaseCombatCharacter::GiveAmmo( int iCount, AmmoIndex_t iAmmoIndex, bool bSuppressSound)
 {
 	if (iCount <= 0)
 		return 0;
@@ -3595,7 +3597,7 @@ int CBaseCombatCharacter::GiveAmmo( int iCount, int iAmmoIndex, bool bSuppressSo
 		return 0;
 	}
 
-	if ( iAmmoIndex < 0 || iAmmoIndex >= MAX_AMMO_SLOTS )
+	if ( (unsigned short)iAmmoIndex >= MAX_AMMO_SLOTS )
 		return 0;
 
 	int iMax = GetAmmoDef()->MaxCarry(iAmmoIndex, this);
@@ -3619,8 +3621,8 @@ int CBaseCombatCharacter::GiveAmmo( int iCount, int iAmmoIndex, bool bSuppressSo
 //-----------------------------------------------------------------------------
 int CBaseCombatCharacter::GiveAmmo( int iCount, const char *szName, bool bSuppressSound )
 {
-	int iAmmoType = GetAmmoDef()->Index(szName);
-	if (iAmmoType == -1)
+	AmmoIndex_t iAmmoType = GetAmmoDef()->Index(szName);
+	if (iAmmoType == AMMO_INVALID_INDEX)
 	{
 		Msg("ERROR: Attempting to give unknown ammo type (%s)\n",szName);
 		return 0;
@@ -3736,7 +3738,7 @@ void CBaseCombatCharacter::VPhysicsShadowCollision( int index, gamevcollisioneve
 	if ( this == pOther->HasPhysicsAttacker( flOtherAttackerTime ) )
 		return;
 
-	int damageType = 0;
+	DamageTypes_t damageType = DMG_GENERIC;
 	float damage = 0;
 
 	damage = CalculatePhysicsImpactDamage( index, pEvent, GetPhysicsImpactDamageTable(), m_impactEnergyScale, false, damageType );
@@ -3801,7 +3803,7 @@ void CBaseCombatCharacter::VPhysicsShadowCollision( int index, gamevcollisioneve
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------	
-void RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, float flRadius, int iClassIgnore, CBaseEntity *pEntityIgnore )
+void RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, float flRadius, Class_T iClassIgnore, CBaseEntity *pEntityIgnore )
 {
 	// NOTE: I did this this way so I wouldn't have to change a whole bunch of
 	// code unnecessarily. We need TF2 specific rules for RadiusDamage, so I moved
@@ -3878,7 +3880,7 @@ CBaseEntity *CBaseCombatCharacter::FindMissTarget( void )
 	Vector		radius( 100, 100, 100);
 	Vector		vecSource = GetAbsOrigin();
 
-	int numEnts = UTIL_EntitiesInBox( pEnts, 256, vecSource-radius, vecSource+radius, 0 );
+	int numEnts = UTIL_EntitiesInBox( pEnts, 256, vecSource-radius, vecSource+radius, FL_NO_ENTITY_FLAGS );
 
 	for ( int i = 0; i < numEnts; i++ )
 	{
@@ -3928,7 +3930,7 @@ void CBaseCombatCharacter::InputKilledNPC( inputdata_t &&inputdata )
 //-----------------------------------------------------------------------------
 void CBaseCombatCharacter::InputSetBloodColor( inputdata_t &&inputdata )
 {
-	SetBloodColor(inputdata.value.Int());
+	SetBloodColor((BloodColor_t)inputdata.value.Int());
 }
 
 //-----------------------------------------------------------------------------
@@ -3996,9 +3998,10 @@ void CBaseCombatCharacter::InputDropWeapon( inputdata_t &&inputdata )
 //-----------------------------------------------------------------------------
 void CBaseCombatCharacter::InputPickupWeaponInstant( inputdata_t &&inputdata )
 {
-	if (inputdata.value.Entity() && inputdata.value.Entity()->IsBaseCombatWeapon())
+	CBaseEntity *pTarget = inputdata.value.EntityP();
+	if (pTarget && pTarget->IsBaseCombatWeapon())
 	{
-		CBaseCombatWeapon *pWeapon = inputdata.value.Entity()->MyCombatWeaponPointer();
+		CBaseCombatWeapon *pWeapon = pTarget->MyCombatWeaponPointer();
 		if (pWeapon->GetOwner())
 		{
 			Msg("Ignoring PickupWeaponInstant on %s because %s already has an owner\n", GetDebugName(), pWeapon->GetDebugName());
@@ -4025,7 +4028,7 @@ void CBaseCombatCharacter::InputPickupWeaponInstant( inputdata_t &&inputdata )
 	}
 	else
 	{
-		Warning("%s received PickupWeaponInstant with invalid entity %s\n", GetDebugName(), inputdata.value.Entity() ? inputdata.value.Entity()->GetDebugName() : "<<null>>");
+		Warning("%s received PickupWeaponInstant with invalid entity %s\n", GetDebugName(), pTarget ? pTarget->GetDebugName() : "<<null>>");
 	}
 }
 
@@ -4073,7 +4076,7 @@ void CBaseCombatCharacter::InputUnholsterWeapon( inputdata_t &&inputdata )
 {
 	// NPCs can handle strings, but players fall back to SwitchToWeapon
 	if (inputdata.value.StringID() != NULL_STRING)
-		InputSwitchToWeapon( inputdata );
+		InputSwitchToWeapon( Move(inputdata) );
 
 	CBaseCombatWeapon *pWeapon = GetActiveWeapon();
 	if (pWeapon && pWeapon->IsEffectActive(EF_NODRAW))
@@ -4135,7 +4138,7 @@ void CBaseCombatCharacter::DoMuzzleFlash()
 //-----------------------------------------------------------------------------
 // Purpose: Changing team, maintain associated data
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::ChangeTeam( int iTeamNum )
+void CBaseCombatCharacter::ChangeTeam( Team_t iTeamNum )
 {
 	BaseClass::ChangeTeam( iTeamNum );
 }
@@ -4144,16 +4147,14 @@ void CBaseCombatCharacter::ChangeTeam( int iTeamNum )
 //-----------------------------------------------------------------------------
 // Return true if we have ever been injured by a member of the given team
 //-----------------------------------------------------------------------------
-bool CBaseCombatCharacter::HasEverBeenInjured( int team /*= TEAM_ANY */ ) const
+bool CBaseCombatCharacter::HasEverBeenInjured( Team_t team /*= TEAM_ANY */ ) const
 {
 	if ( team == TEAM_ANY )
 	{
 		return ( m_hasBeenInjured == 0 ) ? false : true;
 	}
 
-	int teamMask = 1 << team;
-
-	if ( m_hasBeenInjured & teamMask )
+	if ( m_hasBeenInjured & (1 << team) )
 	{
 		return true;
 	}
@@ -4165,7 +4166,7 @@ bool CBaseCombatCharacter::HasEverBeenInjured( int team /*= TEAM_ANY */ ) const
 //-----------------------------------------------------------------------------
 // Return time since we were hurt by a member of the given team
 //-----------------------------------------------------------------------------
-float CBaseCombatCharacter::GetTimeSinceLastInjury( int team /*= TEAM_ANY */ ) const
+float CBaseCombatCharacter::GetTimeSinceLastInjury( Team_t team /*= TEAM_ANY */ ) const
 {
 	const float never = 999999999999.9f;
 

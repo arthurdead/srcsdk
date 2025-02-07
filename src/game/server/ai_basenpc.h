@@ -191,7 +191,7 @@ enum BaseNpcSpawnFlags_t : uint64
 //									( 1 << 15 )	
 // !! Flags above ( 1 << 15 )	 are reserved for NPC sub-classes
 
-	SF_NPC_LAST_SHARED_FLAG = SF_NPC_NO_PLAYER_PUSHAWAY,
+	SF_NPC_LAST_SHARED_FLAG = (1 << 15),
 };
 
 FLAGENUM_OPERATORS( BaseNpcSpawnFlags_t, uint64 )
@@ -394,7 +394,7 @@ struct ScriptedNPCInteraction_Phases_t
 #define DSS_MAX_ANGLE_DIFF		4
 
 // Interaction Logic States
-enum
+enum NpcInteractionState_t : unsigned char
 {
 	NPCINT_NOT_RUNNING = 0,
 	NPCINT_RUNNING_ACTIVE,		// I'm in an interaction that I initiated
@@ -402,7 +402,7 @@ enum
 	NPCINT_MOVING_TO_MARK,		// I'm moving to a position to do an interaction
 };
 
-#define NPCINT_NONE				-1
+#define NPCINT_NONE -1
 
 #define MAXTACLAT_IGNORE		-1
 
@@ -695,9 +695,9 @@ public:
 
 	virtual float		LineOfSightDist( const Vector &vecDir = vec3_invalid, float zEye = FLT_MAX );
 
-	virtual void		MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType );
+	virtual void		MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, AmmoTracer_t iTracerType );
 	virtual const char	*GetTracerType( void );
-	virtual void		DoImpactEffect( trace_t &tr, int nDamageType );
+	virtual void		DoImpactEffect( trace_t &tr, DamageTypes_t nDamageType );
 		
 	enum
 	{
@@ -1350,7 +1350,7 @@ private:
 	CHandle<CAI_BaseNPC>				 m_hInteractionPartner;
 	EHANDLE								 m_hLastInteractionTestTarget;
 	bool								 m_bCannotDieDuringInteraction;
-	int									 m_iInteractionState;
+	NpcInteractionState_t									 m_iInteractionState;
 	int									 m_iInteractionPlaying;
 	CUtlVector<ScriptedNPCInteraction_t> m_ScriptedInteractions;
 

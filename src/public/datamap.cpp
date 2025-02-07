@@ -574,7 +574,11 @@ void MapField_impl( typedescription_t &ret, const char *name, int offset, int si
 	ret.externalName = NULL;
 
 	if((flags_ & FTYPEDESC_OUTPUT) != FTYPEDESC_NONE) {
+	#if defined GAME_DLL || defined CLIENT_DLL
 		ret.pFieldOps = eventFuncs;
+	#else
+		ret.pFieldOps = NULL;
+	#endif
 	} else {
 		ret.pFieldOps = NULL;
 	}

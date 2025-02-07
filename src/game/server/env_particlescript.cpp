@@ -78,7 +78,7 @@ void CEnvParticleScript::PrecacheAnimationEventMaterials()
 		int numseq = hdr->GetNumSeq();
 		for ( int i = 0; i < numseq; ++i )
 		{
-			mstudioseqdesc_t& seqdesc = hdr->pSeqdesc( i );
+			const mstudioseqdesc_t& seqdesc = hdr->pSeqdesc( (sequence_t)i );
 			int ecount = seqdesc.numevents;
 			for ( int j = 0 ; j < ecount; ++j )
 			{
@@ -179,8 +179,8 @@ void CEnvParticleScript::InputSetSequence( inputdata_t &&inputdata )
 {
 	if ( inputdata.value.StringID() != NULL_STRING )
 	{
-		int nSequence = LookupSequence( STRING( inputdata.value.StringID() ) );
-		if ( nSequence != ACT_INVALID )
+		sequence_t nSequence = LookupSequence( STRING( inputdata.value.StringID() ) );
+		if ( nSequence != INVALID_SEQUENCE )
 		{
 			SetSequence( nSequence );
 		}

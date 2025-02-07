@@ -100,6 +100,7 @@ class CCollisionProperty;
 class DensityWeightsMap;
 enum density_type_t : unsigned char;
 enum GenericSpawnFlags_t : uint64;
+enum AmmoTracer_t : unsigned char;
 
 typedef CUtlVector< CBaseEntity* > EntityList_t;
 
@@ -985,7 +986,7 @@ public:
 	virtual float			GetDelay( void ) { return 0; }
 	virtual bool			IsMoving( void );
 	bool					IsWorld() const { extern CWorld *g_WorldEntity; return (void *)this == (void *)g_WorldEntity; }
-	virtual char const		*DamageDecal( int bitsDamageType, int gameMaterial );
+	virtual char const		*DamageDecal( DamageTypes_t bitsDamageType, int gameMaterial );
 	virtual void			DecalTrace( trace_t *pTrace, char const *decalName );
 	virtual void			ImpactTrace( trace_t *pTrace, DamageTypes_t iDamageType, const char *pCustomImpactName = NULL );
 
@@ -1117,10 +1118,10 @@ public:
 	int						ShouldToggle( USE_TYPE useType, int currentState );
 
 	// UNDONE: Move these virtuals to CBaseCombatCharacter?
-	virtual void MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType );
+	virtual void MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, AmmoTracer_t iTracerType );
 	virtual int	GetTracerAttachment( void );
 	virtual void FireBullets( const FireBulletsInfo_t &info );
-	virtual void DoImpactEffect( trace_t &tr, int nDamageType ); // give shooter a chance to do a custom impact.
+	virtual void DoImpactEffect( trace_t &tr, DamageTypes_t nDamageType ); // give shooter a chance to do a custom impact.
 
 	virtual void ModifyFireBulletsDamage( CTakeDamageInfo* dmgInfo ) {}
 
@@ -1578,7 +1579,7 @@ public:
 
 protected:
 	// Invalidates the abs state of all children
-	void					InvalidatePhysicsRecursive( int nChangeFlags );
+	void					InvalidatePhysicsRecursive( InvalidatePhysicsBits_t nChangeFlags );
 
 	int						PhysicsClipVelocity (const Vector& in, const Vector& normal, Vector& out, float overbounce );
 	void					PhysicsRelinkChildren( float dt );
@@ -1696,6 +1697,11 @@ private:
 
 	// Changes shadow cast distance over time
 	void ShadowCastDistThink( );
+
+	GenericSpawnFlags_t GetRawSpawnFlags( void ) const
+	{ return m_spawnflags; }
+	void ClearSpawnFlags( void )
+	{ m_spawnflags = static_cast<GenericSpawnFlags_t>(0); }
 
 protected:
 	// Which frame did I simulate?

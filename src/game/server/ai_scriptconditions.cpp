@@ -646,7 +646,7 @@ void CAI_ScriptConditions::InputDisable( inputdata_t &&inputdata )
 void CAI_ScriptConditions::InputSatisfyConditions( inputdata_t &&inputdata )
 {
 	// This satisfies things.
-	CBaseEntity *pActivator = HasSpawnFlags(SF_ACTOR_AS_ACTIVATOR) ? inputdata.value.Entity() : this;
+	CBaseEntity *pActivator = HasSpawnFlags(SF_ACTOR_AS_ACTIVATOR) ? inputdata.value.EntityP() : this;
 	m_OnConditionsSatisfied.FireOutput(pActivator, this);
 
 

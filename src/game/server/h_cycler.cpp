@@ -16,8 +16,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define FCYCLER_NOTSOLID		0x0001
-
 extern modelindex_t g_sModelIndexSmoke; // (in combatweapon.cpp) holds the index for the smoke cloud
 
 BEGIN_MAPENTITY( CCycler )
@@ -78,7 +76,7 @@ void CCycler::Spawn( )
 	InitBoneControllers();
 	
 	SetSolid( SOLID_BBOX );
-	if ( m_spawnflags & FCYCLER_NOTSOLID )
+	if ( HasSpawnFlags( SF_HCYCLER_NOTSOLID ) )
 	{
 		AddSolidFlags( FSOLID_NOT_SOLID );
 	}
@@ -89,7 +87,7 @@ void CCycler::Spawn( )
 
 	SetMoveType( MOVETYPE_NONE );
 	m_takedamage		= DAMAGE_YES;
-	m_iHealth			= 80000;// no cycler should die
+	SetHealth( 80000 );// no cycler should die
 	GetMotor()->SetIdealYaw( GetLocalAngles().y );
 	GetMotor()->SnapYaw();
 	
@@ -100,7 +98,7 @@ void CCycler::Spawn( )
 
 	ResetSequenceInfo( );
 
-	if (GetSequence() != 0 || m_flCycle != 0)
+	if (GetSequence() != ROOT_SEQUENCE || m_flCycle != 0)
 	{
 #ifdef TF2_DLL
 		m_animate = 1;
@@ -163,10 +161,10 @@ int CCycler::OnTakeDamage( const CTakeDamageInfo &info )
 {
 	if (m_animate)
 	{
-		int nSequence = GetSequence() + 1;
+		sequence_t nSequence = (sequence_t)((unsigned short)GetSequence() + 1);
 		if ( !IsValidSequence(nSequence) )
 		{
-			nSequence = 0;
+			nSequence = ROOT_SEQUENCE;
 		}
 
 		ResetSequence( nSequence );
@@ -192,7 +190,7 @@ void CCycler::InputSetSequence( inputdata_t &&inputdata )
 	{
 		// Legacy support: Try it as a number, and support '0'
 		const char *sChar = inputdata.value.String();
-		int iSeqNum = atoi( sChar );
+		unsigned short iSeqNum = (unsigned short)atoi( sChar );
 		if ( !iSeqNum && sChar[0] != '0' )
 		{
 			// Treat it as a sequence name
@@ -200,12 +198,12 @@ void CCycler::InputSetSequence( inputdata_t &&inputdata )
 		}
 		else
 		{
-			ResetSequence( iSeqNum );
+			ResetSequence( (sequence_t)iSeqNum );
 		}
 
 		if (m_flPlaybackRate == 0.0)
 		{
-			ResetSequence( 0 );
+			ResetSequence( ROOT_SEQUENCE );
 		}
 
 		m_flCycle = 0;
@@ -224,12 +222,12 @@ public:
 
 	void Spawn( void );
 
-	void PrimaryAttack( void );
+	bool PrimaryAttack( void );
 	void SecondaryAttack( void );
 	bool Deploy( void );
 	bool Holster( CBaseCombatWeapon *pSwitchingTo = NULL );
 	string_t m_iszModel;
-	int m_iModel;
+	modelindex_t m_iModel;
 };
 
 IMPLEMENT_SERVERCLASS_ST(CWeaponCycler, DT_WeaponCycler)
@@ -271,7 +269,7 @@ bool CWeaponCycler::Deploy( )
 	if (pOwner)
 	{
 		pOwner->m_flNextAttack = gpGlobals->curtime + 1.0;
-		SendWeaponAnim( 0 );
+		SendWeaponAnim( ACT_IDLE );
 		m_iClip1 = 0;
 		m_iClip2 = 0;
 		return true;
@@ -292,10 +290,11 @@ bool CWeaponCycler::Holster( CBaseCombatWeapon *pSwitchingTo )
 }
 
 
-void CWeaponCycler::PrimaryAttack()
+bool CWeaponCycler::PrimaryAttack()
 {
 	SendWeaponAnim( GetSequence() );
 	m_flNextPrimaryAttack = gpGlobals->curtime + 0.3;
+	return true;
 }
 
 
@@ -303,17 +302,17 @@ void CWeaponCycler::SecondaryAttack( void )
 {
 	float flFrameRate;
 
-	int nSequence = (GetSequence() + 1) % 8;
+	sequence_t nSequence = (sequence_t)(((unsigned short)GetSequence() + 1) % 8);
 
 	// BUG:  Why do we set this here and then set to zero right after?
 	SetModelIndex( m_iModel );
 	flFrameRate = 0.0;
 
-	SetModelIndex( 0 );
+	//SetModelIndex( INVALID_MODEL_INDEX );
 
 	if (flFrameRate == 0.0)
 	{
-		nSequence = 0;
+		nSequence = ROOT_SEQUENCE;
 	}
 
 	SetSequence( nSequence );
@@ -412,7 +411,7 @@ public:
 	void Spawn( void );
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	void Think( void );
-	virtual EntityCaps_t ObjectCaps( void ) { return (BaseClass::ObjectCaps() | FCAP_DONT_SAVE | FCAP_IMPULSE_USE); }
+	virtual EntityCaps_t ObjectCaps( void ) { return (BaseClass::ObjectCaps() | FCAP_IMPULSE_USE); }
 
 	int m_iLowerBound;
 	int m_iUpperBound;

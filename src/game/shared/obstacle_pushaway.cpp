@@ -74,7 +74,7 @@ IterationRetval_t CBotDoorEnumerator::EnumElement( IHandleEntity *pHandleEntity 
 	if ( pEnt == NULL )
 		return ITERATION_CONTINUE;
 
-	if ( ( pEnt->ObjectCaps() & FCAP_IMPULSE_USE ) == 0 )
+	if ( ( pEnt->ObjectCaps() & FCAP_IMPULSE_USE ) == FCAP_NONE )
 	{
 		return ITERATION_CONTINUE;
 	}

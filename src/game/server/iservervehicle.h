@@ -17,7 +17,7 @@ class CBaseEntity;
 class CBasePlayer;
 class CBaseCombatCharacter;
 class CNPC_VehicleDriver;
-enum VehicleSeatQuery_e;
+enum VehicleSeatQuery_e : unsigned char;
 
 // This is used by the player to access vehicles. It's an interface so the
 // vehicles are not restricted in what they can derive from.
@@ -28,13 +28,13 @@ public:
 	virtual CBaseEntity*	GetVehicleEnt() = 0;
 
 	// Get and set the current driver. Use PassengerRole_t enum in shareddefs.h for adding passengers
-	virtual void			SetPassenger( int nRole, CBaseCombatCharacter *pPassenger ) = 0;
+	virtual void			SetPassenger( PassengerRole_t nRole, CBaseCombatCharacter *pPassenger ) = 0;
 	
 	// Is the player visible while in the vehicle? (this is a constant the vehicle)
-	virtual bool			IsPassengerVisible( int nRole = VEHICLE_ROLE_DRIVER ) = 0;
+	virtual bool			IsPassengerVisible( PassengerRole_t nRole = VEHICLE_ROLE_DRIVER ) = 0;
 
 	// Can a given passenger take damage?
-	virtual bool			IsPassengerDamagable( int nRole  = VEHICLE_ROLE_DRIVER ) = 0;
+	virtual bool			IsPassengerDamagable( PassengerRole_t nRole  = VEHICLE_ROLE_DRIVER ) = 0;
 	virtual bool			PassengerShouldReceiveDamage( CTakeDamageInfo &info ) = 0;
 
 	// Is the vehicle upright?
@@ -45,15 +45,15 @@ public:
 	virtual bool			IsPassengerExiting( void ) = 0;
 
 	// Get a position in *world space* inside the vehicle for the player to start at
-	virtual void			GetPassengerSeatPoint( int nRole, Vector *pPoint, QAngle *pAngles ) = 0;
+	virtual void			GetPassengerSeatPoint( PassengerRole_t nRole, Vector *pPoint, QAngle *pAngles ) = 0;
 
 	virtual void			HandlePassengerEntry( CBaseCombatCharacter *pPassenger, bool bAllowEntryOutsideZone = false ) = 0;
 	virtual bool			HandlePassengerExit( CBaseCombatCharacter *pPassenger ) = 0;
 
 	// Get a point in *world space* to leave the vehicle from (may be in solid)
-	virtual bool			GetPassengerExitPoint( int nRole, Vector *pPoint, QAngle *pAngles ) = 0;
-	virtual int				GetEntryAnimForPoint( const Vector &vecPoint ) = 0;
-	virtual int				GetExitAnimToUse( Vector &vecEyeExitEndpoint, bool &bAllPointsBlocked ) = 0;
+	virtual bool			GetPassengerExitPoint( PassengerRole_t nRole, Vector *pPoint, QAngle *pAngles ) = 0;
+	virtual sequence_t				GetEntryAnimForPoint( const Vector &vecPoint ) = 0;
+	virtual sequence_t				GetExitAnimToUse( Vector &vecEyeExitEndpoint, bool &bAllPointsBlocked ) = 0;
 	virtual void			HandleEntryExitFinish( bool bExitAnimOn, bool bResetAnim ) = 0;
 
 	virtual Class_T			ClassifyPassenger( CBaseCombatCharacter *pPassenger, Class_T defaultClassification ) = 0;
@@ -125,10 +125,10 @@ public:
 	virtual void			SetVehicleExitAnim( bool bOn, Vector vecEyeExitEndpoint ) = 0;
 	virtual void			EnterVehicle( CBaseCombatCharacter *pPassenger ) = 0;
 
-	virtual void			PreExitVehicle( CBaseCombatCharacter *pPassenger, int nRole ) = 0;
-	virtual void			ExitVehicle( int nRole ) = 0;
-	virtual bool			AllowBlockedExit( CBaseCombatCharacter *pPassenger, int nRole ) = 0;
-	virtual bool			AllowMidairExit( CBaseCombatCharacter *pPassenger, int nRole ) = 0;
+	virtual void			PreExitVehicle( CBaseCombatCharacter *pPassenger, PassengerRole_t nRole ) = 0;
+	virtual void			ExitVehicle( PassengerRole_t nRole ) = 0;
+	virtual bool			AllowBlockedExit( CBaseCombatCharacter *pPassenger, PassengerRole_t nRole ) = 0;
+	virtual bool			AllowMidairExit( CBaseCombatCharacter *pPassenger, PassengerRole_t nRole ) = 0;
 	virtual string_t		GetVehicleScriptName() = 0;
 
 	virtual bool			PassengerShouldReceiveDamage( CTakeDamageInfo &info ) = 0;

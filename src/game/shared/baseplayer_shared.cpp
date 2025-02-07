@@ -54,7 +54,7 @@ extern ConVar sv_turbophysics;
 class CUsePushFilter : public CTraceFilterEntitiesOnly
 {
 public:
-	bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 	{
 		CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 
@@ -195,7 +195,7 @@ bool CSharedBasePlayer::UsingStandardWeaponsInVehicle( void )
 
 	// NOTE: We *have* to do this before ItemPostFrame because ItemPostFrame
 	// may dump us out of the vehicle
-	int nRole = pVehicle->GetPassengerRole( this );
+	PassengerRole_t nRole = pVehicle->GetPassengerRole( this );
 	bool bUsingStandardWeapons = pVehicle->IsPassengerUsingStandardWeapons( nRole );
 		
 	// Fall through and check weapons, etc. if we're using them 
@@ -455,7 +455,7 @@ void CSharedBasePlayer::CacheVehicleView( void )
 
 	if ( pVehicle != NULL )
 	{		
-		int nRole = pVehicle->GetPassengerRole( this );
+		PassengerRole_t nRole = pVehicle->GetPassengerRole( this );
 
 		// Get our view for this frame
 		pVehicle->GetVehicleViewPosition( nRole, &m_vecVehicleViewOrigin, &m_vecVehicleViewAngles, &m_flVehicleViewFOV );
@@ -846,11 +846,11 @@ void CSharedBasePlayer::Weapon_SetLast( CSharedBaseCombatWeapon *pWeapon )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-int CSharedBasePlayer::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon, int viewmodelindex /*=VIEWMODEL_WEAPON*/, bool bDeploy ) 
+WeaponSwitchResult_t CSharedBasePlayer::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon, viewmodelindex_t viewmodelindex /*=VIEWMODEL_WEAPON*/, bool bDeploy ) 
 {
 	CSharedBaseCombatWeapon *pLastWeapon = GetActiveWeapon();
 
-	int res = BaseClass::Weapon_Switch( pWeapon, viewmodelindex, bDeploy );
+	WeaponSwitchResult_t res = BaseClass::Weapon_Switch( pWeapon, viewmodelindex, bDeploy );
 	if ( res != WEAPON_SWITCH_FAILED )
 	{
 		if ( pLastWeapon && Weapon_ShouldSetLast( pLastWeapon, GetActiveWeapon() ) )
@@ -1589,9 +1589,9 @@ void CSharedBasePlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &z
 
 void CSharedBasePlayer::CalcViewModelView( const Vector& eyeOrigin, const QAngle& eyeAngles)
 {
-	for ( int i = 0; i < MAX_VIEWMODELS; i++ )
+	for ( int i = 0; i < (int)MAX_VIEWMODELS; i++ )
 	{
-		CSharedBaseViewModel *vm = GetViewModel( i );
+		CSharedBaseViewModel *vm = GetViewModel( (viewmodelindex_t)i );
 		if ( !vm )
 			continue;
 	
@@ -1784,9 +1784,9 @@ void CSharedBasePlayer::CalcViewBob( Vector& eyeOrigin )
 
 void CSharedBasePlayer::DoMuzzleFlash()
 {
-	for ( int i = 0; i < MAX_VIEWMODELS; i++ )
+	for ( int i = 0; i < (int)MAX_VIEWMODELS; i++ )
 	{
-		CSharedBaseViewModel *vm = GetViewModel( i );
+		CSharedBaseViewModel *vm = GetViewModel( (viewmodelindex_t)i );
 		if ( !vm )
 			continue;
 
@@ -1819,7 +1819,7 @@ float CSharedBasePlayer::GetFOVDistanceAdjustFactor()
 //			&tr - 
 //			iTracerType - 
 //-----------------------------------------------------------------------------
-void CSharedBasePlayer::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType )
+void CSharedBasePlayer::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, AmmoTracer_t iTracerType )
 {
 	if ( GetActiveWeapon() )
 	{

@@ -32,7 +32,7 @@ void CUserCmd::Reset()
 	forwardmove = 0.0f;
 	sidemove = 0.0f;
 	upmove = 0.0f;
-	buttons = 0;
+	buttons = IN_NONE;
 	impulse = 0;
 	weaponselect = 0;
 	weaponsubtype = 0;
@@ -107,7 +107,7 @@ void CUserCmd::MakeInert( void )
 	forwardmove = 0.f;
 	sidemove = 0.f;
 	upmove = 0.f;
-	buttons = 0;
+	buttons = IN_NONE;
 	impulse = 0;
 }
 
@@ -238,7 +238,7 @@ void WriteUsercmd( bf_write *buf, const CUserCmd *to, const CUserCmd *from )
 	WriteUserCmdDeltaFloat( buf, "forwardmove", from->forwardmove, to->forwardmove );
 	WriteUserCmdDeltaFloat( buf, "sidemove", from->sidemove, to->sidemove );
 	WriteUserCmdDeltaFloat( buf, "upmove", from->upmove, to->upmove );
-	WriteUserCmdDeltaULongLong( buf, "buttons", from->buttons, to->buttons );
+	WriteUserCmdDeltaULongLong( buf, "buttons", (uint64)from->buttons, (uint64)to->buttons );
 	WriteUserCmdDeltaInt( buf, "impulse", from->impulse, to->impulse, 8 );
 
 
@@ -322,7 +322,7 @@ void ReadUsercmd( bf_read *buf, CUserCmd *move, CUserCmd *from, CSharedBasePlaye
 	// read buttons
 	if ( buf->ReadOneBit() )
 	{
-		move->buttons = buf->ReadULongLong();
+		move->buttons = (InButtons_t)buf->ReadULongLong();
 	}
 
 	if ( buf->ReadOneBit() )

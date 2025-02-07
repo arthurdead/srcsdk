@@ -34,8 +34,6 @@ class C_VGuiScreen;
 typedef C_VGuiScreen CSharedVGuiScreen;
 #endif
 
-#define VIEWMODEL_INDEX_BITS 1
-
 #ifdef CLIENT_DLL
 	#define CBaseViewModel C_BaseViewModel
 #endif
@@ -74,9 +72,9 @@ public:
 
 	// Initializes the viewmodel for use							
 	void					SetOwner( CSharedBaseEntity *pEntity );
-	void					SetIndex( int nIndex );
+	void					SetIndex( viewmodelindex_t nIndex );
 	// Returns which viewmodel it is
-	int						ViewModelIndex( ) const;
+	viewmodelindex_t						ViewModelIndex( ) const;
 
 	virtual void			Precache( void );
 
@@ -184,7 +182,7 @@ public:
 #endif
 
 private:
-	CNetworkVar( int, m_nViewModelIndex );		// Which viewmodel is it?
+	CNetworkVar( viewmodelindex_t, m_nViewModelIndex );		// Which viewmodel is it?
 	CNetworkHandle( CSharedBaseEntity, m_hOwner );				// Player or AI carrying this weapon
 
 	// soonest time Update will call WeaponIdle

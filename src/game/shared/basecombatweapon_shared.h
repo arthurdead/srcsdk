@@ -255,7 +255,7 @@ public:
 	virtual bool			KeyValue( const char *szKeyName, const char *szValue );
 	virtual bool			GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen );
 
-	void					MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType );
+	void					MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, AmmoTracer_t iTracerType );
 
 	virtual WeaponClass_t	WeaponClassify();
 	static WeaponClass_t	WeaponClassFromString(const char *str);
@@ -294,9 +294,10 @@ public:
 	virtual void			RescindReloadHudHint();
 
 	// Weapon client handling
-	virtual void			SetViewModelIndex( int index = 0 );
-	virtual bool			SendWeaponAnim( Activity iActivity );
-	virtual void			SendViewModelAnim( int nSequence );
+	virtual void			SetViewModelIndex( viewmodelindex_t index = VIEWMODEL_WEAPON );
+	bool			SendWeaponAnim( Activity iActivity );
+	virtual bool			SendWeaponAnim( sequence_t nSequence, Activity iActivity = ACT_INVALID );
+	virtual void			SendViewModelAnim( sequence_t nSequence );
 	virtual float					GetViewModelSequenceDuration();	// Return how long the current view model sequence is.
 	virtual bool					IsViewModelSequenceFinished( void ) const; // Returns if the viewmodel's current animation is finished
 
@@ -437,7 +438,7 @@ public:
 
 	// Weapon info accessors for data in the weapon's data file
 	const FileWeaponInfo_t	&GetWpnData( void ) const;
-	virtual const char		*GetViewModel( int viewmodelindex = 0 ) const;
+	virtual const char		*GetViewModel( viewmodelindex_t viewmodelindex = VIEWMODEL_WEAPON ) const;
 	virtual const char		*GetWorldModel( void ) const;
 	virtual const char		*GetAnimPrefix( void ) const;
 	virtual int				GetMaxClip1( void ) const;
@@ -700,7 +701,7 @@ protected:
 public:
 
 	// Networked fields
-	CNetworkVar( unsigned char, m_nViewModelIndex );
+	CNetworkVar( viewmodelindex_t, m_nViewModelIndex );
 
 	// Weapon firing
 	CNetworkTime( m_flNextPrimaryAttack );						// soonest time ItemPostFrame will call PrimaryAttack
@@ -725,6 +726,7 @@ public:
 	int						GetIdealSequence( void ) { return m_nIdealSequence; }
 
 	bool					SetIdealActivity( Activity ideal );
+	bool					SetIdealSequence( sequence_t idealSequence, Activity ideal = ACT_INVALID );
 	void					MaintainIdealActivity( void );
 
 private:

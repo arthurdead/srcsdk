@@ -72,7 +72,10 @@ public:
 
 	void SetHitbox( int hitbox );
 
-private:
+	int Hitbox() const;
+	int StaticPropIdx() const;
+
+public:
 	// NOTE: this member is overloaded.
 	// If hEnt points at the world entity, then this is the static prop index.
 	// Otherwise, this is the hitbox index.

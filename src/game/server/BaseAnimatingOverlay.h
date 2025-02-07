@@ -36,20 +36,16 @@ enum AnimLayerFlags_t : unsigned char
 
 FLAGENUM_OPERATORS( AnimLayerFlags_t, unsigned char )
 
-class CAnimationLayer : public CMemZeroOnNew, public INetworkableObject
+class CAnimationLayer : public CMemZeroOnNew
 {
 public:	
 	DECLARE_CLASS_NOBASE( CAnimationLayer );
-	// For CNetworkVars.
-	DECLARE_EMBEDDED_NETWORKVAR();
 
-	CAnimationLayer() = delete;
-	CAnimationLayer(const CAnimationLayer &) = delete;
-	CAnimationLayer(CAnimationLayer &&) = delete;
-	CAnimationLayer &operator=(const CAnimationLayer &) = delete;
-	CAnimationLayer &operator=(CAnimationLayer &&) = delete;
-
-	void	Init( CBaseAnimatingOverlay *pOverlay );
+	CAnimationLayer();
+	CAnimationLayer(const CAnimationLayer &) = default;
+	CAnimationLayer(CAnimationLayer &&) = default;
+	CAnimationLayer &operator=(const CAnimationLayer &) = default;
+	CAnimationLayer &operator=(CAnimationLayer &&) = default;
 
 	// float	SetBlending( int iBlender, float flValue, CBaseAnimating *pOwner );
 	void	StudioFrameAdvance( float flInterval, CBaseAnimating *pOwner );
@@ -65,10 +61,10 @@ public:
 	bool	m_bSequenceFinished;
 	bool	m_bLooping;
 	
-	CNetworkSequence( m_nSequence );
-	CNetworkAnimCycle( m_flCycle );
-	CNetworkAnimCycle( m_flPrevCycle );
-	CNetworkScale( m_flWeight );
+	CNetworkSequenceForDerived( m_nSequence );
+	CNetworkAnimCycleForDerived( m_flCycle );
+	CNetworkAnimCycleForDerived( m_flPrevCycle );
+	CNetworkScaleForDerived( m_flWeight );
 	
 	float	m_flPlaybackRate;
 
@@ -86,7 +82,7 @@ public:
 
 	// order of layering on client
 	unsigned int		m_nPriority;
-	CNetworkVar( unsigned int, m_nOrder );
+	CNetworkVarForDerived( unsigned int, m_nOrder );
 
 	bool	IsActive( void ) const { return ((m_fFlags & ANIM_LAYER_ACTIVE) != ANIM_LAYER_NO_FLAGS); }
 	bool	IsAutokill( void ) const { return ((m_fFlags & ANIM_LAYER_AUTOKILL) != ANIM_LAYER_NO_FLAGS); }
@@ -116,6 +112,34 @@ public:
 	float	m_flLastEventCheck;
 
 	float	m_flLastAccess;
+};
+
+class CNetworkedAnimationLayer : public CAnimationLayer, public INetworkableObject
+{
+public:
+	DECLARE_CLASS( CNetworkedAnimationLayer, CAnimationLayer );
+	// For CNetworkVars.
+	DECLARE_EMBEDDED_NETWORKVAR_NOCHECK();
+
+	virtual void NetworkStateChanged() override;
+	virtual void NetworkStateChanged( unsigned short offset ) override;
+
+	void	Init( CBaseAnimatingOverlay *pOverlay );
+
+	CNetworkedAnimationLayer() = default;
+	CNetworkedAnimationLayer(const CNetworkedAnimationLayer &) = default;
+	CNetworkedAnimationLayer(CNetworkedAnimationLayer &&) = default;
+	CNetworkedAnimationLayer &operator=(const CNetworkedAnimationLayer &) = default;
+	CNetworkedAnimationLayer &operator=(CNetworkedAnimationLayer &&) = default;
+
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_nSequence )
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_flCycle )
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_flPrevCycle )
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_flWeight )
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_nOrder )
+
+private:
+	CBaseAnimatingOverlay *m_pOwnerEntity;
 };
 
 FORCEINLINE void CAnimationLayer::SetSequence( sequence_t nSequence )
@@ -194,18 +218,17 @@ inline float CAnimationLayer::GetFadeout( float flCurTime )
 	return s;
 }
 
+#define MAX_ANIM_OVERLAYS 15
+
 class CBaseAnimatingOverlay : public CBaseAnimating
 {
 public:
+	friend class CNetworkedAnimationLayer;
+
 	DECLARE_CLASS( CBaseAnimatingOverlay, CBaseAnimating );
 
-	enum 
-	{
-		MAX_OVERLAYS = 15,
-	};
-
 private:
-	CNetworkUtlVector( CAnimationLayer, m_AnimOverlay );
+	CNetworkUtlVector( CNetworkedAnimationLayer, m_AnimOverlay );
 	//int				m_nActiveLayers;
 	//int				m_nActiveBaseLayers;
 

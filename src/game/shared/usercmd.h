@@ -17,6 +17,7 @@
 
 class bf_read;
 class bf_write;
+enum InButtons_t : uint64;
 
 class CUserCmd
 {
@@ -58,7 +59,7 @@ public:
 	//  upward velocity.
 	float	upmove;         
 	// Attack button states
-	uint64		buttons;		
+	InButtons_t		buttons;		
 	// Impulse command issued.
 	byte    impulse;        
 	// Current weapon id

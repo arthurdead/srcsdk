@@ -484,7 +484,7 @@ bool CAI_MoveProbe::CheckStep( const CheckStepArgs_t &args, CheckStepResult_t *p
 
 			// Don't step up onto an odd slope
 			if ( trace.endpos.z - args.vecStart.z > args.stepHeight * 0.5 &&
-				 ( ( pFloor->IsWorld() && trace.hitbox > 0 ) ||
+				 ( ( pFloor->IsWorld() && trace.StaticPropIdx() > 0 ) ||
 				   dynamic_cast<CPhysicsProp *>( pFloor ) ) )
 			{
 				if ( fabsf( trace.plane.normal.Dot( Vector(1, 0, 0) ) ) > .4 )

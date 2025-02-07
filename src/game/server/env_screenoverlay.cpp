@@ -83,7 +83,7 @@ void SendProxy_String_tToString( const SendProp *pProp, const void *pStruct, con
 }
 
 IMPLEMENT_SERVERCLASS_ST( CEnvScreenOverlay, DT_EnvScreenOverlay )
-	SendPropArray( SendPropString( SENDINFO_ARRAY( m_iszOverlayNames ), 0, SendProxy_String_tToString ), m_iszOverlayNames ),
+	SendPropArray( SendPropString( SENDINFO_ARRAY( m_iszOverlayNames ), SPROP_NONE, SendProxy_String_tToString ), m_iszOverlayNames ),
 	SendPropArray( SendPropFloat( SENDINFO_ARRAY( m_flOverlayTimes ), 11, SPROP_ROUNDDOWN, -1.0f, 63.0f ), m_flOverlayTimes ),
 	SendPropFloat( SENDINFO( m_flStartTime ), 32, SPROP_NOSCALE ),
 	SendPropInt( SENDINFO( m_iDesiredOverlay ), 5 ),

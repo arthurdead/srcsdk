@@ -60,7 +60,7 @@ static void DispatchComeback( CAI_ExpresserWithFollowup *pExpress, CBaseEntity *
 	// Don't send along null contexts
 	if (followup.followup_contexts && followup.followup_contexts[0] != '\0')
 	{
-		value.SetString( MAKE_STRING( followup.followup_contexts ) );
+		value.SetCString( followup.followup_contexts );
 		g_EventQueue.AddEvent( pRespondent, "AddContext", value, delay - 0.01, pSpeaker, pSpeaker );
 	}
 

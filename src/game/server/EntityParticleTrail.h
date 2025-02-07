@@ -40,7 +40,7 @@ private:
 	void	DecrementRefCount();
 	
 	CNetworkVar( int, m_iMaterialName );
-	CNetworkVarEmbedded( EntityParticleTrailInfo_t, m_Info );
+	CNetworkVarEmbeddedCopyable( EntityParticleTrailInfo_t, m_Info );
 	CNetworkHandle( CBaseEntity, m_hConstraintEntity );
 
 	int	m_nRefCount;

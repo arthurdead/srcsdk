@@ -36,6 +36,14 @@ class CTakeDamageInfo;
 	#define CBaseGrenade C_BaseGrenade
 #endif
 
+// Grenades flagged with this will be triggered when the owner calls detonateSatchelCharges
+enum SFGrenade_t : unsigned char
+{
+	SF_DETONATE =		0x0001
+};
+
+FLAGENUM_OPERATORS( SFGrenade_t, unsigned char )
+
 class CBaseGrenade : public CSharedBaseProjectile
 #ifdef GAME_DLL
 , public CDefaultPlayerPickupVPhysics
@@ -59,9 +67,11 @@ public:
 	DECLARE_MAPENTITY();
 #endif
 
+	DECLARE_SPAWNFLAGS( SFGrenade_t )
+
 	virtual void		Precache( void );
 
-	virtual void		Explode( trace_t *pTrace, int bitsDamageType );
+	virtual void		Explode( trace_t *pTrace, DamageTypes_t bitsDamageType );
 	void				Smoke( void );
 
 	void				BounceTouch( CSharedBaseEntity *pOther );

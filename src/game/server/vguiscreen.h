@@ -70,7 +70,7 @@ private:
 	CNetworkVar( int, m_nPanelName );	// The name of the panel 
 	CNetworkVar( int, m_nAttachmentIndex );
 	CNetworkVar( int, m_nOverlayMaterial );
-	CNetworkVar( int, m_fScreenFlags );
+	CNetworkVar( VGUIScreenFlags_t, m_fScreenFlags );
 	CNetworkHandle( CBasePlayer, m_hPlayerOwner );
 
 	friend CVGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScreenType, CBaseEntity *pAttachedTo, CBaseEntity *pOwner, int nAttachmentIndex );

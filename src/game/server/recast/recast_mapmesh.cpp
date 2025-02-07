@@ -168,7 +168,7 @@ bool CMapMesh::IsTriangleInValidArea( const Vector *vTriangle, bool bCheckNoArea
 		}
 	}
 
-	unsigned int tracemask = NAI_Hull::TraceMask( m_Type );
+	ContentsFlags_t tracemask = NAI_Hull::TraceMask( m_Type );
 
 	// Perform trace to get the surface property
 	trace_t tr;
@@ -348,7 +348,7 @@ bool CMapMesh::GenerateDispVertsAndTris( void *fileContent, CUtlVector<float> &v
 //-----------------------------------------------------------------------------
 // Purpose: get model vcollide_t
 //-----------------------------------------------------------------------------
-vcollide_t *LoadModelPhysCollide( const char *pModelName )
+const vcollide_t *LoadModelPhysCollide( const char *pModelName )
 {
 	modelindex_t modelindex = modelinfo->GetModelIndex( pModelName );
 	if( !IsValidModelIndex(modelindex) )
@@ -375,7 +375,7 @@ vcollide_t *LoadModelPhysCollide( const char *pModelName )
 // Purpose: Add vertices and triangles of a collision model to mesh
 //-----------------------------------------------------------------------------
 void CMapMesh::AddCollisionModelToMesh( const matrix3x4_t &transform, CPhysCollide const *pCollisionModel, 
-	CUtlVector<float> &verts, CUtlVector<int> &triangles, int filterContents )
+	CUtlVector<float> &verts, CUtlVector<int> &triangles, ContentsFlags_t filterContents )
 {
 	if( !pCollisionModel )
 	{
@@ -410,8 +410,8 @@ void CMapMesh::AddCollisionModelToMesh( const matrix3x4_t &transform, CPhysColli
 				// UGLY! used for filtering out water of the world collidable.
 				// Preferable we should just have some way to get the material.
 				Vector offset(0, 0, 2.0f);
-				if( (enginetrace->GetPointContents_WorldOnly(vCenter-offset, filterContents) & filterContents) != 0 &&
-					(enginetrace->GetPointContents_WorldOnly(vCenter+offset, filterContents) & filterContents) == 0 )
+				if( (enginetrace->GetPointContents_WorldOnly(vCenter-offset, filterContents) & filterContents) != CONTENTS_EMPTY &&
+					(enginetrace->GetPointContents_WorldOnly(vCenter+offset, filterContents) & filterContents) == CONTENTS_EMPTY )
 				{
 					continue;
 				}
@@ -478,7 +478,7 @@ bool CMapMesh::GenerateStaticPropData( void *fileContent, CUtlVector<float> &ver
 			Log_Msg(LOG_RECAST, "Listening %d static prop dict entries\n", dictEntries);
 		StaticPropDictLump_t staticPropDictLump;
 
-		CUtlVector<vcollide_t *> modelsVCollides;
+		CUtlVector<const vcollide_t *> modelsVCollides;
 		modelsVCollides.EnsureCapacity( dictEntries );
 
 		for( int i = 0; i < dictEntries; i++ )
@@ -487,7 +487,7 @@ bool CMapMesh::GenerateStaticPropData( void *fileContent, CUtlVector<float> &ver
 			if( m_bLog )
 				Log_Msg(LOG_RECAST, "%d: %s\n", i, staticPropDictLump.m_Name);
 
-			vcollide_t *vcollide = LoadModelPhysCollide( staticPropDictLump.m_Name );
+			const vcollide_t *vcollide = LoadModelPhysCollide( staticPropDictLump.m_Name );
 			if( !vcollide )
 			{
 				modelsVCollides.AddToTail( NULL );
@@ -514,7 +514,7 @@ bool CMapMesh::GenerateStaticPropData( void *fileContent, CUtlVector<float> &ver
 		auto readLump = [&](auto &staticProp) {
 			staticPropData.Get( &staticProp, sizeof( staticProp ) );
 
-			vcollide_t *vcollide = modelsVCollides[staticProp.m_PropType];
+			const vcollide_t *vcollide = modelsVCollides[staticProp.m_PropType];
 
 			matrix3x4_t transform; // model to world transformation
 			AngleMatrix( staticProp.m_Angles, staticProp.m_Origin, transform);

@@ -46,7 +46,7 @@ public:
 	Vector m_vStart;
 	Vector m_vNormal;
 	QAngle m_vAngles;
-	int		m_fFlags;
+	unsigned int		m_fFlags;
 #ifdef CLIENT_DLL
 	ClientEntityHandle_t m_hEntity;
 #else

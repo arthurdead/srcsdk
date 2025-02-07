@@ -14,6 +14,7 @@
 #include "triggers_shared.h"
 
 class CBaseFilter;
+enum InButtons_t : uint64;
 
 // DVS TODO: get rid of CBaseToggle
 //-----------------------------------------------------------------------------
@@ -25,6 +26,8 @@ public:
 	DECLARE_CLASS( CBaseTrigger, CBaseEntity );
 	DECLARE_SERVERCLASS();
 	CBaseTrigger();
+
+	DECLARE_SPAWNFLAGS( SFTrigger_t )
 	
 	void Activate( void );
 	virtual void PostClientActive( void );
@@ -144,7 +147,12 @@ extern CUtlVector< CHandle<CTriggerMultiple> >	g_hWeaponFireTriggers;
 // NOTE: This uses vphysics to compute touch events.  It doesn't do a per-frame Touch call, so the 
 // Entity I/O is different from a regular trigger
 //------------------------------------------------------------------------------
-#define SF_VPHYSICS_MOTION_MOVEABLE	0x1000
+enum SFVphysTrigger_t : unsigned int
+{
+	SF_VPHYSICS_MOTION_MOVEABLE =	0x1000,
+};
+
+FLAGENUM_OPERATORS( SFVphysTrigger_t, unsigned short )
 
 class CBaseVPhysicsTrigger : public CBaseEntity
 {
@@ -152,6 +160,8 @@ public:
 	DECLARE_CLASS( CBaseVPhysicsTrigger , CBaseEntity );
 
 	DECLARE_MAPENTITY();
+
+	DECLARE_SPAWNFLAGS( SFVphysTrigger_t )
 
 	virtual void Spawn();
 	virtual void UpdateOnRemove();
@@ -225,7 +235,7 @@ public:
 	float	m_flDamageCap;		// Maximum damage per second.
 	float	m_flLastDmgTime;	// Time that we last applied damage.
 	float	m_flDmgResetTime;	// For forgiveness, the time to reset the counter that accumulates damage.
-	int		m_bitsDamageInflict;	// DMG_ damage type that the door or tigger does
+	DamageTypes_t		m_bitsDamageInflict;	// DMG_ damage type that the door or tigger does
 	int		m_damageModel;
 	bool	m_bNoDmgForce;		// Should damage from this trigger impart force on what it's hurting
 	float	m_flHurtRate;
@@ -282,16 +292,20 @@ private:
 	void (CBaseEntity::*m_pfnCallback)(CBaseEntity *);
 };
 
+enum SFTriggerCamera_t : unsigned short
+{
+	SF_CAMERA_PLAYER_POSITION =		1,
+	SF_CAMERA_PLAYER_TARGET =			2,
+	SF_CAMERA_PLAYER_TAKECONTROL =	4,
+	SF_CAMERA_PLAYER_INFINITE_WAIT =	8,
+	SF_CAMERA_PLAYER_SNAP_TO =		16,
+	SF_CAMERA_PLAYER_NOT_SOLID =		32,
+	SF_CAMERA_PLAYER_INTERRUPT =		64,
+	SF_CAMERA_PLAYER_SETFOV =			128,
+	SF_CAMERA_PLAYER_NEW_BEHAVIOR =			256, // In case anyone or anything relied on the broken features
+};
 
-#define SF_CAMERA_PLAYER_POSITION		1
-#define SF_CAMERA_PLAYER_TARGET			2
-#define SF_CAMERA_PLAYER_TAKECONTROL	4
-#define SF_CAMERA_PLAYER_INFINITE_WAIT	8
-#define SF_CAMERA_PLAYER_SNAP_TO		16
-#define SF_CAMERA_PLAYER_NOT_SOLID		32
-#define SF_CAMERA_PLAYER_INTERRUPT		64
-#define SF_CAMERA_PLAYER_SETFOV			128
-#define SF_CAMERA_PLAYER_NEW_BEHAVIOR			256 // In case anyone or anything relied on the broken features
+FLAGENUM_OPERATORS( SFTriggerCamera_t, unsigned short )
 
 #define SF_PATHCORNER_TELEPORT 2
 
@@ -302,6 +316,8 @@ class CTriggerCamera : public CBaseEntity
 {
 public:
 	DECLARE_CLASS( CTriggerCamera, CBaseEntity );
+
+	DECLARE_SPAWNFLAGS( SFTriggerCamera_t )
 
 	CTriggerCamera();
 
@@ -374,7 +390,7 @@ private:
 
 	const static float kflPosInterpTime; // seconds
 
-	uint64   m_nPlayerButtons;
+	InButtons_t   m_nPlayerButtons;
 	Takedamage_t m_nOldTakeDamage;
 
 private:

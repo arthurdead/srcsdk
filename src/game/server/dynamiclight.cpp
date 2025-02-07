@@ -71,8 +71,8 @@ IMPLEMENT_SERVERCLASS_ST(CDynamicLight, DT_DynamicLight)
 	SendPropInt( SENDINFO(m_LightStyle), 4, SPROP_UNSIGNED ),
 	SendPropFloat( SENDINFO(m_Radius), 0, SPROP_NOSCALE),
 	SendPropInt( SENDINFO(m_Exponent), NUM_DL_EXPONENT_BITS),
-	SendPropFloat( SENDINFO(m_InnerAngle), 8, 0, 0.0, 360.0f ),
-	SendPropFloat( SENDINFO(m_OuterAngle), 8, 0, 0.0, 360.0f ),
+	SendPropFloat( SENDINFO(m_InnerAngle), 8, SPROP_NONE, 0.0, 360.0f ),
+	SendPropFloat( SENDINFO(m_OuterAngle), 8, SPROP_NONE, 0.0, 360.0f ),
 	SendPropFloat( SENDINFO(m_SpotRadius), 0, SPROP_NOSCALE),
 END_SEND_TABLE()
 
@@ -137,11 +137,11 @@ void CDynamicLight::InputToggle( inputdata_t &&inputdata )
 {
 	if (m_On)
 	{
-		InputTurnOff( inputdata );
+		InputTurnOff( Move(inputdata) );
 	}
 	else
 	{
-		InputTurnOn( inputdata );
+		InputTurnOn( Move(inputdata) );
 	}
 }
 

@@ -161,7 +161,7 @@ void MeshProcess::parseConnection( COffMeshConnection *pOffMeshConn )
 			float rad = 0.0f;
 			for(int i = 0; i < RECAST_NAVMESH_NUM; ++i) {
 				if( (spawnFlags & (RecastOfffMeshConnSF_t)(SF_OFFMESHCONN_TYPE_FLAGS_START << i)) != SF_OFFMESHCONN_NONE )
-					TestAgentRadius( i, rad );
+					TestAgentRadius( (NavMeshType_t)i, rad );
 			}
 
 			offMeshConnRad.AddToTail( rad );

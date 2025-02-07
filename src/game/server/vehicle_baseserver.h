@@ -129,11 +129,11 @@ public:
 
 // IVehicle
 public:
-	virtual CBaseCombatCharacter *GetPassenger( int nRole = VEHICLE_ROLE_DRIVER );
+	virtual CBaseCombatCharacter *GetPassenger( PassengerRole_t nRole = VEHICLE_ROLE_DRIVER );
 
-	virtual int				GetPassengerRole( CBaseCombatCharacter *pPassenger );
-	virtual void			GetVehicleViewPosition( int nRole, Vector *pOrigin, QAngle *pAngles, float *pFOV = NULL );
-	virtual bool			IsPassengerUsingStandardWeapons( int nRole = VEHICLE_ROLE_DRIVER ) { return false; }
+	virtual PassengerRole_t				GetPassengerRole( CBaseCombatCharacter *pPassenger );
+	virtual void			GetVehicleViewPosition( PassengerRole_t nRole, Vector *pOrigin, QAngle *pAngles, float *pFOV = NULL );
+	virtual bool			IsPassengerUsingStandardWeapons( PassengerRole_t nRole = VEHICLE_ROLE_DRIVER ) { return false; }
 	virtual void			SetupMove( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper *pHelper, CMoveData *move );
 	virtual void			ProcessMovement( CBasePlayer *pPlayer, CMoveData *pMoveData );
 	virtual void			FinishMove( CBasePlayer *player, CUserCmd *ucmd, CMoveData *move );
@@ -142,9 +142,9 @@ public:
 // IServerVehicle
 public:
 	virtual CBaseEntity		*GetVehicleEnt( void ) { return m_pVehicle; }
-	virtual void			SetPassenger( int nRole, CBaseCombatCharacter *pPassenger );
-	virtual bool			IsPassengerVisible( int nRole = VEHICLE_ROLE_DRIVER ) { return false; }
-	virtual bool			IsPassengerDamagable( int nRole  = VEHICLE_ROLE_DRIVER ) { return true; }
+	virtual void			SetPassenger( PassengerRole_t nRole, CBaseCombatCharacter *pPassenger );
+	virtual bool			IsPassengerVisible( PassengerRole_t nRole = VEHICLE_ROLE_DRIVER ) { return false; }
+	virtual bool			IsPassengerDamagable( PassengerRole_t nRole  = VEHICLE_ROLE_DRIVER ) { return true; }
 	virtual bool			PassengerShouldReceiveDamage( CTakeDamageInfo &info );
 
 	virtual bool			IsVehicleUpright( void ) { return true; }
@@ -154,8 +154,8 @@ public:
 	virtual void			HandlePassengerEntry( CBaseCombatCharacter *pPassenger, bool bAllowEntryOutsideZone = false );
 	virtual bool			HandlePassengerExit( CBaseCombatCharacter *pPassenger );
 
-	virtual void			GetPassengerSeatPoint( int nRole, Vector *pPoint, QAngle *pAngles );
-	virtual bool			GetPassengerExitPoint( int nRole, Vector *pPoint, QAngle *pAngles );
+	virtual void			GetPassengerSeatPoint( PassengerRole_t nRole, Vector *pPoint, QAngle *pAngles );
+	virtual bool			GetPassengerExitPoint( PassengerRole_t nRole, Vector *pPoint, QAngle *pAngles );
 	virtual Class_T			ClassifyPassenger( CBaseCombatCharacter *pPassenger, Class_T defaultClassification ) { return defaultClassification; }
 	virtual float			PassengerDamageModifier( const CTakeDamageInfo &info ) { return 1.0; }
 	virtual const vehicleparams_t	*GetVehicleParams( void ) { return NULL; }
@@ -235,8 +235,8 @@ public:
 	virtual void			ParseEntryExitAnims( void );
 	void					ParseExitAnim( KeyValues *pkvExitList, bool bEscapeExit );
 	virtual bool			CheckExitPoint( float yaw, int distance, Vector *pEndPoint );
-	virtual int				GetEntryAnimForPoint( const Vector &vecPoint );
-	virtual int				GetExitAnimToUse( Vector &vecEyeExitEndpoint, bool &bAllPointsBlocked );
+	virtual sequence_t				GetEntryAnimForPoint( const Vector &vecPoint );
+	virtual sequence_t				GetExitAnimToUse( Vector &vecEyeExitEndpoint, bool &bAllPointsBlocked );
 	virtual void			HandleEntryExitFinish( bool bExitAnimOn, bool bResetAnim );
 
 	virtual void			SetVehicle( CBaseEntity *pVehicle );
@@ -262,8 +262,8 @@ public:
 	IDrivableVehicle 	*m_pDrivableVehicle;
 
 	// NPC Driving
-	uint64								m_nNPCButtons;
-	uint64								m_nPrevNPCButtons;
+	InButtons_t								m_nNPCButtons;
+	InButtons_t								m_nPrevNPCButtons;
 	float							m_flTurnDegrees;
 
 	// Entry / Exit anims
@@ -317,7 +317,7 @@ private:
 	const char *StateSoundName( sound_states state );
 	void	InitSoundParams( vbs_sound_update_t &params );
 	void	CacheEntryExitPoints( void );
-	bool	GetLocalAttachmentAtTime( int nQuerySequence, int nAttachmentIndex, float flCyclePoint, Vector *vecOriginOut, QAngle *vecAnglesOut );
+	bool	GetLocalAttachmentAtTime( sequence_t nQuerySequence, int nAttachmentIndex, float flCyclePoint, Vector *vecOriginOut, QAngle *vecAnglesOut );
 	bool	GetLocalAttachmentAtTime( const char *lpszAnimName, int nAttachmentIndex, float flCyclePoint, Vector *vecOriginOut, QAngle *vecAnglesOut );
 };
 

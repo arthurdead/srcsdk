@@ -26,7 +26,7 @@ public: // local typedefs
 	tGenericId m_iConcept;
 
 public:
-	CRR_Concept() {};
+	CRR_Concept();
 	// construct concept from a string.
 	CRR_Concept(const char *fromString);
 
@@ -40,7 +40,14 @@ public:
 	{
 		return m_iConcept == other.m_iConcept;
 	}
+	inline bool operator!=(const CRR_Concept &other) // default is compare by concept ids
+	{
+		return m_iConcept != other.m_iConcept;
+	}
 	bool operator==(const char *pszConcept);
+	bool operator!=(const char *pszConcept);
+
+	bool IsValid() const;
 
 protected:
 
@@ -50,6 +57,5 @@ private:
 	CRR_Concept& operator=(const char *fromString);
 };
 };
-
 
 #endif

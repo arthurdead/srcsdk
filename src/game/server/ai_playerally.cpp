@@ -533,7 +533,7 @@ void CAI_PlayerAlly::PrescheduleThink( void )
 			if ( SelectNonCombatSpeech( &selection ) )
 			{
 				SetSpeechTarget( selection.hSpeechTarget.Get() );
-				SpeakDispatchResponse( selection.ai_concept.c_str(), &selection.response );
+				SpeakDispatchResponse( selection.ai_concept, &selection.response );
 				m_flNextIdleSpeechTime = gpGlobals->curtime + RandomFloat( 20,30 );
 			}
 			else
@@ -598,7 +598,7 @@ void CAI_PlayerAlly::SetPendingSpeech( AIConcept_t ai_concept, AI_Response *pRes
 //-----------------------------------------------------------------------------
 void CAI_PlayerAlly::ClearPendingSpeech()
 {
-	m_PendingConcept.erase();
+	m_PendingConcept = INVALID_AI_CONCEPT;
 	m_TimePendingSet = 0;
 }
 
@@ -671,7 +671,7 @@ bool CAI_PlayerAlly::SelectInterjection()
 		if ( SelectIdleSpeech( &selection ) )
 		{
 			SetSpeechTarget( selection.hSpeechTarget );
-			SpeakDispatchResponse( selection.ai_concept.c_str(), &selection.response );
+			SpeakDispatchResponse( selection.ai_concept, &selection.response );
 			return true;
 		}
 	}
@@ -853,7 +853,7 @@ bool CAI_PlayerAlly::AskQuestionNow( CBaseEntity *pSpeechTarget, int iQARandomNu
 		ClearPendingSpeech();
 
 		// Speak immediately
-		return SpeakDispatchResponse( selection.ai_concept.c_str(), &selection.response );
+		return SpeakDispatchResponse( selection.ai_concept, &selection.response );
 	}
 
 	return false;
@@ -945,7 +945,7 @@ void CAI_PlayerAlly::AnswerQuestion( CAI_PlayerAlly *pQuestioner, int iQARandomN
 
 		Assert( !selection.response.IsEmpty() );
 		SetSpeechTarget( selection.hSpeechTarget );
-		SpeakDispatchResponse( selection.ai_concept.c_str(), &selection.response );
+		SpeakDispatchResponse( selection.ai_concept, &selection.response );
 
 		// Prevent idle speech for a while
 		DeferAllIdleSpeech( random_valve->RandomFloat( TALKER_DEFER_IDLE_SPEAK_MIN, TALKER_DEFER_IDLE_SPEAK_MAX ), GetSpeechTarget()->MyNPCPointer() );
@@ -996,13 +996,13 @@ int CAI_PlayerAlly::SelectNonCombatSpeechSchedule()
 		{
 			Assert( !selection.response.IsEmpty() );
 			SetSpeechTarget( selection.hSpeechTarget );
-			SetPendingSpeech( selection.ai_concept.c_str(), &selection.response );
+			SetPendingSpeech( selection.ai_concept, &selection.response );
 		}
 	}
 	
 	if ( HasPendingSpeech() )
 	{
-		if ( m_TimePendingSet == gpGlobals->curtime || IsAllowedToSpeak( m_PendingConcept.c_str() ) )
+		if ( m_TimePendingSet == gpGlobals->curtime || IsAllowedToSpeak( m_PendingConcept ) )
 			return SCHED_TALKER_SPEAK_PENDING_IDLE;
 	}
 	
@@ -1069,11 +1069,11 @@ void CAI_PlayerAlly::StartTask( const Task_t *pTask )
 		break;
 
 	case TASK_TALKER_SPEAK_PENDING:
-		if ( !m_PendingConcept.empty() )
+		if ( m_PendingConcept.IsValid() )
 		{
 			AI_Response response(m_PendingResponse);
-			SpeakDispatchResponse( m_PendingConcept.c_str(), &response );
-			m_PendingConcept.erase();
+			SpeakDispatchResponse( m_PendingConcept, &response );
+			m_PendingConcept = INVALID_AI_CONCEPT;
 			TaskComplete();
 		}
 		else
@@ -1277,7 +1277,7 @@ void CAI_PlayerAlly::Event_Killed( const CTakeDamageInfo &info )
 		if ( player )
 		{
 			variant_t variant;
-			variant.SetEntity(this);
+			variant.SetEntityH(this);
 			player->AcceptInput( "OnSquadMemberKilled", info.GetAttacker(), this, Move(variant), 0 );
 		}
 	}

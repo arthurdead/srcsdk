@@ -830,7 +830,7 @@ bool CRecastMgr::IsMeshBuildDisabled( NavMeshType_t type )
 	CRecastMgrEnt *pMgrEnt = GetRecastMgrEnt();
 	if( pMgrEnt )
 	{
-		return pMgrEnt->HasSpawnFlags( (SF_DISABLE_MESH_FLAGS_START << type) );
+		return pMgrEnt->HasSpawnFlags( (SFRecastMgr_t)(SF_DISABLE_MESH_FLAGS_START << type) );
 	}
 	return false;
 }

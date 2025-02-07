@@ -176,7 +176,7 @@ void *SendProxy_ClientSideAnimation( const SendPropInfo *pProp, const void *pStr
 
 // SendTable stuff.
 IMPLEMENT_SERVERCLASS_ST(CBaseAnimating, DT_BaseAnimating)
-	SendPropInt		( SENDINFO(m_nForceBone), 8, 0 ),
+	SendPropInt		( SENDINFO(m_nForceBone), 8, SPROP_NONE ),
 	SendPropVector	( SENDINFO(m_vecForce), -1, SPROP_NOSCALE ),
 
 	SendPropInt		( SENDINFO(m_nSkin), ANIMATION_SKIN_BITS),
@@ -186,7 +186,7 @@ IMPLEMENT_SERVERCLASS_ST(CBaseAnimating, DT_BaseAnimating)
 
 	SendPropFloat	( SENDINFO(m_flModelScale) ),
 
-	SendPropArray3  ( SENDINFO_ARRAY3(m_flPoseParameter), SendPropFloat(SENDINFO_ARRAY(m_flPoseParameter), ANIMATION_POSEPARAMETER_BITS, 0, 0.0f, 1.0f ) ),
+	SendPropArray3  ( SENDINFO_ARRAY3(m_flPoseParameter), SendPropFloat(SENDINFO_ARRAY(m_flPoseParameter), ANIMATION_POSEPARAMETER_BITS, SPROP_NONE, 0.0f, 1.0f ) ),
 	
 	SendPropInt		( SENDINFO(m_nSequence), ANIMATION_SEQUENCE_BITS, SPROP_UNSIGNED ),
 	SendPropFloat	( SENDINFO(m_flPlaybackRate), ANIMATION_PLAYBACKRATE_BITS, SPROP_ROUNDUP, -4.0, 12.0f ), // NOTE: if this isn't a power of 2 than "1.0" can't be encoded correctly
@@ -544,8 +544,7 @@ void CBaseAnimating::InputSetLightingOrigin( inputdata_t &&inputdata )
 //-----------------------------------------------------------------------------
 void CBaseAnimating::InputSetModelScale( inputdata_t &&inputdata )
 {
-	Vector vecScale;
-	inputdata.value.Vector3D( vecScale );
+	Vector vecScale = inputdata.value.Vector3D();
 
 	SetModelScale( vecScale.x, vecScale.y );
 }
@@ -891,7 +890,7 @@ bool CBaseAnimating::IsValidSequence( sequence_t iSequence )
 //=========================================================
 void CBaseAnimating::SetSequence( sequence_t nSequence )
 {
-	Assert( nSequence == 0 || IsDynamicModelLoading() || ( GetModelPtr( ) && ( (unsigned short)nSequence < GetModelPtr( )->GetNumSeq() ) && ( GetModelPtr( )->GetNumSeq() < (1 << ANIMATION_SEQUENCE_BITS) ) ) );
+	Assert( IsDynamicModelLoading() || ( GetModelPtr( ) && ( (unsigned short)nSequence < GetModelPtr( )->GetNumSeq() ) && ( GetModelPtr( )->GetNumSeq() < (1 << ANIMATION_SEQUENCE_BITS) ) ) );
 	
 	sequence_t oldSequence = m_nSequence;
 	m_nSequence = nSequence;
@@ -2852,7 +2851,7 @@ bool CBaseAnimating::TestHitboxes( const Ray_t &ray, ContentsFlags_t fContentsMa
 
 	if ( TraceToStudio( physprops, ray, pStudioHdr, set, hitboxbones, fContentsMask, GetAbsOrigin(), GetModelScale(), tr ) )
 	{
-		const mstudiobbox_t *pbox = set->pHitbox( tr.hitbox );
+		const mstudiobbox_t *pbox = set->pHitbox( tr.Hitbox() );
 		const mstudiobone_t *pBone = pStudioHdr->pBone(pbox->bone);
 		tr.surface.name = "**studio**";
 		tr.surface.flags = SURF_HITBOX;
@@ -3791,7 +3790,7 @@ void CBaseAnimating::Thaw( float flThawAmount )
 
 	if ( pFreezing )
 	{
-		studiohdr_t *pStudioHdr = modelinfo->GetStudiomodel( GetModel() );
+		const studiohdr_t *pStudioHdr = modelinfo->GetStudiomodel( GetModel() );
 		if ( pStudioHdr )
 		{
 			// Thaw all hitboxes

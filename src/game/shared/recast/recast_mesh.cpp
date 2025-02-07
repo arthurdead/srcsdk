@@ -137,7 +137,7 @@ NavMeshType_t NAI_Hull::LookupId(const char *szName)
 	}
 
 	if(V_stricmp(szName, "PLAYER") == 0) {
-		return ARRAYSIZE(hull);
+		return (NavMeshType_t)ARRAYSIZE(hull);
 	}
 
 	for(int i = 0; i < ARRAYSIZE(hull); ++i) {
@@ -245,7 +245,7 @@ MapMeshType_t NAI_Hull::MapMeshType(NavMeshType_t type)
 	if(type == RECAST_NAVMESH_TINY_FLUID)
 		return RECAST_MAPMESH_NPC_FLUID;
 
-	if(type == ARRAYSIZE(hull))
+	if(type == (NavMeshType_t)ARRAYSIZE(hull))
 		return RECAST_MAPMESH_PLAYER;
 
 	return RECAST_MAPMESH_NPC;
@@ -256,7 +256,7 @@ MapMeshType_t NAI_Hull::MapMeshType(NavMeshType_t type)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-unsigned int NAI_Hull::TraceMask(NavMeshType_t type)
+ContentsFlags_t NAI_Hull::TraceMask(NavMeshType_t type)
 {
 	return TraceMask( MapMeshType( type ) );
 }
@@ -266,7 +266,7 @@ unsigned int NAI_Hull::TraceMask(NavMeshType_t type)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-unsigned int NAI_Hull::TraceMask(MapMeshType_t type)
+ContentsFlags_t NAI_Hull::TraceMask(MapMeshType_t type)
 { 
 	switch (type) {
 	case RECAST_MAPMESH_NPC:
@@ -277,7 +277,7 @@ unsigned int NAI_Hull::TraceMask(MapMeshType_t type)
 		return MASK_PLAYERWORLDSTATIC;
 	}
 
-	return 0;
+	return CONTENTS_EMPTY;
 }
 
 //-----------------------------------------------------------------------------

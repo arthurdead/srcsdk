@@ -11,12 +11,23 @@
 
 #include "baseentity.h"
 
+enum SFBaseToggle_t : uint64
+{
+	SF_TOGGLE_ROTATE_ROLL =			(1 << 0),
+	SF_TOGGLE_ROTATE_PITCH =		(1 << 1),
+
+	SF_TOGGLE_LAST_FLAG = SF_TOGGLE_ROTATE_PITCH,
+};
+
+FLAGENUM_OPERATORS( SFBaseToggle_t, uint64 )
 
 class CBaseToggle : public CBaseEntity
 {
 public:
 	DECLARE_CLASS( CBaseToggle, CBaseEntity );
 	DECLARE_SERVERCLASS();
+
+	DECLARE_SPAWNFLAGS( SFBaseToggle_t )
 
 	CBaseToggle();
 
@@ -55,9 +66,9 @@ public:
 
 	virtual void GetGroundVelocityToApply( Vector &vecGroundVel );
 
-	static float AxisValue( int flags, const QAngle &angles );
+	float AxisValue( const QAngle &angles );
 	void AxisDir( void );
-	static float AxisDelta( int flags, const QAngle &angle1, const QAngle &angle2 );
+	float AxisDelta( const QAngle &angle1, const QAngle &angle2 );
 
 	string_t m_sMaster;		// If this button has a master switch, this is the targetname.
 							// A master switch must be of the multisource type. If all 

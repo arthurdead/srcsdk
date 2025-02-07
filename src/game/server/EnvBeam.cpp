@@ -16,7 +16,7 @@
 // Keeps us from doing strcmps in the tracefilter.
 extern string_t gm_isz_class_PropPhysics;
 
-enum Touch_t
+enum Touch_t : unsigned char
 {
 	touch_none = 0,
 	touch_player_only,
@@ -188,7 +188,7 @@ void CEnvBeam::Spawn( void )
 
 		if ( GetEntityName() != NULL_STRING )
 		{
-			if ( !(m_spawnflags & SF_BEAM_STARTON) )
+			if ( !HasSpawnFlags(SF_BEAM_STARTON) )
 			{
 				AddEffects( EF_NODRAW );
 				m_active = 0;
@@ -203,7 +203,7 @@ void CEnvBeam::Spawn( void )
 	else
 	{
 		m_active = 0;
-		if ( !GetEntityName() || FBitSet(m_spawnflags, SF_BEAM_STARTON) )
+		if ( !GetEntityName() || HasSpawnFlags( SF_BEAM_STARTON) )
 		{
 			SetThink( &CEnvBeam::StrikeThink );
 			SetNextThink( gpGlobals->curtime + 1.0f );
@@ -364,7 +364,7 @@ void CEnvBeam::StrikeThink( void )
 {
 	if ( m_life != 0 )
 	{
-		if ( m_spawnflags & SF_BEAM_RANDOM )
+		if ( HasSpawnFlags( SF_BEAM_RANDOM ) )
 			SetNextThink( gpGlobals->curtime + m_life + random_valve->RandomFloat( 0, m_restrike ) );
 		else
 			SetNextThink( gpGlobals->curtime + m_life + m_restrike );
@@ -429,7 +429,7 @@ void CEnvBeam::Strike( void )
 
 	if ( pointStart || pointEnd )
 	{
-		if ( m_spawnflags & SF_BEAM_RING )
+		if ( HasSpawnFlags( SF_BEAM_RING ) )
 		{
 			te->BeamRing( filter, 0.0,
 				pointStart ? 0 : pStart->entindex(),
@@ -467,7 +467,7 @@ void CEnvBeam::Strike( void )
 	}
 	else
 	{
-		if ( m_spawnflags & SF_BEAM_RING)
+		if ( HasSpawnFlags(SF_BEAM_RING) )
 		{
 			te->BeamRing( filter, 0.0,
 				pStart->entindex(), 
@@ -523,7 +523,7 @@ void CEnvBeam::Strike( void )
 class CTraceFilterPlayersNPCs : public ITraceFilter
 {
 public:
-	bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pServerEntity, ContentsFlags_t contentsMask )
 	{
 		CBaseEntity *pEntity = EntityFromEntityHandle( pServerEntity );
 		if ( pEntity )
@@ -543,7 +543,7 @@ public:
 class CTraceFilterPlayersNPCsPhysicsProps : public ITraceFilter
 {
 public:
-	bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pServerEntity, ContentsFlags_t contentsMask )
 	{
 		CBaseEntity *pEntity = EntityFromEntityHandle( pServerEntity );
 		if ( pEntity )
@@ -715,7 +715,7 @@ void CEnvBeam::RandomArea( void )
 		if (tr2.fraction != 1.0)
 			continue;
 
- 		Zap( tr1.endpos, tr2.endpos );
+		Zap( tr1.endpos, tr2.endpos );
 
 		break;
 	}
@@ -818,11 +818,11 @@ void CEnvBeam::BeamUpdateVars( void )
 	SetNoise( MIN(MAX_BEAM_NOISEAMPLITUDE, m_noiseAmplitude) );
 	SetFrame( m_frameStart );
 	SetScrollRate( m_speed );
-	if ( m_spawnflags & SF_BEAM_SHADEIN )
+	if ( HasSpawnFlags(SF_BEAM_SHADEIN) )
 	{
 		SetBeamFlags( FBEAM_SHADEIN );
 	}
-	else if ( m_spawnflags & SF_BEAM_SHADEOUT )
+	else if ( HasSpawnFlags(SF_BEAM_SHADEOUT) )
 	{
 		SetBeamFlags( FBEAM_SHADEOUT );
 	}

@@ -76,7 +76,7 @@ void CFlexExpresser::Spawn( void )
 	}
 	Precache();
 
-	if ( HasSpawnFlags( FCYCLER_NOTSOLID ) )
+	if ( HasSpawnFlags( SF_FLEXEXPRESSER_NOTSOLID ) )
 	{
 		SetSolid( SOLID_NONE );
 	}

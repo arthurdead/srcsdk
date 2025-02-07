@@ -25,9 +25,11 @@ enum MapMeshType_t
 };
 
 //keep this in-sync with recast_mesh.cpp
-enum
+enum NavMeshType_t : unsigned char
 {
-	RECAST_NAVMESH_HUMAN, // Combine, Stalker, Zombie...
+	RECAST_NAVMESH_INVALID = (unsigned char)-1,
+
+	RECAST_NAVMESH_HUMAN = 0, // Combine, Stalker, Zombie...
 	RECAST_NAVMESH_SMALL_CENTERED, // Scanner
 	RECAST_NAVMESH_WIDE_HUMAN, // Vortigaunt
 	RECAST_NAVMESH_TINY, // Headcrab
@@ -40,12 +42,9 @@ enum
 	RECAST_NAVMESH_TINY_FLUID, // Blob
 	RECAST_NAVMESH_MEDIUMBIG, // Infested drone
 	RECAST_NAVMESH_PLAYER,
+
 	RECAST_NAVMESH_NUM,
 };
-
-typedef int NavMeshType_t;
-
-const NavMeshType_t RECAST_NAVMESH_INVALID = (NavMeshType_t)-1;
 
 abstract_class IRecastMgr
 {

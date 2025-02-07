@@ -17,7 +17,7 @@
 #include "BaseAnimatingOverlay.h"
 #include "tier1/utlmap.h"
 
-#define MAX_LAYER_RECORDS (CBaseAnimatingOverlay::MAX_OVERLAYS)
+#define MAX_LAYER_RECORDS MAX_ANIM_OVERLAYS
 
 struct LayerRecord
 {

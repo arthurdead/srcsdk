@@ -4,10 +4,15 @@
 
 #include "baseentity.h"
 
-#define ENV_PROJECTEDTEXTURE_STARTON				( 1 << 0)
-#define ENV_PROJECTEDTEXTURE_ALWAYSUPDATE			( 1 << 1)
-#define ENV_PROJECTEDTEXTURE_VOLUMETRICS_START_ON	( 1 << 2)
-#define ENV_PROJECTEDTEXTURE_UBERLIGHT				( 1 << 3)
+enum SFProjectedTexture_t : unsigned char
+{
+	ENV_PROJECTEDTEXTURE_STARTON =				( 1 << 0),
+	ENV_PROJECTEDTEXTURE_ALWAYSUPDATE =			( 1 << 1),
+	ENV_PROJECTEDTEXTURE_VOLUMETRICS_START_ON =	( 1 << 2),
+	ENV_PROJECTEDTEXTURE_UBERLIGHT =				( 1 << 3),
+};
+
+FLAGENUM_OPERATORS( SFProjectedTexture_t, unsigned char )
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -18,6 +23,8 @@ class CEnvProjectedTexture : public CPointEntity
 public:
 	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
+
+	DECLARE_SPAWNFLAGS( SFProjectedTexture_t )
 
 	CEnvProjectedTexture();
 	bool KeyValue( const char *szKeyName, const char *szValue );

@@ -238,7 +238,7 @@ public:
 	virtual bool		Weapon_EquipAmmoOnly( CBaseCombatWeapon *pWeapon );	// Adds weapon ammo to player, leaves weapon
 	bool				Weapon_Detach( CBaseCombatWeapon *pWeapon );		// Clear any pointers to the weapon.
 	virtual void		Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget = NULL, const Vector *pVelocity = NULL );
-	virtual	int		Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex = VIEWMODEL_WEAPON, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
+	virtual	WeaponSwitchResult_t		Weapon_Switch( CBaseCombatWeapon *pWeapon, viewmodelindex_t viewmodelindex = VIEWMODEL_WEAPON, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
 	virtual	Vector		Weapon_ShootPosition( );		// gun position at current position/orientation
 	bool				Weapon_IsOnGround( CBaseCombatWeapon *pWeapon );
 	CBaseEntity*		Weapon_FindUsable( const Vector &range );			// search for a usable weapon in this range
@@ -579,10 +579,10 @@ protected:
 	
 	IntervalTimer m_aliveTimer;
 
-	unsigned int m_hasBeenInjured;							// bitfield corresponding to team ID that did the injury	
+	unsigned char m_hasBeenInjured;							// bitfield corresponding to team ID that did the injury	
 
 	// we do this because MAX_TEAMS is 32, which is wasteful for most games
-	enum { MAX_DAMAGE_TEAMS = 4 };
+	enum { MAX_DAMAGE_TEAMS = MAX_TEAMS };
 	struct DamageHistory
 	{
 		Team_t team;					// which team hurt us (TEAM_INVALID means slot unused)

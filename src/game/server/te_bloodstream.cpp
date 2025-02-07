@@ -85,7 +85,7 @@ void CTEBloodStream::Test( const Vector& current_origin, const QAngle& current_a
 }
 
 IMPLEMENT_SERVERCLASS_ST(CTEBloodStream, DT_TEBloodStream)
-	SendPropVector( SENDINFO(m_vecDirection), 11, 0, -10.0, 10.0 ),
+	SendPropVector( SENDINFO(m_vecDirection), 11, SPROP_NONE, -10.0, 10.0 ),
 	SendPropColor32( SENDINFO(m_clr) ),
 	SendPropInt( SENDINFO(m_nAmount), 8, SPROP_UNSIGNED ),
 END_SEND_TABLE()

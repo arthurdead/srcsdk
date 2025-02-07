@@ -21,17 +21,6 @@
 void PlayLockSounds( CBaseEntity *pEdict, locksound_t *pls, int flocked, int fbutton );
 string_t MakeButtonSound( int sound );				// get string of button sound number
 
-
-#define SF_BUTTON_DONTMOVE				1
-#define SF_ROTBUTTON_NOTSOLID			1
-#define	SF_BUTTON_TOGGLE				32		// button stays pushed until reactivated
-#define SF_BUTTON_TOUCH_ACTIVATES		256		// Button fires when touched.
-#define SF_BUTTON_DAMAGE_ACTIVATES		512		// Button fires when damaged.
-#define SF_BUTTON_USE_ACTIVATES			1024	// Button fires when used.
-#define SF_BUTTON_LOCKED				2048	// Whether the button is initially locked.
-#define	SF_BUTTON_SPARK_IF_OFF			4096	// button sparks in OFF state
-#define	SF_BUTTON_JIGGLE_ON_USE_LOCKED	8192	// whether to jiggle if someone uses us when we're locked
-
 BEGIN_MAPENTITY( CBaseButton )
 
 	DEFINE_KEYFIELD_AUTO( m_vecMoveDir, "movedir" ),
@@ -670,10 +659,10 @@ void CBaseButton::ButtonActivate( void )
 //-----------------------------------------------------------------------------
 // Purpose: Enables or disables the use capability based on our spawnflags.
 //-----------------------------------------------------------------------------
-int	CBaseButton::ObjectCaps(void)
+EntityCaps_t	CBaseButton::ObjectCaps(void)
 {
 	return((BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION) |
-			(HasSpawnFlags(SF_BUTTON_USE_ACTIVATES) ? (FCAP_IMPULSE_USE | FCAP_USE_IN_RADIUS) : 0));
+			(HasSpawnFlags(SF_BUTTON_USE_ACTIVATES) ? (FCAP_IMPULSE_USE | FCAP_USE_IN_RADIUS) : FCAP_NONE));
 }
 
 
@@ -837,9 +826,9 @@ void CRotButton::Spawn( void )
 	CBaseToggle::AxisDir();
 
 	// check for clockwise rotation
-	if ( HasSpawnFlags( SF_DOOR_ROTATE_BACKWARDS) )
+	if ( HasSpawnFlags( SF_ROTBUTTON_BACKWARDS) )
 	{
-		m_vecMoveAng = m_vecMoveAng * -1;
+		m_vecMoveAng = (m_vecMoveAng * -1);
 	}
 
 	SetMoveType( MOVETYPE_PUSH );
@@ -904,14 +893,6 @@ bool CRotButton::CreateVPhysics( void )
 	VPhysicsInitShadow( false, false );
 	return true;
 }
-
-
-//-----------------------------------------------------------------------------
-// CMomentaryRotButton spawnflags
-//-----------------------------------------------------------------------------
-#define SF_MOMENTARY_DOOR			1
-#define SF_MOMENTARY_NOT_USABLE		2
-#define SF_MOMENTARY_AUTO_RETURN	16
 
 
 BEGIN_MAPENTITY( CMomentaryRotButton )
@@ -1034,9 +1015,9 @@ void CMomentaryRotButton::Spawn( void )
 	m_bDisabled = false;
 }
 
-int	CMomentaryRotButton::ObjectCaps( void ) 
+EntityCaps_t	CMomentaryRotButton::ObjectCaps( void ) 
 { 
-	int flags = BaseClass::ObjectCaps();
+	EntityCaps_t flags = BaseClass::ObjectCaps();
 	if (!HasSpawnFlags(SF_BUTTON_USE_ACTIVATES))
 	{
 		return flags;
@@ -1091,7 +1072,7 @@ float CMomentaryRotButton::GetPos( const QAngle &vecAngles )
 		flScale = -1;
 	}
 
-	float flPos = flScale * CBaseToggle::AxisDelta( m_spawnflags, vecAngles, m_start ) / m_flMoveDistance;
+	float flPos = flScale * AxisDelta( vecAngles, m_start ) / m_flMoveDistance;
 	return( clamp( flPos, 0.f, 1.f ));
 }
 
@@ -1135,7 +1116,7 @@ void CMomentaryRotButton::InputSetPosition( inputdata_t &&inputdata )
 	// are told to change position in very small increments.
 	//
 	QAngle vecNewAngles = m_start + m_vecMoveAng * ( m_IdealYaw * m_flMoveDistance );
-	float flAngleDelta = fabs( AxisDelta( m_spawnflags, vecNewAngles, GetLocalAngles() ));
+	float flAngleDelta = fabs( AxisDelta( vecNewAngles, GetLocalAngles() ));
 	float dt = flAngleDelta / m_flSpeed;
 	if ( dt < TICK_INTERVAL )
 	{
@@ -1254,7 +1235,7 @@ void CMomentaryRotButton::SetPositionMoveDone(void)
 
 	// TODO: change this to use a Think function like ReturnThink.
 	QAngle vecNewAngles = m_start + m_vecMoveAng * ( m_IdealYaw * m_flMoveDistance );
-	float flAngleDelta = fabs( AxisDelta( m_spawnflags, vecNewAngles, GetLocalAngles() ));
+	float flAngleDelta = fabs( AxisDelta( vecNewAngles, GetLocalAngles() ));
 	float dt = flAngleDelta / m_flSpeed;
 	if ( dt < TICK_INTERVAL )
 	{

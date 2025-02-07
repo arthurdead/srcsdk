@@ -756,7 +756,7 @@ bool CAI_Expresser::FireEntIOFromResponse( char *response, CBaseEntity *pInitiat
 		variant_t variant;
 		if ( pszParam )
 		{
-			variant.SetString( MAKE_STRING(pszParam) );
+			variant.SetCString( pszParam );
 		}
 		pTarget->AcceptInput( pszInput, pInitiator, pInitiator, Move(variant), 0 );
 

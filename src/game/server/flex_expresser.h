@@ -12,7 +12,12 @@
 #include "flexcycler.h"
 #include "ai_speech.h"
 
-#define FCYCLER_NOTSOLID 1
+enum SFFlexExpresser_t : unsigned char
+{
+	SF_FLEXEXPRESSER_NOTSOLID = 1,
+};
+
+FLAGENUM_OPERATORS( SFFlexExpresser_t, unsigned char )
 
 class CFlexExpresserShim : public CFlexCycler
 {
@@ -33,6 +38,8 @@ public:
 	DECLARE_MAPENTITY();
 	CFlexExpresser();
 	~CFlexExpresser();
+
+	DECLARE_SPAWNFLAGS( SFFlexExpresser_t )
 
 	inline CAI_Expresser *GetExpresser( void ) { return m_pExpresser; }
 	inline const CAI_Expresser *GetMultiplayerExpresser( void ) const { return m_pExpresser; }

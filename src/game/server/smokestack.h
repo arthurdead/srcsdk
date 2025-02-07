@@ -65,8 +65,8 @@ public:
 	CNetworkVar( bool, m_bEmit );		// Emit particles?
 	CNetworkVar( float, m_flBaseSpread );
 	
-	CSmokeStackLightInfo		m_AmbientLight;
-	CSmokeStackLightInfo		m_DirLight;
+	CNetworkVarEmbedded( CSmokeStackLightInfo,		m_AmbientLight );
+	CNetworkVarEmbedded( CSmokeStackLightInfo,		m_DirLight );
 
 	CNetworkVar( float, m_flTwist );
 	
