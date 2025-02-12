@@ -2747,7 +2747,7 @@ CBaseEntity *CAI_BaseNPC::EyeLookTarget( void )
 
 		CBaseEntity *pEntity = NULL;
 
-		for ( CEntitySphereQuery sphere( GetAbsOrigin(), 1024, CONTENTS_EMPTY ); (pEntity = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity() )
+		for ( CEntitySphereQuery sphere( GetAbsOrigin(), 1024, FL_NO_ENTITY_FLAGS ); (pEntity = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity() )
 		{
 			if (pEntity == this)
 			{

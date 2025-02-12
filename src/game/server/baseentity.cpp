@@ -160,10 +160,10 @@ void* SendProxy_ClientSideAnimation( const SendPropInfo *pProp, const void *pStr
 }	
 REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_ClientSideAnimation );
 
-void* SendProxy_SendPredictableId( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+void* SendProxy_PredictableId( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)pStruct;
-	if ( !pEntity || !pEntity->m_PredictableID->IsActive() )
+	if ( !pEntity || pEntity->m_PredictableID == INVALID_PREDICTABLE_ID )
 		return NULL;
 
 	if ( !pEntity->GetOwnerEntity() )
@@ -187,9 +187,9 @@ void* SendProxy_SendPredictableId( const SendPropInfo *pProp, const void *pStruc
 	pRecipients->SetOnly( owner_player_index );
 	return ( void * )pVarData;
 }
-REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableId );
+REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( static_cast<SendTableProxyFn>(SendProxy_PredictableId) );
 
-static void* SendProxy_SendPredictableIdTable( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+void* SendProxy_PredictableIdTable( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)pStruct;
 	if ( !pEntity || pEntity->m_PredictableID == INVALID_PREDICTABLE_ID )
@@ -200,7 +200,7 @@ static void* SendProxy_SendPredictableIdTable( const SendPropInfo *pProp, const 
 	
 	return ( void * )pVarData;
 }
-REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableIdTable );
+REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_PredictableIdTable );
 
 void SendProxy_Origin( const SendPropInfo *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
@@ -1050,9 +1050,6 @@ void CBaseEntity::ClearModelIndexOverrides( void )
 void CBaseEntity::AddModelIndexOverride( vision_filter_t flags, modelindex_t nValue )
 {
 	VisionModelIndex_t vismdl( flags, nValue );
-
-	IMPLEMENT_NETWORKVAR_CHAIN( &vismdl );
-
 	m_VisionModelIndexOverrides.AddToTail( Move(vismdl) );
 }
 

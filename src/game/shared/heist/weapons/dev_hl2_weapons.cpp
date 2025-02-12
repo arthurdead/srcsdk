@@ -56,7 +56,7 @@ public:
 	virtual float			GetFireRate( void ) { return 0.5f; }
 
 #ifdef GAME_DLL
-	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
+	Capability_t		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
 
 	void Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator )
 	{
@@ -139,7 +139,7 @@ public:
 	virtual float			GetFireRate( void ) { return 0.7f; }
 
 #ifdef GAME_DLL
-	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
+	Capability_t		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
 
 	void Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator )
 	{
@@ -235,7 +235,7 @@ public:
 	virtual float			GetFireRate( void ) { return 0.075f; }
 
 #ifdef GAME_DLL
-	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
+	Capability_t		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
 
 	void Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator )
 	{

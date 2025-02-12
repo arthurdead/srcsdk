@@ -21,14 +21,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define LC_NONE				0
-#define LC_ALIVE			(1<<0)
-
-#define LC_ORIGIN_CHANGED	(1<<8)
-#define LC_ANGLES_CHANGED	(1<<9)
-#define LC_SIZE_CHANGED		(1<<10)
-#define LC_ANIMATION_CHANGED (1<<11)
-
 static ConVar sv_lagcompensation_teleport_dist( "sv_lagcompensation_teleport_dist", "64", FCVAR_DEVELOPMENTONLY | FCVAR_CHEAT, "How far a player got moved by game code before we can't lag compensate their position back" );
 #define LAG_COMPENSATION_EPS_SQR ( 0.1f * 0.1f )
 // Allow 4 units of error ( about 1 / 8 bbox width )
@@ -64,8 +56,8 @@ static void RestoreEntityTo( CBaseEntity *pEntity, const Vector &vWantedPos )
 		UTIL_SetOrigin( pEntity, vWantedPos, true );
 	}
 
-	unsigned int mask = UTIL_MaskForEntity( pEntity );
-	unsigned int collisiongroup = UTIL_CollisionGroupForEntity( pEntity );
+	ContentsFlags_t mask = UTIL_MaskForEntity( pEntity );
+	Collision_Group_t collisiongroup = UTIL_CollisionGroupForEntity( pEntity );
 
 	UTIL_TraceEntity( pEntity, vWantedPos, vWantedPos, mask, pEntity, collisiongroup, &tr );
 	if ( tr.startsolid || tr.allsolid )
@@ -467,7 +459,7 @@ bool CLagCompensationManager::BacktrackEntity( CBaseEntity *entity, float flTarg
 			}
 
 			// now trace us back as far as we can go
-			unsigned int mask = UTIL_MaskForEntity(entity);
+			ContentsFlags_t mask = UTIL_MaskForEntity(entity);
 			UTIL_TraceEntity( entity, entity->GetAbsOrigin(), org, mask, &tr );
 
 			if ( tr.startsolid || tr.allsolid )
@@ -493,7 +485,7 @@ bool CLagCompensationManager::BacktrackEntity( CBaseEntity *entity, float flTarg
 	}
 	
 	// See if this represents a change for the entity
-	int flags = 0;
+	LagCompesateFlags_t flags = LC_NONE;
 
 	QAngle angdiff = entity->GetAbsAngles() - ang;
 	Vector orgdiff = entity->GetAbsOrigin() - org;
@@ -612,7 +604,7 @@ bool CLagCompensationManager::BacktrackEntity( CBaseEntity *entity, float flTarg
 			int layerCount = pAnimatingOverlay->GetNumAnimOverlays();
 			for( int layerIndex = 0; layerIndex < layerCount; ++layerIndex )
 			{
-				CAnimationLayer *currentLayer = pAnimatingOverlay->GetAnimOverlayForModify(layerIndex);
+				CAnimationLayer *currentLayer = pAnimatingOverlay->GetAnimOverlayForModify((animlayerindex_t)layerIndex);
 				if( currentLayer )
 				{
 					restore->m_layerRecords[layerIndex].m_cycle = currentLayer->m_flCycle;
@@ -660,7 +652,7 @@ bool CLagCompensationManager::BacktrackEntity( CBaseEntity *entity, float flTarg
 		}
 	}
 	
-	if ( !flags )
+	if ( flags == LC_NONE )
 		return false; // we didn't change anything
 
 	if ( sv_lagflushbonecache.GetBool() && (flags & LC_ANIMATION_CHANGED) && entity->GetBaseAnimating() )
@@ -755,7 +747,7 @@ void CLagCompensationManager::RecordDataIntoTrack( CBaseEntity *entity, LagRecor
 	// add new record to entity track
 	LagRecord &record = track->Element( track->AddToHead() );
 
-	record.m_fFlags = 0;
+	record.m_fFlags = LC_NONE;
 	if ( entity->IsAlive() )
 	{
 		record.m_fFlags |= LC_ALIVE;
@@ -778,7 +770,7 @@ void CLagCompensationManager::RecordDataIntoTrack( CBaseEntity *entity, LagRecor
 			int layerCount = pAnimatingOverlay->GetNumAnimOverlays();
 			for( int layerIndex = 0; layerIndex < layerCount; ++layerIndex )
 			{
-				const CAnimationLayer *currentLayer = pAnimatingOverlay->GetAnimOverlay(layerIndex);
+				const CAnimationLayer *currentLayer = pAnimatingOverlay->GetAnimOverlay((animlayerindex_t)layerIndex);
 				if( currentLayer )
 				{
 					record.m_layerRecords[layerIndex].m_cycle = currentLayer->m_flCycle;
@@ -851,7 +843,7 @@ void CLagCompensationManager::RestoreEntityFromRecords( CBaseEntity *entity, Lag
 				int layerCount = pAnimatingOverlay->GetNumAnimOverlays();
 				for( int layerIndex = 0; layerIndex < layerCount; ++layerIndex )
 				{
-					CAnimationLayer *currentLayer = pAnimatingOverlay->GetAnimOverlayForModify(layerIndex);
+					CAnimationLayer *currentLayer = pAnimatingOverlay->GetAnimOverlayForModify((animlayerindex_t)layerIndex);
 					if( currentLayer )
 					{
 						currentLayer->m_flCycle = restore->m_layerRecords[layerIndex].m_cycle;

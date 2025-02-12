@@ -350,7 +350,7 @@ bool CFourWheelVehiclePhysics::Initialize( const char *pVehicleScript, unsigned 
 
 	m_flMaxSpeed = vehicle.engine.maxSpeed;
 
-	IPhysicsObject *pBody = m_pOuter->VPhysicsInitNormal( SOLID_VPHYSICS, 0, false, &solid );
+	IPhysicsObject *pBody = m_pOuter->VPhysicsInitNormal( SOLID_VPHYSICS, FSOLID_NONE, false, &solid );
 	PhysSetGameFlags( pBody, FVPHYSICS_NO_SELF_COLLISIONS | FVPHYSICS_MULTIOBJECT_ENTITY );
 	m_pVehicle = physenv->CreateVehicleController( pBody, vehicle, nVehicleType, physgametrace );
 	m_wheelCount = m_pVehicle->GetWheelCount();
@@ -1001,7 +1001,7 @@ void CFourWheelVehiclePhysics::SteeringTurnAnalog( float carSpeed, const vehicle
 void CFourWheelVehiclePhysics::UpdateDriverControls( CUserCmd *cmd, float flFrameTime )
 {
 	const float SPEED_THROTTLE_AS_BRAKE = 2.0f;
-	int nButtons = cmd->buttons;
+	InButtons_t nButtons = cmd->buttons;
 
 	// Get vehicle data.
 	const vehicle_operatingparams_t &carState = m_pVehicle->GetOperatingParams();
@@ -1035,9 +1035,9 @@ void CFourWheelVehiclePhysics::UpdateDriverControls( CUserCmd *cmd, float flFram
 	// If changing direction, use default "return to zero" speed to more quickly transition.
 	if ( ( nButtons & IN_MOVELEFT ) || ( nButtons & IN_MOVERIGHT ) )
 	{
-		bool bTurnLeft = ( (nButtons & IN_MOVELEFT) != 0 );
-		bool bBrake = ((nButtons & IN_BACK) != 0);
-		bool bThrottleDown = ( (nButtons & IN_FORWARD) != 0 ) && !bBrake;
+		bool bTurnLeft = ( (nButtons & IN_MOVELEFT) != IN_NONE );
+		bool bBrake = ((nButtons & IN_BACK) != IN_NONE);
+		bool bThrottleDown = ( (nButtons & IN_FORWARD) != IN_NONE ) && !bBrake;
 		SteeringTurn( carSpeed, vehicleData, bTurnLeft, bBrake, bThrottleDown );
 	}
 	else if ( cmd->sidemove != 0.0f )

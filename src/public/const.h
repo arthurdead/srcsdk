@@ -308,10 +308,6 @@ FLAGENUM_OPERATORS( Effects_t, unsigned short )
 // plats
 #define	PLAT_LOW_TRIGGER	1
 
-// Trains
-#define	SF_TRAIN_WAIT_RETRIGGER	1
-#define SF_TRAIN_PASSABLE		8		// Train is not solid -- used to make water trains
-
 // view angle update types for CPlayerState::fixangle
 #define FIXANGLE_NONE			0
 #define FIXANGLE_ABSOLUTE		1

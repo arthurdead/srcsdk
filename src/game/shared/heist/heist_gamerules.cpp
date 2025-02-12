@@ -44,7 +44,7 @@ IMPLEMENT_SERVERCLASS( CHeistGameRules, DT_HeistGameRules );
 #endif
 
 BEGIN_NETWORK_TABLE( CSharedHeistGameRulesProxy, DT_HeistGameRulesProxy )
-	PropDataTable("heist_gamerules_data", 0, 0, &REFERENCE_DATATABLE(DT_HeistGameRules), NetProxy_HeistGameRules)
+	PropDataTable("heist_gamerules_data", 0, SPROP_NONE, &REFERENCE_DATATABLE(DT_HeistGameRules), NetProxy_HeistGameRules)
 END_NETWORK_TABLE()
 
 IMPLEMENT_NETWORKCLASS_ALIASED(HeistGameRulesProxy, DT_HeistGameRulesProxy)

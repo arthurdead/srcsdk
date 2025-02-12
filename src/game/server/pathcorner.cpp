@@ -8,30 +8,10 @@
 #include "trains.h"
 #include "entitylist.h"
 #include "ndebugoverlay.h"
+#include "pathcorner.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-
-class CPathCorner : public CPointEntity
-{
-public:
-	DECLARE_CLASS( CPathCorner, CPointEntity );
-
-	void	Spawn( );
-	float	GetDelay( void ) { return m_flWait; }
-	int		DrawDebugTextOverlays(void);
-	void	DrawDebugGeometryOverlays(void);
-
-	// Input handlers	
-	void InputSetNextPathCorner( inputdata_t &&inputdata );
-	void InputInPass( inputdata_t &&inputdata );
-
-	DECLARE_MAPENTITY();
-
-private:
-	float			m_flWait;
-	COutputEvent	m_OnPass;
-};
 
 LINK_ENTITY_TO_CLASS( path_corner, CPathCorner );
 

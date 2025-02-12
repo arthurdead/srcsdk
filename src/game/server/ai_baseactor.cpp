@@ -1404,7 +1404,7 @@ bool CAI_BaseActor::PickRandomLookTarget( AILookTargetArgs_t *pArgs )
 	CBaseEntity *pEntity = NULL;
 	int iHighestImportance = 0;
 	int iConsidered = 0;
-	for ( CEntitySphereQuery sphere( GetAbsOrigin(), 30 * 12, CONTENTS_EMPTY ); (pEntity = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity() )
+	for ( CEntitySphereQuery sphere( GetAbsOrigin(), 30 * 12, FL_NO_ENTITY_FLAGS ); (pEntity = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity() )
 	{
 		if (pEntity == this)
 		{

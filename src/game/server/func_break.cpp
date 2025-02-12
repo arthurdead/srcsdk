@@ -183,7 +183,7 @@ void CBreakable::Spawn( void )
 
     Precache( );    
 
-	if ( !GetHealth() || FBitSet( m_spawnflags, SF_BREAK_TRIGGER_ONLY ) )
+	if ( !GetHealth() || HasSpawnFlags( SF_BREAK_TRIGGER_ONLY ) )
 	{
 		// This allows people to shoot at the glass (since it's penetrable)
 		if ( m_Material == matGlass )
@@ -210,7 +210,7 @@ void CBreakable::Spawn( void )
 	SetModel( STRING( GetModelName() ) );//set size and link into world.
 
 	SetTouch( &CBreakable::BreakTouch );
-	if ( FBitSet( m_spawnflags, SF_BREAK_TRIGGER_ONLY ) )		// Only break on trigger
+	if ( HasSpawnFlags( SF_BREAK_TRIGGER_ONLY ) )		// Only break on trigger
 	{
 		SetTouch( NULL );
 	}
@@ -613,7 +613,7 @@ bool CBreakable::UpdateHealth( int iNewHealth, CBaseEntity *pActivator )
 		}
 		else
 		{
-			if ( FBitSet( m_spawnflags, SF_BREAK_TRIGGER_ONLY ) )
+			if ( HasSpawnFlags( SF_BREAK_TRIGGER_ONLY ) )
 			{
 				m_takedamage = DAMAGE_NO;
 			}
@@ -709,7 +709,7 @@ void CBreakable::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )
 		CBaseEntity *pOther = pEvent->pEntities[otherIndex];
 
 		// We're to take normal damage from this
-		int damageType;
+		DamageTypes_t damageType;
 		IBreakableWithPropData *pBreakableInterface = assert_cast<IBreakableWithPropData*>(this);
 		float damage = CalculateDefaultPhysicsDamage( index, pEvent, m_impactEnergyScale, true, damageType, pBreakableInterface->GetPhysicsDamageTable() );
 		if ( damage > 0 )
@@ -763,7 +763,7 @@ int CBreakable::OnTakeDamage( const CTakeDamageInfo &info )
 	{
 		// Don't play shard noise if being burned.
 		// Don't play shard noise if cbreakable actually died.
-		if ( ( subInfo.GetDamageType() & DMG_BURN ) == false )
+		if ( ( subInfo.GetDamageType() & DMG_BURN ) == DMG_GENERIC )
 		{
 			DamageSound();
 		}
@@ -1044,7 +1044,7 @@ bool CBreakable::IsBreakable( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-char const *CBreakable::DamageDecal( int bitsDamageType, int gameMaterial )
+char const *CBreakable::DamageDecal( DamageTypes_t bitsDamageType, int gameMaterial )
 {
 	if ( m_Material == matGlass  )
 		return "GlassBreak";
@@ -1124,6 +1124,8 @@ class CPushable : public CBreakable
 public:
 	DECLARE_CLASS( CPushable, CBreakable );
 
+	DECLARE_SPAWNFLAGS( SFPushable_t )
+
 	void	Spawn ( void );
 	bool	CreateVPhysics( void );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
@@ -1133,7 +1135,7 @@ public:
 	// breakables use an overridden takedamage
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );
 	virtual void VPhysicsCollision( int index, gamevcollisionevent_t *pEvent );
-	unsigned int PhysicsSolidMaskForEntity( void ) const { return MASK_PLAYERSOLID; }
+	ContentsFlags_t PhysicsSolidMaskForEntity( void ) const { return MASK_PLAYERSOLID; }
 };
 
 
@@ -1167,7 +1169,7 @@ void CPushable::Spawn( void )
 
 bool CPushable::CreateVPhysics( void )
 {
-	VPhysicsInitNormal( SOLID_VPHYSICS, 0, false );
+	VPhysicsInitNormal( SOLID_VPHYSICS, FSOLID_NONE, false );
 	IPhysicsObject *pPhysObj = VPhysicsGetObject();
 	if ( pPhysObj )
 	{
@@ -1203,7 +1205,7 @@ void CPushable::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 
 int CPushable::OnTakeDamage( const CTakeDamageInfo &info )
 {
-	if ( m_spawnflags & SF_PUSH_BREAKABLE )
+	if ( HasSpawnFlags(SF_PUSH_BREAKABLE) )
 		return BaseClass::OnTakeDamage( info );
 
 	return 1;

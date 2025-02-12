@@ -33,42 +33,23 @@ void* SendProxy_LengthTable( const SendProp *pProp, const void *pStructBase, con
 //
 // Note: you have to be DILIGENT about calling NetworkStateChanged whenever an element in your CUtlVector changes
 // since CUtlVector doesn't do this automatically.
-SendPropEx SendPropUtlVector_impl(
+SendPropInfoEx SendPropUtlVector_impl(
 	const char *pVarName,		// Use SENDINFO_UTLVECTOR to generate these 4.
 	int offset,			// Used to generate pData in the function specified in varProxy.
 	int sizeofVar,		// The size of each element in the utlvector.
 	EnsureCapacityFn ensureFn,	// This is the value returned for elements out of the array's current range.
 	int nMaxElements,			// Max # of elements in the array. Keep this as low as possible.
-	SendPropEx pArrayProp,		// Describe the data inside of each element in the array.
+	const SendPropInfoEx &pArrayProp,		// Describe the data inside of each element in the array.
 	SendTableProxyFn varProxy,	// This can be overridden to control who the array is sent to.
 	DTPriority_t priority,
 
-	void(*UtlVectorElement)( 
-	const SendProp *pProp, 
-	const void *pStruct, 
-	const void *pData, 
-	DVariant *pOut, 
-	int iElement, 
-	int objectID ),
-
-	void*(UtlVectorElement_DataTable)( 
-	const SendProp *pProp,
-	const void *pStructBase, 
-	const void *pData, 
-	CSendProxyRecipients *pRecipients, 
-	int objectID ),
-
-	void(*UtlVectorLength)( 
-	const SendProp *pProp, 
-	const void *pStruct, 
-	const void *pData, 
-	DVariant *pOut, 
-	int iElement, 
-	int objectID )
+	SendVarProxyFn UtlVectorElement,
+	SendTableProxyFn UtlVectorElement_DataTable,
+	SendVarProxyFn UtlVectorLength
 
 	)
 {
-	SendPropEx ret;
+	SendPropInfoEx ret;
 
 	Assert( nMaxElements <= MAX_ARRAY_ELEMENTS );
 
@@ -101,20 +82,20 @@ SendPropEx SendPropUtlVector_impl(
 		pExtraData->m_ProxyFn = pArrayProp.GetProxyFn();
 
 
-	SendProp *pProps = new SendProp[nMaxElements+1]; // TODO free that again
+	SendPropInfo *pProps = new SendPropInfo[nMaxElements+1]; // TODO free that again
 
 	// The first property is datatable with an int that tells the length of the array.
 	// It has to go in a datatable, otherwise if this array holds datatable properties, it will be received last.
-	SendProp *pLengthProp = new SendProp;
+	SendPropInfo *pLengthProp = new SendPropInfo;
 	*pLengthProp = SendPropInt( AllocateStringHelper( "lengthprop%d", nMaxElements ), 0, 0, NumBitsForCount( nMaxElements ), SPROP_UNSIGNED, UtlVectorLength );
 	pLengthProp->SetExtraData( pExtraData );
-	pLengthProp->m_Flags |= SPROP_UTLVECTOR_EXTRADATA;
+	pLengthProp->m_Flags |= SPROP_ALLOCATED_EXTRADATA;
 
 	char *pLengthProxyTableName = AllocateUniqueDataTableName( true, "_LPT_%s_%d", pVarName, nMaxElements );
-	SendTable *pLengthTable = new SendTable( pLengthProp, 1, pLengthProxyTableName );
+	SendTableInfo *pLengthTable = new SendTableInfo( pLengthProp, 1, pLengthProxyTableName );
 	pProps[0] = SendPropDataTable( "lengthproxy", 0, pLengthTable, SendProxy_LengthTable );
 	pProps[0].SetExtraData( pExtraData );
-	pProps[0].m_Flags |= SPROP_UTLVECTOR_EXTRADATA;
+	pProps[0].m_Flags |= SPROP_ALLOCATED_SENDTABLE;
 
 	// TERROR:
 	char *pParentArrayPropName = AllocateStringHelper( "%s", pVarName );
@@ -146,7 +127,6 @@ SendPropEx SendPropUtlVector_impl(
 		pProps[i].m_pVarName = s_ElementNames[i-1];	// give unique name
 		pProps[i].m_pParentArrayPropName = pParentArrayPropName; // TERROR: For debugging...
 		pProps[i].SetExtraData( pExtraData );
-		pProps[i].m_Flags |= SPROP_UTLVECTOR_EXTRADATA;
 		pProps[i].m_ElementStride = i-1;	// Kind of lame overloading element stride to hold the element index,
 											// but we can easily move it into its SetExtraData stuff if we need to.
 		
@@ -154,7 +134,7 @@ SendPropEx SendPropUtlVector_impl(
 		if ( pArrayProp.m_Type == DPT_DataTable )
 		{
 			pProps[i].SetDataTableProxyFn( UtlVectorElement_DataTable );
-			pProps[i].SetFlags( SPROP_PROXY_ALWAYS_YES );
+			pProps[i].m_Flags |= SPROP_PROXY_ALWAYS_YES;
 		}
 		else
 		{
@@ -162,12 +142,14 @@ SendPropEx SendPropUtlVector_impl(
 		}
 	}
 
-	SendTable *pTable = new SendTable( 
+	SendTableInfo *pTable = new SendTableInfo( 
 		pProps, 
 		nMaxElements+1, 
 		AllocateUniqueDataTableName( true, "_ST_%s_%d", pVarName, nMaxElements )
 		);
 
 	ret.SetDataTable( pTable );
+	ret.m_Flags |= SPROP_ALLOCATED_SENDTABLE;
+
 	return ret;
 }

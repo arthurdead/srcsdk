@@ -103,10 +103,12 @@ public:
 		m_sFireballSprite = INVALID_MODEL_INDEX;
 	};
 
+	DECLARE_SPAWNFLAGS( SFEnvExplosion_t )
+
 	void Precache( void );
 	void Spawn( );
 	void Smoke ( void );
-	void SetCustomDamageType( uint64 iType ) { m_iCustomDamageType = iType; }
+	void SetCustomDamageType( DamageTypes_t iType ) { m_iCustomDamageType = iType; }
 	bool KeyValue( const char *szKeyName, const char *szValue );
 
 	int DrawDebugTextOverlays(void);
@@ -124,10 +126,10 @@ public:
 	string_t m_iszFireballSprite;
 	modelindex_t m_sFireballSprite;
 	EHANDLE m_hInflictor;
-	uint64 m_iCustomDamageType;
+	DamageTypes_t m_iCustomDamageType;
 
 	// passed along to the RadiusDamage call
-	int m_iClassIgnore;
+	Class_T m_iClassIgnore;
 	EHANDLE m_hEntityIgnore;
 
 };
@@ -195,7 +197,7 @@ void CEnvExplosion::Spawn( void )
 	flSpriteScale = ( m_iMagnitude - 50) * 0.6;
 
 	// Control the clamping of the fireball sprite
-	if( m_spawnflags & SF_ENVEXPLOSION_NOCLAMPMIN )
+	if( HasSpawnFlags( SF_ENVEXPLOSION_NOCLAMPMIN ) )
 	{
 		// Don't inhibit clamping altogether. Just relax it a bit.
 		if ( flSpriteScale < 1 )
@@ -211,7 +213,7 @@ void CEnvExplosion::Spawn( void )
 		}
 	}
 
-	if( m_spawnflags & SF_ENVEXPLOSION_NOCLAMPMAX )
+	if( HasSpawnFlags( SF_ENVEXPLOSION_NOCLAMPMAX ) )
 	{
 		// We may need to adjust this to suit designers' needs.
 		if ( flSpriteScale > 200 )
@@ -228,7 +230,7 @@ void CEnvExplosion::Spawn( void )
 	}
 
 	m_spriteScale = (int)flSpriteScale;
-	m_iCustomDamageType = -1;
+	m_iCustomDamageType = DMG_INVALID;
 }
 
 
@@ -256,9 +258,9 @@ void CEnvExplosion::InputExplode( inputdata_t &&inputdata )
 	}
 
 	// draw decal
-	if (! ( m_spawnflags & SF_ENVEXPLOSION_NODECAL))
+	if (!HasSpawnFlags( SF_ENVEXPLOSION_NODECAL ))
 	{
-		if ( ! ( m_spawnflags & SF_ENVEXPLOSION_ICE ))
+		if ( ! HasSpawnFlags( SF_ENVEXPLOSION_ICE ))
 			UTIL_DecalTrace( &tr, "Scorch" );
 		else
 			UTIL_DecalTrace( &tr, "Ice_Explosion_Decal" );
@@ -270,17 +272,17 @@ void CEnvExplosion::InputExplode( inputdata_t &&inputdata )
 	// flags to pass to the temp ent.
 	int nFlags = TE_EXPLFLAG_NONE;
 
-	if( m_spawnflags & SF_ENVEXPLOSION_NOFIREBALL )
+	if( HasSpawnFlags( SF_ENVEXPLOSION_NOFIREBALL ) )
 	{
 		nFlags |= TE_EXPLFLAG_NOFIREBALL;
 	}
 	
-	if( m_spawnflags & SF_ENVEXPLOSION_NOSOUND )
+	if( HasSpawnFlags( SF_ENVEXPLOSION_NOSOUND ) )
 	{
 		nFlags |= TE_EXPLFLAG_NOSOUND;
 	}
 	
-	if ( m_spawnflags & SF_ENVEXPLOSION_RND_ORIENT )
+	if ( HasSpawnFlags( SF_ENVEXPLOSION_RND_ORIENT ) )
 	{
 		nFlags |= TE_EXPLFLAG_ROTATE;
 	}
@@ -294,12 +296,12 @@ void CEnvExplosion::InputExplode( inputdata_t &&inputdata )
 		nFlags |= TE_EXPLFLAG_NOADDITIVE;
 	}
 
-	if( m_spawnflags & SF_ENVEXPLOSION_NOPARTICLES )
+	if( HasSpawnFlags( SF_ENVEXPLOSION_NOPARTICLES ) )
 	{
 		nFlags |= TE_EXPLFLAG_NOPARTICLES;
 	}
 
-	if( m_spawnflags & SF_ENVEXPLOSION_NODLIGHTS )
+	if( HasSpawnFlags( SF_ENVEXPLOSION_NODLIGHTS ) )
 	{
 		nFlags |= TE_EXPLFLAG_NODLIGHTS;
 	}
@@ -308,12 +310,12 @@ void CEnvExplosion::InputExplode( inputdata_t &&inputdata )
 		nFlags |= TE_EXPLFLAG_DLIGHT;
 	}
 
-	if ( m_spawnflags & SF_ENVEXPLOSION_NOFIREBALLSMOKE )
+	if ( HasSpawnFlags( SF_ENVEXPLOSION_NOFIREBALLSMOKE ) )
 	{
 		nFlags |= TE_EXPLFLAG_NOFIREBALLSMOKE;
 	}
 
-	if ( m_spawnflags & SF_ENVEXPLOSION_ICE )
+	if ( HasSpawnFlags( SF_ENVEXPLOSION_ICE ) )
 	{
 		nFlags |= TE_EXPLFLAG_ICE;
 	}
@@ -325,20 +327,20 @@ void CEnvExplosion::InputExplode( inputdata_t &&inputdata )
 	te->Explosion( filter, 0.0,
 		&vecExplodeOrigin, 
 		( m_sFireballSprite == INVALID_MODEL_INDEX ) ? g_sModelIndexFireball : m_sFireballSprite,
-		!( m_spawnflags & SF_ENVEXPLOSION_NOFIREBALL ) ? ( m_spriteScale / 10.0 ) : 0.0,
+		!HasSpawnFlags( SF_ENVEXPLOSION_NOFIREBALL ) ? ( m_spriteScale / 10.0 ) : 0.0,
 		15,
 		nFlags,
 		iRadius,
 		m_iMagnitude );
 
 	// do damage
-	if ( !( m_spawnflags & SF_ENVEXPLOSION_NODAMAGE ) )
+	if ( !HasSpawnFlags( SF_ENVEXPLOSION_NODAMAGE ) )
 	{
 		CBaseEntity *pAttacker = GetOwnerEntity() ? GetOwnerEntity() : this;
 
 		// Only calculate damage type if we didn't get a custom one passed in
-		uint64 iDamageType = m_iCustomDamageType;
-		if ( iDamageType == -1 )
+		DamageTypes_t iDamageType = m_iCustomDamageType;
+		if ( iDamageType == DMG_INVALID )
 		{
 			iDamageType = HasSpawnFlags( SF_ENVEXPLOSION_GENERIC_DAMAGE ) ? DMG_GENERIC : DMG_BLAST;
 		}
@@ -367,7 +369,7 @@ void CEnvExplosion::InputExplode( inputdata_t &&inputdata )
 	if ( explosion_sparks.GetBool() && !(UTIL_PointContents( GetAbsOrigin(), MASK_WATER ) & CONTENTS_WATER) )
 	{
 		// draw sparks
-		if ( !( m_spawnflags & SF_ENVEXPLOSION_NOSPARKS ) )
+		if ( !HasSpawnFlags( SF_ENVEXPLOSION_NOSPARKS ) )
 		{
 			int sparkCount = random_valve->RandomInt(0,3);
 
@@ -386,12 +388,12 @@ void CEnvExplosion::InputExplode( inputdata_t &&inputdata )
 //-----------------------------------------------------------------------------
 void CEnvExplosion::InputSetIgnoredEntity( inputdata_t &&inputdata )
 {
-	m_hEntityIgnore = inputdata.value.Entity();
+	m_hEntityIgnore = inputdata.value.EntityH();
 }
 
 void CEnvExplosion::Smoke( void )
 {
-	if ( !(m_spawnflags & SF_ENVEXPLOSION_REPEATABLE) )
+	if ( !HasSpawnFlags( SF_ENVEXPLOSION_REPEATABLE ) )
 	{
 		UTIL_Remove( this );
 	}
@@ -400,7 +402,7 @@ void CEnvExplosion::Smoke( void )
 
 // HACKHACK -- create one of these and fake a keyvalue to get the right explosion setup
 void ExplosionCreate( const Vector &center, const QAngle &angles, 
-	CBaseEntity *pOwner, int magnitude, int radius, int nSpawnFlags, float flExplosionForce, CBaseEntity *pInflictor, uint64 iCustomDamageType,
+	CBaseEntity *pOwner, int magnitude, int radius, SFEnvExplosion_t nSpawnFlags, float flExplosionForce, CBaseEntity *pInflictor, DamageTypes_t iCustomDamageType,
 	const EHANDLE *ignoredEntity , Class_T ignoredClass )
 {
 	char			buf[128];
@@ -442,10 +444,10 @@ void ExplosionCreate( const Vector &center, const QAngle &angles,
 
 
 void ExplosionCreate( const Vector &center, const QAngle &angles, 
-	CBaseEntity *pOwner, int magnitude, int radius, bool doDamage, float flExplosionForce, bool bSurfaceOnly, bool bSilent, uint64 iCustomDamageType )
+	CBaseEntity *pOwner, int magnitude, int radius, bool doDamage, float flExplosionForce, bool bSurfaceOnly, bool bSilent, DamageTypes_t iCustomDamageType )
 {
 	// For E3, no sparks
-	int nFlags = SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE;
+	SFEnvExplosion_t nFlags = SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE;
 	if ( !doDamage )
 	{
 		nFlags |= SF_ENVEXPLOSION_NODAMAGE;
@@ -468,10 +470,10 @@ void ExplosionCreate( const Vector &center, const QAngle &angles,
 void ExplosionCreate( const Vector &center, const QAngle &angles, 
 					 CBaseEntity *pOwner, int magnitude, int radius, bool doDamage, 
 					 const EHANDLE *ignoredEntity, Class_T ignoredClass,
-					 float flExplosionForce , bool bSurfaceOnly , bool bSilent , uint64 iCustomDamageType )
+					 float flExplosionForce , bool bSurfaceOnly , bool bSilent , DamageTypes_t iCustomDamageType )
 {
 	// For E3, no sparks
-	int nFlags = SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE;
+	SFEnvExplosion_t nFlags = SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE;
 	if ( !doDamage )
 	{
 		nFlags |= SF_ENVEXPLOSION_NODAMAGE;

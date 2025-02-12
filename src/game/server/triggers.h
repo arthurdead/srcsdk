@@ -147,9 +147,9 @@ extern CUtlVector< CHandle<CTriggerMultiple> >	g_hWeaponFireTriggers;
 // NOTE: This uses vphysics to compute touch events.  It doesn't do a per-frame Touch call, so the 
 // Entity I/O is different from a regular trigger
 //------------------------------------------------------------------------------
-enum SFVphysTrigger_t : unsigned int
+enum SFVphysTrigger_t : uint64
 {
-	SF_VPHYSICS_MOTION_MOVEABLE =	0x1000,
+	SF_VPHYSICS_MOTION_MOVEABLE =	(SF_TRIGGER_LAST_FLAG << 1),
 };
 
 FLAGENUM_OPERATORS( SFVphysTrigger_t, unsigned short )
@@ -162,6 +162,7 @@ public:
 	DECLARE_MAPENTITY();
 
 	DECLARE_SPAWNFLAGS( SFVphysTrigger_t )
+	DECLARE_SPAWNFLAGS_OVERLOAD( SFTrigger_t )
 
 	virtual void Spawn();
 	virtual void UpdateOnRemove();

@@ -355,7 +355,7 @@ bool CEnvMicrophone::CanHearSound( int entindex, soundlevel_t soundlevel, float 
 		return false;
 	}
 
-	if ( ( m_spawnflags & SF_MICROPHONE_IGNORE_NONATTENUATED ) && soundlevel == SNDLVL_NONE )
+	if ( HasSpawnFlags( SF_MICROPHONE_IGNORE_NONATTENUATED ) && soundlevel == SNDLVL_NONE )
 	{
 		return false;
 	}
@@ -509,7 +509,7 @@ void CEnvMicrophone::Think(void)
 //-----------------------------------------------------------------------------
 // Purpose: Hook for the sound system to tell us when a sound's been played
 //-----------------------------------------------------------------------------
-MicrophoneResult_t CEnvMicrophone::SoundPlayed( int entindex, const char *soundname, soundlevel_t soundlevel, float flVolume, int iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins )
+MicrophoneResult_t CEnvMicrophone::SoundPlayed( int entindex, const char *soundname, soundlevel_t soundlevel, float flVolume, SoundFlags_t iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins )
 {
 	if ( m_bAvoidFeedback )
 		return MicrophoneResult_Ok;
@@ -621,7 +621,7 @@ void CEnvMicrophone::SoundStopped( const char *soundname )
 // Output : Returns whether or not the sound was swallowed by the microphone.
 //			Swallowed sounds should not be played by the sound system.
 //-----------------------------------------------------------------------------
-bool CEnvMicrophone::OnSoundPlayed( int entindex, const char *soundname, soundlevel_t soundlevel, float flVolume, int iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins )
+bool CEnvMicrophone::OnSoundPlayed( int entindex, const char *soundname, soundlevel_t soundlevel, float flVolume, SoundFlags_t iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins )
 {
 	bool bSwallowed = false;
 

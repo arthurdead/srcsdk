@@ -23,6 +23,18 @@ enum FogControllerSpawnFlags_t : unsigned char
 
 FLAGENUM_OPERATORS( FogControllerSpawnFlags_t, unsigned char )
 
+enum FogControllerLerpVars_t : unsigned char
+{
+	FOG_CONTROLLER_NO_VARS = 0,
+	FOG_CONTROLLER_COLORPRIMARY_LERP =		(1 << 0),
+	FOG_CONTROLLER_COLORSECONDARY_LERP =		(1 << 1),
+	FOG_CONTROLLER_START_LERP =				(1 << 2),
+	FOG_CONTROLLER_END_LERP =					(1 << 3),
+	FOG_CONTROLLER_MAXDENSITY_LERP =			(1 << 4),
+};
+
+FLAGENUM_OPERATORS( FogControllerLerpVars_t, unsigned char )
+
 //=============================================================================
 //
 // Class Fog Controller:
@@ -75,7 +87,7 @@ public:
 
 	CNetworkVarEmbedded( networked_fogparams_t, m_fog );
 	bool					m_bUseAngles;
-	int						m_iChangedVariables;
+	FogControllerLerpVars_t						m_iChangedVariables;
 };
 
 //=============================================================================

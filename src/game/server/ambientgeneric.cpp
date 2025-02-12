@@ -442,8 +442,8 @@ void CAmbientGeneric::RampThink( void )
 {
 	int pitch = m_dpv.pitch; 
 	int vol = m_dpv.vol;
-	int flags = 0;
-	int fChanged = 0;		// false if pitch and vol remain unchanged this round
+	SoundFlags_t flags = SND_NOFLAGS;
+	bool fChanged = false;		// false if pitch and vol remain unchanged this round
 	int	prev;
 
 	if (!m_dpv.spinup && !m_dpv.spindown && !m_dpv.fadein && !m_dpv.fadeout && !m_dpv.lfotype)
@@ -622,7 +622,7 @@ void CAmbientGeneric::RampThink( void )
 	// Send update to playing sound only if we actually changed
 	// pitch or volume in this routine.
 
-	if (flags && fChanged) 
+	if (flags != SND_NOFLAGS && fChanged) 
 	{
 		if (pitch == PITCH_NORM)
 			pitch = PITCH_NORM + 1; // don't send 'no pitch' !

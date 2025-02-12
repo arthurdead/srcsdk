@@ -31,20 +31,28 @@ EXTERN_SEND_TABLE( DT_EntityParticleTrailInfo );
 //-----------------------------------------------------------------------------
 // Particle trail info
 //-----------------------------------------------------------------------------
-struct EntityParticleTrailInfo_t : public INetworkableObject
+struct EntityParticleTrailInfo_t
 {
 	EntityParticleTrailInfo_t();
 
 	DECLARE_CLASS_NOBASE( EntityParticleTrailInfo_t );
 	DECLARE_SIMPLE_DATADESC();
-	DECLARE_EMBEDDED_NETWORKVAR();
 
 	string_t m_strMaterialName;
-	CNetworkVar( float, m_flLifetime );
-	CNetworkVar( float, m_flStartSize );
-	CNetworkVar( float, m_flEndSize );
+	CNetworkVarForDerived( float, m_flLifetime );
+	CNetworkVarForDerived( float, m_flStartSize );
+	CNetworkVarForDerived( float, m_flEndSize );
 };
 
+struct NetworkedEntityParticleTrailInfo_t : public EntityParticleTrailInfo_t, public INetworkableObject
+{
+	DECLARE_CLASS( NetworkedEntityParticleTrailInfo_t, EntityParticleTrailInfo_t );
+	DECLARE_EMBEDDED_NETWORKVAR();
+
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_flLifetime )
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_flStartSize )
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_flEndSize )
+};
 
 
 #endif // ENTITYPARTICLETRAIL_SHARED_H

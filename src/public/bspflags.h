@@ -133,6 +133,9 @@ enum ContentsFlags_t : unsigned int
 	// everything that blocks corpse movement
 	// UNDONE: Not used yet / may be deleted
 	MASK_DEADSOLID = (CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_WINDOW|CONTENTS_GRATE),
+
+	// NPCs and grates do not prevent fire from travelling
+	MASK_FIRE_SOLID	= ( MASK_SOLID & (~(CONTENTS_MONSTER|CONTENTS_GRATE)) ),
 };
 
 FLAGENUM_OPERATORS( ContentsFlags_t, unsigned int )

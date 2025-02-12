@@ -16,11 +16,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-// -------------------------------
-//  SPAWN_FLAGS
-// -------------------------------
-#define SF_MOVELINEAR_NOTSOLID		8
-
 LINK_ENTITY_TO_CLASS( func_movelinear, CFuncMoveLinear );
 LINK_ENTITY_TO_CLASS( momentary_door, CFuncMoveLinear );	// For backward compatibility
 

@@ -57,7 +57,7 @@ void CSharedHeistPlayer::EquipMask()
 		return;
 
 	pViewModel->RemoveEffects(EF_NODRAW);
-	pViewModel->SendViewModelMatchingSequence(0);
+	pViewModel->SendViewModelMatchingSequence(ROOT_SEQUENCE);
 
 	float duration = gpGlobals->curtime + pViewModel->SequenceDuration();
 	SetNextAttack(duration);

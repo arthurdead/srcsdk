@@ -434,7 +434,7 @@ public:
 	// currently this builds the list in the constructor
 	// UNDONE: make an iterative query of ISpatialPartition so we could
 	// make queries like this optimal
-	CEntitySphereQuery( const Vector &center, float radius, ContentsFlags_t flagMask=CONTENTS_EMPTY );
+	CEntitySphereQuery( const Vector &center, float radius, EntityBehaviorFlags_t flagMask=FL_NO_ENTITY_FLAGS );
 	CBaseEntity *GetCurrentEntity();
 	inline void NextEntity() { m_listIndex++; }
 
@@ -453,7 +453,7 @@ int			UTIL_DropToFloor( CBaseEntity *pEntity, ContentsFlags_t mask, CBaseEntity 
 bool		UTIL_CheckBottom( CBaseEntity *pEntity, ITraceFilter *pTraceFilter, float flStepSize );
 
 void		UTIL_SetOrigin			( CBaseEntity *entity, const Vector &vecOrigin, bool bFireTriggers = false );
-void		UTIL_EmitAmbientSound	( int entindex, const Vector &vecOrigin, const char *samp, float vol, soundlevel_t soundlevel, int fFlags, int pitch, float soundtime = 0.0f, float *duration = NULL );
+void		UTIL_EmitAmbientSound	( int entindex, const Vector &vecOrigin, const char *samp, float vol, soundlevel_t soundlevel, SoundFlags_t fFlags, int pitch, float soundtime = 0.0f, float *duration = NULL );
 void		UTIL_ParticleEffect		( const Vector &vecOrigin, const Vector &vecDirection, ULONG ulColor, ULONG ulCount );
 void		UTIL_ScreenShake		( const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake=false, CUtlVector<CBasePlayer *> *ignore = NULL );
 void		UTIL_ScreenShakeObject	( CBaseEntity *pEnt, const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake=false );
@@ -659,7 +659,12 @@ FLAGENUM_OPERATORS( SFBrush_t, unsigned char )
 #define PUSH_BLOCK_ONLY_X	1
 #define PUSH_BLOCK_ONLY_Y	2
 
-#define SF_LIGHT_START_OFF		1
+enum SFLight_t : unsigned char
+{
+	SF_LIGHT_START_OFF =		1,
+};
+
+FLAGENUM_OPERATORS( SFLight_t, unsigned char )
 
 #define SPAWNFLAG_NOMESSAGE	1
 #define SPAWNFLAG_NOTOUCH	1
@@ -684,7 +689,7 @@ int SENTENCEG_PickRndSz(const char *szrootname);
 int SENTENCEG_GetIndex(const char *szrootname);
 int SENTENCEG_Lookup(const char *sample);
 
-char TEXTURETYPE_Find( trace_t *ptr );
+unsigned short TEXTURETYPE_Find( trace_t *ptr );
 
 void UTIL_EmitSoundSuit(edict_t *entity, const char *sample);
 int  UTIL_EmitGroupIDSuit(edict_t *entity, int isentenceg);

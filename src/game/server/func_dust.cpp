@@ -262,7 +262,7 @@ CTEDust::~CTEDust( void )
 IMPLEMENT_SERVERCLASS_ST( CTEDust, DT_TEDust )
 	SendPropFloat( SENDINFO(m_flSize), -1, SPROP_COORD ),
 	SendPropFloat( SENDINFO(m_flSpeed), -1, SPROP_COORD ),
-	SendPropVector( SENDINFO(m_vecDirection), 4, 0, -1.0f, 1.0f ), // cheap normal
+	SendPropVector( SENDINFO(m_vecDirection), 4, SPROP_NONE, -1.0f, 1.0f ), // cheap normal
 END_SEND_TABLE()
 
 static CTEDust g_TEDust( "Dust" );

@@ -33,11 +33,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-// Spawn flags
-#define SF_BREAKABLESURF_CRACK_DECALS				0x00000001
-#define SF_BREAKABLESURF_DAMAGE_FROM_HELD_OBJECTS	0x00000002
-#define SF_BREAKABLESURF_PLAY_BREAK_SOUND			0x00000004
-
 //#############################################################################
 //  > CWindowPane
 //#############################################################################
@@ -1213,7 +1208,7 @@ void CBreakableSurface::VPhysicsCollision( int index, gamevcollisionevent_t *pEv
 {
 	if ( !m_bIsBroken )
 	{
-		int damageType = 0;
+		DamageTypes_t damageType = DMG_GENERIC;
 		string_t iszDamageTable = ( ( m_nSurfaceType == SHATTERSURFACE_GLASS ) ? MAKE_STRING( "glass" ) : NULL_STRING );
 		bool bDamageFromHeldObjects = HasSpawnFlags( SF_BREAKABLESURF_DAMAGE_FROM_HELD_OBJECTS );
 		float damage = CalculateDefaultPhysicsDamage( index, pEvent, 1.0, false, damageType, iszDamageTable, bDamageFromHeldObjects );

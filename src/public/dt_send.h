@@ -74,7 +74,7 @@ public:
 // - it only plays with the recipients. This must be set on proxies that work
 // this way, otherwise the engine can't track which properties changed
 // in NetworkStateChanged().
-#define REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( sendProxyFn ) static CNonModifiedPointerProxy __proxy_##sendProxyFn( sendProxyFn );
+#define REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( ... ) static CNonModifiedPointerProxy V_CONCAT2(__proxy_, __LINE__)( __VA_ARGS__ );
 
 
 class CStandardSendProxiesV1
@@ -412,11 +412,6 @@ inline SendTableInfo* SendPropInfo::GetDataTable() const
 	return m_pDataTable;
 }
 
-inline void SendPropInfo::SetDataTable( SendTableInfo *pTable )
-{
-	m_pDataTable = pTable; 
-}
-
 inline char const* SendPropInfo::GetExcludeDTName() const
 {
 	return m_pExcludeDTName; 
@@ -633,6 +628,17 @@ inline void SendTableInfo::SetHasPropsEncodedAgainstTickcount( bool bState )
 	m_bHasPropsEncodedAgainstCurrentTickCount = bState;
 }
 
+inline void SendPropInfo::SetDataTable( SendTableInfo *pTable )
+{
+	if((m_Flags & SPROP_ALLOCATED_SENDTABLE) != SPROP_NONE) {
+		if(m_pDataTable) {
+			delete m_pDataTable;
+		}
+	}
+
+	m_pDataTable = pTable; 
+}
+
 // ------------------------------------------------------------------------------------------------------ //
 // Use BEGIN_SEND_TABLE if you want to declare a SendTable and have it inherit all the properties from
 // its base class. There are two requirements for this to work:
@@ -774,7 +780,7 @@ void* SendProxy_DataTableToDataTable( const SendPropInfo *pProp, const void *pSt
 void* SendProxy_DataTablePtrToDataTable( const SendPropInfo *pProp, const void *pStructBase, const void *pData, CSendProxyRecipients *pRecipients, int objectID );
 
 // Used on player entities - only sends the data to the local player (objectID-1).
-void* SendProxy_SendLocalDataTable( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
+void* SendProxy_LocalDataTable( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
 
 float AssignRangeMultiplier( int nBits, double range );
 

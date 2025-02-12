@@ -71,10 +71,10 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CFish, DT_CFish )
 
 	SendPropVector( SENDINFO(m_poolOrigin), -1, SPROP_COORD, 0.0f, HIGH_DEFAULT ),	// only sent once
 
-	SendPropFloat( SENDINFO(m_angle), 7, 0 /*SPROP_CHANGES_OFTEN*/, 0.0f, 360.0f, SendProxy_FishAngle ),
+	SendPropFloat( SENDINFO(m_angle), 7, SPROP_NONE /*SPROP_CHANGES_OFTEN*/, 0.0f, 360.0f, SendProxy_FishAngle ),
 
-	SendPropFloat( SENDINFO(m_x), 7, 0 /*SPROP_CHANGES_OFTEN*/, -255.0f, 255.0f ),
-	SendPropFloat( SENDINFO(m_y), 7, 0 /*SPROP_CHANGES_OFTEN*/, -255.0f, 255.0f ),
+	SendPropFloat( SENDINFO(m_x), 7, SPROP_NONE /*SPROP_CHANGES_OFTEN*/, -255.0f, 255.0f ),
+	SendPropFloat( SENDINFO(m_y), 7, SPROP_NONE /*SPROP_CHANGES_OFTEN*/, -255.0f, 255.0f ),
 	SendPropFloat( SENDINFO(m_z), -1, SPROP_COORD ),								// only sent once
 
 	SendPropModelIndex( SENDINFO(m_nModelIndex) ),
@@ -749,8 +749,7 @@ void CFishPool::InputSpawnFish( inputdata_t &&inputdata )
 void CFishPool::InputPanicLoudFromPoint( inputdata_t &&inputdata )
 {
 	// Make the fish panic from this point
-	Vector vecPoint;
-	inputdata.value.Vector3D( vecPoint );
+	Vector vecPoint = inputdata.value.Vector3D();
 	for( int i=0; i<m_fishes.Count(); ++i )
 	{
 		// Use loud range
@@ -767,8 +766,7 @@ void CFishPool::InputPanicLoudFromPoint( inputdata_t &&inputdata )
 void CFishPool::InputPanicQuietFromPoint( inputdata_t &&inputdata )
 {
 	// Make the fish panic from this point
-	Vector vecPoint;
-	inputdata.value.Vector3D( vecPoint );
+	Vector vecPoint = inputdata.value.Vector3D();
 	for( int i=0; i<m_fishes.Count(); ++i )
 	{
 		// Use loud range

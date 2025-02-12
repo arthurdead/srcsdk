@@ -20,6 +20,8 @@ class CLight : public CPointEntity
 public:
 	DECLARE_CLASS( CLight, CPointEntity );
 
+	DECLARE_SPAWNFLAGS( SFLight_t )
+
 	bool	KeyValue( const char *szKeyName, const char *szValue );
 	void	Spawn( void );
 	void	FadeThink( void );

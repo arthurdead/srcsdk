@@ -88,19 +88,21 @@ void CBaseFilter::InputTestActivator( inputdata_t &&inputdata )
 //-----------------------------------------------------------------------------
 void CBaseFilter::InputTestEntity( inputdata_t &&inputdata )
 {
-	if ( !inputdata.value.Entity() )
+	CBaseEntity *pTarget = inputdata.value.EntityP();
+
+	if ( !pTarget )
 	{
 		// HACKHACK: Not firing OnFail in this case is intentional for the time being (activator shouldn't be null)
 		return;
 	}
 
-	if ( PassesFilter( inputdata.pCaller, inputdata.value.Entity() ) )
+	if ( PassesFilter( inputdata.pCaller, pTarget ) )
 	{
-		m_OnPass.FireOutput( inputdata.value.Entity(), m_bPassCallerWhenTested ? inputdata.pCaller : this );
+		m_OnPass.FireOutput( pTarget, m_bPassCallerWhenTested ? inputdata.pCaller : this );
 	}
 	else
 	{
-		m_OnFail.FireOutput( inputdata.value.Entity(), m_bPassCallerWhenTested ? inputdata.pCaller : this );
+		m_OnFail.FireOutput( pTarget, m_bPassCallerWhenTested ? inputdata.pCaller : this );
 	}
 }
 
@@ -120,7 +122,7 @@ void CBaseFilter::InputSetField( inputdata_t &&inputdata )
 //   Allows one to filter through mutiple filters
 // ###################################################################
 #define MAX_FILTERS 10
-enum filter_t
+enum filter_t : unsigned char
 {
 	FILTER_AND,
 	FILTER_OR,
@@ -667,7 +669,7 @@ protected:
 	{
 		switch (m_iFilterType)
 		{
-			case 1:		return (info.GetDamageType() & m_iDamageType) != 0;
+			case 1:		return (info.GetDamageType() & m_iDamageType) != DMG_GENERIC;
 			case 2:
 			{
 				uint64 iRecvDT = info.GetDamageType();
@@ -689,14 +691,14 @@ protected:
 	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_INTEGER);
-		m_iDamageType = inputdata.value.Int();
+		m_iDamageType = (DamageTypes_t)inputdata.value.UInt64();
 	}
 
 	bool KeyValue( const char *szKeyName, const char *szValue )
 	{
 		if (FStrEq( szKeyName, "damageor" ) || FStrEq( szKeyName, "damagepresets" ))
 		{
-			m_iDamageType |= strtoull( szValue, NULL, 10 );
+			m_iDamageType |= (DamageTypes_t)strtoull( szValue, NULL, 10 );
 		}
 		else
 			return BaseClass::KeyValue( szKeyName, szValue );
@@ -704,7 +706,7 @@ protected:
 		return true;
 	}
 
-	uint64 m_iDamageType;
+	DamageTypes_t m_iDamageType;
 	int m_iFilterType;
 };
 
@@ -722,16 +724,22 @@ END_MAPENTITY()
 //	> CFilterEnemy
 // ###################################################################
 
-#define SF_FILTER_ENEMY_NO_LOSE_AQUIRED	(1<<0)
+enum SFFilterEnemy_t : unsigned char
+{
+	SF_FILTER_ENEMY_NO_LOSE_AQUIRED =	(1<<0),
+};
+
+FLAGENUM_OPERATORS( SFFilterEnemy_t, unsigned char )
 
 class CFilterEnemy : public CBaseFilter
 {
+public:
 	DECLARE_CLASS( CFilterEnemy, CBaseFilter );
 		// NOT SAVED	
 		// m_iszPlayerName
 	DECLARE_MAPENTITY();
 
-public:
+	DECLARE_SPAWNFLAGS( SFFilterEnemy_t )
 
 	virtual bool PassesFilterImpl( CBaseEntity *pCaller, CBaseEntity *pEntity );
 	virtual bool PassesDamageFilterImpl( CBaseEntity *pCaller, const CTakeDamageInfo &info );
@@ -1395,6 +1403,13 @@ END_MAPENTITY()
 // 
 // Redirects certain data to a specific filter.
 // ===================================================================
+enum RedirectFilterMode_t : unsigned char
+{
+	REDIRECT_MUST_PASS_TO_DAMAGE_CALLER,	// Must pass to damage caller, if damage is allowed
+	REDIRECT_MUST_PASS_TO_ACT,				// Must pass to do action
+	REDIRECT_MUST_PASS_ACTIVATORS,			// Each activator must pass this filter
+};
+
 class CBaseFilterRedirect : public CBaseFilter
 {
 public:
@@ -1464,15 +1479,8 @@ public:
 	void InputSetField( inputdata_t &&inputdata )
 	{
 		inputdata.value.Convert(FIELD_STRING);
-		InputSetDamageFilter(inputdata);
+		InputSetDamageFilter(Move(inputdata));
 	}
-
-	enum
-	{
-		REDIRECT_MUST_PASS_TO_DAMAGE_CALLER,	// Must pass to damage caller, if damage is allowed
-		REDIRECT_MUST_PASS_TO_ACT,				// Must pass to do action
-		REDIRECT_MUST_PASS_ACTIVATORS,			// Each activator must pass this filter
-	};
 };
 
 // ###################################################################
@@ -1669,7 +1677,7 @@ public:
 	bool m_bAdjustDamagePosition;
 
 	// See CBaseRedirectFilter enum for more info
-	int m_iSecondaryFilterMode;
+	RedirectFilterMode_t m_iSecondaryFilterMode;
 
 	// If enabled, the caller can be damaged after the transfer. If disabled, the caller cannot.
 	bool m_bCallerDamageAllowed;
@@ -1783,9 +1791,9 @@ public:
 		if (m_flDamageAddend != 0.0f)
 			info.AddDamage(m_flDamageAddend);
 
-		if (m_iDamageBitsAdded != 0)
+		if (m_iDamageBitsAdded != DMG_GENERIC)
 			info.AddDamageType(m_iDamageBitsAdded);
-		if (m_iDamageBitsRemoved != 0)
+		if (m_iDamageBitsRemoved != DMG_GENERIC)
 			info.AddDamageType(~m_iDamageBitsRemoved);
 
 		if (m_iszNewAttacker != NULL_STRING)
@@ -1816,15 +1824,15 @@ public:
 
 	float m_flDamageMultiplier	= 1.0f;
 	float m_flDamageAddend;
-	uint64 m_iDamageBitsAdded;
-	uint64 m_iDamageBitsRemoved;
+	DamageTypes_t m_iDamageBitsAdded;
+	DamageTypes_t m_iDamageBitsRemoved;
 
 	string_t m_iszNewAttacker;		EHANDLE m_hNewAttacker;
 	string_t m_iszNewInflictor;		EHANDLE m_hNewInflictor;
 	string_t m_iszNewWeapon;		EHANDLE m_hNewWeapon;
 
 	// See CBaseRedirectFilter enum for more info
-	int m_iSecondaryFilterMode;
+	RedirectFilterMode_t m_iSecondaryFilterMode;
 };
 
 LINK_ENTITY_TO_CLASS( filter_damage_mod, CFilterDamageMod );
@@ -1881,7 +1889,7 @@ public:
 		m_OutMaxDamage.Set( info.GetMaxDamage(), pActivator, pCaller );
 		m_OutBaseDamage.Set( info.GetBaseDamage(), pActivator, pCaller );
 
-		m_OutDamageType.Set( info.GetDamageType(), pActivator, pCaller );
+		m_OutDamageType.Set( (uint64)info.GetDamageType(), pActivator, pCaller );
 		m_OutDamageCustom.Set( info.GetDamageCustom(), pActivator, pCaller );
 		m_OutDamageStats.Set( info.GetDamageStats(), pActivator, pCaller );
 		m_OutAmmoType.Set( info.GetAmmoType(), pActivator, pCaller );
@@ -1913,7 +1921,7 @@ public:
 	// 0 = Use as a regular damage filter. If it doesn't pass, damage won't be outputted.
 	// 1 = Fire outputs even if the secondary filter doesn't pass.
 	// 2 = Only use the secondary filter for whether to output damage, other damage is actually dealt.
-	int m_iSecondaryFilterMode;
+	unsigned char m_iSecondaryFilterMode;
 
 	// Outputs
 	COutputEHANDLE	m_OutInflictor;
@@ -1924,7 +1932,7 @@ public:
 	COutputFloat	m_OutMaxDamage;
 	COutputFloat	m_OutBaseDamage;
 
-	COutputInt64		m_OutDamageType;
+	COutputUInt64		m_OutDamageType;
 	COutputInt		m_OutDamageCustom;
 	COutputInt		m_OutDamageStats;
 	COutputInt		m_OutAmmoType;

@@ -101,7 +101,7 @@ public:
 	bool IsBreakable( void );
 	bool SparkWhenHit( void );
 
-	char const		*DamageDecal( int bitsDamageType, int gameMaterial );
+	char const		*DamageDecal( DamageTypes_t bitsDamageType, int gameMaterial );
 
 	virtual void	Die( void );
 	void			ResetOnGroundFlags(void);

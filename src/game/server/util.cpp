@@ -341,7 +341,7 @@ int UTIL_EntitiesAtPoint( const Vector &point, CFlaggedEntitiesEnum *pEnum )
 // Purpose: 
 //-----------------------------------------------------------------------------
 
-CEntitySphereQuery::CEntitySphereQuery( const Vector &center, float radius, int flagMask )
+CEntitySphereQuery::CEntitySphereQuery( const Vector &center, float radius, EntityBehaviorFlags_t flagMask )
 {
 	m_listIndex = 0;
 	m_listCount = UTIL_EntitiesInSphere( m_pList, ARRAYSIZE(m_pList), center, radius, flagMask );
@@ -363,7 +363,7 @@ class CTracePassFilter : public CTraceFilter
 public:
 	CTracePassFilter( IHandleEntity *pPassEnt ) : m_pPassEnt( pPassEnt ) {}
 
-	bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 	{
 		if ( !StandardFilterRules( pHandleEntity, contentsMask ) )
 			return false;
@@ -382,7 +382,7 @@ private:
 //-----------------------------------------------------------------------------
 // Drops an entity onto the floor
 //-----------------------------------------------------------------------------
-int UTIL_DropToFloor( CBaseEntity *pEntity, unsigned int mask, CBaseEntity *pIgnore )
+int UTIL_DropToFloor( CBaseEntity *pEntity, ContentsFlags_t mask, CBaseEntity *pIgnore )
 {
 	// Assume no ground
 	pEntity->SetGroundEntity( NULL );
@@ -429,7 +429,7 @@ bool UTIL_CheckBottom( CBaseEntity *pEntity, ITraceFilter *pTraceFilter, float f
 		pTraceFilter = &traceFilter;
 	}
 
-	unsigned int mask = pEntity->PhysicsSolidMaskForEntity();
+	ContentsFlags_t mask = pEntity->PhysicsSolidMaskForEntity();
 
 	VectorAdd (pEntity->GetAbsOrigin(), pEntity->WorldAlignMins(), mins);
 	VectorAdd (pEntity->GetAbsOrigin(), pEntity->WorldAlignMaxs(), maxs);
@@ -728,7 +728,7 @@ CBasePlayer *UTIL_GetNearestPlayer( const Vector &origin )
 	return pNearest;
 }
 
-CBasePlayer *UTIL_GetNearestVisiblePlayer( CBaseEntity *pLooker, int mask )
+CBasePlayer *UTIL_GetNearestVisiblePlayer( CBaseEntity *pLooker, ContentsFlags_t mask )
 {															
 	float distToNearest = FLT_MAX;
 	CBasePlayer *pNearest = NULL;
@@ -1451,7 +1451,7 @@ void UTIL_ShowMessageAll( const char *pString )
 static csurface_t	g_NullSurface = { "**empty**", 0 };
 
 void UTIL_SetTrace(trace_t& trace, const Ray_t &ray, edict_t *ent, float fraction, 
-				   int hitgroup, unsigned int contents, const Vector& normal, float intercept )
+				   Hitgroup_t hitgroup, ContentsFlags_t contents, const Vector& normal, float intercept )
 {
 	trace.startsolid = (fraction == 0.0f);
 	trace.fraction = fraction;
@@ -1783,7 +1783,7 @@ float UTIL_WaterLevel( const Vector &position, float minz, float maxz )
 class CWaterTraceFilter : public CTraceFilter
 {
 public:
-	bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pHandleEntity, ContentsFlags_t contentsMask )
 	{
 		CBaseEntity *pCollide = EntityFromEntityHandle( pHandleEntity );
 
@@ -3362,7 +3362,7 @@ void CC_KDTreeTest( const CCommand &args )
 			CBaseEntity *pList[1024];
 			for ( iTest = 0; iTest < NUM_KDTREE_TESTS; ++iTest )
 			{
-				nCount += UTIL_EntitiesInBox( pList, 1024, vecMins[iTest], vecMaxs[iTest], 0 );
+				nCount += UTIL_EntitiesInBox( pList, 1024, vecMins[iTest], vecMaxs[iTest], FL_NO_ENTITY_FLAGS );
 			}
 
 			Msg( "Count = %d\n", nCount );
@@ -3387,7 +3387,7 @@ void CC_KDTreeTest( const CCommand &args )
 			CBaseEntity *pList[1024];
 			for ( iTest = 0; iTest < NUM_KDTREE_TESTS; ++iTest )
 			{
-				nCount += UTIL_EntitiesInSphere( pList, 1024, vecStart, flRadius[iTest], 0 );
+				nCount += UTIL_EntitiesInSphere( pList, 1024, vecStart, flRadius[iTest], FL_NO_ENTITY_FLAGS );
 			}
 
 			Msg( "Count = %d\n", nCount );
@@ -3625,7 +3625,7 @@ void CC_CollisionTest( const CCommand &args )
 	size[0].Init(0,0,0);
 	size[1].Init(16,16,16);
 	unsigned int dots = 0;
-	int nMask = MASK_ALL & ~(CONTENTS_MONSTER | CONTENTS_HITBOX );
+	ContentsFlags_t nMask = MASK_ALL & ~(CONTENTS_MONSTER | CONTENTS_HITBOX );
 	for ( int j = 0; j < 2; j++ )
 	{
 		float startTime = engine->Time();
@@ -3679,7 +3679,7 @@ static ConCommand collision_test("collision_test", CC_CollisionTest, "Tests coll
  * Return true if ground is fairly level within the given radius around an entity
  * Trace 4 vertical hull-quadrants and test their collisions and ground heights and normals
  */
-bool UTIL_IsGroundLevel( float radius, const Vector &position, float hullHeight, int mask, const CBaseEntity *ignore, bool debugTraces )
+bool UTIL_IsGroundLevel( float radius, const Vector &position, float hullHeight, ContentsFlags_t mask, const CBaseEntity *ignore, bool debugTraces )
 {
 	const int subdivisions = 3;
 	const int samples = subdivisions * subdivisions;

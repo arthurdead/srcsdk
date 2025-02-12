@@ -291,7 +291,7 @@ int UTIL_EmitGroupIDSuit(edict_t *entity, int isentenceg)
 	}
 
 	if (fvol > 0.05)
-		sentenceIndex = SENTENCEG_PlayRndI(entity, isentenceg, fvol, SNDLVL_NORM, 0, pitch);
+		sentenceIndex = SENTENCEG_PlayRndI(entity, isentenceg, fvol, SNDLVL_NORM, SND_NOFLAGS, pitch);
 
 	return sentenceIndex;
 }
@@ -315,7 +315,7 @@ int UTIL_EmitGroupnameSuit(edict_t *entity, const char *groupname)
 	}
 
 	if (fvol > 0.05)
-		sentenceIndex = SENTENCEG_PlayRndSz(entity, groupname, fvol, SNDLVL_NORM, 0, pitch);
+		sentenceIndex = SENTENCEG_PlayRndSz(entity, groupname, fvol, SNDLVL_NORM, SND_NOFLAGS, pitch);
 
 	return sentenceIndex;
 }
@@ -326,7 +326,7 @@ int UTIL_EmitGroupnameSuit(edict_t *entity, const char *groupname)
 // texture name to a material type.  Play footstep sound based
 // on material type.
 
-char TEXTURETYPE_Find( trace_t *ptr )
+unsigned short TEXTURETYPE_Find( trace_t *ptr )
 {
 	const surfacedata_t *psurfaceData = physprops->GetSurfaceData( ptr->surface.surfaceProps );
 

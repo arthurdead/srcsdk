@@ -343,7 +343,7 @@ const char *variant_t::String( void ) const
 			}
 			V_snprintf(strbuffer, sizeof(strbuffer), "%s", STRING(name));
 		} else {
-			V_snprintf(strbuffer, sizeof(strbuffer), "");
+			strbuffer[0] = '\0';
 		}
 	} break;
 	case FIELD_FUNCTION:

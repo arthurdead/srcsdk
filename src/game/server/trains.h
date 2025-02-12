@@ -14,18 +14,28 @@
 
 
 // Spawnflags of CPathCorner
-#define SF_CORNER_WAITFORTRIG	0x001
-#define SF_CORNER_TELEPORT		0x002
+enum SFCorner_t : unsigned char
+{
+	SF_CORNER_WAITFORTRIG =	0x001,
+	SF_CORNER_TELEPORT =		0x002,
+};
+
+FLAGENUM_OPERATORS( SFCorner_t, unsigned char )
 
 // Tracktrain spawn flags
-#define SF_TRACKTRAIN_NOPITCH					0x0001
-#define SF_TRACKTRAIN_NOCONTROL					0x0002
-#define SF_TRACKTRAIN_FORWARDONLY				0x0004
-#define SF_TRACKTRAIN_PASSABLE					0x0008
-#define SF_TRACKTRAIN_FIXED_ORIENTATION			0x0010
-#define SF_TRACKTRAIN_HL1TRAIN					0x0080
-#define SF_TRACKTRAIN_USE_MAXSPEED_FOR_PITCH	0x0100
-#define SF_TRACKTRAIN_UNBLOCKABLE_BY_PLAYER		0x0200
+enum SFTrackTrain_t : unsigned short
+{
+	SF_TRACKTRAIN_NOPITCH =					0x0001,
+	SF_TRACKTRAIN_NOCONTROL =					0x0002,
+	SF_TRACKTRAIN_FORWARDONLY =				0x0004,
+	SF_TRACKTRAIN_PASSABLE =					0x0008,
+	SF_TRACKTRAIN_FIXED_ORIENTATION =			0x0010,
+	SF_TRACKTRAIN_HL1TRAIN =					0x0080,
+	SF_TRACKTRAIN_USE_MAXSPEED_FOR_PITCH =	0x0100,
+	SF_TRACKTRAIN_UNBLOCKABLE_BY_PLAYER =		0x0200,
+};
+
+FLAGENUM_OPERATORS( SFTrackTrain_t, unsigned short )
 
 #define TRAIN_ACTIVE	0x80 
 #define TRAIN_NEW		0xc0
@@ -39,18 +49,18 @@
 
 enum TrainVelocityType_t
 {
-        TrainVelocity_Instantaneous = 0,
-        TrainVelocity_LinearBlend,
-        TrainVelocity_EaseInEaseOut,
+	TrainVelocity_Instantaneous = 0,
+	TrainVelocity_LinearBlend,
+	TrainVelocity_EaseInEaseOut,
 };
 
 
 enum TrainOrientationType_t
 {
-        TrainOrientation_Fixed = 0,
-        TrainOrientation_AtPathTracks,
-        TrainOrientation_LinearBlend,
-        TrainOrientation_EaseInEaseOut,
+	TrainOrientation_Fixed = 0,
+	TrainOrientation_AtPathTracks,
+	TrainOrientation_LinearBlend,
+	TrainOrientation_EaseInEaseOut,
 };
 
 class CFuncTrackTrain : public CBaseEntity
@@ -58,6 +68,8 @@ class CFuncTrackTrain : public CBaseEntity
 public:
 	DECLARE_CLASS( CFuncTrackTrain, CBaseEntity );
 	DECLARE_SERVERCLASS();
+
+	DECLARE_SPAWNFLAGS( SFTrackTrain_t )
 
 	CFuncTrackTrain();
 

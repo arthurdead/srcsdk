@@ -93,7 +93,12 @@ public:
 #endif
 
 	DECLARE_PREDICTABLE();
-	DECLARE_EMBEDDED_NETWORKVAR();
+	DECLARE_EMBEDDED_NETWORKVAR_NOCHECK();
+
+#ifdef GAME_DLL
+	virtual void NetworkStateChanged() override;
+	virtual void NetworkStateChanged( unsigned short offset ) override;
+#endif
 
 #ifdef GAME_DLL
 	DECLARE_MAPEMBEDDED();

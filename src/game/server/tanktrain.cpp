@@ -132,7 +132,7 @@ void CTankTargetChange::Precache( void )
 	BaseClass::Precache();
 
 	// This needs to be in Precache so save/load works
-	m_newTarget.SetString( m_newTargetName );
+	m_newTarget.SetStringT( m_newTargetName );
 }
 
 void CTankTargetChange::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )

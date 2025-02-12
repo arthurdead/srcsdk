@@ -19,9 +19,22 @@
 
 #define MAX_LAYER_RECORDS MAX_ANIM_OVERLAYS
 
+enum LagCompesateFlags_t : unsigned short
+{
+	LC_NONE =				0,
+	LC_ALIVE =			(1<<0),
+
+	LC_ORIGIN_CHANGED =	(1<<8),
+	LC_ANGLES_CHANGED =	(1<<9),
+	LC_SIZE_CHANGED =		(1<<10),
+	LC_ANIMATION_CHANGED = (1<<11),
+};
+
+FLAGENUM_OPERATORS( LagCompesateFlags_t, unsigned short )
+
 struct LayerRecord
 {
-	int m_sequence;
+	sequence_t m_sequence;
 	float m_cycle;
 	float m_weight;
 	int m_order;
@@ -41,7 +54,7 @@ struct LayerRecord
 
 	void Clear()
 	{
-		m_sequence = 0;
+		m_sequence = INVALID_SEQUENCE;
 		m_cycle = 0;
 		m_weight = 0;
 		m_order = 0;
@@ -74,13 +87,13 @@ public:
 
 	void Clear()
 	{
-		m_fFlags = 0;
+		m_fFlags = LC_NONE;
 		m_vecOrigin.Init();
 		m_vecAngles.Init();
 		m_vecMinsPreScaled.Init();
 		m_vecMaxsPreScaled.Init();
 		m_flSimulationTime = -1;
-		m_masterSequence = 0;
+		m_masterSequence = INVALID_SEQUENCE;
 		m_masterCycle = 0;
 		for( int layerIndex = 0; layerIndex < MAX_LAYER_RECORDS; ++layerIndex )
 		{
@@ -89,7 +102,7 @@ public:
 	}
 
 	// Did player die this frame
-	int						m_fFlags;
+	LagCompesateFlags_t						m_fFlags;
 
 	// Player position, orientation and bbox
 	Vector					m_vecOrigin;
@@ -101,7 +114,7 @@ public:
 
 	// Player animation details, so we can get the legs in the right spot.
 	LayerRecord				m_layerRecords[MAX_LAYER_RECORDS];
-	int						m_masterSequence;
+	sequence_t						m_masterSequence;
 	float					m_masterCycle;
 };
 

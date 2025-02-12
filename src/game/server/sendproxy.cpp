@@ -101,7 +101,7 @@ void SendProxy_Time( const SendProp *pProp, const void *pStruct, const void *pVa
 //			pId - 
 // Output : SendProp
 //-----------------------------------------------------------------------------
-SendPropEx SendPropTime(
+SendPropInfoEx SendPropTime(
 	const char *pVarName,
 	int offset,
 	int sizeofVar,
@@ -136,7 +136,7 @@ void SendProxy_PredictableId( const SendProp *pProp, const void *pStruct, const 
 //			pId - 
 // Output : SendProp
 //-----------------------------------------------------------------------------
-SendPropEx SendPropPredictableId(
+SendPropInfoEx SendPropPredictableId(
 	const char *pVarName,
 	int offset,
 	int sizeofVar, DTPriority_t priority )
@@ -151,7 +151,7 @@ void SendProxy_StringT( const SendProp *pProp, const void *pStruct, const void *
 }
 
 
-SendPropEx SendPropStringT( const char *pVarName, int offset, int sizeofVar, DTPriority_t priority )
+SendPropInfoEx SendPropStringT( const char *pVarName, int offset, int sizeofVar, DTPriority_t priority )
 {
 	// Make sure it's the right type.
 	Assert( sizeofVar == sizeof( string_t ) );

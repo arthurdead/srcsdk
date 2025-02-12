@@ -212,6 +212,27 @@ public:
 };
 
 template<>
+class CEntityOutputTemplate<uint64, FIELD_UINTEGER64> : public CBaseEntityOutput
+{
+public:
+	void Init( uint64 value )
+	{
+		m_Value.SetUInt64( value );
+	}
+
+	void Set( uint64 value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
+	{
+		m_Value.SetUInt64( value );
+		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
+	}
+
+	uint64 Get() const
+	{
+		return m_Value.UInt64();
+	}
+};
+
+template<>
 class CEntityOutputTemplate<variant_t, FIELD_VARIANT> : public CBaseEntityOutput
 {
 public:
@@ -243,33 +264,43 @@ public:
 	}
 };
 
-template<>
-class CEntityOutputTemplate<EHANDLE, FIELD_EHANDLE> : public CBaseEntityOutput
+template <>
+class CEntityOutputTemplate<CBaseHandle, FIELD_EHANDLE> : public CBaseEntityOutput
 {
 public:
-	void Init( EHANDLE value )
+	void Init( CBaseHandle value )
 	{
 		m_Value.SetEntityH( value );
 	}
 
-	void Init( CSharedBaseEntity *value )
-	{
-		m_Value.SetEntityH( value );
-	}
-
-	void Set( EHANDLE value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
-	{
-		m_Value.SetEntityH( value );
-		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
-	}
-
-	void Set( CSharedBaseEntity *value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
+	void Set( CBaseHandle value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
 	{
 		m_Value.SetEntityH( value );
 		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
 	}
 
 	CSharedBaseEntity *Get() const
+	{
+		return m_Value.EntityP();
+	}
+};
+
+template <typename T>
+class CEntityOutputTemplate<CHandle<T>, FIELD_EHANDLE> : public CBaseEntityOutput
+{
+public:
+	void Init( CHandle<T> value )
+	{
+		m_Value.SetEntityH( value );
+	}
+
+	void Set( CHandle<T> value, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller )
+	{
+		m_Value.SetEntityH( value );
+		CBaseEntityOutput::FireOutput( m_Value, pActivator, pCaller );
+	}
+
+	T *Get() const
 	{
 		return m_Value.EntityP();
 	}
@@ -297,7 +328,7 @@ typedef CEntityOutputTemplate<unsigned int,FIELD_UINTEGER>			COutputUInt;
 typedef CEntityOutputTemplate<signed char,FIELD_SCHARACTER>			COutputSChar;
 typedef CEntityOutputTemplate<unsigned char,FIELD_UCHARACTER>			COutputUChar;
 typedef CEntityOutputTemplate<int64,FIELD_INTEGER64>			COutputInt64;
-typedef CEntityOutputTemplate<uint64,FIELD_INTEGER64>			COutputUInt64;
+typedef CEntityOutputTemplate<uint64,FIELD_UINTEGER64>			COutputUInt64;
 typedef CEntityOutputTemplate<short,FIELD_SHORT>			COutputShort;
 typedef CEntityOutputTemplate<unsigned short,FIELD_USHORT>			COutputUShort;
 typedef CEntityOutputTemplate<float,FIELD_FLOAT>			COutputFloat;

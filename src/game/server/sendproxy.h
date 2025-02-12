@@ -52,6 +52,10 @@ SendPropInfoEx SendPropStringT( const char *pVarName, int offset, int sizeofVar=
 //-----------------------------------------------------------------------------
 void* SendProxy_OnlyToTeam( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
 
+extern void* SendProxy_PredictableId( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
+
+extern void SendProxy_PredictableId( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
+
 extern void* SendProxy_SendMinimalDataTable( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
 extern void* SendProxy_SendFullDataTable( const SendPropInfo *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
 

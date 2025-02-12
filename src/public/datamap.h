@@ -342,6 +342,16 @@ DECLARE_FIELD_NETWORK_INFO( FIELD_FLOAT, CNetworkAnimCycleBase )
 DECLARE_FIELD_NETWORK_INFO( FIELD_USHORT, CNetworkSequenceBase )
 
 #if defined( CLIENT_DLL ) || defined( GAME_DLL )
+template <typename T>
+class CNativeFieldInfo<CHandle<T>>
+{
+public:
+	using native_type = CHandle<T>;
+	using info_type = CDatamapFieldInfo<FIELD_EHANDLE>;
+	static inline auto FIELDTYPE = FIELD_EHANDLE;
+	static inline auto NATIVESIZE = sizeof(native_type);
+};
+
 template <typename T, typename H>
 class CNativeFieldInfo<CNetworkHandleBaseImpl<T, H>>
 {

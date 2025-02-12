@@ -17,8 +17,8 @@ END_SEND_TABLE()
 IMPLEMENT_SERVERCLASS_ST(CHeistPlayer, DT_Heist_Player)
 	DEFINE_SEND_FIELD( m_flLeaning ),
 
-	SendPropDataTable("heistlocaldata", 0, &REFERENCE_SEND_TABLE(DT_HeistLocalPlayerExclusive), SendProxy_SendLocalDataTable),
-	SendPropDataTable("heistnonlocaldata", 0, &REFERENCE_SEND_TABLE(DT_HeistNonLocalPlayerExclusive), SendProxy_SendNonLocalDataTable),
+	SendPropDataTable("heistlocaldata", 0, &REFERENCE_SEND_TABLE(DT_HeistLocalPlayerExclusive), SendProxy_LocalDataTable),
+	SendPropDataTable("heistnonlocaldata", 0, &REFERENCE_SEND_TABLE(DT_HeistNonLocalPlayerExclusive), SendProxy_NonLocalDataTable),
 END_SEND_TABLE()
 
 CHeistPlayer::CHeistPlayer()

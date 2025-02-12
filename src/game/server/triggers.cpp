@@ -4290,7 +4290,7 @@ bool CBaseVPhysicsTrigger::PassesTriggerFilters( CBaseEntity *pOther )
 		(HasSpawnFlags(SF_TRIGGER_ALLOW_PHYSICS) && pOther->GetMoveType() == MOVETYPE_VPHYSICS) ||
 		(HasSpawnFlags(SF_TRIGGER_ALLOW_ITEMS) && pOther->GetMoveType() == MOVETYPE_FLYGRAVITY)
 		||
-		(	HasSpawnFlags(SF_TRIG_TOUCH_DEBRIS) && 
+		(	HasSpawnFlags(SF_TRIGGER_TOUCH_DEBRIS) && 
 			(pOther->GetCollisionGroup() == COLLISION_GROUP_DEBRIS ||
 			pOther->GetCollisionGroup() == COLLISION_GROUP_DEBRIS_TRIGGER || 
 			pOther->GetCollisionGroup() == COLLISION_GROUP_INTERACTIVE_DEBRIS)

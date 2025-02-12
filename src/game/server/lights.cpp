@@ -285,6 +285,13 @@ LINK_ENTITY_TO_CLASS( light_spot, CLight );
 LINK_ENTITY_TO_CLASS( light_glspot, CLight );
 LINK_ENTITY_TO_CLASS( light_directional, CLight );
 
+enum SFEnvLight_t : unsigned char
+{
+	SF_ENVLIGHT_CSM_ENABLED = 0x01,
+};
+
+FLAGENUM_OPERATORS( SFEnvLight_t, unsigned char )
+
 #define EnvLightBase CLogicalEntity
 
 class CEnvLight : public EnvLightBase
@@ -292,6 +299,8 @@ class CEnvLight : public EnvLightBase
 public:
 	DECLARE_CLASS( CEnvLight, EnvLightBase );
 	DECLARE_NETWORKCLASS();
+
+	DECLARE_SPAWNFLAGS( SFEnvLight_t )
 
 	CEnvLight();
 	~CEnvLight();
@@ -343,7 +352,7 @@ void CEnvLight::Spawn( void )
 
 	BaseClass::Spawn( );
 
-	m_bCascadedShadowMappingEnabled = HasSpawnFlags( 0x01 );
+	m_bCascadedShadowMappingEnabled = HasSpawnFlags( SF_ENVLIGHT_CSM_ENABLED );
 }
 
 static Vector ConvertLightmapGammaToLinear( int *iColor4 )

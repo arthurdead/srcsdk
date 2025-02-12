@@ -73,32 +73,13 @@ SendPropInfoEx SendPropUtlVector_impl(
 	EnsureCapacityFn ensureFn,
 
 	int nMaxElements,			// Max # of elements in the array. Keep this as low as possible.
-	SendPropInfoEx pArrayProp,		// Describe the data inside of each element in the array.
+	const SendPropInfoEx &pArrayProp,		// Describe the data inside of each element in the array.
 	SendTableProxyFn varProxy,	// This can be overridden to control who the array is sent to.
 	DTPriority_t priority,
 
-	void(*UtlVectorElement)( 
-	const SendPropInfo *pProp, 
-	const void *pStruct, 
-	const void *pData, 
-	DVariant *pOut, 
-	int iElement, 
-	int objectID ),
-
-	void*(UtlVectorElement_DataTable)( 
-	const SendPropInfo *pProp,
-	const void *pStructBase, 
-	const void *pData, 
-	CSendProxyRecipients *pRecipients, 
-	int objectID ),
-	
-	void(*UtlVectorLength)( 
-	const SendPropInfo *pProp, 
-	const void *pStruct, 
-	const void *pData, 
-	DVariant *pOut, 
-	int iElement, 
-	int objectID )
+	SendVarProxyFn UtlVectorElement,
+	SendTableProxyFn UtlVectorElement_DataTable,
+	SendVarProxyFn UtlVectorLength
 
 	);
 
@@ -189,7 +170,7 @@ SendPropInfoEx SendPropUtlVector(
 	EnsureCapacityFn ensureFn,
 
 	int nMaxElements,			// Max # of elements in the array. Keep this as low as possible.
-	SendPropInfoEx pArrayProp,		// Describe the data inside of each element in the array.
+	const SendPropInfoEx &pArrayProp,		// Describe the data inside of each element in the array.
 	SendTableProxyFn varProxy=SendProxy_DataTableToDataTable,	// This can be overridden to control who the array is sent to.
 	DTPriority_t priority = SENDPROP_DEFAULT_PRIORITY
 	)

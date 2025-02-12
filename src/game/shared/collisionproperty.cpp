@@ -425,6 +425,24 @@ CSharedCollisionProperty::~CCollisionProperty()
 	#undef CCollisionProperty
 #endif
 
+#ifdef GAME_DLL
+void CSharedCollisionProperty::NetworkStateChanged()
+{
+	if(m_pOuter) {
+		m_pOuter->m_pCollision.NetworkStateChanged();
+	}
+}
+
+void CSharedCollisionProperty::NetworkStateChanged( unsigned short offset )
+{
+	//TODO!!!! impossible to get exact offset?
+
+	if(m_pOuter) {
+		m_pOuter->m_pCollision.NetworkStateChanged();
+	}
+}
+#endif
+
 //-----------------------------------------------------------------------------
 // Initialization
 //-----------------------------------------------------------------------------

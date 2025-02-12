@@ -274,43 +274,37 @@ int CFogController::DrawDebugTextOverlays(void)
 	return text_offset;
 }
 
-#define FOG_CONTROLLER_COLORPRIMARY_LERP		(1 << 0)
-#define FOG_CONTROLLER_COLORSECONDARY_LERP		(1 << 1)
-#define FOG_CONTROLLER_START_LERP				(1 << 2)
-#define FOG_CONTROLLER_END_LERP					(1 << 3)
-#define FOG_CONTROLLER_MAXDENSITY_LERP			(1 << 4)
-
-void CFogController::InputSetColorLerpTo( inputdata_t &&inputdata )
+void CFogController::InputSetColorLerpTo( inputdata_t &&data )
 {
 	m_iChangedVariables |= FOG_CONTROLLER_COLORPRIMARY_LERP;
 	m_fog.colorPrimaryLerpTo = data.value.Color32();
 }
 
-void CFogController::InputSetColorSecondaryLerpTo( inputdata_t &&inputdata )
+void CFogController::InputSetColorSecondaryLerpTo( inputdata_t &&data )
 {
 	m_iChangedVariables |= FOG_CONTROLLER_COLORSECONDARY_LERP;
 	m_fog.colorSecondaryLerpTo = data.value.Color32();
 }
 
-void CFogController::InputSetStartDistLerpTo( inputdata_t &&inputdata )
+void CFogController::InputSetStartDistLerpTo( inputdata_t &&data )
 {
 	m_iChangedVariables |= FOG_CONTROLLER_START_LERP;
 	m_fog.startLerpTo = data.value.Float();
 }
 
-void CFogController::InputSetEndDistLerpTo( inputdata_t &&inputdata )
+void CFogController::InputSetEndDistLerpTo( inputdata_t &&data )
 {
 	m_iChangedVariables |= FOG_CONTROLLER_END_LERP;
 	m_fog.endLerpTo = data.value.Float();
 }
 
-void CFogController::InputSetMaxDensityLerpTo( inputdata_t &&inputdata )
+void CFogController::InputSetMaxDensityLerpTo( inputdata_t &&data )
 {
 	m_iChangedVariables |= FOG_CONTROLLER_MAXDENSITY_LERP;
 	m_fog.maxdensityLerpTo = data.value.Float();
 }
 
-void CFogController::InputStartFogTransition( inputdata_t &&inputdata )
+void CFogController::InputStartFogTransition( inputdata_t &&data )
 {
 	SetThink( &CFogController::SetLerpValues );
 
@@ -345,7 +339,7 @@ void CFogController::SetLerpValues( void )
 		m_fog.maxdensity = m_fog.maxdensityLerpTo;
 	}
 
-	m_iChangedVariables = 0;
+	m_iChangedVariables = FOG_CONTROLLER_NO_VARS;
 	m_fog.lerptime = gpGlobals->curtime;
 }
 

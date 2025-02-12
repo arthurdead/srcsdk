@@ -38,13 +38,24 @@ public:
 //
 //  A breakable surface
 //#############################################################################
+
+// Spawn flags
+enum SFBreakableSurf_t : uint64
+{
+	SF_BREAKABLESURF_CRACK_DECALS =				(SF_BREAK_LAST_FLAG << 1),
+	SF_BREAKABLESURF_DAMAGE_FROM_HELD_OBJECTS =	(SF_BREAK_LAST_FLAG << 2),
+	SF_BREAKABLESURF_PLAY_BREAK_SOUND =			(SF_BREAK_LAST_FLAG << 3),
+};
+
 class CBreakableSurface : public CBreakable
 {
+public:
 	DECLARE_CLASS( CBreakableSurface, CBreakable );
 	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
-public:
+	DECLARE_SPAWNFLAGS( SFBreakableSurf_t )
+
 	CNetworkVar( int, m_nNumWide );
 	CNetworkVar( int, m_nNumHigh );
 	CNetworkVar( float, m_flPanelWidth );

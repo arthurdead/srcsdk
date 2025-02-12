@@ -806,7 +806,7 @@ bool CBaseServerVehicle::GetLocalAttachmentAtTime( sequence_t nQuerySequence, in
 	//		 should really leave the car in an acceptable state to run this query -- jdw
 
 	// Store this off for restoration later
-	int nOldSequence = pAnimating->GetSequence();
+	sequence_t nOldSequence = pAnimating->GetSequence();
 	float flOldCycle = pAnimating->GetCycle();
 
 	// Setup the model for the query

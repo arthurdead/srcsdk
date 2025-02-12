@@ -170,7 +170,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CSharedBeam, DT_Beam )
 	SendPropEHandle(SENDINFO_NAME(m_hMoveParent, moveparent) ),
 	SendPropInt		(SENDINFO(m_nMinDXLevel),	8,	SPROP_UNSIGNED ),
 
-	SendPropDataTable( "beampredictable_id", 0, &REFERENCE_SEND_TABLE( DT_BeamPredictableId ), SendProxy_SendPredictableId ),
+	SendPropDataTable( "beampredictable_id", 0, &REFERENCE_SEND_TABLE( DT_BeamPredictableId ), SendProxy_PredictableId ),
 
 #else
 	RecvPropInt		(RECVINFO(m_nBeamType)),

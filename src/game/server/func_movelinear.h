@@ -16,6 +16,15 @@
 
 class IPhysicsFluidController;
 
+// -------------------------------
+//  SPAWN_FLAGS
+// -------------------------------
+enum SFMoveLinear_t : unsigned char
+{
+	SF_MOVELINEAR_NOTSOLID =		(SF_TOGGLE_LAST_FLAG << 1),
+};
+
+FLAGENUM_OPERATORS( SFMoveLinear_t, unsigned char )
 
 class CFuncMoveLinear : public CBaseToggle
 {
@@ -25,6 +34,8 @@ public:
 
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_vecVelocity );
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_fFlags );
+
+	DECLARE_SPAWNFLAGS( SFMoveLinear_t )
 
 	void		Spawn( void );
 	void		Precache( void );

@@ -300,10 +300,10 @@ static void AddDataMapFieldNamesToList( KeyValueNameList_t &list, datamap_t *pDa
 
 			if(i == 0 &&
 				pField->rawType() == FIELD_VOID &&
-				pField->fieldOffset[0] == 0 &&
+				pField->rawOffset() == 0 &&
 				pField->fieldSize == 0 &&
 				pField->fieldSizeInBytes == 0 &&
-				pField->flags == 0 &&
+				pField->flags == FTYPEDESC_NONE &&
 				pField->fieldName == NULL) {
 				continue;
 			}
@@ -314,13 +314,13 @@ static void AddDataMapFieldNamesToList( KeyValueNameList_t &list, datamap_t *pDa
 				continue;
 			}
 
-			if ((pField->flags & (FTYPEDESC_KEY|FTYPEDESC_INPUT|FTYPEDESC_OUTPUT)) == 0)
+			if ((pField->flags & (FTYPEDESC_KEY|FTYPEDESC_INPUT|FTYPEDESC_OUTPUT)) == FTYPEDESC_NONE)
 			{
 				AssertMsg( 0,"%s has non map data description\n", pDataMap->dataClassName);
 				continue;
 			}
 
-			if ((pField->flags & FTYPEDESC_KEY) != 0)
+			if ((pField->flags & FTYPEDESC_KEY) != FTYPEDESC_NONE)
 			{
 				list.AddToTail( pField->externalName );
 			}
@@ -443,11 +443,11 @@ bool CSharedPointEntity::KeyValue( const char *szKeyName, const char *szValue )
 
 	if ( FStrEq( szKeyName, "mingpulevel" ))
 	{
-		return true;
+		return false;
 	}
 	if ( FStrEq( szKeyName, "maxgpulevel" ))
 	{
-		return true;
+		return false;
 	}
 
 	return BaseClass::KeyValue( szKeyName, szValue );

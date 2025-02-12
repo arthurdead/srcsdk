@@ -15,25 +15,35 @@
 #include "vphysics/friction.h"
 #include "hierarchy.h"
 #include "collisionproperty.h"
+#include "pathcorner.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 static void PlatSpawnInsideTrigger(edict_t *pevPlatform);
 
-#define SF_PLAT_TOGGLE				0x0001
+enum SFPlatTrain_t : uint64
+{
+	SF_PLATTRAIN_TOGGLE =				(SF_TOGGLE_LAST_FLAG << 1),
+
+	SF_PLATTRAIN_LAST_FLAG = SF_PLATTRAIN_TOGGLE,
+};
+
+FLAGENUM_OPERATORS( SFPlatTrain_t, uint64 )
 
 class CBasePlatTrain : public CBaseToggle
 {
 public:
 	DECLARE_CLASS( CBasePlatTrain, CBaseToggle );
 
+	DECLARE_SPAWNFLAGS( SFPlatTrain_t )
+
 	~CBasePlatTrain();
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	void Precache( void );
 
 	// This is done to fix spawn flag collisions between this class and a derived class
-	virtual bool IsTogglePlat( void ) { return HasSpawnFlags( SF_PLAT_TOGGLE) ? true : false; }
+	virtual bool IsTogglePlat( void ) { return HasSpawnFlags( SF_PLATTRAIN_TOGGLE) ? true : false; }
 
 	DECLARE_MAPENTITY();
 
@@ -205,8 +215,8 @@ void CBasePlatTrain::Precache( void )
 	}
 
 	//Precache them all
-	PrecacheScriptSound( (char *) STRING(m_NoiseMoving) );
-	PrecacheScriptSound( (char *) STRING(m_NoiseArrived) );
+	PrecacheScriptSound( STRING(m_NoiseMoving) );
+	PrecacheScriptSound( STRING(m_NoiseArrived) );
 
 }
 
@@ -697,11 +707,22 @@ void CFuncPlatRot::RotMove( QAngle &destAngle, float time )
 	}
 }
 
+// Trains
+enum SFTrain_t : uint64
+{
+	SF_TRAIN_WAIT_RETRIGGER =	(SF_PLATTRAIN_LAST_FLAG << 1),
+	SF_TRAIN_PASSABLE =		(SF_PLATTRAIN_LAST_FLAG << 2),		// Train is not solid -- used to make water trains
+};
+
+FLAGENUM_OPERATORS( SFTrain_t, uint64 )
 
 class CFuncTrain : public CBasePlatTrain
 {
 public:
 	DECLARE_CLASS( CFuncTrain, CBasePlatTrain );
+
+	DECLARE_SPAWNFLAGS( SFTrain_t )
+
 	void Spawn( void );
 	void Precache( void );
 	void Activate( void );
@@ -809,7 +830,8 @@ void CFuncTrain::Wait( void )
 	m_hCurrentTarget->AcceptInput( "InPass", this, this, Move(emptyVariant), 0 );
 
 	// need pointer to LAST target.
-	if ( m_hCurrentTarget->HasSpawnFlags( SF_TRAIN_WAIT_RETRIGGER ) || HasSpawnFlags( SF_TRAIN_WAIT_RETRIGGER ) )
+	CFuncTrain *pTrain =  dynamic_cast<CFuncTrain *>(m_hCurrentTarget.Get());
+	if ( ( pTrain && pTrain->HasSpawnFlags( SF_TRAIN_WAIT_RETRIGGER ) ) || HasSpawnFlags( SF_TRAIN_WAIT_RETRIGGER ) )
     {
 		AddSpawnFlags( SF_TRAIN_WAIT_RETRIGGER );
         
@@ -913,7 +935,8 @@ void CFuncTrain::Next( void )
     m_hEnemy = pTarg;
 
 	//Check for teleport
-	if ( m_hCurrentTarget->HasSpawnFlags( SF_CORNER_TELEPORT ) )
+	CPathCorner *pCorner =  dynamic_cast<CPathCorner *>(m_hCurrentTarget.Get());
+	if ( pCorner && pCorner->HasSpawnFlags( SF_CORNER_TELEPORT ) )
 	{
 		IncrementInterpolationFrame();
 
@@ -1023,7 +1046,7 @@ void CFuncTrain::Spawn( void )
 	SetMoveType( MOVETYPE_PUSH );
 	SetSolid( SOLID_BSP );
 	SetModel( STRING( GetModelName() ) );
-	if ( HasSpawnFlags( SF_TRACKTRAIN_PASSABLE ) )
+	if ( HasSpawnFlags( SF_TRAIN_PASSABLE ) )
 	{
 		AddSolidFlags( FSOLID_NOT_SOLID );
 	}
@@ -2878,15 +2901,23 @@ void CFuncTrainControls::Spawn( void )
 	SetNextThink( gpGlobals->curtime );
 }
 
+enum SFTrack_t : uint64
+{
+	SF_TRACK_ACTIVATETRAIN =		(SF_PLATTRAIN_LAST_FLAG << 1),
+	SF_TRACK_RELINK =				(SF_PLATTRAIN_LAST_FLAG << 2),
+	SF_TRACK_ROTMOVE =			(SF_PLATTRAIN_LAST_FLAG << 3),
+	SF_TRACK_STARTBOTTOM =		(SF_PLATTRAIN_LAST_FLAG << 4),
+	SF_TRACK_DONT_MOVE =			(SF_PLATTRAIN_LAST_FLAG << 5),
+};
 
-#define SF_TRACK_ACTIVATETRAIN		0x00000001
-#define SF_TRACK_RELINK				0x00000002
-#define SF_TRACK_ROTMOVE			0x00000004
-#define SF_TRACK_STARTBOTTOM		0x00000008
-#define SF_TRACK_DONT_MOVE			0x00000010
+FLAGENUM_OPERATORS( SFTrack_t, uint64 )
 
-
-typedef enum { TRAIN_SAFE, TRAIN_BLOCKING, TRAIN_FOLLOWING } TRAIN_CODE;
+enum TRAIN_CODE : unsigned char
+{
+	TRAIN_SAFE,
+	TRAIN_BLOCKING,
+	TRAIN_FOLLOWING
+};
 
 
 //-----------------------------------------------------------------------------
@@ -2898,6 +2929,9 @@ class CFuncTrackChange : public CFuncPlatRot
 {
 public:
 	DECLARE_CLASS( CFuncTrackChange, CFuncPlatRot );
+
+	DECLARE_SPAWNFLAGS( SFTrack_t )
+
 	void Spawn( void );
 	void Precache( void );
 
